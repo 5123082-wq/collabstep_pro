@@ -3,6 +3,7 @@ import '@/styles/layout.css';
 import { Inter } from 'next/font/google';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import ConsoleFilter from '@/components/util/ConsoleFilter';
 import ThemeScript from '@/components/theme/ThemeScript';
 import { ThemeProvider } from '@/components/theme/ThemeContext';
@@ -32,6 +33,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <ThemeProvider>
           <ConsoleFilter />
           {children}
+          <SpeedInsights />
         </ThemeProvider>
       </body>
     </html>

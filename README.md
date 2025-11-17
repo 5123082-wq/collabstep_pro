@@ -93,11 +93,72 @@ DEMO_USER_PASSWORD=demo-user
 
 ## 🚀 Развертывание на Vercel
 
-Для развертывания:
+### Быстрый старт
 
-1. Установите переменные окружения: `NAV_V1=on`, `APP_LOCALE=ru`, `FIN_EXPENSES_STORAGE` (`memory` для preview, `db` для staging/production)
-2. Команда сборки: `pnpm vercel-build`
-3. Требования: Node.js 20, pnpm 9+
+1. **Подключите репозиторий к Vercel:**
+   - Зайдите на [vercel.com](https://vercel.com)
+   - Нажмите "Add New Project"
+   - Импортируйте репозиторий `5123082-wq/collabstep_pro`
+   - Vercel автоматически определит Next.js проект
+
+2. **Настройте проект:**
+   - **Root Directory:** `apps/web` (важно для monorepo!)
+   - **Framework Preset:** Next.js
+   - **Build Command:** `pnpm vercel-build` (или оставьте по умолчанию)
+   - **Install Command:** `pnpm install`
+   - **Output Directory:** `.next` (по умолчанию)
+
+3. **Установите переменные окружения:**
+   
+   **Обязательные:**
+   ```
+   NAV_V1=on
+   APP_LOCALE=ru
+   AUTH_DEV=on
+   FIN_EXPENSES_STORAGE=memory
+   ```
+   
+   **Демо-аккаунты:**
+   ```
+   DEMO_ADMIN_EMAIL=admin.demo@collabverse.test
+   DEMO_ADMIN_PASSWORD=demo-admin
+   DEMO_USER_EMAIL=user.demo@collabverse.test
+   DEMO_USER_PASSWORD=demo-user
+   ```
+   
+   **Для production/staging:**
+   ```
+   FIN_EXPENSES_STORAGE=db
+   ```
+   
+   **Опциональные (WebSocket):**
+   ```
+   NEXT_PUBLIC_WS_URL=wss://your-websocket-server.com
+   NEXT_PUBLIC_WS_ENABLED=true
+   ```
+
+4. **Настройки Node.js и pnpm:**
+   - Node.js Version: `20.x`
+   - Package Manager: `pnpm` (Vercel автоматически определит из `packageManager` в `package.json`)
+
+5. **Разверните:**
+   - Нажмите "Deploy"
+   - Vercel автоматически соберет и развернет проект
+
+### Важные моменты
+
+- ✅ Проект уже настроен для Vercel (есть `vercel.json`)
+- ✅ Это monorepo, поэтому важно указать `Root Directory: apps/web`
+- ✅ Для preview окружений используйте `FIN_EXPENSES_STORAGE=memory`
+- ✅ Для production используйте `FIN_EXPENSES_STORAGE=db` (если настроена БД)
+
+### Проверка развертывания
+
+После развертывания проверьте:
+- Главная страница загружается
+- Авторизация работает (`/login`)
+- Демо-аккаунты работают
+- API routes отвечают
 
 Подробнее в [docs/getting-started/setup.md](docs/getting-started/setup.md)
 

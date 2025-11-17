@@ -1,0 +1,9 @@
+{
+  "buildCommand": "pnpm vercel-build",
+  "devCommand": "pnpm dev",
+  "installCommand": "pnpm install",
+  "framework": "nextjs",
+  "rootDirectory": "apps/web",
+  "outputDirectory": ".next"
+}
+
