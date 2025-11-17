@@ -1,6 +1,6 @@
 {
-  "buildCommand": "pnpm vercel-build",
-  "devCommand": "pnpm dev",
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pnpm --filter @collabverse/web build",
   "installCommand": "pnpm install",
   "framework": "nextjs",
   "rootDirectory": "apps/web",
