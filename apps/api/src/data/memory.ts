@@ -11,6 +11,7 @@ import type {
   DocumentVersion,
   FileObject,
   TaskComment,
+  ProjectChatMessage,
   Project,
   ProjectBudget,
   ProjectBudgetSnapshot,
@@ -26,16 +27,35 @@ import type {
   WorkspaceMember,
   WorkspaceUser,
   PlatformModule,
-  PlatformUserControl
+  PlatformUserControl,
+  Notification
 } from '../types';
 
-export const DEFAULT_WORKSPACE_USER_ID = 'admin.demo@collabverse.test';
+// Предсказуемые UUID для тестовых пользователей (для стабильности тестирования)
+export const TEST_ADMIN_USER_ID = '00000000-0000-0000-0000-000000000001';
+export const TEST_USER_ID = '00000000-0000-0000-0000-000000000002';
+export const TEST_FINANCE_USER_ID = '00000000-0000-0000-0000-000000000003';
+export const TEST_DESIGNER_USER_ID = '00000000-0000-0000-0000-000000000004';
+
+// Константы для обратной совместимости
+export const DEFAULT_WORKSPACE_USER_ID = TEST_ADMIN_USER_ID;
 export const DEFAULT_ACCOUNT_ID = 'acct-collabverse';
 export const DEFAULT_WORKSPACE_ID = 'ws-collabverse-core';
 
+/**
+ * Checks if a user ID belongs to the admin user
+ */
+export function isAdminUserId(userId: string): boolean {
+  return userId === TEST_ADMIN_USER_ID || userId === DEFAULT_WORKSPACE_USER_ID;
+}
+
+// Test project IDs (using UUID format for consistency)
+export const TEST_PROJECT_DEMO_ID = '550e8400-e29b-41d4-a716-446655440001';
+export const TEST_PROJECT_2_ID = '550e8400-e29b-41d4-a716-446655440002';
+
 export const WORKSPACE_USERS: WorkspaceUser[] = [
   {
-    id: DEFAULT_WORKSPACE_USER_ID,
+    id: TEST_ADMIN_USER_ID,
     name: 'Алина Админ',
     email: 'admin.demo@collabverse.test',
     title: 'Руководитель продукта',
@@ -43,7 +63,7 @@ export const WORKSPACE_USERS: WorkspaceUser[] = [
     location: 'Москва'
   },
   {
-    id: 'user.demo@collabverse.test',
+    id: TEST_USER_ID,
     name: 'Игорь Участник',
     email: 'user.demo@collabverse.test',
     title: 'Менеджер проектов',
@@ -51,7 +71,7 @@ export const WORKSPACE_USERS: WorkspaceUser[] = [
     location: 'Санкт-Петербург'
   },
   {
-    id: 'finance.pm@collabverse.test',
+    id: TEST_FINANCE_USER_ID,
     name: 'Мария Финансы',
     email: 'finance.pm@collabverse.test',
     title: 'Финансовый контролёр',
@@ -59,7 +79,7 @@ export const WORKSPACE_USERS: WorkspaceUser[] = [
     location: 'Москва'
   },
   {
-    id: 'designer-1',
+    id: TEST_DESIGNER_USER_ID,
     name: 'Диана Дизайн',
     email: 'designer.demo@collabverse.test',
     title: 'Ведущий дизайнер',
@@ -70,6 +90,12 @@ export const WORKSPACE_USERS: WorkspaceUser[] = [
 
 type GlobalMemoryScope = typeof globalThis & {
   __collabverseFinanceIdempotencyKeys__?: Map<string, string>;
+  __collabverseMemory__?: {
+    PROJECTS: Project[];
+    TASKS: Task[];
+    WORKSPACE_USERS: WorkspaceUser[];
+    [key: string]: any;
+  };
 };
 
 const globalMemoryScope = globalThis as GlobalMemoryScope;
@@ -78,22 +104,70 @@ const globalIdempotencyKeys =
 
 globalMemoryScope.__collabverseFinanceIdempotencyKeys__ = globalIdempotencyKeys;
 
+// Используем глобальную память для разделения между процессами Next.js
+// Это гарантирует, что проекты сохраняются между запросами
+const getOrCreateGlobalMemory = () => {
+  if (globalMemoryScope.__collabverseMemory__) {
+    // Если глобальная память уже существует, убеждаемся, что WORKSPACE_USERS инициализирован
+    if (!globalMemoryScope.__collabverseMemory__.WORKSPACE_USERS) {
+      globalMemoryScope.__collabverseMemory__.WORKSPACE_USERS = [...WORKSPACE_USERS];
+    }
+    return globalMemoryScope.__collabverseMemory__;
+  }
+  
+  const mem = {
+    PROJECTS: [] as Project[],
+    TASKS: [] as Task[],
+    TASK_DEPENDENCIES: [] as TaskDependency[],
+    PROJECT_MEMBERS: {} as Record<string, ProjectMember[]>,
+    EXPENSES: [] as Expense[],
+    EXPENSE_ATTACHMENTS: [] as ExpenseAttachment[],
+    PROJECT_BUDGETS: [] as (ProjectBudget | ProjectBudgetSnapshot)[],
+    AUDIT_LOG: [] as AuditLogEntry[],
+    EVENTS: [] as DomainEvent[],
+    MARKETPLACE_LISTINGS: [] as Array<{
+      id: string;
+      projectId: string;
+      workspaceId: string;
+      title: string;
+      description?: string;
+      state: 'draft' | 'published' | 'rejected';
+      createdAt: string;
+      updatedAt: string;
+    }>,
+    NOTIFICATIONS: [] as Notification[],
+    PROJECT_CHAT_MESSAGES: [] as ProjectChatMessage[],
+    WORKSPACE_USERS: [...WORKSPACE_USERS] as WorkspaceUser[]
+  };
+  
+  globalMemoryScope.__collabverseMemory__ = mem;
+  return mem;
+};
+
+const globalMemory = getOrCreateGlobalMemory();
+
 export const memory = {
-  WORKSPACE_USERS,
+  get WORKSPACE_USERS() { 
+    if (!globalMemory.WORKSPACE_USERS) {
+      globalMemory.WORKSPACE_USERS = [...WORKSPACE_USERS];
+    }
+    return globalMemory.WORKSPACE_USERS; 
+  },
+  set WORKSPACE_USERS(value: WorkspaceUser[]) { globalMemory.WORKSPACE_USERS = value; },
   ACCOUNTS: [
     {
       id: DEFAULT_ACCOUNT_ID,
       name: 'Collabverse Demo Org',
-      ownerId: DEFAULT_WORKSPACE_USER_ID,
+      ownerId: TEST_ADMIN_USER_ID,
       createdAt: '2024-01-10T08:00:00.000Z',
       updatedAt: '2024-06-01T10:00:00.000Z'
     }
   ] as Account[],
   ACCOUNT_MEMBERS: [
-    { accountId: DEFAULT_ACCOUNT_ID, userId: DEFAULT_WORKSPACE_USER_ID, role: 'owner' },
-    { accountId: DEFAULT_ACCOUNT_ID, userId: 'user.demo@collabverse.test', role: 'admin' },
-    { accountId: DEFAULT_ACCOUNT_ID, userId: 'finance.pm@collabverse.test', role: 'member' },
-    { accountId: DEFAULT_ACCOUNT_ID, userId: 'designer-1', role: 'viewer' }
+    { accountId: DEFAULT_ACCOUNT_ID, userId: TEST_ADMIN_USER_ID, role: 'owner' },
+    { accountId: DEFAULT_ACCOUNT_ID, userId: TEST_USER_ID, role: 'admin' },
+    { accountId: DEFAULT_ACCOUNT_ID, userId: TEST_FINANCE_USER_ID, role: 'member' },
+    { accountId: DEFAULT_ACCOUNT_ID, userId: TEST_DESIGNER_USER_ID, role: 'viewer' }
   ] as AccountMember[],
   WORKSPACES: [
     {
@@ -119,19 +193,19 @@ export const memory = {
   ] as Workspace[],
   WORKSPACE_MEMBERS: {
     [DEFAULT_WORKSPACE_ID]: [
-      { workspaceId: DEFAULT_WORKSPACE_ID, userId: DEFAULT_WORKSPACE_USER_ID, role: 'owner' },
-      { workspaceId: DEFAULT_WORKSPACE_ID, userId: 'user.demo@collabverse.test', role: 'admin' },
-      { workspaceId: DEFAULT_WORKSPACE_ID, userId: 'finance.pm@collabverse.test', role: 'member' }
+      { workspaceId: DEFAULT_WORKSPACE_ID, userId: TEST_ADMIN_USER_ID, role: 'owner' },
+      { workspaceId: DEFAULT_WORKSPACE_ID, userId: TEST_USER_ID, role: 'admin' },
+      { workspaceId: DEFAULT_WORKSPACE_ID, userId: TEST_FINANCE_USER_ID, role: 'member' }
     ],
     'ws-marketing': [
-      { workspaceId: 'ws-marketing', userId: DEFAULT_WORKSPACE_USER_ID, role: 'admin' },
-      { workspaceId: 'ws-marketing', userId: 'designer-1', role: 'member' }
+      { workspaceId: 'ws-marketing', userId: TEST_ADMIN_USER_ID, role: 'admin' },
+      { workspaceId: 'ws-marketing', userId: TEST_DESIGNER_USER_ID, role: 'member' }
     ]
   } as Record<string, WorkspaceMember[]>,
   FILES: [
     {
       id: 'file-team-brief',
-      uploaderId: DEFAULT_WORKSPACE_USER_ID,
+      uploaderId: TEST_ADMIN_USER_ID,
       filename: 'Командный бриф.pdf',
       mimeType: 'application/pdf',
       sizeBytes: 248_123,
@@ -140,7 +214,7 @@ export const memory = {
     },
     {
       id: 'file-design-assets',
-      uploaderId: 'designer-1',
+      uploaderId: TEST_DESIGNER_USER_ID,
       filename: 'design-assets.zip',
       mimeType: 'application/zip',
       sizeBytes: 1_024_512,
@@ -148,234 +222,18 @@ export const memory = {
       uploadedAt: '2024-05-15T10:15:00.000Z'
     }
   ] as FileObject[],
-  ATTACHMENTS: [
-    {
-      id: 'attach-task-brief',
-      projectId: 'proj-admin-onboarding',
-      fileId: 'file-team-brief',
-      linkedEntity: 'task',
-      entityId: 'task-admin-brief',
-      createdAt: '2024-05-04T09:05:00.000Z',
-      createdBy: DEFAULT_WORKSPACE_USER_ID
-    },
-    {
-      id: 'attach-task-design-assets',
-      projectId: 'proj-admin-onboarding',
-      fileId: 'file-design-assets',
-      linkedEntity: 'task',
-      entityId: 'task-admin-design-library-assets',
-      createdAt: '2024-05-16T11:30:00.000Z',
-      createdBy: 'designer-1'
-    }
-  ] as Attachment[],
-  DOCUMENTS: [
-    {
-      id: 'doc-kickoff-notes',
-      projectId: 'proj-admin-onboarding',
-      title: 'Протокол встречи по онбордингу',
-      status: 'active',
-      createdAt: '2024-05-02T11:00:00.000Z',
-      updatedAt: '2024-05-17T09:00:00.000Z'
-    }
-  ] as Document[],
-  DOCUMENT_VERSIONS: [
-    {
-      id: 'doc-kickoff-v1',
-      documentId: 'doc-kickoff-notes',
-      fileId: 'file-team-brief',
-      version: 1,
-      createdAt: '2024-05-02T11:00:00.000Z',
-      createdBy: DEFAULT_WORKSPACE_USER_ID,
-      notes: 'Первичный draft'
-    }
-  ] as DocumentVersion[],
-  TASK_COMMENTS: [
-    {
-      id: 'comment-brief-1',
-      projectId: 'proj-admin-onboarding',
-      taskId: 'task-admin-brief',
-      parentId: null,
-      body: 'Команда, проверьте, пожалуйста, бриф перед завтрашней встречей.',
-      mentions: ['user.demo@collabverse.test'],
-      authorId: DEFAULT_WORKSPACE_USER_ID,
-      attachments: ['file-team-brief'],
-      createdAt: '2024-05-04T09:10:00.000Z',
-      updatedAt: '2024-05-04T09:10:00.000Z'
-    }
-  ] as TaskComment[],
-  PROJECTS: [
-    {
-      id: 'proj-admin-onboarding',
-      workspaceId: DEFAULT_WORKSPACE_ID,
-      key: 'ONBD',
-      title: 'Онбординг команды Collabstep',
-      description: 'Первые шаги команды после запуска платформы.',
-      ownerId: DEFAULT_WORKSPACE_USER_ID,
-      status: 'active' as ProjectStatus,
-      stage: 'design',
-      type: 'product' as ProjectType,
-      visibility: 'private' as ProjectVisibility,
-      budgetPlanned: 1200000,
-      budgetSpent: 450000,
-      workflowId: 'wf-proj-admin-onboarding',
-      archived: false,
-      createdAt: '2024-05-01T08:30:00.000Z',
-      updatedAt: '2024-06-10T12:15:00.000Z'
-    },
-    {
-      id: 'proj-admin-landing-archive',
-      workspaceId: 'ws-marketing',
-      key: 'LAND',
-      title: 'Редизайн лендинга (архив)',
-      description: 'Завершённая инициатива по обновлению главной страницы.',
-      ownerId: DEFAULT_WORKSPACE_USER_ID,
-      status: 'archived' as ProjectStatus,
-      stage: 'launch',
-      type: 'marketing' as ProjectType,
-      visibility: 'public' as ProjectVisibility,
-      budgetPlanned: 800000,
-      budgetSpent: 820000,
-      workflowId: 'wf-proj-admin-landing-archive',
-      archived: true,
-      createdAt: '2023-11-05T10:00:00.000Z',
-      updatedAt: '2024-01-20T17:45:00.000Z'
-    }
-  ] as Project[],
-  TASKS: [
-    {
-      id: 'task-admin-brief',
-      projectId: 'proj-admin-onboarding',
-      number: 1,
-      parentId: null,
-      title: 'Подготовить бриф и дорожную карту',
-      description: 'Сформировать цели, KPI и ритуалы команды.',
-      status: 'in_progress',
-      assigneeId: DEFAULT_WORKSPACE_USER_ID,
-      labels: ['Стратегия', 'Команда'],
-      estimatedTime: 32,
-      loggedTime: 18,
-      createdAt: '2024-05-02T09:00:00.000Z',
-      updatedAt: '2024-06-08T14:20:00.000Z'
-    },
-    {
-      id: 'task-admin-brief-kickoff',
-      projectId: 'proj-admin-onboarding',
-      number: 2,
-      parentId: 'task-admin-brief',
-      title: 'Провести стартовую сессию',
-      description: 'Согласовать ключевые deliverables и зоны ответственности.',
-      status: 'new',
-      assigneeId: 'user.demo@collabverse.test',
-      estimatedTime: 6,
-      loggedTime: 0,
-      createdAt: '2024-05-03T10:00:00.000Z',
-      updatedAt: '2024-05-15T12:00:00.000Z'
-    },
-    {
-      id: 'task-admin-brief-survey',
-      projectId: 'proj-admin-onboarding',
-      number: 3,
-      parentId: 'task-admin-brief',
-      title: 'Собрать ожидания стейкхолдеров',
-      description: 'Интервьюировать ключевых участников и собрать потребности.',
-      status: 'review',
-      iterationId: 'iter-admin-onboarding-sprint-1',
-      estimatedTime: 14,
-      loggedTime: 12,
-      createdAt: '2024-05-05T11:30:00.000Z',
-      updatedAt: '2024-06-07T18:45:00.000Z'
-    },
-    {
-      id: 'task-admin-brief-survey-report',
-      projectId: 'proj-admin-onboarding',
-      number: 4,
-      parentId: 'task-admin-brief-survey',
-      title: 'Подготовить отчёт по интервью',
-      status: 'in_progress',
-      estimatedTime: 10,
-      loggedTime: 5,
-      createdAt: '2024-05-06T13:00:00.000Z',
-      updatedAt: '2024-06-09T09:10:00.000Z'
-    },
-    {
-      id: 'task-admin-design',
-      projectId: 'proj-admin-onboarding',
-      number: 5,
-      parentId: null,
-      title: 'Собрать дизайн-концепты',
-      description: 'Подготовить варианты визуального языка продукта.',
-      status: 'review',
-      assigneeId: 'designer-1',
-      labels: ['Дизайн'],
-      estimatedTime: 24,
-      loggedTime: 19,
-      createdAt: '2024-05-12T11:00:00.000Z',
-      updatedAt: '2024-06-09T10:30:00.000Z'
-    },
-    {
-      id: 'task-admin-design-library',
-      projectId: 'proj-admin-onboarding',
-      number: 6,
-      parentId: 'task-admin-design',
-      title: 'Собрать UI-кит',
-      description: 'Сверстать компоненты, состояния и адаптивные варианты.',
-      status: 'in_progress',
-      assigneeId: 'designer-1',
-      estimatedTime: 20,
-      loggedTime: 11,
-      createdAt: '2024-05-13T09:30:00.000Z',
-      updatedAt: '2024-06-09T11:00:00.000Z'
-    },
-    {
-      id: 'task-admin-design-library-assets',
-      projectId: 'proj-admin-onboarding',
-      number: 7,
-      parentId: 'task-admin-design-library',
-      title: 'Подготовить ассеты для презентации',
-      description: 'Экспортировать макеты и сделать превью для команды.',
-      status: 'new',
-      estimatedTime: 8,
-      loggedTime: 0,
-      createdAt: '2024-05-14T12:15:00.000Z',
-      updatedAt: '2024-06-09T11:10:00.000Z'
-    },
-    {
-      id: 'task-admin-landing-archive-audit',
-      projectId: 'proj-admin-landing-archive',
-      number: 1,
-      parentId: null,
-      title: 'Провести аудит контента',
-      description: 'Собрать обратную связь и подготовить обновления.',
-      status: 'done',
-      estimatedTime: 12,
-      loggedTime: 13,
-      createdAt: '2023-10-15T08:00:00.000Z',
-      updatedAt: '2023-11-10T16:00:00.000Z'
-    }
-  ] as Task[],
-  TASK_DEPENDENCIES: [
-    // Example: task-admin-design-library-assets blocks task-admin-design-library
-    // This would be added when dependencies are created
-  ] as TaskDependency[],
-  WORKFLOWS: {
-    'proj-admin-onboarding': {
-      projectId: 'proj-admin-onboarding',
-      statuses: ['new', 'in_progress', 'review', 'done']
-    },
-    'proj-admin-landing-archive': {
-      projectId: 'proj-admin-landing-archive',
-      statuses: ['new', 'in_progress', 'review', 'done']
-    }
-  } as Record<string, ProjectWorkflow>,
-  ITERATIONS: [
-    {
-      id: 'iter-admin-onboarding-sprint-1',
-      projectId: 'proj-admin-onboarding',
-      title: 'Спринт 1: Запуск команды',
-      start: '2024-05-06',
-      end: '2024-05-17'
-    }
-  ] as Iteration[],
+  ATTACHMENTS: [] as Attachment[],
+  DOCUMENTS: [] as Document[],
+  DOCUMENT_VERSIONS: [] as DocumentVersion[],
+  TASK_COMMENTS: [] as TaskComment[],
+  get PROJECTS() { return globalMemory.PROJECTS; },
+  set PROJECTS(value: Project[]) { globalMemory.PROJECTS = value; },
+  get TASKS() { return globalMemory.TASKS; },
+  set TASKS(value: Task[]) { globalMemory.TASKS = value; },
+  get TASK_DEPENDENCIES() { return globalMemory.TASK_DEPENDENCIES; },
+  set TASK_DEPENDENCIES(value: TaskDependency[]) { globalMemory.TASK_DEPENDENCIES = value; },
+  WORKFLOWS: {} as Record<string, ProjectWorkflow>,
+  ITERATIONS: [] as Iteration[],
   TEMPLATES: [
     {
       id: 'tpl-admin-discovery',
@@ -388,65 +246,30 @@ export const memory = {
     { id: 'tpl-mkt', title: 'Маркетинг', kind: 'marketing', summary: 'Кампания + контент-план' },
     { id: 'tpl-product', title: 'Digital-продукт', kind: 'product', summary: 'MVP флоу + бэклог' }
   ] as ProjectTemplate[],
-  PROJECT_MEMBERS: {
-    'proj-admin-onboarding': [
-      { userId: 'admin.demo@collabverse.test', role: 'owner' },
-      { userId: 'user.demo@collabverse.test', role: 'member' }
-    ],
-    'proj-admin-landing-archive': [
-      { userId: 'admin.demo@collabverse.test', role: 'owner' },
-      { userId: 'finance.pm@collabverse.test', role: 'admin' },
-      { userId: 'designer-1', role: 'viewer' }
-    ]
-  } as Record<string, ProjectMember[]>,
-  EXPENSES: [] as Expense[],
-  EXPENSE_ATTACHMENTS: [] as ExpenseAttachment[],
-  PROJECT_BUDGETS: [] as (ProjectBudget | ProjectBudgetSnapshot)[],
-  AUDIT_LOG: [
-    {
-      id: 'audit-proj-onboarding-created',
-      actorId: DEFAULT_WORKSPACE_USER_ID,
-      action: 'project.created',
-      projectId: 'proj-admin-onboarding',
-      workspaceId: DEFAULT_WORKSPACE_ID,
-      entity: { type: 'project', id: 'proj-admin-onboarding' },
-      after: { id: 'proj-admin-onboarding', title: 'Онбординг админ-команды' },
-      createdAt: '2024-05-01T08:30:00.000Z'
-    },
-    {
-      id: 'audit-task-brief-created',
-      actorId: DEFAULT_WORKSPACE_USER_ID,
-      action: 'task.created',
-      projectId: 'proj-admin-onboarding',
-      workspaceId: DEFAULT_WORKSPACE_ID,
-      entity: { type: 'task', id: 'task-admin-brief' },
-      after: { title: 'Подготовить бриф и дорожную карту', status: 'in_progress' },
-      createdAt: '2024-05-02T09:05:00.000Z'
-    },
-    {
-      id: 'audit-task-design-status',
-      actorId: 'designer-1',
-      action: 'task.status_changed',
-      projectId: 'proj-admin-onboarding',
-      workspaceId: DEFAULT_WORKSPACE_ID,
-      entity: { type: 'task', id: 'task-admin-design-library' },
-      before: { status: 'new' },
-      after: { status: 'in_progress' },
-      createdAt: '2024-05-18T10:00:00.000Z'
-    },
-    {
-      id: 'audit-task-brief-time',
-      actorId: DEFAULT_WORKSPACE_USER_ID,
-      action: 'task.time_updated',
-      projectId: 'proj-admin-onboarding',
-      workspaceId: DEFAULT_WORKSPACE_ID,
-      entity: { type: 'task', id: 'task-admin-brief-survey' },
-      after: { loggedTime: 12, estimatedTime: 14 },
-      createdAt: '2024-06-07T19:00:00.000Z'
-    }
-  ] as AuditLogEntry[],
-  EVENTS: [] as DomainEvent[],
+  get PROJECT_MEMBERS() { return globalMemory.PROJECT_MEMBERS; },
+  set PROJECT_MEMBERS(value: Record<string, ProjectMember[]>) { globalMemory.PROJECT_MEMBERS = value; },
+  get EXPENSES() { return globalMemory.EXPENSES; },
+  set EXPENSES(value: Expense[]) { globalMemory.EXPENSES = value; },
+  get EXPENSE_ATTACHMENTS() { return globalMemory.EXPENSE_ATTACHMENTS; },
+  set EXPENSE_ATTACHMENTS(value: ExpenseAttachment[]) { globalMemory.EXPENSE_ATTACHMENTS = value; },
+  get PROJECT_BUDGETS() { return globalMemory.PROJECT_BUDGETS; },
+  set PROJECT_BUDGETS(value: (ProjectBudget | ProjectBudgetSnapshot)[]) { globalMemory.PROJECT_BUDGETS = value; },
+  get AUDIT_LOG() { return globalMemory.AUDIT_LOG; },
+  set AUDIT_LOG(value: AuditLogEntry[]) { globalMemory.AUDIT_LOG = value; },
+  get EVENTS() { return globalMemory.EVENTS; },
+  set EVENTS(value: DomainEvent[]) { globalMemory.EVENTS = value; },
   IDEMPOTENCY_KEYS: globalIdempotencyKeys,
+  get MARKETPLACE_LISTINGS() { return globalMemory.MARKETPLACE_LISTINGS; },
+  set MARKETPLACE_LISTINGS(value: Array<{
+    id: string;
+    projectId: string;
+    workspaceId: string;
+    title: string;
+    description?: string;
+    state: 'draft' | 'published' | 'rejected';
+    createdAt: string;
+    updatedAt: string;
+  }>) { globalMemory.MARKETPLACE_LISTINGS = value; },
   ADMIN_PLATFORM_MODULES: [
     {
       id: 'module-core-dashboard',
@@ -461,7 +284,7 @@ export const memory = {
       tags: ['core'],
       sortOrder: 10,
       updatedAt: '2024-06-10T12:00:00.000Z',
-      updatedBy: DEFAULT_WORKSPACE_USER_ID
+      updatedBy: TEST_ADMIN_USER_ID
     },
     {
       id: 'module-marketing',
@@ -476,7 +299,7 @@ export const memory = {
       tags: ['marketing'],
       sortOrder: 20,
       updatedAt: '2024-06-10T12:00:00.000Z',
-      updatedBy: DEFAULT_WORKSPACE_USER_ID
+      updatedBy: TEST_ADMIN_USER_ID
     },
     {
       id: 'module-marketing-research',
@@ -487,11 +310,11 @@ export const memory = {
       path: '/app/marketing/research',
       status: 'enabled',
       defaultAudience: 'beta',
-      testers: ['designer-1'],
+      testers: [TEST_DESIGNER_USER_ID],
       tags: ['marketing', 'research'],
       sortOrder: 21,
       updatedAt: '2024-06-10T12:00:00.000Z',
-      updatedBy: DEFAULT_WORKSPACE_USER_ID
+      updatedBy: TEST_ADMIN_USER_ID
     },
     {
       id: 'module-docs',
@@ -506,7 +329,7 @@ export const memory = {
       tags: ['documents'],
       sortOrder: 30,
       updatedAt: '2024-06-10T12:00:00.000Z',
-      updatedBy: DEFAULT_WORKSPACE_USER_ID
+      updatedBy: TEST_ADMIN_USER_ID
     },
     {
       id: 'module-docs-brand',
@@ -517,11 +340,11 @@ export const memory = {
       path: '/app/docs/brand-repo',
       status: 'enabled',
       defaultAudience: 'beta',
-      testers: ['designer-1'],
+      testers: [TEST_DESIGNER_USER_ID],
       tags: ['documents', 'brand'],
       sortOrder: 31,
       updatedAt: '2024-06-10T12:00:00.000Z',
-      updatedBy: DEFAULT_WORKSPACE_USER_ID
+      updatedBy: TEST_ADMIN_USER_ID
     },
     {
       id: 'module-finance',
@@ -532,11 +355,11 @@ export const memory = {
       path: '/app/finance',
       status: 'enabled',
       defaultAudience: 'admins',
-      testers: ['finance.pm@collabverse.test'],
+      testers: [TEST_FINANCE_USER_ID],
       tags: ['finance'],
       sortOrder: 40,
       updatedAt: '2024-06-10T12:00:00.000Z',
-      updatedBy: DEFAULT_WORKSPACE_USER_ID
+      updatedBy: TEST_ADMIN_USER_ID
     },
     {
       id: 'module-finance-automations',
@@ -547,11 +370,11 @@ export const memory = {
       path: '/app/finance/automations',
       status: 'disabled',
       defaultAudience: 'beta',
-      testers: ['finance.pm@collabverse.test'],
+      testers: [TEST_FINANCE_USER_ID],
       tags: ['finance', 'beta'],
       sortOrder: 41,
       updatedAt: '2024-06-10T12:00:00.000Z',
-      updatedBy: DEFAULT_WORKSPACE_USER_ID
+      updatedBy: TEST_ADMIN_USER_ID
     },
     {
       id: 'module-community',
@@ -566,7 +389,7 @@ export const memory = {
       tags: ['community'],
       sortOrder: 50,
       updatedAt: '2024-06-10T12:00:00.000Z',
-      updatedBy: DEFAULT_WORKSPACE_USER_ID
+      updatedBy: TEST_ADMIN_USER_ID
     },
     {
       id: 'module-ai',
@@ -577,50 +400,54 @@ export const memory = {
       path: '/app/ai-hub',
       status: 'enabled',
       defaultAudience: 'beta',
-      testers: ['designer-1'],
+      testers: [TEST_DESIGNER_USER_ID],
       tags: ['ai'],
       sortOrder: 60,
       updatedAt: '2024-06-10T12:00:00.000Z',
-      updatedBy: DEFAULT_WORKSPACE_USER_ID
+      updatedBy: TEST_ADMIN_USER_ID
     }
   ] as PlatformModule[],
   ADMIN_USER_CONTROLS: [
     {
-      userId: DEFAULT_WORKSPACE_USER_ID,
+      userId: TEST_ADMIN_USER_ID,
       status: 'active',
       roles: ['productAdmin', 'featureAdmin'],
       testerAccess: ['module-ai', 'module-marketing-research', 'module-docs-brand'],
       notes: 'Главный администратор демо-окружения.',
       updatedAt: '2024-06-10T12:00:00.000Z',
-      updatedBy: DEFAULT_WORKSPACE_USER_ID
+      updatedBy: TEST_ADMIN_USER_ID
     },
     {
-      userId: 'user.demo@collabverse.test',
+      userId: TEST_USER_ID,
       status: 'active',
       roles: ['viewer'],
       testerAccess: ['module-community'],
       updatedAt: '2024-06-10T12:00:00.000Z',
-      updatedBy: DEFAULT_WORKSPACE_USER_ID
+      updatedBy: TEST_ADMIN_USER_ID
     },
     {
-      userId: 'finance.pm@collabverse.test',
+      userId: TEST_FINANCE_USER_ID,
       status: 'active',
       roles: ['financeAdmin', 'betaTester'],
       testerAccess: ['module-finance', 'module-finance-automations'],
       notes: 'Ответственный за финансовые автоматизации.',
       updatedAt: '2024-06-10T12:00:00.000Z',
-      updatedBy: DEFAULT_WORKSPACE_USER_ID
+      updatedBy: TEST_ADMIN_USER_ID
     },
     {
-      userId: 'designer-1',
+      userId: TEST_DESIGNER_USER_ID,
       status: 'invited',
       roles: ['betaTester'],
       testerAccess: ['module-marketing-research', 'module-docs-brand', 'module-ai'],
       notes: 'UI/UX тестирование новых разделов.',
       updatedAt: '2024-06-10T12:00:00.000Z',
-      updatedBy: DEFAULT_WORKSPACE_USER_ID
+      updatedBy: TEST_ADMIN_USER_ID
     }
-  ] as PlatformUserControl[]
+  ] as PlatformUserControl[],
+  get NOTIFICATIONS() { return globalMemory.NOTIFICATIONS; },
+  set NOTIFICATIONS(value: Notification[]) { globalMemory.NOTIFICATIONS = value; },
+  get PROJECT_CHAT_MESSAGES() { return globalMemory.PROJECT_CHAT_MESSAGES; },
+  set PROJECT_CHAT_MESSAGES(value: ProjectChatMessage[]) { globalMemory.PROJECT_CHAT_MESSAGES = value; }
 };
 
 export function resetFinanceMemory(): void {

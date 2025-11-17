@@ -17,7 +17,7 @@ const memoryStorage: StateStorage = {
 };
 
 // Все доступные ID секций меню
-const ALL_MENU_IDS = leftMenuConfig.map((section) => section.id);
+export const ALL_MENU_IDS = leftMenuConfig.map((section) => section.id);
 
 // Предустановки для разных типов пользователей
 export const MENU_PRESETS: {

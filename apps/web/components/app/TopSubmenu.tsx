@@ -3,6 +3,7 @@
 import clsx from 'clsx';
 import Link from 'next/link';
 import type { MouseEventHandler, ReactNode } from 'react';
+import { ContentBlock } from '@/components/ui/content-block';
 
 type BaseItem = {
   id: string;
@@ -58,10 +59,7 @@ export default function TopSubmenu({ items, ariaLabel = 'Дополнитель�
   }
 
   return (
-    <nav
-      aria-label={ariaLabel}
-      className="flex flex-wrap items-center gap-2 rounded-2xl border border-neutral-900 bg-neutral-950/70 p-2"
-    >
+    <ContentBlock as="nav" size="sm" aria-label={ariaLabel} className="flex flex-wrap items-center gap-2 p-2">
       {items.map((item) => {
         const { id, label, badge, disabled } = item;
         const className = resolveItemClassName(item.active, disabled);
@@ -105,6 +103,6 @@ export default function TopSubmenu({ items, ariaLabel = 'Дополнитель�
           </button>
         );
       })}
-    </nav>
+    </ContentBlock>
   );
 }

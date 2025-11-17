@@ -72,7 +72,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     cleanData.testers = parsed.data.testers;
   }
 
-  const updated = adminService.updateModule(params.id, cleanData, session.email);
+  const updated = adminService.updateModule(params.id, cleanData, session.userId);
   if (!updated) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }

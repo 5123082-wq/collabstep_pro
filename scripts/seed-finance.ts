@@ -1,10 +1,10 @@
-import { financeService, projectsRepository, resetFinanceMemory, type ExpenseStatus } from '@collabverse/api';
+import { financeService, projectsRepository, resetFinanceMemory, TEST_PROJECT_DEMO_ID, type ExpenseStatus } from '@collabverse/api';
 
 async function main() {
   resetFinanceMemory();
 
   const projects = projectsRepository.list();
-  const primaryProject = projects.find((project) => project.id === 'proj-admin-onboarding') ?? projects[0];
+  const primaryProject = projects.find((project) => project.id === TEST_PROJECT_DEMO_ID) ?? projects[0];
   const secondaryProject = projects.find((project) => project.id !== primaryProject.id) ?? primaryProject;
 
   await financeService.upsertBudget(

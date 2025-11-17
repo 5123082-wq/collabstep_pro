@@ -2,10 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { toast } from '@/lib/ui/toast';
+import { ContentBlock } from '@/components/ui/content-block';
 import { search, type SearchItem } from '@/lib/search/deepSearch';
-import { useProjectContext } from '@/components/project/ProjectContext';
-import { loadInvoices, loadProjects, loadTasks } from '@/lib/mock/loaders';
+import { toast } from '@/lib/ui/toast';
 
 type CommandPaletteProps = {
   open: boolean;
@@ -41,35 +40,35 @@ const COMMAND_ITEMS: SearchItem[] = [
     title: 'Открыть раздел исполнителей',
     subtitle: 'Каталог специалистов и команд',
     tags: ['performers', 'specialists'],
-    ref: '/app/performers/specialists'
+    ref: '/performers/specialists'
   },
   {
     type: 'command',
     title: 'Посмотреть вакансии исполнителей',
     subtitle: 'Актуальные запросы на специалистов',
     tags: ['performers', 'vacancies'],
-    ref: '/app/performers/vacancies'
+    ref: '/performers/vacancies'
   },
   {
     type: 'command',
     title: 'Открыть маркетинговый обзор',
     subtitle: 'Цели, кампании и лиды',
     tags: ['marketing', 'overview'],
-    ref: '/app/marketing/overview'
+    ref: '/marketing/overview'
   },
   {
     type: 'command',
     title: 'Управление кампаниями',
     subtitle: 'Перейти к разделу «Кампании & Реклама»',
     tags: ['marketing', 'campaigns'],
-    ref: '/app/marketing/campaigns'
+    ref: '/marketing/campaigns'
   },
   {
     type: 'command',
     title: 'Контент и SEO',
     subtitle: 'Открыть контент-план и SEO-кластеры',
     tags: ['marketing', 'content'],
-    ref: '/app/marketing/content-seo'
+    ref: '/marketing/content-seo'
   }
 ];
 
@@ -80,83 +79,16 @@ function getTypeLabel(type: SearchItem['type']): string {
   return type;
 }
 
-const PROJECT_PARTICIPANTS: Record<string, { id: string; name: string; subtitle: string }[]> = {
-  DEMO: [
-    { id: 'user-founder', name: 'founder@demo.collabverse.ru', subtitle: 'FOUNDER · Инициатор проекта' },
-    { id: 'user-pm', name: 'pm@demo.collabverse.ru', subtitle: 'PM · Управление задачами' },
-    { id: 'user-designer', name: 'designer@demo.collabverse.ru', subtitle: 'Дизайнер · Бренд и UI' },
-    { id: 'contractor-print', name: 'print.contractor@demo.collabverse.ru', subtitle: 'CONTRACTOR · Печать и мерч' }
-  ]
-};
-
 export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
-  const projectContext = useProjectContext();
   const router = useRouter();
 
-  const dataset = useMemo(() => {
-    const allProjects = loadProjects();
-    const allTasks = loadTasks();
-    const allInvoices = loadInvoices();
-
-    const projectItems: SearchItem[] = allProjects.map((project) => ({
-      type: 'project',
-      title: project.name,
-      subtitle: project.status,
-      tags: [project.code],
-      ref: project.id,
-      projectId: project.id
-    }));
-
-    const taskItems: SearchItem[] = allTasks.map((task) => ({
-      type: 'task',
-      title: `${task.title}`,
-      subtitle: `${task.status} · ${task.projectId}`,
-      tags: [task.projectId, task.id],
-      ref: task.id,
-      projectId: task.projectId
-    }));
-
-    const invoiceItems: SearchItem[] = allInvoices.map((invoice) => ({
-      type: 'invoice',
-      title: invoice.title,
-      subtitle: `${invoice.amount.toLocaleString('ru-RU')} ${invoice.currency} · ${invoice.projectId}`,
-      tags: [invoice.projectId, invoice.id],
-      ref: invoice.id,
-      projectId: invoice.projectId
-    }));
-
-    const participantItems: SearchItem[] = Object.entries(PROJECT_PARTICIPANTS).flatMap(([projectId, participants]) =>
-      participants.map((participant) => ({
-        type: 'user',
-        title: participant.name,
-        subtitle: participant.subtitle,
-        tags: [projectId],
-        ref: participant.id,
-        projectId
-      }))
-    );
-
-    if (projectContext) {
-      return [
-        ...COMMAND_ITEMS,
-        ...projectItems.filter((item) => item.projectId === projectContext.projectId),
-        ...taskItems.filter((item) => item.projectId === projectContext.projectId),
-        ...invoiceItems.filter((item) => item.projectId === projectContext.projectId),
-        ...participantItems.filter((item) => item.projectId === projectContext.projectId)
-      ];
-    }
-
-    return [...COMMAND_ITEMS, ...projectItems, ...taskItems, ...invoiceItems, ...participantItems];
-  }, [projectContext]);
-
-  const projectId = projectContext?.projectId;
+  const dataset = useMemo<SearchItem[]>(() => [...COMMAND_ITEMS], []);
 
   const results: PaletteResult = useMemo(() => {
-    const options = projectId ? { projectId } : {};
-    return search(query, dataset, options);
-  }, [dataset, projectId, query]);
+    return search(query, dataset);
+  }, [dataset, query]);
 
   useEffect(() => {
     if (!open) {
@@ -225,10 +157,10 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
       aria-modal="true"
       aria-label="Командная палитра"
     >
-      <div className="w-full max-w-3xl rounded-2xl border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-popover)] p-6 shadow-2xl">
+      <ContentBlock as="div" className="w-full max-w-3xl p-6 shadow-2xl">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h2 className="text-base font-semibold text-[color:var(--text-primary)]">Командная палитра</h2>
+            <h2 className="text-lg font-semibold text-[color:var(--text-primary)]">Командная палитра</h2>
             <p className="text-xs text-[color:var(--text-tertiary)]">
               Маски: @ — участники и подрядчики, # — задачи, $ — счета.
             </p>
@@ -264,12 +196,7 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
                   type="button"
                   onMouseEnter={() => setActiveIndex(index)}
                   onClick={() => {
-                    if (item.type === 'command') {
-                      router.push(item.ref);
-                      onClose();
-                      return;
-                    }
-                    toast(`TODO: открыть ${item.type} ${item.title}`);
+                    router.push(item.ref);
                     onClose();
                   }}
                   className={`flex w-full items-center justify-between gap-4 px-4 py-3 text-left text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 ${
@@ -280,13 +207,13 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
                     <p className="font-medium text-[color:var(--text-primary)]">{item.title}</p>
                     {item.subtitle && <p className="text-xs text-[color:var(--text-tertiary)]">{item.subtitle}</p>}
                   </div>
-                  <span className="text-[11px] uppercase tracking-wide text-[color:var(--text-tertiary)]">{getTypeLabel(item.type)}</span>
+                  <span className="text-xs uppercase tracking-wide text-[color:var(--text-tertiary)]">{getTypeLabel(item.type)}</span>
                 </button>
               </li>
             );
           })}
         </ul>
-      </div>
+      </ContentBlock>
     </div>
   );
 }

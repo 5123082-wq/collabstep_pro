@@ -7,6 +7,7 @@ import TemplateCard from './TemplateCard';
 import TemplatesToolbar from './TemplatesToolbar';
 import TemplatesSkeleton from './TemplatesSkeleton';
 import EmptyTemplatesState from './EmptyTemplatesState';
+import TemplateDetailModal from './TemplateDetailModal';
 
 const CATEGORY_LABELS: Record<MarketplaceCategory, string> = {
   logo: 'Логотипы',
@@ -132,28 +133,31 @@ export default function TemplatesCatalog({ templates }: TemplatesCatalogProps) {
   const totalCount = filtered.length;
 
   return (
-    <div className="space-y-6">
-      <TemplatesToolbar
-        query={query}
-        onQueryChange={handleSearchChange}
-        category={category}
-        onCategoryChange={handleCategoryChange}
-        sort={sort}
-        onSortChange={handleSortChange}
-        totalCount={totalCount}
-        categoryLabels={CATEGORY_LABELS}
-      />
-      {isLoading ? (
-        <TemplatesSkeleton />
-      ) : totalCount === 0 ? (
-        <EmptyTemplatesState onReset={handleResetFilters} />
-      ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filtered.map((template) => (
-            <TemplateCard key={template.id} template={template} />
-          ))}
-        </div>
-      )}
-    </div>
+    <>
+      <div className="space-y-6">
+        <TemplatesToolbar
+          query={query}
+          onQueryChange={handleSearchChange}
+          category={category}
+          onCategoryChange={handleCategoryChange}
+          sort={sort}
+          onSortChange={handleSortChange}
+          totalCount={totalCount}
+          categoryLabels={CATEGORY_LABELS}
+        />
+        {isLoading ? (
+          <TemplatesSkeleton />
+        ) : totalCount === 0 ? (
+          <EmptyTemplatesState onReset={handleResetFilters} />
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filtered.map((template) => (
+              <TemplateCard key={template.id} template={template} />
+            ))}
+          </div>
+        )}
+      </div>
+      <TemplateDetailModal />
+    </>
   );
 }

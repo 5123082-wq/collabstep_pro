@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import clsx from 'clsx';
 import { Modal, ModalContent, ModalHeader } from '@/components/ui/modal';
-import AppearanceSettings from './AppearanceSettings';
 
 type PlatformSettingsModalProps = {
   open: boolean;
@@ -17,7 +16,6 @@ type SettingsSection = {
 };
 
 const SETTINGS_SECTIONS: SettingsSection[] = [
-  { id: 'appearance', label: 'Внешний вид', icon: '🎨' },
   { id: 'interface', label: 'Интерфейс', icon: '⚙️' },
   { id: 'notifications', label: 'Уведомления', icon: '🔔' },
   { id: 'accessibility', label: 'Доступность', icon: '♿' },
@@ -25,7 +23,7 @@ const SETTINGS_SECTIONS: SettingsSection[] = [
 ];
 
 export default function PlatformSettingsModal({ open, onClose }: PlatformSettingsModalProps) {
-  const [activeSection, setActiveSection] = useState<string>('appearance');
+  const [activeSection, setActiveSection] = useState<string>('interface');
 
   return (
     <Modal open={open} onOpenChange={onClose}>
@@ -33,7 +31,7 @@ export default function PlatformSettingsModal({ open, onClose }: PlatformSetting
         <ModalHeader className="px-6 py-5 border-b border-neutral-800">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-semibold text-white">Настройки платформы</h2>
+              <h2 className="text-xl font-semibold text-white">Настройки платформы</h2>
               <p className="mt-1 text-sm text-neutral-400">
                 Персонализируйте внешний вид разделов для лучшей ориентации
               </p>
@@ -90,11 +88,10 @@ export default function PlatformSettingsModal({ open, onClose }: PlatformSetting
           {/* Контент */}
           <div className="flex-1 overflow-y-auto bg-neutral-950">
             <div className="p-6 max-w-5xl mx-auto">
-              {activeSection === 'appearance' && <AppearanceSettings />}
               {activeSection === 'interface' && (
                 <div className="space-y-6">
                   <div>
-                    <h3 className="text-xl font-semibold text-white">Интерфейс</h3>
+                    <h3 className="text-lg font-semibold text-white">Интерфейс</h3>
                     <p className="mt-1 text-sm text-neutral-400">Настройки интерфейса скоро будут доступны</p>
                   </div>
                 </div>
@@ -102,7 +99,7 @@ export default function PlatformSettingsModal({ open, onClose }: PlatformSetting
               {activeSection === 'notifications' && (
                 <div className="space-y-6">
                   <div>
-                    <h3 className="text-xl font-semibold text-white">Уведомления</h3>
+                    <h3 className="text-lg font-semibold text-white">Уведомления</h3>
                     <p className="mt-1 text-sm text-neutral-400">Настройки уведомлений скоро будут доступны</p>
                   </div>
                 </div>
@@ -110,7 +107,7 @@ export default function PlatformSettingsModal({ open, onClose }: PlatformSetting
               {activeSection === 'accessibility' && (
                 <div className="space-y-6">
                   <div>
-                    <h3 className="text-xl font-semibold text-white">Доступность</h3>
+                    <h3 className="text-lg font-semibold text-white">Доступность</h3>
                     <p className="mt-1 text-sm text-neutral-400">Настройки доступности скоро будут доступны</p>
                   </div>
                 </div>
@@ -118,7 +115,7 @@ export default function PlatformSettingsModal({ open, onClose }: PlatformSetting
               {activeSection === 'security' && (
                 <div className="space-y-6">
                   <div>
-                    <h3 className="text-xl font-semibold text-white">Безопасность</h3>
+                    <h3 className="text-lg font-semibold text-white">Безопасность</h3>
                     <p className="mt-1 text-sm text-neutral-400">Настройки безопасности скоро будут доступны</p>
                   </div>
                 </div>

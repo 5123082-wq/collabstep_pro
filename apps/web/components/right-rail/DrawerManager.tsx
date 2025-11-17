@@ -4,7 +4,6 @@ import { Suspense, lazy } from 'react';
 import { useUI } from '@/stores/ui';
 
 const CommunicationDrawer = lazy(() => import('./CommunicationDrawer'));
-const TaskDrawer = lazy(() => import('./TaskDrawer'));
 const DocumentDrawer = lazy(() => import('./DocumentDrawer'));
 const AssistantDrawer = lazy(() => import('./AssistantDrawer'));
 const RailSettingsDrawer = lazy(() => import('./RailSettingsDrawer'));
@@ -16,7 +15,6 @@ export function DrawerManager() {
   return (
     <Suspense fallback={null}>
       {isCommunicationDrawer ? <CommunicationDrawer /> : null}
-      {drawer === 'task' ? <TaskDrawer /> : null}
       {drawer === 'document' ? <DocumentDrawer /> : null}
       {drawer === 'assistant' ? <AssistantDrawer /> : null}
       {drawer === 'rail-settings' ? <RailSettingsDrawer /> : null}

@@ -79,7 +79,7 @@ type SheetContentProps = React.HTMLAttributes<HTMLDivElement> & {
   side?: SheetSide;
 };
 
-export function SheetContent({ children, className, side, ...props }: SheetContentProps) {
+export function SheetContent({ children, className, side, style, ...props }: SheetContentProps) {
   const context = useSheetContext('SheetContent');
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -122,9 +122,19 @@ export function SheetContent({ children, className, side, ...props }: SheetConte
     return null;
   }
 
+  // Проверяем, переопределены ли стили позиционирования через style prop
+  const hasCustomWidth = style?.width !== undefined;
+  const hasCustomMaxWidth = style?.maxWidth !== undefined;
+  const hasCustomRight = style?.right !== undefined;
+  const hasCustomLeft = style?.left !== undefined;
+
   const sideClasses: Record<SheetSide, string> = {
-    right: 'inset-y-0 right-0 ml-auto h-full w-full max-w-[420px]',
-    left: 'inset-y-0 left-0 mr-auto h-full w-full max-w-[420px]',
+    right: hasCustomWidth || hasCustomMaxWidth || hasCustomRight 
+      ? 'inset-y-0 ml-auto h-full' 
+      : 'inset-y-0 right-0 ml-auto h-full w-full max-w-[420px]',
+    left: hasCustomWidth || hasCustomMaxWidth || hasCustomLeft
+      ? 'inset-y-0 mr-auto h-full'
+      : 'inset-y-0 left-0 mr-auto h-full w-full max-w-[420px]',
     top: 'inset-x-0 top-0 mx-auto w-full max-w-2xl',
     bottom: 'inset-x-0 bottom-0 mx-auto w-full max-w-2xl'
   };
@@ -138,6 +148,11 @@ export function SheetContent({ children, className, side, ...props }: SheetConte
 
   const positionClass = sideClasses[actualSide];
   const alignment = containerAlign[actualSide];
+  
+  // Если есть кастомные стили, убираем w-full из классов чтобы не конфликтовать с inline стилями
+  const finalPositionClass = (hasCustomWidth || hasCustomMaxWidth || hasCustomRight || hasCustomLeft) 
+    ? positionClass.replace(/\bw-full\b/g, '')
+    : positionClass;
   const radiusClasses: Record<SheetSide, string> = {
     right: 'rounded-l-2xl rounded-r-none',
     left: 'rounded-r-2xl rounded-l-none',
@@ -171,10 +186,11 @@ export function SheetContent({ children, className, side, ...props }: SheetConte
           className={cn(
             'pointer-events-auto border border-[color:var(--surface-border-strong)] bg-[color:var(--surface-popover)] shadow-2xl outline-none transition-transform duration-300 ease-out',
             radiusClasses[actualSide],
-            positionClass,
+            finalPositionClass,
             translateClasses[actualSide],
             className
           )}
+          style={style}
           {...props}
         >
           {children}

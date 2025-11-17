@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 
 const articles = [
   {
@@ -58,8 +59,8 @@ export default function BlogPage() {
         <h2 className="text-2xl font-semibold">Статьи</h2>
         <div className="grid gap-6 sm:grid-cols-2">
           {articles.map((article) => (
-            <article key={article.title} className="rounded-2xl border border-neutral-900 bg-neutral-900/50 p-6">
-              <h3 className="text-xl font-semibold">{article.title}</h3>
+            <ContentBlock key={article.title} as="article" size="sm">
+              <ContentBlockTitle as="h3">{article.title}</ContentBlockTitle>
               <p className="mt-3 text-sm text-neutral-400">{article.description}</p>
               <Link
                 href={article.href}
@@ -67,7 +68,7 @@ export default function BlogPage() {
               >
                 Читать
               </Link>
-            </article>
+            </ContentBlock>
           ))}
         </div>
       </section>
@@ -75,8 +76,8 @@ export default function BlogPage() {
         <h2 className="text-2xl font-semibold">Вебинары</h2>
         <div className="grid gap-6 sm:grid-cols-2">
           {webinars.map((webinar) => (
-            <article key={webinar.title} className="rounded-2xl border border-neutral-900 bg-neutral-900/50 p-6">
-              <h3 className="text-xl font-semibold">{webinar.title}</h3>
+            <ContentBlock key={webinar.title} as="article" size="sm">
+              <ContentBlockTitle as="h3">{webinar.title}</ContentBlockTitle>
               <p className="mt-3 text-sm text-neutral-400">{webinar.description}</p>
               <Link
                 href={webinar.href}
@@ -84,7 +85,7 @@ export default function BlogPage() {
               >
                 Смотреть расписание
               </Link>
-            </article>
+            </ContentBlock>
           ))}
         </div>
       </section>

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 
 const productHighlights = [
   {
@@ -57,8 +58,8 @@ export default function ProductPage() {
       </header>
       <section className="mt-12 grid gap-6 sm:grid-cols-2">
         {productHighlights.map((item) => (
-          <article key={item.title} className="rounded-2xl border border-neutral-900 bg-neutral-900/50 p-6">
-            <h2 className="text-xl font-semibold">{item.title}</h2>
+          <ContentBlock key={item.title} as="article" size="sm">
+            <ContentBlockTitle as="h2">{item.title}</ContentBlockTitle>
             <p className="mt-3 text-sm text-neutral-400">{item.description}</p>
             <Link
               href={item.cta.href}
@@ -66,7 +67,7 @@ export default function ProductPage() {
             >
               {item.cta.label}
             </Link>
-          </article>
+          </ContentBlock>
         ))}
       </section>
     </main>

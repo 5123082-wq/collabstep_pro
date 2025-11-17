@@ -12,6 +12,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent
 } from 'react';
 import { marketingMenu, type NavItem } from '@/config/MarketingMenu.config';
+import { ContentBlock } from '@/components/ui/content-block';
 import MobileMenu from './MobileMenu';
 
 const childDescriptions: Record<string, string> = {
@@ -249,7 +250,7 @@ export default function MarketingNavbar() {
                 >
                   <div className="space-y-4">
                     {item.children.map((child) => (
-                      <div key={child.id} className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-4">
+                      <ContentBlock key={child.id} size="sm" className="p-4">
                         <Link
                           href={child.href}
                           onClick={() => setOpenItemId(null)}
@@ -271,7 +272,7 @@ export default function MarketingNavbar() {
                             {child.cta.label}
                           </Link>
                         )}
-                      </div>
+                      </ContentBlock>
                     ))}
                   </div>
                 </div>

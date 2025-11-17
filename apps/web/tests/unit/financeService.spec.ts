@@ -5,13 +5,14 @@ import {
   financeService,
   projectsRepository,
   resetFinanceMemory,
+  TEST_PROJECT_DEMO_ID,
   type Expense,
   type ExpenseEntityRepository,
   type ExpenseIdempotencyRepository
 } from '@collabverse/api';
 
 describe('financeService', () => {
-  const projectId = projectsRepository.list()[0]?.id ?? 'proj-admin-onboarding';
+  const projectId = projectsRepository.list()[0]?.id ?? TEST_PROJECT_DEMO_ID;
 
   beforeEach(async () => {
     resetFinanceMemory();

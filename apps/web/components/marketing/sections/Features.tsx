@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 
 const features: { title: string; description: string; icon: ReactNode }[] = [
   {
@@ -36,11 +37,11 @@ export default function Features() {
         </header>
         <div className="grid gap-6 sm:grid-cols-2">
           {features.map((feature) => (
-            <article key={feature.title} className="rounded-2xl border border-neutral-900 bg-neutral-900/40 p-6">
+            <ContentBlock key={feature.title} as="article" size="sm" variant="muted">
               <span className="text-3xl" aria-hidden>{feature.icon}</span>
-              <h3 className="mt-4 text-xl font-semibold">{feature.title}</h3>
+              <ContentBlockTitle as="h3" className="mt-4">{feature.title}</ContentBlockTitle>
               <p className="mt-2 text-sm text-neutral-400">{feature.description}</p>
-            </article>
+            </ContentBlock>
           ))}
         </div>
       </div>

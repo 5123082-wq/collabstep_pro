@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { toast } from '@/lib/ui/toast';
 import clsx from 'clsx';
 import type { CSSProperties } from 'react';
+import { ContentBlock } from '@/components/ui/content-block';
 
 type MarketingAction = {
   label: string;
@@ -68,32 +69,36 @@ export default function MarketingHeader({ title, description, actions, metrics }
     <section className="space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-2">
-          <h2 className="text-2xl font-semibold text-white">{title}</h2>
+          <h2 className="text-xl font-semibold text-white">{title}</h2>
           <p className="text-sm text-neutral-400">{description}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">{actions.map(renderAction)}</div>
       </header>
       <div className="cs-auto-grid" style={metricsGridStyle}>
         {metrics.map((metric) => (
-          <div key={metric.id} className="rounded-2xl border border-neutral-900 bg-neutral-950/70 p-4">
+          <ContentBlock key={metric.id} size="sm" className="flex flex-col">
             <p className="text-xs uppercase tracking-wide text-neutral-500">{metric.label}</p>
             <p className="mt-2 text-2xl font-semibold text-white">{metric.value}</p>
-            {metric.helper ? <p className="mt-2 text-xs text-neutral-400">{metric.helper}</p> : null}
-            {metric.trend ? (
-              <p
-                className={clsx(
-                  'mt-3 inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold',
-                  metric.trend.direction === 'up'
-                    ? 'bg-emerald-500/10 text-emerald-200'
-                    : 'bg-rose-500/10 text-rose-200'
-                )}
-              >
-                <span aria-hidden="true">{metric.trend.direction === 'up' ? '↑' : '↓'}</span>
-                {metric.trend.value}
-                {metric.trend.label ? <span className="font-normal text-neutral-400">· {metric.trend.label}</span> : null}
-              </p>
-            ) : null}
-          </div>
+            <div className="mt-auto space-y-2">
+              {metric.helper ? <p className="text-xs text-neutral-400">{metric.helper}</p> : <div className="h-0" aria-hidden="true" />}
+              {metric.trend ? (
+                <p
+                  className={clsx(
+                    'inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold',
+                    metric.trend.direction === 'up'
+                      ? 'bg-emerald-500/10 text-emerald-200'
+                      : 'bg-rose-500/10 text-rose-200'
+                  )}
+                >
+                  <span aria-hidden="true">{metric.trend.direction === 'up' ? '↑' : '↓'}</span>
+                  {metric.trend.value}
+                  {metric.trend.label ? <span className="font-normal text-neutral-400">· {metric.trend.label}</span> : null}
+                </p>
+              ) : (
+                <div className="h-0" aria-hidden="true" />
+              )}
+            </div>
+          </ContentBlock>
         ))}
       </div>
     </section>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { ContentBlock } from '@/components/ui/content-block';
 import { toast } from '@/lib/ui/toast';
 import { useUI } from '@/stores/ui';
 
@@ -39,19 +40,23 @@ export default function DocumentDrawer() {
         <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 py-6">
           <section className="space-y-3">
             <h3 className="text-sm font-semibold text-neutral-100">Сводка</h3>
-            <div className="rounded-2xl border border-neutral-800 bg-neutral-950/70 p-4 text-sm text-neutral-300">
-              Эскроу договор для подрядчика «Print Studio». Сумма: 750 000 ₽. Срок действия — 30 дней.
-            </div>
+            <ContentBlock size="sm">
+              <p className="text-sm text-neutral-300">
+                Эскроу договор для подрядчика «Print Studio». Сумма: 750 000 ₽. Срок действия — 30 дней.
+              </p>
+            </ContentBlock>
           </section>
           <section className="space-y-3">
             <h3 className="text-sm font-semibold text-neutral-100">Маршрут согласования</h3>
             <ol className="space-y-2">
               {REVIEW_STEPS.map((step, index) => (
-                <li key={step.id} className="rounded-2xl border border-neutral-800 bg-neutral-950/60 p-4">
-                  <p className="text-sm font-semibold text-neutral-100">
-                    {index + 1}. {step.title}
-                  </p>
-                  <p className="mt-1 text-xs text-neutral-400">{step.description}</p>
+                <li key={step.id}>
+                  <ContentBlock size="sm">
+                    <p className="text-sm font-semibold text-neutral-100">
+                      {index + 1}. {step.title}
+                    </p>
+                    <p className="mt-1 text-xs text-neutral-400">{step.description}</p>
+                  </ContentBlock>
                 </li>
               ))}
             </ol>
@@ -76,9 +81,11 @@ export default function DocumentDrawer() {
               />
               Требуется квалифицированная подпись
             </label>
-            <div className="rounded-2xl border border-dashed border-neutral-800 bg-neutral-950/40 p-4 text-xs text-neutral-400">
-              Файлы прикреплены автоматически. Подписанты получат уведомления после публикации.
-            </div>
+            <ContentBlock variant="dashed" size="sm">
+              <p className="text-xs text-neutral-400">
+                Файлы прикреплены автоматически. Подписанты получат уведомления после публикации.
+              </p>
+            </ContentBlock>
           </section>
           <div className="mt-auto flex flex-col gap-3 border-t border-neutral-800 pt-6">
             <button

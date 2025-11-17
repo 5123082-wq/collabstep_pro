@@ -2,25 +2,25 @@
 
 import { usePathname } from 'next/navigation';
 import { useMemo } from 'react';
+import { ContentBlock } from '@/components/ui/content-block';
 import { toast } from '@/lib/ui/toast';
 
 const routeActions: Record<string, { title: string; actions: { label: string; message: string }[] }> = {
-  '/app/dashboard': {
+  '/dashboard': {
     title: 'Быстрые действия',
     actions: [
       { label: 'Открыть отчёт за неделю', message: 'TODO: Отчёт за неделю' },
       { label: 'Созвон с командой', message: 'TODO: Созвон' }
     ]
   },
-  '/project': {
+  '/projects': {
     title: 'Проекты',
     actions: [
-      { label: 'Новый проект', message: 'TODO: Новый проект' },
-      { label: 'Добавить задачу', message: 'TODO: Добавить задачу' },
-      { label: 'Пригласить участника', message: 'TODO: Пригласить участника' }
+      { label: 'Открыть обзор проектов', message: 'Открываем новую страницу проектов' },
+      { label: 'Создать проект', message: 'Используйте меню создания, чтобы запустить инициативу' }
     ]
   },
-  '/app/marketplace': {
+  '/marketplace': {
     title: 'Маркетплейс',
     actions: [
       { label: 'Открыть витрину', message: 'TODO: Открыть витрину решений' },
@@ -28,7 +28,7 @@ const routeActions: Record<string, { title: string; actions: { label: string; me
       { label: 'Перейти к заказам', message: 'TODO: Открыть историю заказов' }
     ]
   },
-  '/app/performers': {
+  '/performers': {
     title: 'Исполнители',
     actions: [
       { label: 'Найти специалиста', message: 'TODO: Найти специалиста' },
@@ -36,7 +36,7 @@ const routeActions: Record<string, { title: string; actions: { label: string; me
       { label: 'Просмотреть отклики', message: 'TODO: Открыть отклики исполнителей' }
     ]
   },
-  '/app/marketing': {
+  '/marketing': {
     title: 'Маркетинг',
     actions: [
       { label: 'Создать кампанию', message: 'TODO: Мастер создания кампании' },
@@ -44,49 +44,49 @@ const routeActions: Record<string, { title: string; actions: { label: string; me
       { label: 'Подключить источник данных', message: 'TODO: Настроить интеграцию аналитики' }
     ]
   },
-  '/app/ai-hub': {
+  '/ai-hub': {
     title: 'AI-хаб',
     actions: [
       { label: 'Запустить генерацию', message: 'TODO: Генерация' },
       { label: 'Создать промпт', message: 'TODO: Создать промпт' }
     ]
   },
-  '/app/community': {
+  '/community': {
     title: 'Комьюнити',
     actions: [
       { label: 'Поделиться апдейтом', message: 'TODO: Поделиться апдейтом' },
       { label: 'Создать событие', message: 'TODO: Создать событие' }
     ]
   },
-  '/app/finance': {
+  '/finance': {
     title: 'Финансы',
     actions: [
       { label: 'Открыть эскроу', message: 'TODO: Открыть эскроу' },
       { label: 'Создать счёт', message: 'TODO: Создать счёт' }
     ]
   },
-  '/app/docs': {
+  '/docs': {
     title: 'Документы',
     actions: [
       { label: 'Загрузить файл', message: 'TODO: Загрузить файл' },
       { label: 'Создать шаблон', message: 'TODO: Создать шаблон' }
     ]
   },
-  '/app/profile': {
+  '/profile': {
     title: 'Профиль',
     actions: [
       { label: 'Редактировать карточку', message: 'TODO: Редактировать профиль' },
       { label: 'Запросить отзыв', message: 'TODO: Запросить отзыв' }
     ]
   },
-  '/app/org': {
+  '/org': {
     title: 'Организация',
     actions: [
       { label: 'Добавить сотрудника', message: 'TODO: Добавить сотрудника' },
       { label: 'Синхронизировать биллинг', message: 'TODO: Синхронизировать биллинг' }
     ]
   },
-  '/app/support': {
+  '/support': {
     title: 'Поддержка',
     actions: [
       { label: 'Создать тикет', message: 'TODO: Создать тикет' },
@@ -106,16 +106,18 @@ export default function RightActionsPanel() {
   if (!matched) {
     return (
       <aside className="hidden w-[280px] flex-col border-l border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] px-4 py-6 lg:flex">
-        <div className="rounded-2xl border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] p-4 text-sm text-[color:var(--text-tertiary)]">
-          Быстрых действий пока нет.
-        </div>
+        <ContentBlock size="sm" variant="muted">
+          <p className="text-sm text-[color:var(--text-tertiary)]">
+            Быстрых действий пока нет.
+          </p>
+        </ContentBlock>
       </aside>
     );
   }
 
   return (
     <aside className="hidden w-[280px] flex-col border-l border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] px-4 py-6 lg:flex">
-      <div className="rounded-2xl border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] p-4">
+      <ContentBlock size="sm">
         <h3 className="text-sm font-semibold text-[color:var(--text-primary)]">{matched.title}</h3>
         <ul className="mt-3 space-y-2">
           {matched.actions.map((action) => (
@@ -130,7 +132,7 @@ export default function RightActionsPanel() {
             </li>
           ))}
         </ul>
-      </div>
+      </ContentBlock>
     </aside>
   );
 }

@@ -230,6 +230,30 @@ export async function POST(request: Request) {
       idempotencyKey
     });
 
+    // Проверяем, была ли трата автоматически переведена в pending из-за превышения лимита
+    const wasAutomated = expense.status === 'pending' && expensePayload.status !== 'pending';
+    if (wasAutomated) {
+      // Отправляем телеметрию о срабатывании автоматизации
+      const { trackEvent } = await import('@/lib/telemetry');
+      trackEvent('pm_expense_limit_breached', {
+        workspaceId,
+        projectId,
+        expenseId: expense.id,
+        userId: auth.userId,
+        amount: expense.amount,
+        currency: expense.currency,
+        source: 'api'
+      });
+      trackEvent('pm_automation_triggered', {
+        workspaceId,
+        projectId,
+        expenseId: expense.id,
+        userId: auth.userId,
+        automationType: 'budget_limit_exceeded',
+        source: 'api'
+      });
+    }
+
     return jsonOk(expense, { status: 201 });
   } catch (error) {
     return handleError(error);

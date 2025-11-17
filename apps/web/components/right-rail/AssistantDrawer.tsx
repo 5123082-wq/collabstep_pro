@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import AssistantIcon from './AssistantIcon';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { ContentBlock } from '@/components/ui/content-block';
 import { cn } from '@/lib/utils';
 import { toast } from '@/lib/ui/toast';
 import { useUI } from '@/stores/ui';
@@ -52,36 +53,39 @@ export default function AssistantDrawer() {
             <h3 className="text-sm font-semibold text-neutral-100">Рекомендуем попробовать</h3>
             <div className="grid gap-3">
               {SUGGESTIONS.map((item) => (
-                <button
+                <ContentBlock
                   key={item.id}
+                  as="button"
+                  size="sm"
+                  interactive
                   type="button"
                   onClick={() => handleSuggestion(item.title)}
-                  className="flex flex-col items-start rounded-2xl border border-neutral-800 bg-neutral-950/70 px-4 py-3 text-left transition hover:border-indigo-500/40 hover:bg-indigo-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                  className="flex flex-col items-start text-left"
                 >
                   <span className="text-sm font-semibold text-neutral-100">{item.title}</span>
                   <span className="text-xs text-neutral-400">{item.description}</span>
-                </button>
+                </ContentBlock>
               ))}
             </div>
           </section>
           <section className="space-y-3">
             <h3 className="text-sm font-semibold text-neutral-100">История</h3>
             <div className="space-y-3">
-              <article className="rounded-2xl border border-neutral-800 bg-neutral-950/60 p-4">
+              <ContentBlock as="article" size="sm">
                 <p className="text-xs uppercase tracking-wide text-indigo-200">AI</p>
                 <p className="mt-2 text-sm text-neutral-300">
                   Я подготовил план запуска мерча. Готов отправить команде?
                 </p>
-              </article>
-              <article className="rounded-2xl border border-neutral-800 bg-neutral-950/40 p-4">
+              </ContentBlock>
+              <ContentBlock as="article" size="sm" variant="muted">
                 <p className="text-xs uppercase tracking-wide text-neutral-500">Вы</p>
                 <p className="mt-2 text-sm text-neutral-300">Сделай сравнительную таблицу подрядчиков по стоимости.</p>
-              </article>
+              </ContentBlock>
             </div>
           </section>
         </div>
         <div className="border-t border-neutral-800 bg-neutral-950/80 px-6 py-5">
-          <div className="rounded-2xl border border-neutral-800 bg-neutral-950/70 p-4">
+          <ContentBlock size="sm">
             <textarea
               value={prompt}
               onChange={(event) => setPrompt(event.target.value)}
@@ -110,7 +114,7 @@ export default function AssistantDrawer() {
                 Отправить
               </button>
             </div>
-          </div>
+          </ContentBlock>
         </div>
       </SheetContent>
     </Sheet>

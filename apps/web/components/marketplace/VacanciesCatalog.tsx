@@ -12,6 +12,7 @@ import {
 } from '@/lib/marketplace/vacancies';
 import { useDebouncedValue } from '@/lib/ui/useDebouncedValue';
 import { toast } from '@/lib/ui/toast';
+import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 
 const ITEMS_PER_PAGE = 8;
 
@@ -67,7 +68,7 @@ function Pagination({ currentPage, totalPages, onChange }: PaginationProps) {
   }
   const pages = Array.from({ length: totalPages }, (_, index) => index + 1);
   return (
-    <nav aria-label="Пагинация вакансий" className="flex items-center justify-between rounded-2xl border border-neutral-900 bg-neutral-950/60 px-4 py-3">
+    <ContentBlock as="nav" size="sm" aria-label="Пагинация вакансий" className="flex items-center justify-between px-4 py-3">
       <button
         type="button"
         onClick={() => onChange(Math.max(1, currentPage - 1))}
@@ -103,13 +104,13 @@ function Pagination({ currentPage, totalPages, onChange }: PaginationProps) {
       >
         Вперёд
       </button>
-    </nav>
+    </ContentBlock>
   );
 }
 
 function VacancyCard({ vacancy }: { vacancy: Vacancy }) {
   return (
-    <article className="flex h-full flex-col justify-between rounded-3xl border border-neutral-900 bg-neutral-950/70 p-6 shadow-sm shadow-neutral-950/20 transition hover:border-indigo-500/40">
+    <ContentBlock interactive as="article" className="flex h-full flex-col justify-between">
       <div className="space-y-3">
         <header>
           <p className="text-xs uppercase tracking-wide text-indigo-300">{vacancy.project}</p>
@@ -181,7 +182,7 @@ function VacancyCard({ vacancy }: { vacancy: Vacancy }) {
           Подробнее
         </Link>
       </footer>
-    </article>
+    </ContentBlock>
   );
 }
 
@@ -285,9 +286,9 @@ export default function VacanciesCatalog({ data, error }: VacanciesCatalogProps)
 
   if (error) {
     return (
-      <div className="rounded-3xl border border-rose-500/40 bg-rose-500/10 p-6 text-sm text-rose-100">
+      <ContentBlock variant="error">
         <p>Не удалось загрузить вакансии. Попробуйте обновить страницу.</p>
-      </div>
+      </ContentBlock>
     );
   }
 
@@ -300,21 +301,25 @@ export default function VacanciesCatalog({ data, error }: VacanciesCatalogProps)
 
   return (
     <section className="space-y-6" aria-live="polite">
-      <div className="rounded-3xl border border-neutral-900 bg-neutral-950/60 p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h2 className="text-xl font-semibold text-neutral-100">Каталог вакансий</h2>
-            <p className="text-sm text-neutral-400">Подберите задачи по роли, уровню, формату и типу вознаграждения.</p>
-          </div>
-          <button
-            type="button"
-            onClick={handleReset}
-            className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+      <ContentBlock
+        header={
+          <ContentBlockTitle
+            description="Подберите задачи по роли, уровню, формату и типу вознаграждения."
+            actions={
+              <button
+                type="button"
+                onClick={handleReset}
+                className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+              >
+                Сбросить фильтры
+              </button>
+            }
           >
-            Сбросить фильтры
-          </button>
-        </div>
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
+            Каталог вакансий
+          </ContentBlockTitle>
+        }
+      >
+        <div className="grid gap-4 md:grid-cols-3">
           <label className="flex flex-col gap-2 text-sm text-neutral-300">
             <span className="text-xs uppercase tracking-wide text-neutral-500">Роль</span>
             <select
@@ -412,7 +417,7 @@ export default function VacanciesCatalog({ data, error }: VacanciesCatalogProps)
             />
           </label>
         </div>
-      </div>
+      </ContentBlock>
 
       <div ref={listRef} className="flex items-center justify-between text-sm text-neutral-400">
         <p>
@@ -422,9 +427,9 @@ export default function VacanciesCatalog({ data, error }: VacanciesCatalogProps)
       </div>
 
       {pageItems.length === 0 ? (
-        <div className="rounded-3xl border border-neutral-900 bg-neutral-950/60 p-10 text-center text-sm text-neutral-400">
+        <ContentBlock variant="dashed" className="p-10 text-center text-sm text-neutral-400">
           Ничего не найдено. Измените фильтры.
-        </div>
+        </ContentBlock>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {pageItems.map((vacancy) => (

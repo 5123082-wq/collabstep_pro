@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import type { MarketplaceCategory } from '@/lib/marketplace/types';
+import { ContentBlock } from '@/components/ui/content-block';
 
 type SortKey = 'featured' | 'price_asc' | 'price_desc' | 'rating_desc';
 
@@ -36,7 +37,7 @@ export default function TemplatesToolbar({
   const totalLabel = useMemo(() => new Intl.NumberFormat('ru-RU').format(totalCount), [totalCount]);
 
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-neutral-800/80 bg-neutral-900/60 p-4 shadow-xl shadow-black/10 sm:flex-row sm:items-center sm:justify-between">
+    <ContentBlock size="sm" className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
         <label className="relative flex-1">
           <span className="sr-only">Поиск по шаблонам</span>
@@ -76,6 +77,6 @@ export default function TemplatesToolbar({
       <p className="text-xs uppercase tracking-[0.32em] text-neutral-500">
         Найдено: <span className="text-neutral-100">{totalLabel}</span>
       </p>
-    </div>
+    </ContentBlock>
   );
 }

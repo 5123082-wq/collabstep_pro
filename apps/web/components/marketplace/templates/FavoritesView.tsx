@@ -6,6 +6,7 @@ import clsx from 'clsx';
 import { useMarketplaceStore } from '@/lib/marketplace/store';
 import type { MarketplaceTemplate } from '@/lib/marketplace/types';
 import { getTemplatePriceLabel } from '@/lib/marketplace/pricing';
+import { ContentBlock } from '@/components/ui/content-block';
 
 type FavoritesViewProps = {
   templates: MarketplaceTemplate[];
@@ -20,8 +21,8 @@ export default function FavoritesView({ templates }: FavoritesViewProps) {
 
   if (favoriteTemplates.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-neutral-800/80 bg-neutral-900/40 p-16 text-center">
-        <h2 className="text-xl font-semibold text-neutral-100">Вы пока ничего не сохранили</h2>
+      <ContentBlock variant="dashed" size="sm" className="flex flex-col items-center justify-center gap-4 p-16 text-center">
+        <h2 className="text-lg font-semibold text-neutral-100">Вы пока ничего не сохранили</h2>
         <p className="max-w-md text-sm text-neutral-400">
           Добавляйте понравившиеся шаблоны и проекты в избранное, чтобы быстро находить их и делиться с командой.
         </p>
@@ -31,7 +32,7 @@ export default function FavoritesView({ templates }: FavoritesViewProps) {
         >
           Открыть каталог шаблонов
         </Link>
-      </div>
+      </ContentBlock>
     );
   }
 
@@ -41,9 +42,10 @@ export default function FavoritesView({ templates }: FavoritesViewProps) {
         const priceInfo = getTemplatePriceLabel(template);
 
         return (
-          <div
+          <ContentBlock
             key={template.id}
-            className="flex flex-col gap-4 rounded-2xl border border-neutral-800/70 bg-neutral-900/40 p-4 sm:flex-row sm:items-center"
+            size="sm"
+            className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center"
           >
             <Link href={`/market/templates/${template.id}`} className="relative h-32 w-full overflow-hidden rounded-xl sm:w-48">
               <Image src={template.previewUrl} alt={template.title} fill className="object-cover" sizes="192px" />
@@ -84,7 +86,7 @@ export default function FavoritesView({ templates }: FavoritesViewProps) {
                 Удалить
               </button>
             </div>
-          </div>
+          </ContentBlock>
         );
       })}
     </div>

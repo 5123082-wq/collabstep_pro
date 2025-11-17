@@ -1,6 +1,7 @@
 import { memory } from '../data/memory';
 import { adminModulesRepository } from '../repositories/admin-modules-repository';
 import { adminUserControlsRepository } from '../repositories/admin-user-controls-repository';
+import { usersRepository } from '../repositories/users-repository';
 import type {
   PlatformAudience,
   PlatformModule,
@@ -59,11 +60,13 @@ export interface AdminUserView {
   notes?: string;
   updatedAt: string;
   updatedBy: string;
+  isAI?: boolean; // Флаг для AI-агентов
 }
 
 export class AdminService {
   private getWorkspaceUserMap(): Map<string, WorkspaceUser> {
-    return new Map(memory.WORKSPACE_USERS.map((user) => [user.id, user]));
+    const users = memory.WORKSPACE_USERS || [];
+    return new Map(users.map((user) => [user.id, user]));
   }
 
   private getUserControlsMap(): Map<string, PlatformUserControl> {
@@ -252,9 +255,21 @@ export class AdminService {
           effectiveStatus: module.effectiveStatus
         }));
 
+      // Получаем имя пользователя, если его нет - используем email или "Без имени"
+      const getUserDisplayName = (): string => {
+        if (user?.name) {
+          return user.name;
+        }
+        if (user?.email) {
+          // Используем часть email до @ как имя
+          return user.email.split('@')[0];
+        }
+        return 'Без имени';
+      };
+
       const view: AdminUserView = {
         userId,
-        name: user?.name ?? userId,
+        name: getUserDisplayName(),
         status: control.status,
         roles: [...control.roles],
         testerAccess: [...control.testerAccess],
@@ -281,6 +296,11 @@ export class AdminService {
       
       if (control.notes) {
         view.notes = control.notes;
+      }
+      
+      // Добавляем флаг isAI, если пользователь является AI-агентом
+      if (user?.isAI) {
+        view.isAI = true;
       }
       
       views.push(view);
@@ -324,6 +344,23 @@ export class AdminService {
     }
 
     return this.getUser(userId)!;
+  }
+
+  deleteUser(userId: string): boolean {
+    // Удаляем из ADMIN_USER_CONTROLS
+    const controlDeleted = adminUserControlsRepository.delete(userId);
+    
+    // Удаляем из WORKSPACE_USERS (может не существовать для сиротских записей)
+    const userDeleted = usersRepository.delete(userId);
+    
+    // Если была удалена запись из ADMIN_USER_CONTROLS, синхронизируем модули
+    // чтобы удалить назначения тестеров из модулей
+    if (controlDeleted) {
+      this.syncModulesFromUserControls('system');
+    }
+    
+    // Возвращаем true, если была удалена хотя бы одна запись
+    return controlDeleted || userDeleted;
   }
 
   private syncUserControlsForModule(moduleId: string, testers: string[], actorId: string): void {

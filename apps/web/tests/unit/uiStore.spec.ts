@@ -31,20 +31,12 @@ describe('ui-store', () => {
 
     jest.resetModules();
     reloadStore();
-    useUiStore.setState({ bgPreset: 'mesh', expandedGroups: [], lastProjectId: null });
+    useUiStore.setState({ expandedGroups: [], lastProjectId: null });
     await useUiStore.persist?.clearStorage?.();
   });
 
   afterEach(() => {
     delete (global as { window?: Window }).window;
-  });
-
-  it('переключает фон и сохраняет состояние', () => {
-    act(() => {
-      useUiStore.getState().setBgPreset('grid');
-    });
-
-    expect(useUiStore.getState().bgPreset).toBe('grid');
   });
 
   it('переключает раскрытые группы меню', () => {

@@ -65,6 +65,28 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     cleanData.notes = parsed.data.notes;
   }
 
-  const updated = adminService.updateUser(params.id, cleanData, session.email);
+  const updated = adminService.updateUser(params.id, cleanData, session.userId);
   return NextResponse.json({ item: updated });
+}
+
+export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+  const session = getDemoSessionFromCookies();
+  if (!session) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+  if (session.role !== 'admin') {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+
+  // Нельзя удалить самого себя
+  if (params.id === session.userId) {
+    return NextResponse.json({ error: 'cannot_delete_self' }, { status: 400 });
+  }
+
+  const deleted = adminService.deleteUser(params.id);
+  if (!deleted) {
+    return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  }
+
+  return NextResponse.json({ success: true });
 }

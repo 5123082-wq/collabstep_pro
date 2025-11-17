@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 
 const personas = [
   {
@@ -73,12 +74,13 @@ export default function AudiencePage() {
       </header>
       <section className="mt-12 grid gap-6 md:grid-cols-2">
         {personas.map((persona) => (
-          <article
+          <ContentBlock
             key={persona.id}
             id={persona.id}
-            className="rounded-2xl border border-neutral-900 bg-neutral-900/50 p-6"
+            as="article"
+            size="sm"
           >
-            <h2 className="text-xl font-semibold">{persona.title}</h2>
+            <ContentBlockTitle as="h2">{persona.title}</ContentBlockTitle>
             <p className="mt-3 text-sm text-neutral-400">{persona.description}</p>
             <div className="mt-4 flex flex-wrap gap-3">
               {persona.actions.map((action) => (
@@ -91,7 +93,7 @@ export default function AudiencePage() {
                 </Link>
               ))}
             </div>
-          </article>
+          </ContentBlock>
         ))}
       </section>
     </main>

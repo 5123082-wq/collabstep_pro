@@ -1,8 +1,0 @@
-[
-  { "id": "inv-501", "title": "Счёт за дизайн-спринт", "amount": 240000, "projectId": "DEMO", "currency": "RUB" },
-  { "id": "inv-518", "title": "Аванс по мобильной разработке", "amount": 390000, "projectId": "DEMO", "currency": "RUB" },
-  { "id": "inv-533", "title": "Консультация AI-команды", "amount": 120000, "projectId": "DEMO", "currency": "RUB" },
-  { "id": "inv-550", "title": "Исследование пользователей", "amount": 175000, "projectId": "DEMO", "currency": "RUB" },
-  { "id": "inv-561", "title": "Доработка CRM", "amount": 210000, "projectId": "DEMO", "currency": "RUB" },
-  { "id": "inv-575", "title": "Поддержка маркетплейса", "amount": 95000, "projectId": "DEMO", "currency": "RUB" }
-]

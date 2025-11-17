@@ -49,22 +49,26 @@ export type LeftMenuSection = {
   children?: LeftMenuChild[];
 };
 
-export const PROJECTS_HUB_PATH = '/app/projects';
-export const MARKETING_HUB_PATH = '/app/marketing';
+export const PROJECTS_HUB_PATH = '/projects';
+export const PM_HUB_PATH = '/pm';
+export const MARKETING_HUB_PATH = '/marketing';
+export const PM_MENU_SECTION: LeftMenuSection = {
+  id: 'pm',
+  label: 'Проекты и задачи',
+  icon: 'projects',
+  href: PM_HUB_PATH,
+  children: [
+    { id: 'pm-dashboard', label: 'Дашборд', href: PM_HUB_PATH },
+    { id: 'pm-projects', label: 'Проекты', href: `${PM_HUB_PATH}/projects` },
+    { id: 'pm-tasks', label: 'Задачи', href: `${PM_HUB_PATH}/tasks` },
+    { id: 'pm-archive', label: 'Архив', href: `${PM_HUB_PATH}/archive` }
+  ]
+};
 export const PROJECTS_MENU_SECTION: LeftMenuSection = {
   id: 'projects',
   label: 'Проекты',
   icon: 'projects',
-  href: PROJECTS_HUB_PATH,
-  children: [
-    { id: 'projects-overview', label: 'Обзор проектов', href: PROJECTS_HUB_PATH },
-    { id: 'projects-my', label: 'Мои проекты', href: `${PROJECTS_HUB_PATH}/my` },
-    { id: 'projects-templates', label: 'Шаблоны', href: `${PROJECTS_HUB_PATH}/templates` },
-    { id: 'projects-archive', label: 'Архив', href: `${PROJECTS_HUB_PATH}/archive` },
-    { id: 'projects-divider', type: 'divider' },
-    { id: 'projects-create', label: 'Создать проект', href: `${PROJECTS_HUB_PATH}/create` },
-    { id: 'projects-workspace', label: 'Рабочее пространство', href: `${PROJECTS_HUB_PATH}/workspace` }
-  ]
+  href: PROJECTS_HUB_PATH
 };
 
 const baseLeftMenuConfig: LeftMenuSection[] = [
@@ -72,9 +76,9 @@ const baseLeftMenuConfig: LeftMenuSection[] = [
     id: 'dashboard',
     label: 'Обзор',
     icon: 'dashboard',
-    href: '/app/dashboard'
+    href: '/dashboard'
   },
-  PROJECTS_MENU_SECTION,
+  PM_MENU_SECTION,
   {
     id: 'marketplace',
     label: 'Маркетплейс',
@@ -97,13 +101,13 @@ const baseLeftMenuConfig: LeftMenuSection[] = [
     id: 'performers',
     label: 'Исполнители',
     icon: 'performers',
-    href: '/app/performers/specialists',
+    href: '/performers/specialists',
     children: [
-      { id: 'performers-specialists', label: 'Специалисты', href: '/app/performers/specialists' },
-      { id: 'performers-teams', label: 'Команды и подрядчики', href: '/app/performers/teams' },
-      { id: 'performers-vacancies', label: 'Вакансии и задачи', href: '/app/performers/vacancies' },
-      { id: 'performers-my-vacancies', label: 'Мои вакансии', href: '/app/performers/my-vacancies' },
-      { id: 'performers-responses', label: 'Отклики и приглашения', href: '/app/performers/responses' }
+      { id: 'performers-specialists', label: 'Специалисты', href: '/performers/specialists' },
+      { id: 'performers-teams', label: 'Команды и подрядчики', href: '/performers/teams' },
+      { id: 'performers-vacancies', label: 'Вакансии и задачи', href: '/performers/vacancies' },
+      { id: 'performers-my-vacancies', label: 'Мои вакансии', href: '/performers/my-vacancies' },
+      { id: 'performers-responses', label: 'Отклики и приглашения', href: '/performers/responses' }
     ]
   },
   {
@@ -123,24 +127,24 @@ const baseLeftMenuConfig: LeftMenuSection[] = [
     id: 'ai-hub',
     label: 'AI-хаб',
     icon: 'ai',
-    href: '/app/ai-hub/generations',
+    href: '/ai-hub/generations',
     children: [
-      { id: 'ai-generations', label: 'Генерации', href: '/app/ai-hub/generations' },
-      { id: 'ai-history', label: 'История', href: '/app/ai-hub/history' },
-      { id: 'ai-prompts', label: 'Промпты', href: '/app/ai-hub/prompts' },
-      { id: 'ai-agents', label: 'Агенты', href: '/app/ai-hub/agents' }
+      { id: 'ai-generations', label: 'Генерации', href: '/ai-hub/generations' },
+      { id: 'ai-history', label: 'История', href: '/ai-hub/history' },
+      { id: 'ai-prompts', label: 'Промпты', href: '/ai-hub/prompts' },
+      { id: 'ai-agents', label: 'Агенты', href: '/ai-hub/agents' }
     ]
   },
   {
     id: 'community',
     label: 'Комьюнити',
     icon: 'community',
-    href: '/app/community/pitch',
+    href: '/community/pitch',
     children: [
-      { id: 'community-pitch', label: 'Питч', href: '/app/community/pitch' },
-      { id: 'community-rooms', label: 'Комнаты', href: '/app/community/rooms' },
-      { id: 'community-events', label: 'События', href: '/app/community/events' },
-      { id: 'community-rating', label: 'Рейтинг', href: '/app/community/rating' }
+      { id: 'community-pitch', label: 'Питч', href: '/community/pitch' },
+      { id: 'community-rooms', label: 'Комнаты', href: '/community/rooms' },
+      { id: 'community-events', label: 'События', href: '/community/events' },
+      { id: 'community-rating', label: 'Рейтинг', href: '/community/rating' }
     ]
   },
   {
@@ -148,47 +152,47 @@ const baseLeftMenuConfig: LeftMenuSection[] = [
     label: 'Финансы',
     icon: 'finance',
     roles: ['FOUNDER', 'PM', 'ADMIN'],
-    href: '/app/finance/expenses',
+    href: '/finance/expenses',
     children: [
-      { id: 'finance-expenses', label: 'Расходы', href: '/app/finance/expenses', roles: ['FOUNDER', 'PM', 'ADMIN'] },
-      { id: 'finance-wallet', label: 'Кошелёк', href: '/app/finance/wallet', roles: ['FOUNDER', 'PM', 'ADMIN'] },
-      { id: 'finance-escrow', label: 'Эскроу', href: '/app/finance/escrow', roles: ['FOUNDER', 'PM', 'ADMIN'] },
-      { id: 'finance-invoices', label: 'Счета', href: '/app/finance/invoices', roles: ['FOUNDER', 'PM', 'ADMIN'] },
-      { id: 'finance-plans', label: 'Тарифы', href: '/app/finance/plans', roles: ['FOUNDER', 'PM', 'ADMIN'] },
-      { id: 'finance-disputes', label: 'Споры', href: '/app/finance/disputes', roles: ['FOUNDER', 'PM', 'ADMIN'] }
+      { id: 'finance-expenses', label: 'Расходы', href: '/finance/expenses', roles: ['FOUNDER', 'PM', 'ADMIN'] },
+      { id: 'finance-wallet', label: 'Кошелёк', href: '/finance/wallet', roles: ['FOUNDER', 'PM', 'ADMIN'] },
+      { id: 'finance-escrow', label: 'Эскроу', href: '/finance/escrow', roles: ['FOUNDER', 'PM', 'ADMIN'] },
+      { id: 'finance-invoices', label: 'Счета', href: '/finance/invoices', roles: ['FOUNDER', 'PM', 'ADMIN'] },
+      { id: 'finance-plans', label: 'Тарифы', href: '/finance/plans', roles: ['FOUNDER', 'PM', 'ADMIN'] },
+      { id: 'finance-disputes', label: 'Споры', href: '/finance/disputes', roles: ['FOUNDER', 'PM', 'ADMIN'] }
     ]
   },
   {
     id: 'docs',
     label: 'Документы',
     icon: 'docs',
-    href: '/app/docs/files',
+    href: '/docs/files',
     children: [
-      { id: 'docs-files', label: 'Файлы', href: '/app/docs/files' },
-      { id: 'docs-contracts', label: 'Контракты', href: '/app/docs/contracts' },
-      { id: 'docs-brand', label: 'Бренд-репозиторий', href: '/app/docs/brand-repo' }
+      { id: 'docs-files', label: 'Файлы', href: '/docs/files' },
+      { id: 'docs-contracts', label: 'Контракты', href: '/docs/contracts' },
+      { id: 'docs-brand', label: 'Бренд-репозиторий', href: '/docs/brand-repo' }
     ]
   },
   {
     id: 'org',
     label: 'Организация',
     icon: 'org',
-    href: '/app/org/team',
+    href: '/org/team',
     children: [
-      { id: 'org-team', label: 'Команда', href: '/app/org/team' },
-      { id: 'org-billing', label: 'Биллинг', href: '/app/org/billing' },
-      { id: 'org-templates', label: 'Процесс-шаблоны', href: '/app/org/process-templates' }
+      { id: 'org-team', label: 'Команда', href: '/org/team' },
+      { id: 'org-billing', label: 'Биллинг', href: '/org/billing' },
+      { id: 'org-templates', label: 'Процесс-шаблоны', href: '/org/process-templates' }
     ]
   },
   {
     id: 'support',
     label: 'Поддержка',
     icon: 'support',
-    href: '/app/support/help',
+    href: '/support/help',
     children: [
-      { id: 'support-help', label: 'База знаний', href: '/app/support/help' },
-      { id: 'support-tickets', label: 'Тикеты', href: '/app/support/tickets' },
-      { id: 'support-chat', label: 'Чат', href: '/app/support/chat' }
+      { id: 'support-help', label: 'База знаний', href: '/support/help' },
+      { id: 'support-tickets', label: 'Тикеты', href: '/support/tickets' },
+      { id: 'support-chat', label: 'Чат', href: '/support/chat' }
     ]
   },
   {
@@ -196,16 +200,16 @@ const baseLeftMenuConfig: LeftMenuSection[] = [
     label: 'Админка',
     icon: 'admin',
     roles: ['ADMIN', 'MODERATOR'],
-    href: '/app/admin',
+    href: '/admin',
     children: [
-      { id: 'admin-overview', label: 'Обзор', href: '/app/admin' },
-      { id: 'admin-features', label: 'Фичи & Разделы', href: '/app/admin/features' },
-      { id: 'admin-users', label: 'Пользователи', href: '/app/admin/users' },
-      { id: 'admin-roles', label: 'Роли & Разрешения', href: '/app/admin/roles' },
-      { id: 'admin-segments', label: 'Сегменты', href: '/app/admin/segments' },
-      { id: 'admin-audit', label: 'Аудит', href: '/app/admin/audit' },
-      { id: 'admin-releases', label: 'Релизы', href: '/app/admin/releases' },
-      { id: 'admin-support', label: 'Support Tools', href: '/app/admin/support' }
+      { id: 'admin-overview', label: 'Обзор', href: '/admin' },
+      { id: 'admin-features', label: 'Фичи & Разделы', href: '/admin/features' },
+      { id: 'admin-users', label: 'Пользователи', href: '/admin/users' },
+      { id: 'admin-roles', label: 'Роли & Разрешения', href: '/admin/roles' },
+      { id: 'admin-segments', label: 'Сегменты', href: '/admin/segments' },
+      { id: 'admin-audit', label: 'Аудит', href: '/admin/audit' },
+      { id: 'admin-releases', label: 'Релизы', href: '/admin/releases' },
+      { id: 'admin-support', label: 'Support Tools', href: '/admin/support' }
     ]
   }
 ];

@@ -1,9 +1,10 @@
 import type { MarketplaceFile } from '@/lib/marketplace/types';
+import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 
 export default function TemplateFileList({ files }: { files: MarketplaceFile[] }) {
   return (
-    <section className="space-y-4">
-      <h2 className="text-xl font-semibold text-neutral-100">Состав файлов</h2>
+    <ContentBlock as="section" size="sm" className="space-y-4">
+      <ContentBlockTitle>Состав файлов</ContentBlockTitle>
       <div className="overflow-hidden rounded-2xl border border-neutral-800/80">
         <table className="min-w-full divide-y divide-neutral-800 text-sm">
           <thead className="bg-neutral-900/80 text-neutral-400">
@@ -28,6 +29,6 @@ export default function TemplateFileList({ files }: { files: MarketplaceFile[] }
         После покупки файлы доступны для скачивания через защищённые ссылки. Срок действия ссылок — 72 часа, далее
         их можно обновить в разделе «Мои заказы».
       </p>
-    </section>
+    </ContentBlock>
   );
 }

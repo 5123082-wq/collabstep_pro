@@ -12,6 +12,7 @@ import {
 } from '@/lib/marketplace/specialists';
 import { useDebouncedValue } from '@/lib/ui/useDebouncedValue';
 import { toast } from '@/lib/ui/toast';
+import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 
 const ITEMS_PER_PAGE = 9;
 
@@ -67,7 +68,7 @@ function Pagination({ currentPage, totalPages, onChange }: PaginationProps) {
   const pages = Array.from({ length: totalPages }, (_, index) => index + 1);
 
   return (
-    <nav aria-label="Пагинация" className="flex items-center justify-between rounded-2xl border border-neutral-900 bg-neutral-950/60 px-4 py-3">
+    <ContentBlock as="nav" size="sm" aria-label="Пагинация" className="flex items-center justify-between px-4 py-3">
       <button
         type="button"
         onClick={() => onChange(Math.max(1, currentPage - 1))}
@@ -103,26 +104,55 @@ function Pagination({ currentPage, totalPages, onChange }: PaginationProps) {
       >
         Вперёд
       </button>
-    </nav>
+    </ContentBlock>
   );
 }
 
 function SpecialistCard({ specialist }: { specialist: Specialist }) {
   return (
-    <article className="rounded-3xl border border-neutral-900 bg-neutral-950/70 p-6 shadow-sm shadow-neutral-950/20 transition hover:border-indigo-500/40">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h3 className="text-lg font-semibold text-neutral-50">{specialist.name}</h3>
-          <p className="text-sm text-neutral-400">{specialist.role}</p>
+    <ContentBlock
+      as="article"
+      interactive
+      header={
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold text-neutral-50">{specialist.name}</h3>
+            <p className="text-sm text-neutral-400">{specialist.role}</p>
+          </div>
+          <div className="text-right text-sm text-neutral-300">
+            <p>
+              <span aria-hidden="true">★</span> {specialist.rating.toFixed(1)}
+            </p>
+            <p className="text-xs text-neutral-500">{specialist.reviews} отзывов</p>
+          </div>
         </div>
-        <div className="text-right text-sm text-neutral-300">
-          <p>
-            <span aria-hidden="true">★</span> {specialist.rating.toFixed(1)}
-          </p>
-          <p className="text-xs text-neutral-500">{specialist.reviews} отзывов</p>
+      }
+      footer={
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => toast(`Приглашение отправлено ${specialist.name}`)}
+            className="rounded-xl border border-indigo-500/50 bg-indigo-500/15 px-4 py-2 text-sm font-medium text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+          >
+            Пригласить
+          </button>
+          <button
+            type="button"
+            onClick={() => toast(`Запрос на интервью отправлен ${specialist.name}`)}
+            className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+          >
+            Запросить интервью
+          </button>
+          <Link
+            href={`/p/${specialist.handle}`}
+            className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+          >
+            Открыть визитку
+          </Link>
         </div>
-      </header>
-      <p className="mt-4 text-sm text-neutral-300">{specialist.description}</p>
+      }
+    >
+      <p className="text-sm text-neutral-300">{specialist.description}</p>
       <dl className="mt-4 space-y-2 text-sm text-neutral-300">
         <div className="flex flex-wrap items-center gap-2">
           <dt className="font-semibold text-neutral-200">Навыки:</dt>
@@ -161,29 +191,7 @@ function SpecialistCard({ specialist }: { specialist: Specialist }) {
           </span>
         ))}
       </div>
-      <footer className="mt-6 flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={() => toast(`Приглашение отправлено ${specialist.name}`)}
-          className="rounded-xl border border-indigo-500/50 bg-indigo-500/15 px-4 py-2 text-sm font-medium text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
-        >
-          Пригласить
-        </button>
-        <button
-          type="button"
-          onClick={() => toast(`Запрос на интервью отправлен ${specialist.name}`)}
-          className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
-        >
-          Запросить интервью
-        </button>
-        <Link
-          href={`/p/${specialist.handle}`}
-          className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
-        >
-          Открыть визитку
-        </Link>
-      </footer>
-    </article>
+    </ContentBlock>
   );
 }
 
@@ -328,9 +336,9 @@ export default function SpecialistsCatalog({ data, error }: SpecialistsCatalogPr
 
   if (error) {
     return (
-      <div className="rounded-3xl border border-rose-500/40 bg-rose-500/10 p-6 text-sm text-rose-100">
+      <ContentBlock variant="error">
         <p>Не удалось загрузить каталог специалистов. Попробуйте обновить страницу.</p>
-      </div>
+      </ContentBlock>
     );
   }
 
@@ -343,21 +351,25 @@ export default function SpecialistsCatalog({ data, error }: SpecialistsCatalogPr
 
   return (
     <section className="space-y-6" aria-live="polite">
-      <div className="rounded-3xl border border-neutral-900 bg-neutral-950/60 p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h2 className="text-xl font-semibold text-neutral-100">Поиск специалистов</h2>
-            <p className="text-sm text-neutral-400">Фильтруйте каталог по ролям, навыкам, языку и ставке.</p>
-          </div>
-          <button
-            type="button"
-            onClick={handleReset}
-            className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+      <ContentBlock
+        header={
+          <ContentBlockTitle
+            description="Фильтруйте каталог по ролям, навыкам, языку и ставке."
+            actions={
+              <button
+                type="button"
+                onClick={handleReset}
+                className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+              >
+                Сбросить фильтры
+              </button>
+            }
           >
-            Сбросить фильтры
-          </button>
-        </div>
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
+            Поиск специалистов
+          </ContentBlockTitle>
+        }
+      >
+        <div className="grid gap-4 md:grid-cols-4">
           <label className="flex flex-col gap-2 text-sm text-neutral-300">
             <span className="text-xs uppercase tracking-wide text-neutral-500">Роль</span>
             <select
@@ -369,6 +381,21 @@ export default function SpecialistsCatalog({ data, error }: SpecialistsCatalogPr
               {roles.map((role) => (
                 <option key={role} value={role}>
                   {role}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-2 text-sm text-neutral-300">
+            <span className="text-xs uppercase tracking-wide text-neutral-500">Навыки</span>
+            <select
+              value={filters.skills.length > 0 ? filters.skills[0] : ''}
+              onChange={(event) => updateFilters({ skills: event.target.value ? [event.target.value] : [] })}
+              className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
+            >
+              <option value="">Все навыки</option>
+              {skills.map((skill) => (
+                <option key={skill} value={skill}>
+                  {skill}
                 </option>
               ))}
             </select>
@@ -403,38 +430,6 @@ export default function SpecialistsCatalog({ data, error }: SpecialistsCatalogPr
           </label>
         </div>
         <div className="mt-4 grid gap-4 md:grid-cols-3">
-          <label className="flex flex-col gap-2 text-sm text-neutral-300 md:col-span-2">
-            <span className="text-xs uppercase tracking-wide text-neutral-500">Навыки</span>
-            <div className="flex flex-wrap gap-2">
-              {skills.map((skill) => {
-                const checked = filters.skills.includes(skill);
-                return (
-                  <label
-                    key={skill}
-                    className={`flex items-center gap-2 rounded-full border px-3 py-1 text-xs transition focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-indigo-400 ${
-                      checked
-                        ? 'border-indigo-500/60 bg-indigo-500/20 text-indigo-100'
-                        : 'border-neutral-800 bg-neutral-900/70 text-neutral-300 hover:border-indigo-500/40 hover:text-white'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-neutral-700 bg-neutral-900 text-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
-                      checked={checked}
-                      onChange={(event) => {
-                        if (event.target.checked) {
-                          updateFilters({ skills: [...filters.skills, skill] });
-                        } else {
-                          updateFilters({ skills: filters.skills.filter((item) => item !== skill) });
-                        }
-                      }}
-                    />
-                    {skill}
-                  </label>
-                );
-              })}
-            </div>
-          </label>
           <div className="grid gap-2">
             <span className="text-xs uppercase tracking-wide text-neutral-500">Ставка (₽/час)</span>
             <div className="flex gap-2">
@@ -483,7 +478,7 @@ export default function SpecialistsCatalog({ data, error }: SpecialistsCatalogPr
             </select>
           </label>
         </div>
-      </div>
+      </ContentBlock>
 
       <div ref={listRef} className="flex items-center justify-between text-sm text-neutral-400">
         <p>
@@ -493,9 +488,9 @@ export default function SpecialistsCatalog({ data, error }: SpecialistsCatalogPr
       </div>
 
       {pageItems.length === 0 ? (
-        <div className="rounded-3xl border border-neutral-900 bg-neutral-950/60 p-10 text-center text-sm text-neutral-400">
+        <ContentBlock variant="dashed" className="p-10 text-center text-sm text-neutral-400">
           Ничего не найдено. Измените фильтры.
-        </div>
+        </ContentBlock>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
           {pageItems.map((specialist) => (

@@ -1,13 +1,10 @@
 'use client';
 
 import clsx from 'clsx';
-import { useState, useMemo } from 'react';
-import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 import { canAccessAdmin, canAccessFinance, getUserRoles } from '@/lib/auth/roles';
 import { toast } from '@/lib/ui/toast';
-import { detectSectionFromPath } from '@/lib/section-detector';
-import { useSectionThemingStore } from '@/stores/sectionTheming';
-import { generateSectionClassName, getSectionThemeStyles } from '@/lib/utils/sectionTheme';
+import { ContentBlock } from '@/components/ui/content-block';
 
 type Access = 'finance' | 'admin' | null;
 
@@ -42,78 +39,31 @@ export default function AppSection({
 }: AppSectionProps) {
   const [state, setState] = useState<(typeof states)[number]['id']>('default');
   const roles = getUserRoles();
-  const pathname = usePathname();
-  
-  // Определяем текущий раздел и применяем тему
-  // ВСЕ ХУКИ ДОЛЖНЫ БЫТЬ ДО УСЛОВНЫХ ВОЗВРАТОВ!
-  const sectionId = useMemo(() => {
-    const detected = detectSectionFromPath(pathname || '');
-    // Отладка (можно убрать в продакшене)
-    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-      console.log('[AppSection] Pathname:', pathname, 'SectionId:', detected);
-    }
-    return detected;
-  }, [pathname]);
-  
-  const sectionThemes = useSectionThemingStore((state) => state.sectionThemes);
-  const theme = useMemo(() => {
-    if (!sectionId) return null;
-    const themeForSection = useSectionThemingStore.getState().getSectionTheme(sectionId);
-    // Отладка (можно убрать в продакшене)
-    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-      console.log('[AppSection] SectionId:', sectionId, 'Theme:', themeForSection, 'All themes:', sectionThemes);
-    }
-    return themeForSection;
-  }, [sectionId, sectionThemes]);
-  const sectionClassName = useMemo(() => generateSectionClassName(theme), [theme]);
-  const sectionStyles = useMemo(() => getSectionThemeStyles(theme), [theme]);
-  
-  // Применяем тему с приоритетом над глобальными стилями
-  const finalClassName = useMemo(() => {
-    if (!theme) return 'space-y-6';
-    
-    // Для вариантов с темой используем важные классы
-    if (theme.variant === 'minimal') {
-      return 'space-y-4 rounded-2xl border border-neutral-800 bg-neutral-950/40 p-4';
-    }
-    if (theme.variant === 'accent') {
-      return 'space-y-6 rounded-3xl border p-6';
-    }
-    if (theme.variant === 'bordered') {
-      return 'space-y-6 rounded-2xl border-2 bg-neutral-950/80 p-6';
-    }
-    return sectionClassName;
-  }, [theme, sectionClassName]);
 
   if (access === 'admin' && !canAccessAdmin(roles)) {
     return (
-      <section className="rounded-2xl border border-neutral-900 bg-neutral-950/80 p-10 text-center">
-        <h2 className="text-xl font-semibold text-neutral-100">Нет доступа</h2>
-        <p className="mt-2 text-sm text-neutral-400">Этот раздел доступен только администраторам или модераторам.</p>
-      </section>
+      <ContentBlock variant="muted" className="text-center">
+        <h2 className="text-lg font-semibold text-[color:var(--text-primary)]">Нет доступа</h2>
+        <p className="mt-2 text-sm text-[color:var(--text-secondary)]">Этот раздел доступен только администраторам или модераторам.</p>
+      </ContentBlock>
     );
   }
 
   if (access === 'finance' && !canAccessFinance(roles)) {
     return (
-      <section className="rounded-2xl border border-neutral-900 bg-neutral-950/80 p-10 text-center">
-        <h2 className="text-xl font-semibold text-neutral-100">Нет доступа</h2>
-        <p className="mt-2 text-sm text-neutral-400">Финансовые данные доступны руководителям проектов и администраторам.</p>
-      </section>
+      <ContentBlock variant="muted" className="text-center">
+        <h2 className="text-lg font-semibold text-[color:var(--text-primary)]">Нет доступа</h2>
+        <p className="mt-2 text-sm text-[color:var(--text-secondary)]">Финансовые данные доступны руководителям проектов и администраторам.</p>
+      </ContentBlock>
     );
   }
 
   return (
-    <section 
-      className={finalClassName} 
-      style={sectionStyles}
-      data-section-theme={theme?.variant || 'default'}
-      data-section-id={sectionId || 'none'}
-    >
+    <section className="space-y-6">
       <header className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-neutral-50">{title}</h1>
+            <h1 className="text-xl font-semibold text-neutral-50">{title}</h1>
             <p className="text-sm text-neutral-400">{description}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -150,24 +100,24 @@ export default function AppSection({
       </header>
 
       {state === 'loading' && (
-        <div className="space-y-4 rounded-2xl border border-neutral-900 bg-neutral-950/80 p-6">
+        <ContentBlock>
           <div className="h-4 w-1/4 animate-pulse rounded bg-neutral-800" />
           <div className="space-y-3">
             <div className="h-3 w-full animate-pulse rounded bg-neutral-800" />
             <div className="h-3 w-5/6 animate-pulse rounded bg-neutral-800" />
             <div className="h-3 w-2/3 animate-pulse rounded bg-neutral-800" />
           </div>
-        </div>
+        </ContentBlock>
       )}
 
       {state === 'empty' && (
-        <div className="rounded-2xl border border-dashed border-neutral-800 bg-neutral-950/60 p-8 text-center text-sm text-neutral-400">
-          {emptyMessage}
-        </div>
+        <ContentBlock variant="dashed" className="text-center">
+          <p className="text-sm text-[color:var(--text-tertiary)]">{emptyMessage}</p>
+        </ContentBlock>
       )}
 
       {state === 'error' && (
-        <div className="rounded-2xl border border-rose-500/40 bg-rose-500/10 p-6 text-sm text-rose-100">
+        <ContentBlock variant="error">
           <p>{errorMessage}</p>
           <button
             type="button"
@@ -176,21 +126,21 @@ export default function AppSection({
           >
             Повторить
           </button>
-        </div>
+        </ContentBlock>
       )}
 
       {state === 'default' && (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-neutral-900 bg-neutral-950/70 p-6">
-            <p className="text-sm text-neutral-300">
+          <ContentBlock>
+            <p className="text-sm text-[color:var(--text-secondary)]">
               Данные и виджеты будут подключаться на следующих этапах. Сейчас — демо-макет.
             </p>
-          </div>
+          </ContentBlock>
           <div className="grid gap-3 md:grid-cols-2">
             {[0, 1, 2, 3].map((index) => (
-              <div key={index} className="rounded-2xl border border-neutral-900 bg-neutral-950/70 p-4">
-                <p className="text-sm font-semibold text-neutral-100">Карточка #{index + 1}</p>
-                <p className="mt-2 text-xs text-neutral-400">
+              <div key={index} className="content-block-sm">
+                <p className="text-sm font-semibold text-[color:var(--text-primary)]">Карточка #{index + 1}</p>
+                <p className="mt-2 text-xs text-[color:var(--text-secondary)]">
                   Данные обновятся автоматически после подключения реальных источников.
                 </p>
               </div>

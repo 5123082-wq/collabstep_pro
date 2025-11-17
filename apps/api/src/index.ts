@@ -1,6 +1,6 @@
 export * from './types';
 export { memory } from './data/memory';
-export { DEFAULT_WORKSPACE_USER_ID, DEFAULT_ACCOUNT_ID, DEFAULT_WORKSPACE_ID } from './data/memory';
+export { DEFAULT_WORKSPACE_USER_ID, DEFAULT_ACCOUNT_ID, DEFAULT_WORKSPACE_ID, TEST_PROJECT_DEMO_ID, TEST_PROJECT_2_ID, TEST_ADMIN_USER_ID, TEST_USER_ID, TEST_FINANCE_USER_ID, TEST_DESIGNER_USER_ID, isAdminUserId } from './data/memory';
 export { ProjectsRepository, projectsRepository } from './repositories/projects-repository';
 export { TemplatesRepository, templatesRepository } from './repositories/templates-repository';
 export { TasksRepository, tasksRepository } from './repositories/tasks-repository';
@@ -67,6 +67,7 @@ export {
 } from './stores/expense-store-factory';
 export { amountToCents, centsToAmount } from './utils/money';
 export { formatTaskKey, parseTaskKey } from './utils/task-key';
+export { hashPassword, verifyPassword } from './utils/password';
 export {
   adminModulesRepository,
   AdminModulesRepository
@@ -82,3 +83,32 @@ export {
   type AdminUserView,
   type AdminModuleTester
 } from './services/admin-service';
+export {
+  MarketplaceListingsRepository,
+  marketplaceListingsRepository,
+  type MarketplaceListing,
+  type MarketplaceListingState
+} from './repositories/marketplace-listings-repository';
+export {
+  NotificationsRepository,
+  notificationsRepository,
+  type CreateNotificationInput,
+  type ListNotificationsOptions
+} from './repositories/notifications-repository';
+export {
+  ProjectChatRepository,
+  projectChatRepository,
+  type ProjectChatMessageWithFiles,
+  type CreateChatMessageInput,
+  type UpdateChatMessageInput,
+  type ListChatMessagesOptions
+} from './repositories/project-chat-repository';
+export {
+  AIAgentsRepository,
+  aiAgentsRepository
+} from './repositories/ai-agents-repository';
+export type { AIAgent, AIAgentType } from './types';
+// WebSocket server exports are intentionally excluded from the main index
+// to prevent them from being bundled in client code.
+// Import them directly from './websocket' or './websocket/server' if needed server-side.
+export type { WebSocketEvent, WebSocketEventType } from './websocket/types';

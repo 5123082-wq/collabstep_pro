@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 
 const cases = [
   {
@@ -46,9 +47,9 @@ export default function ProjectsCasesPage() {
       </header>
       <section className="mt-12 space-y-6">
         {cases.map((item) => (
-          <article key={item.title} className="rounded-2xl border border-neutral-900 bg-neutral-900/50 p-6">
+          <ContentBlock key={item.title} as="article" size="sm">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
-              <h2 className="text-xl font-semibold text-neutral-100">{item.title}</h2>
+              <ContentBlockTitle as="h2">{item.title}</ContentBlockTitle>
               <span className="text-sm font-semibold text-indigo-300">{item.result}</span>
             </div>
             <p className="mt-3 text-sm text-neutral-400">{item.description}</p>
@@ -58,7 +59,7 @@ export default function ProjectsCasesPage() {
             >
               Читать подробнее
             </Link>
-          </article>
+          </ContentBlock>
         ))}
       </section>
     </main>

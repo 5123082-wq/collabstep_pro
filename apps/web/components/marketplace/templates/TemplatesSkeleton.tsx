@@ -1,10 +1,13 @@
+import { ContentBlock } from '@/components/ui/content-block';
+
 export default function TemplatesSkeleton() {
   return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {Array.from({ length: 8 }).map((_, index) => (
-        <div
+        <ContentBlock
           key={index}
-          className="flex flex-col gap-4 rounded-2xl border border-neutral-900/80 bg-neutral-900/60 p-5"
+          size="sm"
+          className="flex flex-col gap-4 p-5"
         >
           <div className="aspect-[4/3] w-full animate-pulse rounded-xl bg-neutral-800/70" />
           <div className="h-4 w-24 animate-pulse rounded bg-neutral-800/60" />
@@ -14,7 +17,7 @@ export default function TemplatesSkeleton() {
             <div className="h-10 w-full animate-pulse rounded-xl bg-neutral-800/60" />
             <div className="h-10 w-16 animate-pulse rounded-xl bg-neutral-800/60" />
           </div>
-        </div>
+        </ContentBlock>
       ))}
     </div>
   );

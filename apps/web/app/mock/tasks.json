@@ -1,8 +1,0 @@
-[
-  { "id": "task-12", "title": "Сверстать лендинг", "projectId": "DEMO", "assignee": "designer@collabverse.ru", "status": "В процессе" },
-  { "id": "task-18", "title": "Интеграция платежей", "projectId": "DEMO", "assignee": "dev@collabverse.ru", "status": "На ревью" },
-  { "id": "task-24", "title": "Написать FAQ", "projectId": "DEMO", "assignee": "copy@collabverse.ru", "status": "Запланировано" },
-  { "id": "task-31", "title": "Подготовить UX-исследование", "projectId": "DEMO", "assignee": "ux@collabverse.ru", "status": "Идёт" },
-  { "id": "task-41", "title": "Собрать дэшборд", "projectId": "DEMO", "assignee": "analyst@collabverse.ru", "status": "Ожидание" },
-  { "id": "task-55", "title": "Тестировать мобильное приложение", "projectId": "DEMO", "assignee": "qa@collabverse.ru", "status": "В работе" }
-]

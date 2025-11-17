@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 
 const roles = [
   {
@@ -46,12 +47,14 @@ export default function Audience() {
         </header>
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {roles.map((role) => (
-            <article
+            <ContentBlock
               key={role.id}
               id={role.id}
-              className="rounded-2xl border border-neutral-900 bg-neutral-900/40 p-6"
+              as="article"
+              size="sm"
+              variant="muted"
             >
-              <h3 className="text-lg font-semibold">{role.title}</h3>
+              <ContentBlockTitle as="h3">{role.title}</ContentBlockTitle>
               <p className="mt-3 text-sm text-neutral-400">{role.description}</p>
               <Link
                 href={role.cta.href}
@@ -59,7 +62,7 @@ export default function Audience() {
               >
                 {role.cta.label}
               </Link>
-            </article>
+            </ContentBlock>
           ))}
         </div>
       </div>

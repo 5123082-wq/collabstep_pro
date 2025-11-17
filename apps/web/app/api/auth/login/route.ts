@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { encodeDemoSession, getDemoAccount, isDemoAuthEnabled, type DemoRole } from '@/lib/auth/demo-session';
 import { withSessionCookie } from '@/lib/auth/session-cookie';
+import { ensureDemoAccountsInitialized } from '@/lib/auth/init-demo-accounts';
+import { usersRepository } from '@collabverse/api';
+import { verifyPassword } from '@collabverse/api/utils/password';
 
 const INVALID_MESSAGE = 'Неверная почта или пароль';
 
@@ -27,11 +30,11 @@ function resolveReturnPath(value: unknown): string {
   if (typeof value === 'string') {
     const trimmed = value.trim();
     if (trimmed.startsWith('/') && !trimmed.startsWith('//')) {
-      return trimmed || '/app/dashboard';
+      return trimmed || '/dashboard';
     }
   }
 
-  return '/app/dashboard';
+  return '/dashboard';
 }
 
 async function readPayload(request: NextRequest): Promise<LoginPayload> {
@@ -61,6 +64,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Dev authentication disabled' }, { status: 403 });
   }
 
+  // Инициализируем демо-аккаунты при первом использовании
+  ensureDemoAccountsInitialized();
+
   const payload = await readPayload(request);
   const email = typeof payload.email === 'string' ? payload.email.trim() : '';
   const password = typeof payload.password === 'string' ? payload.password : '';
@@ -69,16 +75,43 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: INVALID_MESSAGE }, { status: 401 });
   }
 
-  const accounts = collectAccounts();
-  const account = findMatchingAccount(accounts, email, password);
+  // Сначала проверяем демо-аккаунты
+  const demoAccounts = collectAccounts();
+  const demoAccount = findMatchingAccount(demoAccounts, email, password);
 
-  if (!account) {
-    return NextResponse.json({ error: INVALID_MESSAGE }, { status: 401 });
+  if (demoAccount) {
+    // Получаем пользователя из БД для получения userId
+    const user = usersRepository.findByEmail(demoAccount.email);
+    const userId = user?.id || demoAccount.email; // Fallback на email для обратной совместимости
+    const sessionToken = encodeDemoSession({ 
+      email: demoAccount.email, 
+      userId,
+      role: demoAccount.role, 
+      issuedAt: Date.now() 
+    });
+    const redirectPath = resolveReturnPath(payload.returnTo);
+    const response = NextResponse.json({ redirect: redirectPath });
+    return withSessionCookie(response, sessionToken);
   }
 
-  const sessionToken = encodeDemoSession({ email: account.email, role: account.role, issuedAt: Date.now() });
-  const redirectPath = resolveReturnPath(payload.returnTo);
-  const response = NextResponse.json({ redirect: redirectPath });
+  // Затем проверяем пользователей из БД
+  const user = usersRepository.findByEmail(email);
+  if (user && user.passwordHash) {
+    const isValidPassword = verifyPassword(password, user.passwordHash);
+    if (isValidPassword) {
+      // Определяем роль: если это админ по email, то admin, иначе user
+      const role: DemoRole = email.toLowerCase() === getDemoAccount('admin').email.toLowerCase() ? 'admin' : 'user';
+      const sessionToken = encodeDemoSession({ 
+        email: user.email, 
+        userId: user.id,
+        role, 
+        issuedAt: Date.now() 
+      });
+      const redirectPath = resolveReturnPath(payload.returnTo);
+      const response = NextResponse.json({ redirect: redirectPath });
+      return withSessionCookie(response, sessionToken);
+    }
+  }
 
-  return withSessionCookie(response, sessionToken);
+  return NextResponse.json({ error: INVALID_MESSAGE }, { status: 401 });
 }

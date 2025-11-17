@@ -1,0 +1,117 @@
+/**
+ * API endpoint для генерации подзадач
+ * 
+ * POST /api/ai/generate-subtasks
+ * 
+ * Генерирует типовые подзадачи для задачи
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { generateText } from '@/lib/ai/client';
+import { 
+  generateSubtasks
+} from '@/api/src/services/ai-planning-service';
+import { getAuthFromRequest } from '@/lib/api/finance-access';
+import { jsonError, jsonOk } from '@/lib/api/http';
+import { getTasksRepository } from '@/api/src/repositories/tasks-repository';
+
+/**
+ * Адаптер для использования AI клиента в сервисе
+ */
+const aiClientAdapter = {
+  generateText: async (
+    prompt: string, 
+    options?: { maxTokens?: number; temperature?: number; systemPrompt?: string }
+  ) => {
+    return await generateText(prompt, options);
+  }
+};
+
+export async function POST(req: NextRequest) {
+  try {
+    // Проверка авторизации
+    const auth = getAuthFromRequest(req);
+    if (!auth) {
+      return jsonError('UNAUTHORIZED', { status: 401 });
+    }
+
+    // Парсинг тела запроса
+    const body = await req.json();
+    const { taskTitle, taskDescription, taskId } = body;
+
+    // Валидация
+    if (!taskTitle || typeof taskTitle !== 'string' || taskTitle.trim().length === 0) {
+      return jsonError('INVALID_REQUEST', { 
+        status: 400,
+        message: 'taskTitle is required and must be a non-empty string'
+      });
+    }
+
+    if (taskTitle.length > 500) {
+      return jsonError('INVALID_REQUEST', { 
+        status: 400,
+        message: 'taskTitle is too long (max 500 characters)'
+      });
+    }
+
+    if (taskDescription && taskDescription.length > 2000) {
+      return jsonError('INVALID_REQUEST', { 
+        status: 400,
+        message: 'taskDescription is too long (max 2000 characters)'
+      });
+    }
+
+    // Если указан taskId, проверяем права доступа
+    if (taskId) {
+      const tasksRepo = getTasksRepository();
+      const task = tasksRepo.findById(taskId);
+
+      if (!task) {
+        return jsonError('NOT_FOUND', { 
+          status: 404,
+          message: 'Task not found'
+        });
+      }
+
+      // TODO: Проверить, что пользователь имеет доступ к проекту задачи
+    }
+
+    // Генерация подзадач
+    const subtasks = await generateSubtasks(
+      aiClientAdapter,
+      taskTitle,
+      taskDescription
+    );
+
+    return jsonOk({ 
+      taskTitle,
+      subtasks,
+      generatedAt: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Error generating subtasks:', error);
+    
+    if (error instanceof Error) {
+      if (error.message.includes('API key')) {
+        return jsonError('AI_SERVICE_ERROR', { 
+          status: 503,
+          message: 'AI service is not configured'
+        });
+      }
+      
+      if (error.message.includes('rate limit')) {
+        return jsonError('AI_SERVICE_ERROR', { 
+          status: 429,
+          message: 'AI service rate limit exceeded'
+        });
+      }
+    }
+
+    return jsonError('AI_SERVICE_ERROR', { 
+      status: 500,
+      message: 'Failed to generate subtasks'
+    });
+  }
+}
+

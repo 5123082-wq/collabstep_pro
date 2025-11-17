@@ -8,7 +8,15 @@ export type FeatureFlagKey =
   | 'tasksWorkspace'
   | 'financeAutomations'
   | 'projectActivityAudit'
-  | 'taskTimeTracking';
+  | 'taskTimeTracking'
+  | 'pmNavProjectsAndTasks'
+  | 'pmProjectsList'
+  | 'pmProjectCard'
+  | 'pmTasksBoard'
+  | 'pmTasksList'
+  | 'pmTasksCalendar'
+  | 'pmDashboard'
+  | 'pmArchive';
 
 export type FeatureFlagDefinition = {
   env: string;
@@ -36,7 +44,7 @@ export const featureFlagRegistry = {
   projectsOverview: {
     env: 'NEXT_PUBLIC_FEATURE_PROJECTS_OVERVIEW',
     stage: 2,
-    description: 'Новый обзор проектов /app/projects.',
+    description: 'Обзор проектов /app/projects (Stage 2: табы, фильтры, пресеты).',
     default: true
   },
   projectCreateWizard: {
@@ -55,7 +63,7 @@ export const featureFlagRegistry = {
     env: 'NEXT_PUBLIC_FEATURE_BUDGET_LIMITS',
     stage: 5,
     description: 'Управление бюджетом, лимитами и предупреждениями.',
-    default: false
+    default: true
   },
   tasksWorkspace: {
     env: 'NEXT_PUBLIC_FEATURE_TASKS_WORKSPACE',
@@ -67,7 +75,7 @@ export const featureFlagRegistry = {
     env: 'NEXT_PUBLIC_FEATURE_FINANCE_AUTOMATIONS',
     stage: 8,
     description: 'Автоматизации финансов и журнал срабатываний.',
-    default: false
+    default: true
   },
   projectActivityAudit: {
     env: 'NEXT_PUBLIC_FEATURE_PROJECT_ACTIVITY_AUDIT',
@@ -79,6 +87,54 @@ export const featureFlagRegistry = {
     env: 'NEXT_PUBLIC_FEATURE_TASK_TIME_TRACKING',
     stage: 4,
     description: 'Учёт и трекинг времени по задачам.',
+    default: true
+  },
+  pmNavProjectsAndTasks: {
+    env: 'NEXT_PUBLIC_FEATURE_PM_NAV_PROJECTS_AND_TASKS',
+    stage: 0,
+    description: 'Навигация раздела «Проекты и задачи».',
+    default: true
+  },
+  pmProjectsList: {
+    env: 'NEXT_PUBLIC_FEATURE_PM_PROJECTS_LIST',
+    stage: 1,
+    description: 'Список проектов с фильтрами и сортировками.',
+    default: true
+  },
+  pmProjectCard: {
+    env: 'NEXT_PUBLIC_FEATURE_PM_PROJECT_CARD',
+    stage: 1,
+    description: 'Карточка проекта с KPI и связками.',
+    default: true
+  },
+  pmTasksBoard: {
+    env: 'NEXT_PUBLIC_FEATURE_PM_TASKS_BOARD',
+    stage: 2,
+    description: 'Kanban доска для задач.',
+    default: true
+  },
+  pmTasksList: {
+    env: 'NEXT_PUBLIC_FEATURE_PM_TASKS_LIST',
+    stage: 2,
+    description: 'Список задач (Excel-подобный) с инлайн-редактированием.',
+    default: true
+  },
+  pmTasksCalendar: {
+    env: 'NEXT_PUBLIC_FEATURE_PM_TASKS_CALENDAR',
+    stage: 2,
+    description: 'Календарное представление задач.',
+    default: true
+  },
+  pmDashboard: {
+    env: 'NEXT_PUBLIC_FEATURE_PM_DASHBOARD',
+    stage: 3,
+    description: 'Дашборд с виджетами: Пульс, Прогресс, Нагрузка, Финансы.',
+    default: true
+  },
+  pmArchive: {
+    env: 'NEXT_PUBLIC_FEATURE_PM_ARCHIVE',
+    stage: 4,
+    description: 'Архив проектов с возможностью восстановления.',
     default: true
   }
 } as const satisfies Record<FeatureFlagKey, FeatureFlagDefinition>;

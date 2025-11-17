@@ -143,6 +143,15 @@ export class AdminUserControlsRepository {
     memory.ADMIN_USER_CONTROLS[idx] = next;
     return cloneControl(next);
   }
+
+  delete(userId: string): boolean {
+    const idx = memory.ADMIN_USER_CONTROLS.findIndex((item) => item.userId === userId);
+    if (idx === -1) {
+      return false;
+    }
+    memory.ADMIN_USER_CONTROLS.splice(idx, 1);
+    return true;
+  }
 }
 
 export const adminUserControlsRepository = new AdminUserControlsRepository();

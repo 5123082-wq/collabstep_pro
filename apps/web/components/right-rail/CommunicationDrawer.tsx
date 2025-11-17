@@ -105,7 +105,7 @@ export default function CommunicationDrawer() {
                     <Icon className="h-4 w-4" aria-hidden="true" />
                     {tab.label}
                     {showBadge ? (
-                      <span className="absolute -top-1 -right-1 rounded-full bg-indigo-500/20 px-1.5 py-[2px] text-[10px] font-semibold text-indigo-200">
+                      <span className="absolute -top-1 -right-1 rounded-full bg-indigo-500/20 px-1.5 py-[2px] text-xs font-semibold text-indigo-200">
                         {badge}
                       </span>
                     ) : null}

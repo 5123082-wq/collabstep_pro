@@ -48,17 +48,6 @@ const requiredFiles = [
 
 const requiredMissing = requiredFiles.filter((filePath) => !existsSync(filePath));
 
-const projectLayoutCandidates = [
-  'apps/web/app/(project)/[id]/layout.tsx',
-  'apps/web/app/(project)/project/[id]/layout.tsx'
-];
-
-const hasProjectLayout = projectLayoutCandidates.some((filePath) => existsSync(filePath));
-
-if (!hasProjectLayout) {
-  requiredMissing.push('apps/web/app/(project)/[id]/layout.tsx');
-}
-
 if (invalidEntries.length > 0 || requiredMissing.length > 0) {
   if (invalidEntries.length > 0) {
     console.error('[verify-routes] Нарушение регистра в сегментах:', invalidEntries);

@@ -1,4 +1,5 @@
 import type { MarketplaceTemplate } from '@/lib/marketplace/types';
+import { ContentBlock } from '@/components/ui/content-block';
 
 const categoryLabels: Record<string, string> = {
   logo: 'Логотипы',
@@ -9,7 +10,7 @@ const categoryLabels: Record<string, string> = {
 
 export default function TemplateMetaGrid({ template }: { template: MarketplaceTemplate }) {
   return (
-    <section className="grid gap-6 rounded-2xl border border-neutral-800/80 bg-neutral-950/40 p-6 sm:grid-cols-2">
+    <ContentBlock as="section" size="sm" className="grid gap-6 sm:grid-cols-2">
       <div>
         <p className="text-xs uppercase tracking-[0.32em] text-neutral-500">Категория</p>
         <p className="text-base font-semibold text-neutral-100">{categoryLabels[template.category]}</p>
@@ -29,6 +30,6 @@ export default function TemplateMetaGrid({ template }: { template: MarketplaceTe
         <p className="text-xs uppercase tracking-[0.32em] text-neutral-500">Продажи</p>
         <p className="text-base font-semibold text-neutral-100">{template.salesCount}</p>
       </div>
-    </section>
+    </ContentBlock>
   );
 }

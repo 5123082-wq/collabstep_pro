@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 
 const projects = [
   {
@@ -49,8 +50,8 @@ export default function ProjectsPage() {
       </header>
       <section className="mt-12 grid gap-6 sm:grid-cols-2">
         {projects.map((project) => (
-          <article key={project.title} className="rounded-2xl border border-neutral-900 bg-neutral-900/50 p-6">
-            <h2 className="text-xl font-semibold">{project.title}</h2>
+          <ContentBlock key={project.title} as="article" size="sm">
+            <ContentBlockTitle as="h2">{project.title}</ContentBlockTitle>
             <p className="mt-3 text-sm text-neutral-400">{project.description}</p>
             <Link
               href={project.href}
@@ -58,7 +59,7 @@ export default function ProjectsPage() {
             >
               Откликнуться
             </Link>
-          </article>
+          </ContentBlock>
         ))}
       </section>
     </main>

@@ -16,6 +16,7 @@ import type { DemoSession } from '@/lib/auth/demo-session';
 import { getRolesForDemoAccount, setUserRoles } from '@/lib/auth/roles';
 import { toast } from '@/lib/ui/toast';
 import { useQueryToast } from '@/lib/ui/useQueryToast';
+import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
 
 const TOAST_MESSAGES: Record<string, { message: string; tone?: 'info' | 'success' | 'warning' }> = {
   'register-success': { message: 'Регистрация успешна', tone: 'success' },
@@ -35,6 +36,7 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
   const [isLoggingOut, setLoggingOut] = useState(false);
   const roles = useMemo(() => getRolesForDemoAccount(session.email, session.role), [session.email, session.role]);
   useQueryToast(TOAST_MESSAGES);
+  useUnreadNotifications(session.userId);
 
   const openCreateMenu = useCallback(() => {
     setCreateOpen(true);
@@ -115,7 +117,7 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
     <AppShellProvider openCreateMenu={openCreateMenu} openCommandPalette={openCommandPalette}>
       <div className="flex h-screen min-h-0 max-h-screen overflow-hidden bg-transparent text-[color:var(--text-primary)]">
         <Sidebar roles={roles} />
-        <div className="flex h-full min-h-0 flex-1 flex-col">
+        <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
           <AppTopbar
             profile={{ email: session.email, role: session.role }}
             onOpenCreate={openCreateMenu}
@@ -124,8 +126,8 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
             onLogout={handleLogout}
             isLoggingOut={isLoggingOut}
           />
-          <div className="flex flex-1 min-h-0 overflow-hidden bg-[color:var(--surface-base)]">
-            <ContentContainer className={isHoverRailEnabled ? 'lg:pr-6 xl:pr-10' : ''}>
+          <div className="flex flex-1 min-h-0 min-w-0 overflow-hidden bg-[color:var(--surface-base)]">
+            <ContentContainer>
               {children}
             </ContentContainer>
           </div>

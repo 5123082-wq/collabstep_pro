@@ -1,4 +1,4 @@
-import { memory } from '../data/memory';
+import { memory, isAdminUserId } from '../data/memory';
 import type { Project, ProjectMember, ProjectStage, ProjectStatus, ProjectType, ProjectVisibility } from '../types';
 
 function cloneProject(project: Project): Project {
@@ -39,6 +39,9 @@ export class ProjectsRepository {
 
   findById(id: string): Project | null {
     const project = memory.PROJECTS.find((item) => item.id === id);
+    if (!project) {
+      console.log(`[ProjectsRepository] Project not found by ID: ${id}, totalProjects=${memory.PROJECTS.length}, projectIds=[${memory.PROJECTS.map(p => p.id).join(', ')}]`);
+    }
     return project ? cloneProject(project) : null;
   }
 
@@ -56,6 +59,12 @@ export class ProjectsRepository {
     if (!project) {
       return false;
     }
+    
+    // Administrators have access to all projects
+    if (isAdminUserId(userId)) {
+      return true;
+    }
+    
     // Public projects are accessible to everyone
     if (project.visibility === 'public') {
       return true;
@@ -64,7 +73,12 @@ export class ProjectsRepository {
     if (project.visibility === 'private') {
       const isOwner = project.ownerId === userId;
       const isMember = this.getMember(projectId, userId) !== null;
-      return isOwner || isMember;
+      const hasAccess = isOwner || isMember;
+      // Логирование для отладки
+      if (!hasAccess) {
+        console.log(`[ProjectsRepository] Access denied: projectId=${projectId}, userId=${userId}, ownerId=${project.ownerId}, isOwner=${isOwner}, isMember=${isMember}`);
+      }
+      return hasAccess;
     }
     return false;
   }
@@ -170,6 +184,8 @@ export class ProjectsRepository {
       project.type = type;
     }
     memory.PROJECTS.push(project);
+    console.log(`[ProjectsRepository] Created project: id=${project.id}, workspaceId=${project.workspaceId}, ownerId=${project.ownerId}, title=${project.title}, totalProjects=${memory.PROJECTS.length}`);
+    
     return cloneProject(project);
   }
 
@@ -276,6 +292,7 @@ export class ProjectsRepository {
     }
 
     memory.PROJECTS[idx] = next;
+    
     return cloneProject(next);
   }
 
@@ -284,11 +301,13 @@ export class ProjectsRepository {
     if (idx === -1) {
       return false;
     }
+    const project = memory.PROJECTS[idx];
     memory.PROJECTS.splice(idx, 1);
     memory.TASKS = memory.TASKS.filter((task) => task.projectId !== id);
     memory.ITERATIONS = memory.ITERATIONS.filter((iteration) => iteration.projectId !== id);
     delete memory.WORKFLOWS[id];
     delete memory.PROJECT_MEMBERS[id];
+    
     return true;
   }
 

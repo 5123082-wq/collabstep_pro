@@ -45,6 +45,6 @@ export async function POST(request: NextRequest): Promise<DemoLoginResponse> {
   const account = getDemoAccount(role);
 
   const sessionToken = encodeDemoSession({ email: account.email, role, issuedAt: Date.now() });
-  const response = NextResponse.redirect(new URL('/app/dashboard', request.url), { status: 303 });
+  const response = NextResponse.redirect(new URL('/dashboard', request.url), { status: 303 });
   return withSessionCookie(response, sessionToken);
 }

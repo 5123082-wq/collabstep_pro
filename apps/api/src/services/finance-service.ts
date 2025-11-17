@@ -283,6 +283,75 @@ export class FinanceService {
 
       await this.recalculateBudget(inserted.projectId);
 
+      // Автоматизация: проверка превышения лимита бюджета
+      const financeAutomationsEnabled =
+        process.env.NEXT_PUBLIC_FEATURE_FINANCE_AUTOMATIONS === '1' ||
+        process.env.FEATURE_FINANCE_AUTOMATIONS === '1' ||
+        process.env.NEXT_PUBLIC_FEATURE_FINANCE_AUTOMATIONS?.toLowerCase() === 'true' ||
+        process.env.FEATURE_FINANCE_AUTOMATIONS?.toLowerCase() === 'true';
+
+      if (financeAutomationsEnabled) {
+        const budgetSnapshot = await this.getBudget(inserted.projectId);
+        if (budgetSnapshot && budgetSnapshot.total) {
+          const spentCents = amountToCents(budgetSnapshot.spentTotal);
+          const limitCents = amountToCents(budgetSnapshot.total);
+
+          // Проверяем превышение общего лимита
+          if (spentCents > limitCents && inserted.status !== 'pending') {
+            // Переводим трату в pending
+            const updatedExpense = await this.expenseStore.changeStatus(inserted.id, 'pending', {
+              actorId: 'system'
+            });
+
+            if (updatedExpense) {
+              // Записываем событие автоматизации
+              createAuditEntry({
+                actorId: 'system',
+                action: 'automation.triggered',
+                projectId: inserted.projectId,
+                workspaceId: inserted.workspaceId,
+                entity: { type: 'expense', id: inserted.id },
+                after: {
+                  automationType: 'budget_limit_exceeded',
+                  expenseId: inserted.id,
+                  previousStatus: inserted.status,
+                  newStatus: 'pending',
+                  budgetLimit: budgetSnapshot.total,
+                  budgetSpent: budgetSnapshot.spentTotal,
+                  exceededBy: centsToAmount(spentCents - limitCents)
+                }
+              });
+
+              emitEvent('automation.triggered', inserted.id, {
+                automationType: 'budget_limit_exceeded',
+                expenseId: inserted.id,
+                previousStatus: inserted.status,
+                newStatus: 'pending',
+                budgetLimit: budgetSnapshot.total,
+                budgetSpent: budgetSnapshot.spentTotal
+              });
+
+              // Отправляем событие для телеметрии (будет обработано на клиенте)
+              emitEvent('pm_expense_limit_breached', inserted.id, {
+                expenseId: inserted.id,
+                projectId: inserted.projectId,
+                budgetLimit: budgetSnapshot.total,
+                budgetSpent: budgetSnapshot.spentTotal,
+                exceededBy: centsToAmount(spentCents - limitCents)
+              });
+
+              emitEvent('pm_automation_triggered', inserted.id, {
+                automationType: 'budget_limit_exceeded',
+                expenseId: inserted.id,
+                projectId: inserted.projectId
+              });
+
+              return updatedExpense;
+            }
+          }
+        }
+      }
+
       return inserted;
     });
   }

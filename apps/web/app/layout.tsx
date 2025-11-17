@@ -1,6 +1,5 @@
 import '@/styles/globals.css';
 import '@/styles/layout.css';
-import '@/styles/section-themes.css';
 import { Inter } from 'next/font/google';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
@@ -21,7 +20,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="ru" className={inter.variable}>
+    <html 
+      lang="ru" 
+      className={inter.variable}
+      suppressHydrationWarning
+    >
       <head>
         <ThemeScript />
       </head>

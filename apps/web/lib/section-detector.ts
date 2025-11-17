@@ -26,40 +26,40 @@ export function detectSectionFromPath(pathname: string): GlobalSectionId | null 
   
   const normalized = pathname.split('?')[0] || ''; // Убираем query параметры
   
-  if (normalized.startsWith('/app/dashboard') || normalized === '/app') {
+  if (normalized.startsWith('/dashboard') || normalized === '/') {
     return 'dashboard';
   }
-  if (normalized.startsWith('/app/projects') || normalized.startsWith('/project')) {
+  if (normalized.startsWith('/projects') || normalized.startsWith('/project')) {
     return 'projects';
   }
   if (normalized.startsWith('/market')) {
     return 'marketplace';
   }
-  if (normalized.startsWith('/app/performers')) {
+  if (normalized.startsWith('/performers')) {
     return 'performers';
   }
-  if (normalized.startsWith('/app/marketing')) {
+  if (normalized.startsWith('/marketing')) {
     return 'marketing';
   }
-  if (normalized.startsWith('/app/ai-hub')) {
+  if (normalized.startsWith('/ai-hub')) {
     return 'ai-hub';
   }
-  if (normalized.startsWith('/app/community')) {
+  if (normalized.startsWith('/community')) {
     return 'community';
   }
-  if (normalized.startsWith('/app/finance')) {
+  if (normalized.startsWith('/finance')) {
     return 'finance';
   }
-  if (normalized.startsWith('/app/docs')) {
+  if (normalized.startsWith('/docs')) {
     return 'docs';
   }
-  if (normalized.startsWith('/app/org')) {
+  if (normalized.startsWith('/org')) {
     return 'org';
   }
-  if (normalized.startsWith('/app/support')) {
+  if (normalized.startsWith('/support')) {
     return 'support';
   }
-  if (normalized.startsWith('/app/admin')) {
+  if (normalized.startsWith('/admin')) {
     return 'admin';
   }
   

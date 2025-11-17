@@ -16,8 +16,8 @@ export default function AppShellError({ reset }: RouteErrorProps) {
           description="Обновите страницу — мы попробуем восстановить последний контекст проекта."
           reset={reset}
           links={[
-            { href: '/app/dashboard', label: 'Перейти в дэшборд' },
-            { href: '/project', label: 'К проектам' }
+            { href: '/dashboard', label: 'Перейти в дэшборд' },
+            { href: '/projects', label: 'К проектам' }
           ]}
         />
       </div>

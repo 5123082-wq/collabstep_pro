@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { ContentBlock } from '@/components/ui/content-block';
 import { defaultRailConfig } from '@/mocks/rail';
 import { cn } from '@/lib/utils';
 import { useRailPreferencesStore } from '@/stores/railPreferences';
@@ -46,7 +47,7 @@ export default function RailSettingsDrawer() {
           <p className="text-xs text-neutral-400">Выберите действия, которые будут доступны в правом меню.</p>
         </SheetHeader>
         <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 py-6">
-          <form className="rounded-2xl border border-neutral-800/80 bg-neutral-950/60 p-4" onSubmit={handleSubmit}>
+          <ContentBlock size="sm" as="form" onSubmit={handleSubmit}>
             <h3 className="text-sm font-semibold text-neutral-100">Добавить горячую кнопку</h3>
             <p className="mt-1 text-xs text-neutral-400">
               Укажите название, ссылку и иконку. Кнопка появится в правом меню.
@@ -95,7 +96,7 @@ export default function RailSettingsDrawer() {
             >
               Добавить кнопку
             </button>
-          </form>
+          </ContentBlock>
 
           <div>
             <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">Быстрые действия</h3>
@@ -104,8 +105,9 @@ export default function RailSettingsDrawer() {
                 const Icon = action.icon;
                 const enabled = enabledActionIds.includes(action.id);
                 return (
-                  <li key={action.id} className="rounded-2xl border border-neutral-800 bg-neutral-950/70 p-4">
-                    <div className="flex items-center justify-between gap-4">
+                  <li key={action.id}>
+                    <ContentBlock size="sm">
+                      <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-3">
                         <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-900/80 text-neutral-200">
                           <Icon className="h-5 w-5" aria-hidden="true" />
@@ -147,6 +149,7 @@ export default function RailSettingsDrawer() {
                         </button>
                       </div>
                     </div>
+                    </ContentBlock>
                   </li>
                 );
               })}
@@ -154,7 +157,8 @@ export default function RailSettingsDrawer() {
                 const Icon = CUSTOM_RAIL_ICONS[action.icon]?.icon;
                 const enabled = enabledActionIds.includes(action.id);
                 return (
-                  <li key={action.id} className="rounded-2xl border border-indigo-900/60 bg-indigo-950/40 p-4">
+                  <li key={action.id}>
+                    <ContentBlock size="sm" variant="primary">
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-3">
                         <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-200">
@@ -206,12 +210,17 @@ export default function RailSettingsDrawer() {
                         </button>
                       </div>
                     </div>
+                    </ContentBlock>
                   </li>
                 );
               })}
               {customActions.length === 0 ? (
-                <li className="rounded-2xl border border-neutral-800/70 bg-neutral-950/50 p-4 text-xs text-neutral-500">
-                  Добавьте собственные кнопки, чтобы быстрее переходить к нужным страницам.
+                <li>
+                  <ContentBlock size="sm" variant="muted">
+                    <p className="text-xs text-neutral-500">
+                      Добавьте собственные кнопки, чтобы быстрее переходить к нужным страницам.
+                    </p>
+                  </ContentBlock>
                 </li>
               ) : null}
             </ol>

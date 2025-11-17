@@ -1,0 +1,166 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { flags } from '@/lib/flags';
+import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
+import { 
+  projectsRepository, 
+  tasksRepository,
+  usersRepository,
+  DEFAULT_WORKSPACE_ID 
+} from '@collabverse/api';
+import { jsonError, jsonOk } from '@/lib/api/http';
+import { transformProject as transformProjectFromAggregator, buildTaskMetrics } from '@/lib/pm/stage2-aggregator';
+import type { Project } from '@/types/pm';
+
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: { id: string } }
+): Promise<NextResponse> {
+  if (!flags.PM_NAV_PROJECTS_AND_TASKS || !flags.PM_PROJECT_CARD) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  const auth = getAuthFromRequest(_req);
+  if (!auth) {
+    return jsonError('UNAUTHORIZED', { status: 401 });
+  }
+
+  // Логируем все проекты в памяти для отладки
+  const allProjects = projectsRepository.list();
+  console.log(`[Project API GET] Looking for project: id=${params.id}, userId=${auth.userId}, totalProjects=${allProjects.length}`);
+  if (allProjects.length > 0) {
+    console.log(`[Project API GET] Available project IDs: [${allProjects.map(p => p.id).join(', ')}]`);
+  }
+  
+  // Try to find project by ID first
+  let apiProject = projectsRepository.findById(params.id);
+  
+  // If not found by ID, try to find by key (assuming default workspace)
+  if (!apiProject) {
+    console.log(`[Project API GET] Project not found by ID, trying findByKey: workspaceId=${DEFAULT_WORKSPACE_ID}, key=${params.id}`);
+    apiProject = projectsRepository.findByKey(DEFAULT_WORKSPACE_ID, params.id);
+  }
+  
+  if (!apiProject) {
+    console.error(`[Project API GET] Project not found: id=${params.id}, userId=${auth.userId}, totalProjects=${allProjects.length}`);
+    return jsonError('NOT_FOUND', { status: 404 });
+  }
+  
+  console.log(`[Project API GET] Project found: id=${apiProject.id}, workspaceId=${apiProject.workspaceId}, ownerId=${apiProject.ownerId}`);
+
+  // Check if user has access to the project
+  const hasAccess = projectsRepository.hasAccess(apiProject.id, auth.userId);
+  if (!hasAccess) {
+    console.error(`[Project API] Access denied: projectId=${apiProject.id}, userId=${auth.userId}, ownerId=${apiProject.ownerId}, visibility=${apiProject.visibility}`);
+    return jsonError('ACCESS_DENIED', { status: 403 });
+  }
+
+  // Получаем все необходимые данные для трансформации проекта
+  const members = projectsRepository.listMembers(apiProject.id);
+  const allTasks = tasksRepository.list({ projectId: apiProject.id });
+  const metricsMap = buildTaskMetrics(allTasks);
+  const resolvedMetrics = metricsMap.get(apiProject.id) ?? {
+    total: 0,
+    inProgress: 0,
+    overdue: 0,
+    completed: 0,
+    activity7d: 0,
+    progressPct: 0
+  };
+  
+  const owner = usersRepository.findById(apiProject.ownerId);
+
+  // Используем функцию трансформации из aggregator
+  // listing получается внутри transformProject, поэтому не передаем его отдельно
+  const project = transformProjectFromAggregator(
+    apiProject, 
+    members, 
+    resolvedMetrics, 
+    owner ? {
+      id: owner.id,
+      name: owner.name,
+      email: owner.email
+    } : null
+  );
+
+  return jsonOk({ project });
+}
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+): Promise<NextResponse> {
+  if (!flags.PM_NAV_PROJECTS_AND_TASKS || !flags.PM_PROJECT_CARD) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  const auth = getAuthFromRequest(req);
+  if (!auth) {
+    return jsonError('UNAUTHORIZED', { status: 401 });
+  }
+
+  // Try to find project by ID first
+  let apiProject = projectsRepository.findById(params.id);
+  
+  // If not found by ID, try to find by key (assuming default workspace)
+  if (!apiProject) {
+    apiProject = projectsRepository.findByKey(DEFAULT_WORKSPACE_ID, params.id);
+  }
+  
+  if (!apiProject) {
+    return jsonError('NOT_FOUND', { status: 404 });
+  }
+
+  const role = getProjectRole(apiProject.id, auth.userId);
+  if (role !== 'owner' && role !== 'admin') {
+    return jsonError('ACCESS_DENIED', { status: 403 });
+  }
+
+  try {
+    const body = await req.json();
+    const updated = projectsRepository.update(apiProject.id, body);
+    return jsonOk({ project: updated });
+  } catch (error) {
+    return jsonError('INVALID_REQUEST', { status: 400 });
+  }
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+): Promise<NextResponse> {
+  if (!flags.PM_NAV_PROJECTS_AND_TASKS) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  const auth = getAuthFromRequest(req);
+  if (!auth) {
+    return jsonError('UNAUTHORIZED', { status: 401 });
+  }
+
+  // Try to find project by ID first
+  let apiProject = projectsRepository.findById(params.id);
+  
+  // If not found by ID, try to find by key (assuming default workspace)
+  if (!apiProject) {
+    apiProject = projectsRepository.findByKey(DEFAULT_WORKSPACE_ID, params.id);
+  }
+  
+  if (!apiProject) {
+    return jsonError('NOT_FOUND', { status: 404 });
+  }
+
+  const role = getProjectRole(apiProject.id, auth.userId);
+  if (role !== 'owner' && role !== 'admin') {
+    return jsonError('ACCESS_DENIED', { status: 403 });
+  }
+
+  try {
+    projectsRepository.delete(apiProject.id);
+    console.log(`[Project API DELETE] Project deleted: id=${apiProject.id}, userId=${auth.userId}`);
+    return jsonOk({ deleted: true });
+  } catch (error: any) {
+    console.error(`[Project API DELETE] Error deleting project: ${error.message}`);
+    return jsonError('INTERNAL_ERROR', { status: 500 });
+  }
+}
+

@@ -8,7 +8,7 @@ const heroHighlights = [
 
 export default function Hero() {
   return (
-    <section className="bg-gradient-to-b from-neutral-900 via-neutral-950 to-neutral-950">
+    <section className="bg-gradient-to-b from-neutral-900 via-neutral-950 to-neutral-950 hero-gradient">
       <div className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-24 text-center sm:px-8 lg:px-12">
         <div className="space-y-4">
           <p className="text-sm uppercase tracking-[0.3em] text-indigo-400">Collabverse</p>

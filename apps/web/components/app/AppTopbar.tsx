@@ -4,11 +4,23 @@ import clsx from 'clsx';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useUiStore } from '@/lib/state/ui-store';
-import { loadSpecialists, loadVacancies } from '@/lib/mock/loaders';
+// TODO: Подключить к реальному API специалистов и вакансий
 import { toast } from '@/lib/ui/toast';
 import ThemeToggle from '@/components/app/ThemeToggle';
 import AccountMenu from '@/components/app/AccountMenu';
+import { marketingNavigation } from '@/components/marketing/app/MarketingLayoutShell';
+import { MARKETING_HUB_PATH, PM_HUB_PATH } from '@/components/app/LeftMenu.config';
+import { pmNavigation } from '@/components/pm/pmNavigation';
+import SectionNavigationBar from '@/components/app/SectionNavigationBar';
+import { marketplaceNavigation } from '@/components/marketplace/marketplaceNavigation';
+import { performersNavigation } from '@/components/performers/performersNavigation';
+import { aiHubNavigation } from '@/components/ai-hub/aiHubNavigation';
+import { communityNavigation } from '@/components/community/communityNavigation';
+import { financeNavigation } from '@/components/finance/financeNavigation';
+import { docsNavigation } from '@/components/docs/docsNavigation';
+import { orgNavigation } from '@/components/org/orgNavigation';
+import { supportNavigation } from '@/components/support/supportNavigation';
+import { adminNavigation } from '@/components/admin/adminNavigation';
 
 type QuickSuggestion = {
   id: string;
@@ -34,7 +46,7 @@ function IconButton({ icon, label }: { icon: keyof typeof iconPaths; label: stri
     <button
       type="button"
       className={clsx(
-        'group flex h-10 w-10 items-center justify-center rounded-full border transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
+        'group flex h-9 w-9 items-center justify-center rounded-full border transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
         'border-[color:var(--theme-control-border)] bg-[color:var(--theme-control-bg)] text-[color:var(--theme-control-foreground)]',
         'hover:border-[color:var(--theme-control-border-hover)] hover:text-[color:var(--theme-control-foreground-hover)]'
       )}
@@ -42,7 +54,7 @@ function IconButton({ icon, label }: { icon: keyof typeof iconPaths; label: stri
     >
       <svg
         aria-hidden="true"
-        className="h-5 w-5 transition group-hover:scale-105"
+        className="h-[18px] w-[18px] transition group-hover:scale-105"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -73,9 +85,9 @@ type AppTopbarProps = {
 export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings, profile, onLogout, isLoggingOut }: AppTopbarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const bgPreset = useUiStore((state) => state.bgPreset);
-  const { items: specialistItems } = loadSpecialists();
-  const { items: vacancyItems } = loadVacancies();
+  // TODO: Подключить к реальному API специалистов и вакансий
+  const specialistItems: Array<{ id: string; name: string; role: string; skills: string[]; handle: string }> = [];
+  const vacancyItems: Array<{ id: string; title: string; project: string; summary: string; tags: string[]; level: string }> = [];
   const [searchValue, setSearchValue] = useState('');
   const [isSearchFocused, setSearchFocused] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState(0);
@@ -207,20 +219,25 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
     : undefined;
   const currentSubscriptionLabel = 'Подписка Pro';
 
-  useEffect(() => {
-    const body = document.body;
-    const classes = ['app-bg-mesh', 'app-bg-grid', 'app-bg-halo', 'app-bg-sunrise', 'app-bg-mint', 'app-bg-lavender', 'app-bg-sands'];
-    body.classList.remove(...classes);
-    body.classList.add(`app-bg-${bgPreset}`);
-    return () => {
-      body.classList.remove(...classes);
-    };
-  }, [bgPreset]);
+  // Определяем текущий раздел для отображения панели навигации
+  // Важно: проверяем маркетинг ПЕРЕД маркетплейсом, так как /marketing начинается с /market
+  const isMarketingSection = pathname?.startsWith(MARKETING_HUB_PATH) ?? false;
+  const isPMSection = (pathname?.startsWith(PM_HUB_PATH) ?? false) && !pathname?.match(/^\/pm\/projects\/[^/]+/);
+  // Маркетплейс проверяем на /market/, чтобы не перехватывать /marketing
+  const isMarketplaceSection = pathname?.startsWith('/market/') ?? false;
+  const isPerformersSection = pathname?.startsWith('/performers') ?? false;
+  const isAiHubSection = pathname?.startsWith('/ai-hub') ?? false;
+  const isCommunitySection = pathname?.startsWith('/community') ?? false;
+  const isFinanceSection = pathname?.startsWith('/finance') ?? false;
+  const isDocsSection = pathname?.startsWith('/docs') ?? false;
+  const isOrgSection = pathname?.startsWith('/org') ?? false;
+  const isSupportSection = pathname?.startsWith('/support') ?? false;
+  const isAdminSection = pathname?.startsWith('/admin') ?? false;
 
   return (
     <header className="sticky top-0 z-40 border-b border-neutral-900/60 bg-neutral-950/80 backdrop-blur">
-      <div className="flex items-center justify-between gap-6 px-6 py-4">
-        <div className="flex flex-1 items-center gap-3">
+      <div className="flex items-center justify-between gap-[21.6px] px-[21.6px] py-[14.4px] min-w-0">
+        <div className="flex flex-1 items-center gap-[10.8px] min-w-0">
           <form
             className="relative hidden max-w-md flex-1 md:block"
             role="search"
@@ -253,13 +270,13 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
               aria-describedby={showMaskHint || showEmptyState ? hintId : undefined}
               role="combobox"
               aria-haspopup="listbox"
-              className="w-full rounded-2xl border border-neutral-800 bg-neutral-900/60 px-5 py-3 text-sm text-neutral-100 shadow-inner shadow-neutral-950/20 transition focus:border-indigo-500 focus:outline-none"
+              className="w-full rounded-2xl border border-neutral-800 bg-neutral-900/60 px-[18px] py-[7.2px] text-[12.6px] text-neutral-100 shadow-inner shadow-neutral-950/20 transition focus:border-indigo-500 focus:outline-none"
               autoComplete="off"
             />
             <button
               type="button"
               onClick={onOpenPalette}
-              className="absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-full border border-neutral-700 px-2 py-1 text-[10px] uppercase tracking-wide text-neutral-500 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 md:flex"
+              className="absolute right-[10.8px] top-1/2 hidden -translate-y-1/2 rounded-full border border-neutral-700 px-[7.2px] py-[3.6px] text-[9px] uppercase tracking-wide text-neutral-500 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 md:flex"
             >
               ⌘K
             </button>
@@ -276,15 +293,15 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
                           id={`${listboxId}-option-${suggestion.id}`}
                           onMouseEnter={() => setActiveSuggestion(index)}
                           onClick={() => handleSelectSuggestion(suggestion)}
-                          className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 ${
+                          className={`flex w-full items-center justify-between gap-[10.8px] px-[14.4px] py-[10.8px] text-left text-[12.6px] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 ${
                             index === activeSuggestion ? 'bg-indigo-500/10' : 'bg-transparent'
                           }`}
                         >
                           <div>
                             <p className="font-medium text-neutral-100">{suggestion.label}</p>
-                            <p className="text-xs text-neutral-500">{suggestion.description}</p>
+                            <p className="text-[10.8px] text-neutral-500">{suggestion.description}</p>
                           </div>
-                          <span className="text-[11px] uppercase tracking-wide text-neutral-500">
+                          <span className="text-[9.9px] uppercase tracking-wide text-neutral-500">
                             {suggestion.type === 'specialist' ? 'специалист' : 'вакансия'}
                           </span>
                         </button>
@@ -292,7 +309,7 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
                     ))}
                   </ul>
                 ) : (
-                  <div id={hintId} className="px-4 py-3 text-sm text-neutral-400">
+                  <div id={hintId} className="px-[14.4px] py-[10.8px] text-[12.6px] text-neutral-400">
                     {showMaskHint
                       ? 'Введите текст после маски @ или #, чтобы искать специалистов или вакансии.'
                       : 'Совпадений не найдено. Попробуйте изменить запрос.'}
@@ -304,22 +321,22 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
           <button
             type="button"
             onClick={onOpenCreate}
-            className="inline-flex items-center gap-2 rounded-2xl border border-indigo-500/50 bg-indigo-500/10 px-4 py-2 text-sm font-semibold text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+            className="inline-flex items-center gap-[7.2px] rounded-2xl border border-indigo-500/50 bg-indigo-500/10 px-[14.4px] py-[7.2px] text-[12.6px] font-semibold text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
           >
-            <span className="text-lg leading-none">+</span>
+            <span className="text-[16.2px] leading-none">+</span>
             Создать
           </button>
         </div>
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden items-center gap-[7.2px] md:flex">
           <button
             type="button"
             onClick={() => toast('Раздел тарифов скоро появится в демо-версии платформы', 'info')}
-            className="inline-flex items-center gap-2 rounded-2xl border border-indigo-500/60 bg-indigo-500/15 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+            className="inline-flex items-center gap-[7.2px] rounded-2xl border border-indigo-500/60 bg-indigo-500/15 px-[14.4px] py-[7.2px] text-[9.9px] font-semibold uppercase tracking-[0.18em] text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
           >
             <svg
               aria-hidden="true"
               viewBox="0 0 24 24"
-              className="h-4 w-4"
+              className="h-[14.4px] w-[14.4px]"
               fill="none"
               stroke="currentColor"
               strokeWidth={1.6}
@@ -340,11 +357,11 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
             {...(onOpenSettings && { onOpenSettings })}
           />
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-[7.2px]">
           <span
             data-testid="role-badge"
             className={clsx(
-              'rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide text-neutral-100',
+              'rounded-full px-[10.8px] py-[3.6px] text-[10.8px] font-semibold uppercase tracking-wide text-neutral-100',
               profile.role === 'admin'
                 ? 'bg-amber-500/20 text-amber-100 ring-1 ring-inset ring-amber-500/50'
                 : 'bg-indigo-500/20 text-indigo-100 ring-1 ring-inset ring-indigo-500/50'
@@ -354,6 +371,77 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
           </span>
         </div>
       </div>
+      {/* Панель навигации для всех разделов платформы */}
+      {isMarketingSection && (
+        <SectionNavigationBar
+          items={marketingNavigation}
+          ariaLabel="Навигация по разделам маркетинга"
+          basePath={MARKETING_HUB_PATH}
+          exactMatch={true}
+        />
+      )}
+      {isPMSection && (
+        <SectionNavigationBar
+          items={pmNavigation}
+          ariaLabel="Навигация по разделам проектов и задач"
+          basePath={PM_HUB_PATH}
+        />
+      )}
+      {isMarketplaceSection && (
+        <SectionNavigationBar
+          items={marketplaceNavigation}
+          ariaLabel="Навигация по разделам маркетплейса"
+        />
+      )}
+      {isPerformersSection && (
+        <SectionNavigationBar
+          items={performersNavigation}
+          ariaLabel="Навигация по разделам исполнителей"
+        />
+      )}
+      {isAiHubSection && (
+        <SectionNavigationBar
+          items={aiHubNavigation}
+          ariaLabel="Навигация по разделам AI-хаба"
+        />
+      )}
+      {isCommunitySection && (
+        <SectionNavigationBar
+          items={communityNavigation}
+          ariaLabel="Навигация по разделам комьюнити"
+        />
+      )}
+      {isFinanceSection && (
+        <SectionNavigationBar
+          items={financeNavigation}
+          ariaLabel="Навигация по разделам финансов"
+        />
+      )}
+      {isDocsSection && (
+        <SectionNavigationBar
+          items={docsNavigation}
+          ariaLabel="Навигация по разделам документов"
+        />
+      )}
+      {isOrgSection && (
+        <SectionNavigationBar
+          items={orgNavigation}
+          ariaLabel="Навигация по разделам организации"
+        />
+      )}
+      {isSupportSection && (
+        <SectionNavigationBar
+          items={supportNavigation}
+          ariaLabel="Навигация по разделам поддержки"
+        />
+      )}
+      {isAdminSection && (
+        <SectionNavigationBar
+          items={adminNavigation}
+          ariaLabel="Навигация по разделам админки"
+          basePath="/admin"
+        />
+      )}
     </header>
   );
 }

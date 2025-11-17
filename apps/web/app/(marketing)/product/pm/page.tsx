@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 
 const templates = [
   {
@@ -49,8 +50,8 @@ export default function ProductPMPage() {
       </header>
       <section className="mt-12 grid gap-6 sm:grid-cols-2">
         {templates.map((template) => (
-          <article key={template.title} className="rounded-2xl border border-neutral-900 bg-neutral-900/50 p-6">
-            <h2 className="text-xl font-semibold">{template.title}</h2>
+          <ContentBlock key={template.title} as="article" size="sm">
+            <ContentBlockTitle as="h2">{template.title}</ContentBlockTitle>
             <p className="mt-3 text-sm text-neutral-400">{template.description}</p>
             <Link
               href={template.href}
@@ -58,7 +59,7 @@ export default function ProductPMPage() {
             >
               Использовать шаблон
             </Link>
-          </article>
+          </ContentBlock>
         ))}
       </section>
     </main>

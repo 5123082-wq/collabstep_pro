@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 
 const demos = [
   {
@@ -49,8 +50,8 @@ export default function ProductAIPage() {
       </header>
       <section className="mt-12 grid gap-6 sm:grid-cols-2">
         {demos.map((demo) => (
-          <article key={demo.title} className="rounded-2xl border border-neutral-900 bg-neutral-900/50 p-6">
-            <h2 className="text-xl font-semibold">{demo.title}</h2>
+          <ContentBlock key={demo.title} as="article" size="sm">
+            <ContentBlockTitle as="h2">{demo.title}</ContentBlockTitle>
             <p className="mt-3 text-sm text-neutral-400">{demo.description}</p>
             <Link
               href={demo.href}
@@ -58,7 +59,7 @@ export default function ProductAIPage() {
             >
               Попробовать
             </Link>
-          </article>
+          </ContentBlock>
         ))}
       </section>
     </main>

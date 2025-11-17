@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomUUID } from 'crypto';
 import { DEFAULT_WORKSPACE_USER_ID, auditLogRepository } from '@collabverse/api';
 import type { AuditLogEntry } from '@collabverse/api';
 import { getDemoSessionFromCookies } from '@/lib/auth/demo-session.server';
@@ -14,7 +14,7 @@ type RecordAuditParams = {
 
 export function recordAudit(params: RecordAuditParams): AuditLogEntry {
   const session = getDemoSessionFromCookies();
-  const actorId = session?.email ?? DEFAULT_WORKSPACE_USER_ID;
+  const actorId = session?.userId ?? DEFAULT_WORKSPACE_USER_ID;
 
   return auditLogRepository.record({
     id: randomUUID(),

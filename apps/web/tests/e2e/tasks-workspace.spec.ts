@@ -1,6 +1,7 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
 import { captureConsole } from './utils/console';
 import { loginAsDemo } from './utils/auth';
+import { TEST_PROJECT_DEMO_ID } from '@collabverse/api';
 
 const appOrigin = 'http://127.0.0.1:3000';
 
@@ -32,38 +33,38 @@ test.describe('project tasks workspace', () => {
     const logs: string[] = [];
     captureConsole(page, logs);
 
-    await page.goto(`${appOrigin}/project/proj-admin-onboarding/tasks`);
+    await page.goto(`${appOrigin}/pm/projects/${TEST_PROJECT_DEMO_ID}/tasks`);
     const kanbanView = page.locator('[data-view-mode="kanban"]');
     await expect(kanbanView).toBeVisible();
 
     const inProgressCard = page
-      .locator('[data-status="in_progress"] [data-task-id="task-admin-brief-survey-report"]')
+      .locator('[data-status="in_progress"] [data-task-id="task-test-planning-roadmap"]')
       .first();
     await inProgressCard.waitFor({ state: 'visible' });
 
     const reviewColumn = page.locator('[data-status="review"]').first();
     await dragCard(page, inProgressCard, reviewColumn);
     await expect(
-      page.locator('[data-status="review"] [data-task-id="task-admin-brief-survey-report"]')
+      page.locator('[data-status="review"] [data-task-id="task-test-planning-roadmap"]')
     ).toBeVisible();
 
     const reviewCard = page
-      .locator('[data-status="review"] [data-task-id="task-admin-brief-survey-report"]')
+      .locator('[data-status="review"] [data-task-id="task-test-planning-roadmap"]')
       .first();
     await reviewCard.waitFor({ state: 'visible' });
     const progressColumn = page.locator('[data-status="in_progress"]').first();
     await dragCard(page, reviewCard, progressColumn);
     await expect(
-      page.locator('[data-status="in_progress"] [data-task-id="task-admin-brief-survey-report"]')
+      page.locator('[data-status="in_progress"] [data-task-id="task-test-planning-roadmap"]')
     ).toBeVisible();
 
     await page.getByRole('button', { name: 'Список' }).click();
     const listView = page.locator('[data-view-mode="list"]');
     await expect(listView).toBeVisible();
 
-    const epicRow = listView.locator('[data-task-row-id="task-admin-brief"]').first();
+    const epicRow = listView.locator('[data-task-row-id="task-test-planning"]').first();
     await expect(epicRow).toBeVisible();
-    const childRow = listView.locator('[data-task-row-id="task-admin-brief-survey"]').first();
+    const childRow = listView.locator('[data-task-row-id="task-test-planning-research"]').first();
     await expect(childRow).toBeVisible();
 
     await epicRow.getByRole('button', { name: 'Свернуть ветку' }).click();
@@ -72,7 +73,7 @@ test.describe('project tasks workspace', () => {
     await epicRow.getByRole('button', { name: 'Развернуть ветку' }).click();
     await expect(childRow).toBeVisible();
 
-    await expect(listView.locator('[data-task-row-id="task-admin-design-library-assets"]').first()).toBeVisible();
+    await expect(listView.locator('[data-task-row-id="task-test-design-mockups"]').first()).toBeVisible();
 
     expect(logs).toEqual([]);
   });

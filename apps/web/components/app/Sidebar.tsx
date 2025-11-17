@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { buildLeftMenu } from '@/lib/nav/menu-builder';
 import type { UserRole } from '@/lib/auth/roles';
 import { useUiStore } from '@/lib/state/ui-store';
-import { useMenuPreferencesStore } from '@/stores/menuPreferences';
+import { useMenuPreferencesStore, ALL_MENU_IDS } from '@/stores/menuPreferences';
 
 const iconMap: Record<string, string> = {
   dashboard: 'M4 4h16v16H4z',
@@ -32,7 +32,7 @@ type IconName = keyof typeof iconMap;
 function MenuIcon({ name, className }: { name: IconName; className?: string }) {
   return (
     <svg
-      className={clsx('h-4 w-4 flex-none text-indigo-200', className)}
+      className={clsx('h-3.5 w-3.5 flex-none text-indigo-200', className)}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -50,28 +50,76 @@ type SidebarProps = {
 export default function Sidebar({ roles }: SidebarProps) {
   const pathname = usePathname();
   const [normalizedPath = ''] = (pathname ?? '').split('?');
-  // Подписываемся на изменения видимости меню для перерисовки компонента
-  const visibleMenuIds = useMenuPreferencesStore((state) => state.visibleMenuIds);
-  const menu = useMemo(() => {
-    // visibleMenuIds нужен для перерисовки при изменении настроек, хотя buildLeftMenu получает его из store
-    return buildLeftMenu(roles);
-  }, [roles]); // eslint-disable-line react-hooks/exhaustive-deps
-  const { expandedGroups, toggleGroup, sidebarCollapsed, toggleSidebarCollapsed, setSidebarCollapsed } = useUiStore((state) => ({
-    expandedGroups: state.expandedGroups,
+  const [activeFlyout, setActiveFlyout] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+  
+  // Используем локальное состояние для предотвращения hydration errors
+  // Инициализируем одинаковые значения на сервере и клиенте, затем синхронизируем с store после монтирования
+  const [sidebarCollapsed, setLocalSidebarCollapsed] = useState(false);
+  const [visibleMenuIds, setVisibleMenuIds] = useState<string[]>(ALL_MENU_IDS);
+  const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
+  
+  // Получаем значения из stores для синхронизации после монтирования
+  const storeVisibleMenuIds = useMenuPreferencesStore((state) => state.visibleMenuIds);
+  const storeExpandedGroups = useUiStore((state) => state.expandedGroups);
+  const { toggleGroup, sidebarCollapsed: storeSidebarCollapsed, toggleSidebarCollapsed, setSidebarCollapsed, setExpandedGroups: setStoreExpandedGroups } = useUiStore((state) => ({
     toggleGroup: state.toggleGroup,
     sidebarCollapsed: state.sidebarCollapsed,
     toggleSidebarCollapsed: state.toggleSidebarCollapsed,
-    setSidebarCollapsed: state.setSidebarCollapsed
+    setSidebarCollapsed: state.setSidebarCollapsed,
+    setExpandedGroups: state.setExpandedGroups
   }));
-  const [activeFlyout, setActiveFlyout] = useState<string | null>(null);
+  
+  // Вычисляем меню с использованием useMemo для стабильности
+  // До монтирования используем дефолтные значения для предотвращения hydration errors
+  const menu = useMemo(() => {
+    // До монтирования всегда используем ALL_MENU_IDS для одинакового рендера на сервере и клиенте
+    const effectiveVisibleMenuIds = isMounted ? visibleMenuIds : ALL_MENU_IDS;
+    return buildLeftMenu(roles, effectiveVisibleMenuIds);
+  }, [roles, visibleMenuIds, isMounted]);
+
+  // Устанавливаем флаг монтирования и синхронизируем состояние только один раз после монтирования
+  useEffect(() => {
+    setIsMounted(true);
+    setLocalSidebarCollapsed(storeSidebarCollapsed);
+    setVisibleMenuIds(storeVisibleMenuIds);
+    setExpandedGroups(storeExpandedGroups);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Синхронизируем локальное состояние с store после монтирования
+  useEffect(() => {
+    if (!isMounted) {
+      return;
+    }
+    setLocalSidebarCollapsed(storeSidebarCollapsed);
+  }, [storeSidebarCollapsed, isMounted]);
+
+  // Синхронизируем visibleMenuIds с store после монтирования
+  useEffect(() => {
+    if (!isMounted) {
+      return;
+    }
+    setVisibleMenuIds(storeVisibleMenuIds);
+  }, [storeVisibleMenuIds, isMounted]);
+
+  // Синхронизируем expandedGroups с store после монтирования
+  useEffect(() => {
+    if (!isMounted) {
+      return;
+    }
+    setExpandedGroups(storeExpandedGroups);
+  }, [storeExpandedGroups, isMounted]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' || !isMounted) {
       return;
     }
 
     const mediaQuery = window.matchMedia('(max-width: 1023px)');
-    const applyValue = (value: boolean) => setSidebarCollapsed(value);
+    const applyValue = (value: boolean) => {
+      setSidebarCollapsed(value);
+      setLocalSidebarCollapsed(value);
+    };
     applyValue(mediaQuery.matches);
 
     const listener = (event: MediaQueryListEvent) => applyValue(event.matches);
@@ -83,7 +131,7 @@ export default function Sidebar({ roles }: SidebarProps) {
 
     mediaQuery.addListener(listener);
     return () => mediaQuery.removeListener(listener);
-  }, [setSidebarCollapsed]);
+  }, [setSidebarCollapsed, isMounted]);
 
   const isSectionActive = (href?: string, children?: typeof menu[number]['children']) => {
     if (href && normalizedPath.startsWith(href)) {
@@ -104,7 +152,11 @@ export default function Sidebar({ roles }: SidebarProps) {
   }, [normalizedPath]);
 
   const renderExpandedMenu = () => (
-    <nav aria-label="Навигация приложения" className="mt-6 flex flex-1 flex-col gap-2 overflow-y-auto pr-2">
+    <nav 
+      aria-label="Навигация приложения" 
+      className="sidebar-nav mt-6 flex flex-1 flex-col gap-2 overflow-y-auto pr-0.5"
+      style={{ scrollbarGutter: 'stable' }}
+    >
       {menu.map((section) => {
         const isExpanded = expandedGroups.includes(section.id) || !section.children;
         const hasChildren = Boolean(section.children?.length);
@@ -112,12 +164,12 @@ export default function Sidebar({ roles }: SidebarProps) {
 
         return (
           <div key={section.id} className="rounded-2xl border border-transparent hover:border-[color:var(--surface-border-subtle)]">
-            <div className="flex items-center justify-between px-3 py-2">
+            <div className="flex items-center justify-between px-2 py-1.5">
               {section.href ? (
                 <Link
                   href={section.href}
                   className={clsx(
-                    'flex flex-1 items-center gap-3 text-sm font-semibold text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                    'flex flex-1 items-center gap-2 text-sm font-semibold text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
                     active && 'text-[color:var(--text-primary)]'
                   )}
                 >
@@ -125,7 +177,7 @@ export default function Sidebar({ roles }: SidebarProps) {
                   {section.label}
                 </Link>
               ) : (
-                <div className="flex flex-1 items-center gap-3 text-sm font-semibold text-[color:var(--text-secondary)]">
+                <div className="flex flex-1 items-center gap-2 text-sm font-semibold text-[color:var(--text-secondary)]">
                   <MenuIcon name={(section.icon ?? 'dashboard') as IconName} />
                   {section.label}
                 </div>
@@ -133,21 +185,29 @@ export default function Sidebar({ roles }: SidebarProps) {
               {hasChildren && (
                 <button
                   type="button"
-                  onClick={() => toggleGroup(section.id)}
+                  onClick={() => {
+                    toggleGroup(section.id);
+                    // Обновляем локальное состояние сразу для мгновенной реакции UI
+                    const currentExpanded = expandedGroups.includes(section.id);
+                    const newExpandedGroups = currentExpanded
+                      ? expandedGroups.filter((id) => id !== section.id)
+                      : [...expandedGroups, section.id];
+                    setExpandedGroups(newExpandedGroups);
+                  }}
                   aria-expanded={isExpanded}
                   aria-label={(isExpanded ? 'Свернуть ' : 'Раскрыть ') + section.label}
-                  className="rounded-full border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] px-2 py-1 text-xs text-[color:var(--text-tertiary)] transition hover:border-indigo-500/40 hover:text-[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                  className="rounded-full border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] px-2 py-1 text-xs leading-none text-[color:var(--text-tertiary)] transition hover:border-indigo-500/40 hover:text-[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
                 >
                   {isExpanded ? '−' : '+'}
                 </button>
               )}
             </div>
             {hasChildren && isExpanded && (
-              <ul className="space-y-1 px-3 pb-3">
+              <ul className="space-y-1 px-2.5 pb-2">
                 {section.children?.map((child) => {
                   if (child.type === 'divider') {
                     return (
-                      <li key={child.id} role="separator" className="my-3 border-t border-[color:var(--surface-border-subtle)]" />
+                      <li key={child.id} role="separator" className="my-2 border-t border-[color:var(--surface-border-subtle)]" />
                     );
                   }
 
@@ -156,7 +216,7 @@ export default function Sidebar({ roles }: SidebarProps) {
                       <Link
                         href={child.href}
                         className={clsx(
-                          'block rounded-xl px-3 py-2 text-sm text-[color:var(--text-secondary)] transition hover:bg-indigo-500/10 hover:text-[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                          'block rounded-xl px-2.5 py-2 text-sm text-[color:var(--text-secondary)] transition hover:bg-indigo-500/10 hover:text-[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
                           normalizedPath === child.href && 'bg-indigo-500/10 text-[color:var(--text-primary)]'
                         )}
                       >
@@ -176,7 +236,7 @@ export default function Sidebar({ roles }: SidebarProps) {
   const renderCollapsedMenu = () => (
     <nav
       aria-label="Свёрнутая навигация приложения"
-      className="mt-4 flex flex-1 flex-col items-center gap-2 overflow-y-auto pb-4"
+      className="sidebar-nav mt-4 flex flex-1 flex-col items-center gap-2 overflow-y-auto pb-4"
     >
       {menu.map((section) => {
         const hasChildren = Boolean(section.children?.length);
@@ -291,30 +351,53 @@ export default function Sidebar({ roles }: SidebarProps) {
     <aside
       className={clsx(
         'flex h-full flex-shrink-0 flex-col overflow-hidden border-r border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] py-5 transition-[width] duration-300 ease-out',
-        sidebarCollapsed ? 'w-[72px] px-2' : 'w-[288px] px-4'
+        sidebarCollapsed ? 'w-[72px] px-2' : 'w-[230px] px-2'
       )}
       data-collapsed={sidebarCollapsed}
     >
-      <div className={clsx('flex items-center justify-between', sidebarCollapsed ? 'px-1' : 'px-2')}>
+      <div className={clsx('flex items-center justify-between', sidebarCollapsed ? 'px-1' : 'px-1.5')}>
         {!sidebarCollapsed && (
-          <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">Навигация</p>
+          <p className="font-mono text-xs font-semibold uppercase tracking-[0.15em] text-neutral-400">Collabverse</p>
         )}
-        <button
-          type="button"
-          onClick={toggleSidebarCollapsed}
-          className="flex h-8 w-8 items-center justify-center rounded-full border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] text-[color:var(--text-tertiary)] transition hover:border-indigo-500/40 hover:text-[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
-          aria-label={sidebarCollapsed ? 'Развернуть меню' : 'Свернуть меню'}
-        >
-          <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
-            {sidebarCollapsed ? (
-              <path d="M7 5l6 5-6 5" strokeLinecap="round" strokeLinejoin="round" />
-            ) : (
-              <path d="M13 5l-6 5 6 5" strokeLinecap="round" strokeLinejoin="round" />
-            )}
-          </svg>
-        </button>
+        <div className="flex items-center gap-1.5">
+          {!sidebarCollapsed && expandedGroups.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setStoreExpandedGroups([])}
+              aria-label="Свернуть все"
+              title="Свернуть все"
+              className="flex h-7 w-7 items-center justify-center rounded-full border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] text-[color:var(--text-tertiary)] transition hover:border-indigo-500/40 hover:text-[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+            >
+              <svg 
+                className="h-3.5 w-3.5" 
+                viewBox="0 0 20 20" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5 13l5-5 5 5" />
+              </svg>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={toggleSidebarCollapsed}
+            className="flex h-7 w-7 items-center justify-center rounded-full border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] text-[color:var(--text-tertiary)] transition hover:border-indigo-500/40 hover:text-[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+            aria-label={sidebarCollapsed ? 'Развернуть меню' : 'Свернуть меню'}
+          >
+            <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
+              {sidebarCollapsed ? (
+                <path d="M7 5l6 5-6 5" strokeLinecap="round" strokeLinejoin="round" />
+              ) : (
+                <path d="M13 5l-6 5 6 5" strokeLinecap="round" strokeLinejoin="round" />
+              )}
+            </svg>
+          </button>
+        </div>
       </div>
-      {sidebarCollapsed ? renderCollapsedMenu() : renderExpandedMenu()}
+      {isMounted ? (sidebarCollapsed ? renderCollapsedMenu() : renderExpandedMenu()) : renderExpandedMenu()}
     </aside>
   );
 }

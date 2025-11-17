@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { ContentBlock } from '@/components/ui/content-block';
 import { toast } from '@/lib/ui/toast';
 import { useUI } from '@/stores/ui';
 
@@ -49,7 +50,7 @@ export default function InviteDialog() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/80 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl border border-neutral-800 bg-neutral-900/95 p-6 shadow-2xl" role="dialog" aria-modal="true">
+      <ContentBlock as="div" className="w-full max-w-md p-6 shadow-2xl" role="dialog" aria-modal="true">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold text-neutral-50">Пригласить участника</h2>
@@ -108,7 +109,7 @@ export default function InviteDialog() {
             </button>
           </div>
         </form>
-      </div>
+      </ContentBlock>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Vacancy } from '@/lib/schemas/marketplace-vacancy';
 import { toast } from '@/lib/ui/toast';
+import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 
 const EMPLOYMENT_LABEL: Record<'project' | 'part-time' | 'full-time', string> = {
   project: 'Проектная занятость',
@@ -169,9 +170,11 @@ export default function VacancyDetail({ vacancy }: VacancyDetailProps) {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="space-y-6">
-          <section className="rounded-3xl border border-neutral-900 bg-neutral-950/60 p-6">
-            <h2 className="text-lg font-semibold text-neutral-100">Описание</h2>
-            <p className="mt-3 text-sm text-neutral-300">{vacancy.summary}</p>
+          <ContentBlock
+            as="section"
+            header={<ContentBlockTitle>Описание</ContentBlockTitle>}
+          >
+            <p className="text-sm text-neutral-300">{vacancy.summary}</p>
             <div className="mt-4 flex flex-wrap gap-2 text-xs text-neutral-400">
               {vacancy.tags.map((tag) => (
                 <span key={tag} className="rounded-full border border-neutral-800 bg-neutral-900/70 px-3 py-1">
@@ -179,12 +182,15 @@ export default function VacancyDetail({ vacancy }: VacancyDetailProps) {
                 </span>
               ))}
             </div>
-          </section>
+          </ContentBlock>
 
           {detailSections.map((section) => (
-            <section key={section.id} className="rounded-3xl border border-neutral-900 bg-neutral-950/60 p-6">
-              <h2 className="text-lg font-semibold text-neutral-100">{section.title}</h2>
-              <ul className="mt-3 space-y-2 text-sm text-neutral-300">
+            <ContentBlock
+              key={section.id}
+              as="section"
+              header={<ContentBlockTitle>{section.title}</ContentBlockTitle>}
+            >
+              <ul className="space-y-2 text-sm text-neutral-300">
                 {section.items.map((item) => (
                   <li key={item} className="flex items-start gap-3">
                     <span aria-hidden="true" className="mt-1 block h-1.5 w-1.5 rounded-full bg-indigo-400" />
@@ -192,19 +198,20 @@ export default function VacancyDetail({ vacancy }: VacancyDetailProps) {
                   </li>
                 ))}
               </ul>
-            </section>
+            </ContentBlock>
           ))}
 
-          <section className="rounded-3xl border border-neutral-900 bg-neutral-950/60 p-6">
-            <h2 className="text-lg font-semibold text-neutral-100">Тестовое задание</h2>
-            <p className="mt-3 text-sm text-neutral-300">{vacancy.testTask}</p>
-          </section>
+          <ContentBlock
+            as="section"
+            header={<ContentBlockTitle>Тестовое задание</ContentBlockTitle>}
+          >
+            <p className="text-sm text-neutral-300">{vacancy.testTask}</p>
+          </ContentBlock>
         </div>
 
         <aside className="space-y-4">
-          <section className="rounded-3xl border border-neutral-900 bg-neutral-950/60 p-6">
-            <h2 className="text-base font-semibold text-neutral-100">Условия</h2>
-            <dl className="mt-3 space-y-2 text-sm text-neutral-300">
+          <ContentBlock as="section" size="sm" header={<ContentBlockTitle as="h2">Условия</ContentBlockTitle>}>
+            <dl className="space-y-2 text-sm text-neutral-300">
               <div className="flex justify-between gap-3">
                 <dt className="text-neutral-400">Вознаграждение</dt>
                 <dd className="text-right text-neutral-100">{formatReward(vacancy.reward)}</dd>
@@ -219,10 +226,9 @@ export default function VacancyDetail({ vacancy }: VacancyDetailProps) {
               </div>
             </dl>
             <p className="mt-3 text-xs text-neutral-500">{vacancy.paymentNote}</p>
-          </section>
+          </ContentBlock>
 
-          <section className="rounded-3xl border border-neutral-900 bg-neutral-950/60 p-6 space-y-3">
-            <h2 className="text-base font-semibold text-neutral-100">Контакты</h2>
+          <ContentBlock as="section" size="sm" className="space-y-3" header={<ContentBlockTitle as="h2">Контакты</ContentBlockTitle>}>
             <p className="text-sm text-neutral-300">{vacancy.contact.name}</p>
             <p className="text-sm text-neutral-400">{vacancy.contact.channel}</p>
             <button
@@ -232,9 +238,9 @@ export default function VacancyDetail({ vacancy }: VacancyDetailProps) {
             >
               Открыть чат
             </button>
-          </section>
+          </ContentBlock>
 
-          <section className="rounded-3xl border border-neutral-900 bg-neutral-950/60 p-6 space-y-3">
+          <ContentBlock as="section" size="sm" className="space-y-3">
             <button
               type="button"
               onClick={() => setRespondOpen(true)}
@@ -256,7 +262,7 @@ export default function VacancyDetail({ vacancy }: VacancyDetailProps) {
             >
               Подписаться на обновления
             </button>
-          </section>
+          </ContentBlock>
         </aside>
       </div>
 
@@ -268,7 +274,7 @@ export default function VacancyDetail({ vacancy }: VacancyDetailProps) {
           aria-label="Отклик на вакансию"
           className="fixed inset-0 z-[110] flex items-center justify-center bg-neutral-950/80 p-4 backdrop-blur"
         >
-          <div className="w-full max-w-xl rounded-3xl border border-neutral-900 bg-neutral-950/90 p-6">
+          <ContentBlock className="w-full max-w-xl">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold text-neutral-100">Отклик на вакансию</h2>
@@ -336,7 +342,7 @@ export default function VacancyDetail({ vacancy }: VacancyDetailProps) {
                 </button>
               </div>
             </form>
-          </div>
+          </ContentBlock>
         </div>
       )}
     </div>

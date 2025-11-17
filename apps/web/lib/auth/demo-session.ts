@@ -2,6 +2,7 @@ export type DemoRole = 'admin' | 'user';
 
 export type DemoSession = {
   email: string;
+  userId: string; // Уникальный ID пользователя (UUID)
   role: DemoRole;
   issuedAt: number;
 };
@@ -27,8 +28,13 @@ export function decodeDemoSession(value: string | undefined | null): DemoSession
       return null;
     }
 
+    // Обратная совместимость: если userId отсутствует, используем email как userId
+    // Это нужно для старых сессий, которые были созданы до введения userId
+    const userId = parsed.userId || parsed.email;
+
     return {
       email: parsed.email,
+      userId,
       role: parsed.role,
       issuedAt: typeof parsed.issuedAt === 'number' ? parsed.issuedAt : Date.now()
     };

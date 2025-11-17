@@ -69,7 +69,7 @@ export interface FileObject {
   uploadedAt: string;
 }
 
-export type AttachmentEntityType = 'project' | 'task' | 'comment' | 'document';
+export type AttachmentEntityType = 'project' | 'task' | 'comment' | 'document' | 'project_chat';
 
 export interface Attachment {
   id: ID;
@@ -109,6 +109,16 @@ export interface TaskComment {
   body: string;
   mentions: ID[];
   authorId: ID;
+  attachments: ID[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProjectChatMessage {
+  id: ID;
+  projectId: ID;
+  authorId: ID;
+  body: string;
   attachments: ID[];
   createdAt: string;
   updatedAt: string;
@@ -239,6 +249,20 @@ export interface WorkspaceUser {
   avatarUrl?: string;
   department?: string;
   location?: string;
+  isAI?: boolean; // Флаг для виртуальных AI-агентов
+  passwordHash?: string; // Хэш пароля для авторизации
+}
+
+export type AIAgentType = 'assistant' | 'reviewer' | 'reminder' | 'summarizer';
+
+export interface AIAgent extends WorkspaceUser {
+  isAI: true;
+  agentType: AIAgentType;
+  responseTemplates?: string[]; // Стандартные ответы
+  behavior?: {
+    autoRespond?: boolean; // Автоматически отвечать на упоминания
+    responseStyle?: 'short' | 'detailed'; // Стиль ответов
+  };
 }
 
 export interface ProjectCardTaskStats {
@@ -378,4 +402,27 @@ export interface PlatformUserControl {
   notes?: string;
   updatedAt: string;
   updatedBy: ID;
+}
+
+export type NotificationType =
+  | 'task_assigned'
+  | 'task_updated'
+  | 'comment_added'
+  | 'deadline_approaching'
+  | 'project_invite';
+
+export type NotificationStatus = 'unread' | 'read' | 'archived';
+
+export interface Notification {
+  id: ID;
+  userId: ID;
+  type: NotificationType;
+  title: string;
+  message: string;
+  projectId?: ID;
+  taskId?: ID;
+  relatedEntityId?: ID;
+  status: NotificationStatus;
+  createdAt: string;
+  readAt?: string;
 }

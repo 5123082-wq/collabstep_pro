@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import MarketBreadcrumbs from '@/components/marketplace/MarketBreadcrumbs';
 import TemplatesCatalog from '@/components/marketplace/templates/TemplatesCatalog';
 import TemplatesSkeleton from '@/components/marketplace/templates/TemplatesSkeleton';
 import { templates } from '@/lib/marketplace/data';
@@ -13,13 +12,14 @@ export const metadata: Metadata = {
 export default function MarketTemplatesPage() {
   return (
     <div className="space-y-8">
-      <MarketBreadcrumbs items={[{ label: 'Маркетплейс', href: '/market' }, { label: 'Каталог шаблонов' }]} />
-      <div className="space-y-3">
-        <h1 className="text-3xl font-semibold sm:text-4xl">Каталог шаблонов</h1>
-        <p className="text-neutral-400 sm:text-lg">
-          Подборка готовых UI-комплектов, презентаций и лендингов. Добавляйте в корзину, сохраняйте в
-          избранное и собирайте коллекции для своих проектов.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold text-neutral-50">Каталог шаблонов</h1>
+          <p className="text-sm text-neutral-400">
+            Подборка готовых UI-комплектов, презентаций и лендингов. Добавляйте в корзину, сохраняйте в
+            избранное и собирайте коллекции для своих проектов.
+          </p>
+        </div>
       </div>
       <Suspense
         fallback={

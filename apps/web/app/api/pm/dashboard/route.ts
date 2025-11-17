@@ -1,0 +1,215 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { flags } from '@/lib/flags';
+import { getAuthFromRequest } from '@/lib/api/finance-access';
+import {
+  projectsRepository,
+  tasksRepository,
+  DEFAULT_WORKSPACE_ID
+} from '@collabverse/api';
+import { jsonError, jsonOk } from '@/lib/api/http';
+
+export async function GET(_req: NextRequest): Promise<NextResponse> {
+  if (!flags.PM_NAV_PROJECTS_AND_TASKS) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  const auth = getAuthFromRequest(_req);
+  if (!auth) {
+    return jsonError('UNAUTHORIZED', { status: 401 });
+  }
+
+  const currentUserId = auth.userId;
+
+  // Get all projects user has access to
+  const allProjects = projectsRepository.list();
+  const accessibleProjects = allProjects.filter((project) =>
+    projectsRepository.hasAccess(project.id, currentUserId)
+  );
+
+  // Filter active projects (status === 'active' or 'draft' and not archived)
+  const activeProjects = accessibleProjects.filter(
+    (project) => (project.status === 'active' || project.status === 'draft') && !project.archived
+  );
+
+  // Get all tasks from accessible projects
+  const allTasks = tasksRepository.list();
+  const accessibleProjectIds = new Set(accessibleProjects.map((p) => p.id));
+  const accessibleTasks = allTasks.filter((task) =>
+    accessibleProjectIds.has(task.projectId)
+  );
+
+  // Count open tasks (not done)
+  const openTasks = accessibleTasks.filter(
+    (task) => task.status !== 'done'
+  ).length;
+
+  // Count user's open tasks
+  const myOpenTasks = accessibleTasks.filter(
+    (task) => task.status !== 'done' && task.assigneeId === currentUserId
+  ).length;
+
+  // Count overdue tasks
+  const now = Date.now();
+  const overdue = accessibleTasks.filter((task) => {
+    if (task.status === 'done') return false;
+    const dueAt = task.dueAt ?? task.dueDate;
+    if (!dueAt) return false;
+    const dueTime = new Date(dueAt).getTime();
+    return !Number.isNaN(dueTime) && dueTime < now;
+  }).length;
+
+  // Get upcoming deadlines (next 7 days)
+  const sevenDaysFromNow = now + 7 * 24 * 60 * 60 * 1000;
+  const upcomingDeadlines = accessibleTasks
+    .filter((task) => {
+      if (task.status === 'done') return false;
+      const dueAt = task.dueAt ?? task.dueDate;
+      if (!dueAt) return false;
+      const dueTime = new Date(dueAt).getTime();
+      return (
+        !Number.isNaN(dueTime) &&
+        dueTime >= now &&
+        dueTime <= sevenDaysFromNow
+      );
+    })
+    .map((task) => {
+      const project = accessibleProjects.find((p) => p.id === task.projectId);
+      return {
+        id: task.id,
+        title: task.title,
+        projectId: task.projectId,
+        projectKey: project?.key ?? 'UNK',
+        dueAt: (task.dueAt ?? task.dueDate) as string,
+        status: task.status,
+        assigneeId: task.assigneeId
+      };
+    })
+    .sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime())
+    .slice(0, 5); // Limit to 5 upcoming deadlines
+
+  // Calculate progress data (burnup and burndown)
+  // Group tasks by date (last 30 days)
+  const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+  const burnupData: Array<{ date: string; total: number; completed: number }> = [];
+  const burndownData: Array<{ date: string; remaining: number }> = [];
+
+  // Create date range
+  const dates: string[] = [];
+  for (let i = 30; i >= 0; i--) {
+    const date = new Date(now - i * 24 * 60 * 60 * 1000);
+    dates.push(date.toISOString().split('T')[0]);
+  }
+
+  // Calculate burnup (total tasks and completed tasks over time)
+  let totalTasks = 0;
+  let completedTasks = 0;
+
+  for (const date of dates) {
+    const dateTime = new Date(date).getTime();
+
+    // Count tasks created before or on this date
+    const tasksCreatedByDate = accessibleTasks.filter((task) => {
+      const createdAt = new Date(task.createdAt).getTime();
+      return createdAt <= dateTime;
+    });
+    totalTasks = tasksCreatedByDate.length;
+
+    // Count tasks completed before or on this date
+    const tasksCompletedByDate = tasksCreatedByDate.filter(
+      (task) => task.status === 'done'
+    );
+    completedTasks = tasksCompletedByDate.length;
+
+    burnupData.push({
+      date,
+      total: totalTasks,
+      completed: completedTasks
+    });
+
+    // Burndown: remaining tasks (not done)
+    const remainingTasks = totalTasks - completedTasks;
+    burndownData.push({
+      date,
+      remaining: remainingTasks
+    });
+  }
+
+  // Workload data (tasks per assignee)
+  const workloadMap = new Map<
+    string,
+    { taskCount: number; projectIds: Set<string> }
+  >();
+
+  for (const task of accessibleTasks) {
+    if (task.status === 'done' || !task.assigneeId) continue;
+
+    const existing = workloadMap.get(task.assigneeId) ?? {
+      taskCount: 0,
+      projectIds: new Set<string>()
+    };
+    existing.taskCount += 1;
+    existing.projectIds.add(task.projectId);
+    workloadMap.set(task.assigneeId, existing);
+  }
+
+  const workload = Array.from(workloadMap.entries()).map(
+    ([assigneeId, data]) => ({
+      assigneeId,
+      taskCount: data.taskCount,
+      projectCount: data.projectIds.size,
+      projects: Array.from(data.projectIds)
+    })
+  );
+
+  // Finance data (simplified - can be enhanced later)
+  const finance = {
+    expenses: [] as Array<{
+      projectId: string;
+      projectKey: string;
+      projectTitle: string;
+      spent: string;
+      limit?: string;
+      remaining?: string;
+      currency: string;
+      categories: Array<{ name: string; spent: string; limit?: string }>;
+    }>,
+    totalSpent: '0',
+    totalLimit: '0'
+  };
+
+  // Add finance data for projects with budgets
+  for (const project of accessibleProjects) {
+    if (project.budgetPlanned !== null || project.budgetSpent !== null) {
+      const spent = project.budgetSpent ?? 0;
+      const limit = project.budgetPlanned ?? 0;
+      const remaining = limit - spent;
+
+      finance.expenses.push({
+        projectId: project.id,
+        projectKey: project.key,
+        projectTitle: project.title,
+        spent: spent.toString(),
+        limit: limit > 0 ? limit.toString() : undefined,
+        remaining: remaining > 0 ? remaining.toString() : undefined,
+        currency: 'RUB', // Default currency
+        categories: []
+      });
+    }
+  }
+
+  return jsonOk({
+    pulse: {
+      activeProjects: activeProjects.length,
+      openTasks,
+      myOpenTasks,
+      overdue,
+      upcomingDeadlines
+    },
+    progress: {
+      burnup: burnupData,
+      burndown: burndownData
+    },
+    workload,
+    finance
+  });
+}

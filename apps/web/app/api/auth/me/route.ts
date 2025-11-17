@@ -10,7 +10,7 @@ export function GET(request: NextRequest) {
   }
 
   return NextResponse.json(
-    { email: session.email, role: session.role, authenticated: true },
+    { email: session.email, userId: session.userId, role: session.role, authenticated: true },
     { status: 200, headers: { 'Cache-Control': 'no-store' } }
   );
 }

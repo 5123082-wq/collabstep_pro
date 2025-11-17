@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 
 const benefits = [
   {
@@ -49,8 +50,8 @@ export default function ContractorsPage() {
       </header>
       <section className="mt-12 grid gap-6 sm:grid-cols-2">
         {benefits.map((benefit) => (
-          <article key={benefit.title} className="rounded-2xl border border-neutral-900 bg-neutral-900/50 p-6">
-            <h2 className="text-xl font-semibold">{benefit.title}</h2>
+          <ContentBlock key={benefit.title} as="article" size="sm">
+            <ContentBlockTitle as="h2">{benefit.title}</ContentBlockTitle>
             <p className="mt-3 text-sm text-neutral-400">{benefit.description}</p>
             <Link
               href={benefit.href}
@@ -58,7 +59,7 @@ export default function ContractorsPage() {
             >
               Подробнее
             </Link>
-          </article>
+          </ContentBlock>
         ))}
       </section>
     </main>

@@ -5,6 +5,10 @@
   "scripts": {
     "prebuild": "node scripts/clean-next.mjs",
     "dev": "next dev",
+    "dev:3001": "next dev -p 3001",
+    "dev:3002": "next dev -p 3002",
+    "dev:3003": "next dev -p 3003",
+    "dev:3004": "next dev -p 3004",
     "build": "next build && node scripts/fix-manifests.mjs",
     "start": "next start",
     "typecheck": "tsc -p tsconfig.json --noEmit",
@@ -20,9 +24,11 @@
     "lucide-react": "^0.546.0",
     "nanoid": "^3.3.11",
     "next": "14.2.4",
+    "openai": "^4.68.0",
     "react": "18.3.1",
     "react-big-calendar": "^1.19.4",
     "react-dom": "18.3.1",
+    "socket.io-client": "^4.8.1",
     "zod": "^3.23.8",
     "zustand": "^4.5.2"
   },

@@ -135,6 +135,7 @@ export class TasksRepository {
     };
 
     memory.TASKS.push(task);
+    
     return enrichTask(task);
   }
 
@@ -222,6 +223,7 @@ export class TasksRepository {
     }
 
     memory.TASKS[idx] = updated;
+    
     return enrichTask(updated);
   }
 
@@ -230,11 +232,13 @@ export class TasksRepository {
     if (idx === -1) {
       return false;
     }
+    const task = memory.TASKS[idx];
     memory.TASKS.splice(idx, 1);
     // Also remove dependencies for this task
     memory.TASK_DEPENDENCIES = memory.TASK_DEPENDENCIES.filter(
       (dep) => dep.dependentTaskId !== id && dep.blockerTaskId !== id
     );
+    
     return true;
   }
 }

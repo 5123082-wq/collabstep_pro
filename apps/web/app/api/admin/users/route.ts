@@ -3,15 +3,23 @@ import { adminService } from '@collabverse/api';
 import { getDemoSessionFromCookies } from '@/lib/auth/demo-session.server';
 
 export async function GET() {
-  const session = getDemoSessionFromCookies();
-  if (!session) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  }
-  if (session.role !== 'admin') {
-    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
-  }
+  try {
+    const session = getDemoSessionFromCookies();
+    if (!session) {
+      return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+    }
+    if (session.role !== 'admin') {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
 
-  const items = adminService.listUsers();
-  return NextResponse.json({ items });
+    const items = adminService.listUsers();
+    return NextResponse.json({ items });
+  } catch (error) {
+    console.error('[API /admin/users] Ошибка:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }
 

@@ -2,21 +2,10 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { StateStorage } from 'zustand/middleware';
 
-export type WallpaperPreset =
-  | 'mesh'
-  | 'grid'
-  | 'halo'
-  | 'sunrise'
-  | 'mint'
-  | 'lavender'
-  | 'sands';
-
 type UiState = {
-  bgPreset: WallpaperPreset;
   expandedGroups: string[];
   lastProjectId: string | null;
   sidebarCollapsed: boolean;
-  setBgPreset: (v: UiState['bgPreset']) => void;
   toggleGroup: (id: string) => void;
   setExpandedGroups: (ids: string[]) => void;
   setLastProjectId: (id: string | null) => void;
@@ -37,8 +26,7 @@ const memoryStorage: StateStorage = {
   }
 };
 
-const defaultState: Pick<UiState, 'bgPreset' | 'expandedGroups' | 'lastProjectId' | 'sidebarCollapsed'> = {
-  bgPreset: 'mesh',
+const defaultState: Pick<UiState, 'expandedGroups' | 'lastProjectId' | 'sidebarCollapsed'> = {
   expandedGroups: [],
   lastProjectId: null,
   sidebarCollapsed: false
@@ -48,7 +36,6 @@ export const useUiStore = create<UiState>()(
   persist(
     (set, get) => ({
       ...defaultState,
-      setBgPreset: (v) => set({ bgPreset: v }),
       toggleGroup: (id) => {
         const current = get().expandedGroups;
         const exists = current.includes(id);
@@ -69,11 +56,6 @@ export const useUiStore = create<UiState>()(
       merge: (persistedState, currentState) => {
         const persisted = (persistedState as Partial<UiState>) ?? {};
 
-        const allowedPresets: WallpaperPreset[] = ['mesh', 'grid', 'halo', 'sunrise', 'mint', 'lavender', 'sands'];
-        const bgPreset = allowedPresets.includes(persisted.bgPreset as WallpaperPreset)
-          ? (persisted.bgPreset as WallpaperPreset)
-          : currentState.bgPreset;
-
         const expandedGroups = Array.isArray(persisted.expandedGroups)
           ? persisted.expandedGroups.filter((item): item is string => typeof item === 'string')
           : currentState.expandedGroups;
@@ -87,7 +69,6 @@ export const useUiStore = create<UiState>()(
         return {
           ...currentState,
           ...persisted,
-          bgPreset,
           expandedGroups,
           lastProjectId,
           sidebarCollapsed

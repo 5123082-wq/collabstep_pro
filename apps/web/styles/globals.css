@@ -4,6 +4,20 @@
 
 :root {
   color-scheme: dark;
+  /* Единые отступы контента */
+  --content-inline-padding: 1.5rem; /* 24px на мобильных */
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --content-inline-padding: 2rem; /* 32px на больших экранах */
+  }
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --content-inline-padding: 2.5rem; /* 40px на очень больших экранах */
+  }
 }
 
 html[data-theme='dark'] {
@@ -26,8 +40,8 @@ body {
   color: var(--text-primary);
   background-attachment: fixed;
   transition: background 320ms ease, color 200ms ease;
-  font-size: 14px;
-  line-height: 1.7;
+  font-size: var(--font-size-base); /* 16px - стандартный веб-размер для доступности */
+  line-height: var(--line-height-relaxed); /* 1.7 */
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -80,44 +94,6 @@ h6 {
   line-height: 1.35;
 }
 
-body.app-bg-mesh {
-  background-image: radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.22), transparent 48%),
-    radial-gradient(circle at 80% 0%, rgba(236, 72, 153, 0.2), transparent 55%),
-    radial-gradient(circle at 52% 78%, rgba(14, 165, 233, 0.18), transparent 50%),
-    linear-gradient(125deg, rgba(4, 7, 18, 0.92), rgba(8, 12, 25, 0.94) 45%, rgba(15, 23, 42, 0.95) 100%);
-}
-
-body.app-bg-grid {
-  background-image: linear-gradient(rgba(99, 102, 241, 0.12) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(99, 102, 241, 0.12) 1px, transparent 1px),
-    radial-gradient(circle at top, rgba(56, 189, 248, 0.28), transparent 60%);
-  background-size: 28px 28px, 28px 28px, auto;
-  background-color: rgba(3, 7, 18, 0.95);
-}
-
-body.app-bg-halo {
-  background-image: radial-gradient(circle at 50% 20%, rgba(59, 130, 246, 0.28), transparent 60%),
-    radial-gradient(circle at 22% 78%, rgba(236, 72, 153, 0.28), transparent 58%),
-    radial-gradient(circle at 78% 82%, rgba(20, 184, 166, 0.26), transparent 62%);
-  background-color: rgba(4, 7, 17, 0.96);
-}
-
-body.app-bg-sunrise {
-  background-image: linear-gradient(165deg, rgba(254, 243, 199, 0.92) 0%, rgba(253, 186, 140, 0.78) 55%, rgba(253, 164, 175, 0.88) 100%);
-}
-
-body.app-bg-mint {
-  background-image: linear-gradient(140deg, rgba(236, 252, 203, 0.92) 0%, rgba(167, 243, 208, 0.82) 45%, rgba(190, 230, 253, 0.85) 100%);
-}
-
-body.app-bg-lavender {
-  background-image: linear-gradient(150deg, rgba(237, 233, 254, 0.95) 0%, rgba(196, 181, 253, 0.82) 48%, rgba(191, 219, 254, 0.88) 100%);
-}
-
-body.app-bg-sands {
-  background-image: linear-gradient(140deg, rgba(254, 249, 195, 0.92) 0%, rgba(253, 230, 138, 0.75) 40%, rgba(251, 207, 232, 0.82) 100%);
-}
-
 [data-app-main],
 main[data-app-main] {
   max-width: none !important;
@@ -127,10 +103,12 @@ main[data-app-main] {
   padding-inline-end: var(--content-inline-padding);
 }
 
+/* Учитываем HoverRail справа только в свернутом состоянии: отступ от края (16px) + ширина меню (56px) = 72px */
+/* В развернутом виде HoverRail накладывается поверх контента, не сдвигая его */
 @media (min-width: 1024px) {
   [data-app-main],
   main[data-app-main] {
-    padding-inline-end: max(var(--content-inline-padding), var(--rail-safe-area));
+    padding-inline-end: max(var(--content-inline-padding), 72px);
   }
 }
 
@@ -147,6 +125,260 @@ main[data-app-main] {
   display: grid;
   gap: var(--cs-grid-gap, 1.5rem);
   grid-template-columns: repeat(auto-fit, minmax(var(--cs-grid-min, 280px), 1fr));
+  align-items: stretch;
+}
+
+/* Блоки в cs-auto-grid тоже должны растягиваться */
+.cs-auto-grid > .content-block,
+.cs-auto-grid > section.content-block,
+.cs-auto-grid > article.content-block {
+  align-self: stretch !important;
+  display: flex;
+  flex-direction: column;
+  /* Убеждаемся, что нет лишних отступов */
+  margin: 0 !important;
+}
+
+/* Единая система отступов для всех блоков контента - автоматически учитывает HoverRail */
+/* Применяется ко всем блокам с rounded углами и border внутри основного контента */
+@media (min-width: 1024px) {
+  [data-app-main] [class*='rounded-2xl'][class*='border'],
+  [data-app-main] [class*='rounded-3xl'][class*='border'],
+  [data-app-main] section[class*='rounded-'],
+  [data-app-main] div[class*='rounded-'][class*='border'] {
+    box-sizing: border-box;
+  }
+}
+
+/* ============================================
+   ЕДИНАЯ СИСТЕМА БЛОКОВ КОНТЕНТА
+   Основана на эталонном блоке: rounded-3xl border border-neutral-900 bg-neutral-950/70 p-6 shadow-[0_0_12px_rgba(0,0,0,0.12)]
+   ============================================ */
+
+/* Базовый класс для всех блоков контента (эталонный стиль) */
+.content-block {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--content-block-radius);
+  border: var(--content-block-border-width) solid var(--content-block-border);
+  background-color: var(--content-block-bg);
+  padding: var(--content-block-padding);
+  box-shadow: var(--content-block-shadow);
+  gap: var(--content-block-gap);
+  transition: all 200ms ease;
+  /* Убеждаемся, что блоки не имеют лишних отступов по умолчанию */
+  margin: 0;
+  /* Убеждаемся, что блоки выравниваются одинаково */
+  align-self: auto;
+}
+
+/* Вариант с меньшими отступами (для вложенных элементов) */
+.content-block-sm {
+  border-radius: var(--content-block-radius-sm);
+  padding: var(--content-block-padding-sm);
+  border-color: var(--content-block-border-sm);
+  background-color: var(--content-block-bg-sm);
+  gap: var(--content-block-gap-sm);
+}
+
+/* Интерактивный блок с hover эффектом */
+.content-block-interactive {
+  cursor: pointer;
+}
+
+.content-block-interactive:hover {
+  border-color: var(--content-block-border-hover);
+  background-color: var(--content-block-bg-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Варианты акцентов */
+.content-block-primary {
+  border-color: var(--accent-border);
+  background-color: var(--accent-bg);
+}
+
+.content-block-muted {
+  background-color: var(--surface-muted);
+  border-color: var(--surface-border-subtle);
+}
+
+/* Блок без обводки (для вложенных элементов) */
+.content-block-borderless {
+  border: none;
+  box-shadow: none;
+}
+
+/* Блок с пунктирной обводкой (для пустых состояний) */
+.content-block-dashed {
+  border-style: dashed;
+  border-color: var(--surface-border-subtle);
+  background-color: transparent;
+}
+
+/* Блок с ошибкой */
+.content-block-error {
+  border-color: var(--button-danger-border);
+  background-color: var(--button-danger-bg);
+  color: var(--button-danger-foreground);
+}
+
+/* Внутренние отступы для контента внутри блоков */
+.content-block-header {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.content-block-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: inherit;
+}
+
+.content-block-footer {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 1px solid var(--surface-border-subtle);
+}
+
+/* Стандартные заголовки внутри блоков */
+.content-block h1,
+.content-block h2,
+.content-block h3 {
+  color: var(--text-primary);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.content-block h3 {
+  font-size: var(--font-size-lg); /* 18px */
+  line-height: var(--line-height-tight); /* 1.2 */
+}
+
+.content-block p {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm); /* 14px */
+  line-height: var(--line-height-normal); /* 1.5 */
+}
+
+/* Стандартные отступы между блоками (только для блоков вне grid/flex контейнеров с gap) */
+/* Не применяем margin-top к блокам в grid/flex, так как gap уже управляет отступами */
+[data-app-main] .content-block + .content-block {
+  margin-top: var(--content-block-gap);
+}
+
+/* Отключаем margin-top для блоков в grid контейнерах (gap управляет отступами) */
+[data-app-main] .grid > .content-block + .content-block,
+[data-app-main] .grid > section.content-block + section.content-block,
+[data-app-main] .grid > article.content-block + article.content-block,
+[data-app-main] .grid > .content-block + section.content-block,
+[data-app-main] .grid > section.content-block + .content-block,
+[data-app-main] .grid > article.content-block + .content-block,
+[data-app-main] .grid > .content-block + article.content-block,
+[data-app-main] .content-grid > .content-block + .content-block,
+[data-app-main] .cs-auto-grid > .content-block + .content-block {
+  margin-top: 0;
+}
+
+/* Отключаем margin-top для блоков в flex контейнерах с gap */
+[data-app-main] .flex[class*='gap'] > .content-block + .content-block,
+[data-app-main] .flex[class*='gap'] > section.content-block + section.content-block,
+[data-app-main] .flex[class*='gap'] > article.content-block + article.content-block {
+  margin-top: 0;
+}
+
+/* Выравнивание карточек в grid - по умолчанию растягиваем на всю высоту строки */
+/* Используем @layer utilities чтобы переопределить Tailwind классы */
+@layer utilities {
+  /* Для обычных grid без items-start - растягиваем блоки */
+  .grid:not(.items-start) {
+    align-items: stretch !important;
+  }
+
+  /* Блоки в grid должны растягиваться и быть flex контейнерами (только для grid без items-start) */
+  .grid:not(.items-start) > .content-block,
+  .grid:not(.items-start) > section.content-block,
+  .grid:not(.items-start) > article.content-block {
+    align-self: stretch !important;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Для grid с items-start - выравниваем по началу (например, kanban) */
+  .grid.items-start > .content-block,
+  .grid.items-start > section.content-block,
+  .grid.items-start > article.content-block {
+    align-self: start !important;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Убеждаемся, что все блоки в grid имеют одинаковое выравнивание по вертикали */
+  .grid > .content-block,
+  .grid > section.content-block,
+  .grid > article.content-block {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* Блоки в flex контейнерах с gap не должны иметь дополнительных отступов */
+  .flex[class*='gap'] > .content-block,
+  .flex[class*='gap'] > section.content-block,
+  .flex[class*='gap'] > article.content-block {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* Убеждаемся, что все блоки в flex контейнерах выравниваются одинаково */
+  .flex > .content-block,
+  .flex > section.content-block,
+  .flex > article.content-block {
+    align-self: auto;
+  }
+
+  /* Для flex контейнеров с items-start/stretch - применяем соответствующее выравнивание */
+  .flex.items-start > .content-block,
+  .flex.items-start > section.content-block,
+  .flex.items-start > article.content-block {
+    align-self: flex-start;
+  }
+
+  .flex.items-stretch > .content-block,
+  .flex.items-stretch > section.content-block,
+  .flex.items-stretch > article.content-block {
+    align-self: stretch;
+  }
+}
+
+
+/* Сетка для карточек */
+.content-grid {
+  display: grid;
+  gap: var(--content-block-gap);
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  align-items: stretch;
+}
+
+.content-grid > .content-block,
+.content-grid > section.content-block,
+.content-grid > article.content-block {
+  margin: 0 !important;
+  align-self: stretch !important;
+}
+
+@media (min-width: 768px) {
+  .content-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .content-grid {
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  }
 }
 
 a {
@@ -157,7 +389,7 @@ html[data-theme='dark'] .bg-neutral-950,
 html[data-theme='dark'] .bg-neutral-950\/80,
 html[data-theme='dark'] .bg-neutral-950\/70,
 html[data-theme='dark'] .bg-neutral-950\/60 {
-  background-color: rgba(8, 13, 24, 0.96) !important;
+  background-color: rgba(13, 13, 13, 0.96) !important;
 }
 
 html[data-theme='light'] .bg-neutral-950,
@@ -178,7 +410,7 @@ html[data-theme='dark'] .bg-neutral-900\/70,
 html[data-theme='dark'] .bg-neutral-900\/60,
 html[data-theme='dark'] .bg-neutral-900\/40,
 html[data-theme='dark'] .bg-neutral-900\/20 {
-  background-color: rgba(12, 18, 32, 0.9) !important;
+  background-color: rgba(20, 20, 20, 0.9) !important;
 }
 
 html[data-theme='light'] .bg-neutral-900,
@@ -208,7 +440,7 @@ html[data-theme='dark'] .border-neutral-800\/80,
 html[data-theme='dark'] .border-neutral-800\/70,
 html[data-theme='dark'] .border-neutral-700,
 html[data-theme='dark'] .border-neutral-700\/60 {
-  border-color: rgba(148, 163, 184, 0.35) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 html[data-theme='light'] .border-neutral-900,
@@ -226,7 +458,7 @@ html[data-theme='light'] .border-neutral-700\/60 {
 
 html[data-theme='dark'] .text-neutral-100,
 html[data-theme='dark'] .text-neutral-200 {
-  color: #f8fafc !important;
+  color: #ffffff !important;
 }
 
 html[data-theme='light'] .text-neutral-50 {
@@ -239,7 +471,7 @@ html[data-theme='light'] .text-neutral-200 {
 }
 
 html[data-theme='dark'] .text-neutral-300 {
-  color: #e2e8f0 !important;
+  color: #e5e5e5 !important;
 }
 
 html[data-theme='light'] .text-neutral-300 {
@@ -247,7 +479,7 @@ html[data-theme='light'] .text-neutral-300 {
 }
 
 html[data-theme='dark'] .text-neutral-400 {
-  color: #cbd5f5 !important;
+  color: #e5e5e5 !important;
 }
 
 html[data-theme='light'] .text-neutral-400 {
@@ -255,7 +487,7 @@ html[data-theme='light'] .text-neutral-400 {
 }
 
 html[data-theme='dark'] .text-neutral-500 {
-  color: #94a3b8 !important;
+  color: #a0a0a0 !important;
 }
 
 html[data-theme='light'] .text-neutral-500 {
@@ -263,7 +495,7 @@ html[data-theme='light'] .text-neutral-500 {
 }
 
 html[data-theme='dark'] .text-neutral-600 {
-  color: #64748b !important;
+  color: #808080 !important;
 }
 
 html[data-theme='light'] .text-neutral-600 {
@@ -644,22 +876,22 @@ html[data-theme='light'] .text-red-400 {
 /* React Big Calendar Custom Styles */
 .rbc-calendar-wrapper .rbc-calendar {
   background-color: transparent;
-  color: #f8fafc;
+  color: #ffffff;
   font-family: inherit;
   height: 100%;
 }
 
 .rbc-calendar-wrapper .rbc-header {
-  background-color: rgba(12, 18, 32, 0.9);
-  border-color: rgba(148, 163, 184, 0.35);
-  color: #e2e8f0;
+  background-color: rgba(20, 20, 20, 0.9);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #e5e5e5;
   font-weight: 600;
   padding: 0.75rem 0.5rem;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .rbc-calendar-wrapper .rbc-header + .rbc-header {
-  border-left: 1px solid rgba(148, 163, 184, 0.35);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .rbc-calendar-wrapper .rbc-month-view {
@@ -668,25 +900,25 @@ html[data-theme='light'] .text-red-400 {
 }
 
 .rbc-calendar-wrapper .rbc-month-row {
-  border-color: rgba(148, 163, 184, 0.35);
+  border-color: rgba(255, 255, 255, 0.1);
   overflow: visible;
 }
 
 .rbc-calendar-wrapper .rbc-day-bg {
   background-color: transparent;
-  border-color: rgba(148, 163, 184, 0.25);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 .rbc-calendar-wrapper .rbc-today {
-  background-color: rgba(99, 102, 241, 0.08);
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .rbc-calendar-wrapper .rbc-off-range-bg {
-  background-color: rgba(12, 18, 32, 0.3);
+  background-color: rgba(20, 20, 20, 0.3);
 }
 
 .rbc-calendar-wrapper .rbc-off-range {
-  color: #64748b;
+  color: #808080;
 }
 
 .rbc-calendar-wrapper .rbc-date-cell {
@@ -695,7 +927,7 @@ html[data-theme='light'] .text-red-400 {
 }
 
 .rbc-calendar-wrapper .rbc-now .rbc-button-link {
-  color: #a5b4fc;
+  color: #ffffff;
   font-weight: 600;
 }
 
@@ -710,9 +942,9 @@ html[data-theme='light'] .text-red-400 {
 }
 
 .rbc-calendar-wrapper .rbc-toolbar button {
-  color: #e2e8f0;
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  background-color: rgba(12, 18, 32, 0.9);
+  color: #e5e5e5;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(20, 20, 20, 0.9);
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
   font-size: 0.875rem;
@@ -721,21 +953,21 @@ html[data-theme='light'] .text-red-400 {
 }
 
 .rbc-calendar-wrapper .rbc-toolbar button:hover {
-  background-color: rgba(12, 18, 32, 1);
-  border-color: rgba(148, 163, 184, 0.5);
+  background-color: rgba(26, 26, 26, 1);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .rbc-calendar-wrapper .rbc-toolbar button:active,
 .rbc-calendar-wrapper .rbc-toolbar button.rbc-active {
-  background-color: #6366f1;
-  border-color: #6366f1;
-  color: #ffffff;
+  background-color: #ffffff;
+  border-color: #ffffff;
+  color: #0d0d0d;
 }
 
 .rbc-calendar-wrapper .rbc-toolbar-label {
   font-size: 1rem;
   font-weight: 600;
-  color: #f8fafc;
+  color: #ffffff;
 }
 
 .rbc-calendar-wrapper .rbc-event {
@@ -760,8 +992,8 @@ html[data-theme='light'] .text-red-400 {
 }
 
 .rbc-calendar-wrapper .rbc-show-more {
-  background-color: rgba(99, 102, 241, 0.1);
-  color: #a5b4fc;
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #e5e5e5;
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   font-size: 0.75rem;
@@ -770,65 +1002,65 @@ html[data-theme='light'] .text-red-400 {
 }
 
 .rbc-calendar-wrapper .rbc-show-more:hover {
-  background-color: rgba(99, 102, 241, 0.2);
+  background-color: rgba(255, 255, 255, 0.12);
 }
 
 .rbc-calendar-wrapper .rbc-overlay {
-  background-color: rgba(12, 18, 32, 0.98);
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  background-color: rgba(20, 20, 20, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.5rem;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   padding: 0.5rem;
 }
 
 .rbc-calendar-wrapper .rbc-overlay-header {
-  border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding: 0.5rem;
   margin-bottom: 0.5rem;
   font-weight: 600;
-  color: #f8fafc;
+  color: #ffffff;
 }
 
 /* Week/Day view styles */
 .rbc-calendar-wrapper .rbc-time-view {
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.5rem;
   background-color: transparent;
 }
 
 .rbc-calendar-wrapper .rbc-time-header-content {
-  border-left: 1px solid rgba(148, 163, 184, 0.35);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .rbc-calendar-wrapper .rbc-time-content {
-  border-top: 1px solid rgba(148, 163, 184, 0.35);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .rbc-calendar-wrapper .rbc-time-slot {
-  border-top: 1px solid rgba(148, 163, 184, 0.15);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .rbc-calendar-wrapper .rbc-current-time-indicator {
-  background-color: #6366f1;
+  background-color: #ffffff;
   height: 2px;
 }
 
 .rbc-calendar-wrapper .rbc-timeslot-group {
-  border-left: 1px solid rgba(148, 163, 184, 0.35);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .rbc-calendar-wrapper .rbc-day-slot .rbc-time-slot {
-  border-top: 1px solid rgba(148, 163, 184, 0.15);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .rbc-calendar-wrapper .rbc-label {
-  color: #94a3b8;
+  color: #a0a0a0;
   font-size: 0.75rem;
   padding: 0.25rem 0.5rem;
 }
 
 .rbc-calendar-wrapper .rbc-time-header.rbc-overflowing {
-  border-right: 1px solid rgba(148, 163, 184, 0.35);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .rbc-calendar-wrapper .rbc-agenda-view {
@@ -836,31 +1068,31 @@ html[data-theme='light'] .text-red-400 {
 }
 
 .rbc-calendar-wrapper .rbc-agenda-view table {
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.5rem;
 }
 
 .rbc-calendar-wrapper .rbc-agenda-view table thead > tr > th {
-  background-color: rgba(12, 18, 32, 0.9);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+  background-color: rgba(20, 20, 20, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding: 0.75rem;
-  color: #e2e8f0;
+  color: #e5e5e5;
 }
 
 .rbc-calendar-wrapper .rbc-agenda-view table tbody > tr > td {
   padding: 0.75rem;
-  border-top: 1px solid rgba(148, 163, 184, 0.25);
-  color: #cbd5f5;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: #e5e5e5;
 }
 
 .rbc-calendar-wrapper .rbc-agenda-date-cell,
 .rbc-calendar-wrapper .rbc-agenda-time-cell {
   white-space: nowrap;
-  color: #94a3b8;
+  color: #a0a0a0;
 }
 
 .rbc-calendar-wrapper .rbc-agenda-event-cell {
-  color: #f8fafc;
+  color: #ffffff;
 }
 
 /* Light theme overrides */
@@ -878,7 +1110,7 @@ html[data-theme='light'] .rbc-calendar-wrapper .rbc-day-bg {
 }
 
 html[data-theme='light'] .rbc-calendar-wrapper .rbc-today {
-  background-color: rgba(99, 102, 241, 0.08);
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 html[data-theme='light'] .rbc-calendar-wrapper .rbc-off-range-bg {
@@ -922,4 +1154,156 @@ html[data-theme='light'] .rbc-calendar-wrapper .rbc-agenda-time-cell {
 
 html[data-theme='light'] .rbc-calendar-wrapper .rbc-agenda-event-cell {
   color: #0f172a;
+}
+
+/* Custom scrollbar styles for sidebar navigation */
+aside[data-collapsed] nav.sidebar-nav::-webkit-scrollbar,
+aside nav.sidebar-nav::-webkit-scrollbar {
+  width: 9px;
+}
+
+aside[data-collapsed] nav.sidebar-nav::-webkit-scrollbar-track,
+aside nav.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 4.5px;
+  margin: 0;
+}
+
+aside[data-collapsed] nav.sidebar-nav::-webkit-scrollbar-thumb,
+aside nav.sidebar-nav::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 4.5px;
+  border: 0;
+  background-clip: padding-box;
+}
+
+aside[data-collapsed] nav.sidebar-nav::-webkit-scrollbar-thumb:hover,
+aside nav.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  background-clip: padding-box;
+}
+
+/* Firefox scrollbar styles */
+aside[data-collapsed] nav.sidebar-nav,
+aside nav.sidebar-nav {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+/* Light theme scrollbar styles */
+html[data-theme='light'] aside[data-collapsed] nav.sidebar-nav::-webkit-scrollbar-track,
+html[data-theme='light'] aside nav.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html[data-theme='light'] aside[data-collapsed] nav.sidebar-nav::-webkit-scrollbar-thumb,
+html[data-theme='light'] aside nav.sidebar-nav::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+html[data-theme='light'] aside[data-collapsed] nav.sidebar-nav::-webkit-scrollbar-thumb:hover,
+html[data-theme='light'] aside nav.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme='light'] aside[data-collapsed] nav.sidebar-nav,
+html[data-theme='light'] aside nav.sidebar-nav {
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+/* Marketing section glow effect - градиентная подсветка для блоков маркетинга */
+.marketing-glow {
+  position: relative;
+  box-shadow: 
+    0 0 30px rgba(0, 0, 0, 0.25), 
+    0 0 60px rgba(99, 102, 241, 0.15), 
+    0 0 90px rgba(99, 102, 241, 0.08),
+    0 0 0 1px rgba(99, 102, 241, 0.2);
+}
+
+.marketing-glow::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.5), rgba(139, 92, 246, 0.4), rgba(99, 102, 241, 0.3), rgba(99, 102, 241, 0.2));
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  padding: 3px;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 1;
+}
+
+html[data-theme='light'] .marketing-glow {
+  box-shadow: 
+    0 0 30px rgba(0, 0, 0, 0.15), 
+    0 0 60px rgba(99, 102, 241, 0.1), 
+    0 0 90px rgba(99, 102, 241, 0.05),
+    0 0 0 1px rgba(99, 102, 241, 0.15);
+}
+
+html[data-theme='light'] .marketing-glow::before {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(139, 92, 246, 0.25), rgba(99, 102, 241, 0.2), rgba(99, 102, 241, 0.15));
+  opacity: 0.8;
+}
+
+/* Hide scrollbar for horizontal scrolling breadcrumbs */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+/* Global scrollbar styles - прозрачный фон, видимый только бегунок */
+/* Убираем фон самого скроллбара */
+::-webkit-scrollbar {
+  width: 10px;
+  background-color: transparent;
+}
+
+/* Убираем фон дорожки (track) */
+::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+/* Стилизуем только бегунок - темная тема (по умолчанию) */
+::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 5px;
+}
+
+/* Бегунок при наведении - темная тема */
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Firefox scrollbar styles - темная тема */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+/* Светлая тема - скроллбар */
+html[data-theme='light'] ::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+html[data-theme='light'] ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme='light'] * {
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+/* Hero section gradient - светлая тема */
+html[data-theme='light'] .hero-gradient {
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.96)) !important;
 }

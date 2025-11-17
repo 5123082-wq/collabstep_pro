@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 
 const categories = [
   {
@@ -54,8 +55,8 @@ export default function ProductMarketplacePage() {
       </header>
       <section className="mt-12 grid gap-6 sm:grid-cols-2">
         {categories.map((category) => (
-          <article key={category.title} className="rounded-2xl border border-neutral-900 bg-neutral-900/50 p-6">
-            <h2 className="text-xl font-semibold">{category.title}</h2>
+          <ContentBlock key={category.title} as="article" size="sm">
+            <ContentBlockTitle as="h2">{category.title}</ContentBlockTitle>
             <p className="mt-3 text-sm text-neutral-400">{category.description}</p>
             <Link
               href={category.cta.href}
@@ -63,7 +64,7 @@ export default function ProductMarketplacePage() {
             >
               {category.cta.label}
             </Link>
-          </article>
+          </ContentBlock>
         ))}
       </section>
     </main>

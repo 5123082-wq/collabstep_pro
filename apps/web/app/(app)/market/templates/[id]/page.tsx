@@ -2,7 +2,6 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import MarketBreadcrumbs from '@/components/marketplace/MarketBreadcrumbs';
 import { templates, getTemplateById, getTemplatesByCategory } from '@/lib/marketplace/data';
 import TemplatePurchaseActions from '@/components/marketplace/templates/TemplatePurchaseActions';
 import TemplateFileList from '@/components/marketplace/templates/TemplateFileList';
@@ -47,18 +46,11 @@ export default function TemplateDetailPage({ params }: TemplateDetailPageProps) 
 
   return (
     <div className="space-y-12">
-      <MarketBreadcrumbs
-        items={[
-          { label: 'Маркетплейс', href: '/market' },
-          { label: 'Каталог шаблонов', href: '/market/templates' },
-          { label: template.title }
-        ]}
-      />
       <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px]">
         <section className="space-y-8">
           <header className="space-y-4">
-            <h1 className="text-3xl font-semibold sm:text-4xl">{template.title}</h1>
-            <p className="text-neutral-300">{template.description}</p>
+            <h1 className="text-xl font-semibold text-neutral-50">{template.title}</h1>
+            <p className="text-sm text-neutral-400">{template.description}</p>
           </header>
           <div className="cs-auto-grid gap-4">
             {template.gallery.map((image) => (

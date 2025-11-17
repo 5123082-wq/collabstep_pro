@@ -52,7 +52,7 @@ export function RailItem({ action, expanded, onClick, badge, iconColumnWidth }: 
           <Icon className="h-[19px] w-[19px] text-neutral-500 dark:text-neutral-200" aria-hidden="true" />
           {showBadge ? (
             <span className="absolute -top-1 -right-1">
-              <Badge className="px-1 py-0 text-[10px] leading-3">{badge}</Badge>
+              <Badge className="px-1 py-0 text-xs leading-3">{badge}</Badge>
             </span>
           ) : null}
         </span>

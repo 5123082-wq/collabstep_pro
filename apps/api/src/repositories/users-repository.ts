@@ -36,21 +36,54 @@ export class UsersRepository {
     return memory.WORKSPACE_USERS.filter((user) => lookup.has(user.id)).map(cloneUser);
   }
 
-  create(user: Omit<WorkspaceUser, 'id'> & { id?: string }): WorkspaceUser {
+  findByEmail(email: string): WorkspaceUser | null {
+    if (!email) {
+      return null;
+    }
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed) {
+      return null;
+    }
+    const match = memory.WORKSPACE_USERS.find((user) => user.email.toLowerCase() === trimmed);
+    return match ? cloneUser(match) : null;
+  }
+
+  updatePassword(email: string, passwordHash: string): boolean {
+    if (!email || !passwordHash) {
+      return false;
+    }
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed) {
+      return false;
+    }
+    const userIndex = memory.WORKSPACE_USERS.findIndex((user) => user.email.toLowerCase() === trimmed);
+    if (userIndex < 0) {
+      return false;
+    }
+    memory.WORKSPACE_USERS[userIndex] = {
+      ...memory.WORKSPACE_USERS[userIndex],
+      passwordHash
+    };
+    return true;
+  }
+
+  create(user: Omit<WorkspaceUser, 'id'> & { id?: string; passwordHash?: string }): WorkspaceUser {
     const email = user.email.trim().toLowerCase();
     const existing = memory.WORKSPACE_USERS.find((u) => u.email.toLowerCase() === email);
     if (existing) {
       return cloneUser(existing);
     }
 
+    // Генерируем UUID для нового пользователя, если ID не предоставлен
     const newUser: WorkspaceUser = {
-      id: user.id || email,
+      id: user.id || crypto.randomUUID(),
       name: user.name.trim(),
       email: user.email.trim(),
       ...(user.title && { title: user.title }),
       ...(user.avatarUrl && { avatarUrl: user.avatarUrl }),
       ...(user.department && { department: user.department }),
-      ...(user.location && { location: user.location })
+      ...(user.location && { location: user.location }),
+      ...(user.passwordHash && { passwordHash: user.passwordHash })
     };
 
     memory.WORKSPACE_USERS.push(newUser);
@@ -82,6 +115,41 @@ export class UsersRepository {
     }
 
     return cloneUser(newUser);
+  }
+
+  delete(userId: string): boolean {
+    if (!userId) {
+      return false;
+    }
+    const trimmed = userId.trim();
+    if (!trimmed) {
+      return false;
+    }
+    
+    const userIndex = memory.WORKSPACE_USERS.findIndex(
+      (user) => user.id === trimmed || user.email.toLowerCase() === trimmed.toLowerCase()
+    );
+    
+    if (userIndex < 0) {
+      return false;
+    }
+
+    // Удаляем пользователя из WORKSPACE_USERS
+    memory.WORKSPACE_USERS.splice(userIndex, 1);
+
+    // Удаляем из ACCOUNT_MEMBERS
+    memory.ACCOUNT_MEMBERS = memory.ACCOUNT_MEMBERS.filter(
+      (member) => member.userId !== trimmed
+    );
+
+    // Удаляем из WORKSPACE_MEMBERS
+    for (const workspaceId in memory.WORKSPACE_MEMBERS) {
+      memory.WORKSPACE_MEMBERS[workspaceId] = memory.WORKSPACE_MEMBERS[workspaceId].filter(
+        (member) => member.userId !== trimmed
+      );
+    }
+
+    return true;
   }
 }
 

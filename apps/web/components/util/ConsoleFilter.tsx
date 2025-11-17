@@ -5,7 +5,9 @@ import { useEffect } from 'react';
 const SUPPRESSED_PATTERNS = [
   'Failed to load resource: the server responded with a status of 404 (Not Found)',
   'No default component was found for a parallel route rendered on this page',
-  'The above error occurred in the <NotFoundErrorBoundary> component'
+  'The above error occurred in the <NotFoundErrorBoundary> component',
+  'Download the React DevTools',
+  'reactjs.org/link/react-devtools'
 ];
 
 function shouldSuppress(args: unknown[]): boolean {
@@ -30,6 +32,7 @@ export default function ConsoleFilter(): null {
   useEffect(() => {
     const originalError = console.error;
     const originalWarn = console.warn;
+    const originalLog = console.log;
 
     const wrap = (original: typeof console.error) =>
       (...args: unknown[]) => {
@@ -42,10 +45,12 @@ export default function ConsoleFilter(): null {
 
     console.error = wrap(originalError);
     console.warn = wrap(originalWarn);
+    console.log = wrap(originalLog);
 
     return () => {
       console.error = originalError;
       console.warn = originalWarn;
+      console.log = originalLog;
     };
   }, []);
 

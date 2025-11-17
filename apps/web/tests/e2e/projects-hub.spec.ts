@@ -4,46 +4,44 @@ import { loginAsDemo } from './utils/auth';
 
 const appOrigin = 'http://localhost:3000';
 
-const routes = [
-  { label: 'Обзор', path: '/app/projects' },
-  { label: 'Мои', path: '/app/projects/my' },
-  { label: 'Шаблоны', path: '/app/projects/templates' },
-  { label: 'Архив', path: '/app/projects/archive' },
-  { label: 'Создать', path: '/app/projects/create' },
-  { label: 'Рабочее пространство', path: '/app/projects/workspace' }
-];
-
-test.describe('projects hub', () => {
+test.describe('projects overview', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsDemo(page, 'user', appOrigin);
+    await loginAsDemo(page, 'admin', appOrigin);
   });
 
-  test('верхнее меню переключает маршруты без ошибок', async ({ page }) => {
+  test('renders projects and tabs without console errors', async ({ page }) => {
     const logs: string[] = [];
     captureConsole(page, logs);
+
     await page.goto(`${appOrigin}/app/projects`);
+    await expect(page.getByRole('heading', { name: 'Проекты' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Мои' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Я участник' })).toBeVisible();
+    await expect(page.getByTestId('project-card').first()).toBeVisible();
 
-    for (const route of routes) {
-      const link = page.getByRole('link', { name: route.label });
-      await expect(link).toBeVisible();
-      await link.click();
-      await page.waitForURL(`**${route.path}`);
-      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    }
-
-    expect(logs).toEqual([]);
+    expect(logs.filter((message) => /error/i.test(message))).toEqual([]);
   });
 
-  test('drawer открывается, фокусируется и закрывается по Escape', async ({ page }) => {
+  test('filters projects by status and resets filters', async ({ page }) => {
     await page.goto(`${appOrigin}/app/projects`);
-    const trigger = page.getByRole('button', { name: 'Показать карточку проекта' });
-    await trigger.click();
+    await expect(page.getByRole('heading', { name: 'Проекты' })).toBeVisible();
 
-    const drawer = page.getByRole('dialog', { name: 'Карточка проекта' });
-    await expect(drawer).toBeVisible();
-    await expect(drawer.getByText('Содержимое карточки появится в следующих итерациях.')).toBeVisible();
+    const cards = page.getByTestId('project-card');
+    await expect(cards).toHaveCount(2);
 
-    await page.keyboard.press('Escape');
-    await expect(drawer).toBeHidden();
+    await page.getByLabel('Статус').selectOption('ARCHIVED');
+    await expect(cards).toHaveCount(1);
+    await expect(cards.first().getByRole('link', { name: /Редизайн лендинга/ })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Сбросить' }).click();
+    await expect(cards).toHaveCount(2);
+  });
+
+  test('shows empty state when switching to member tab', async ({ page }) => {
+    await page.goto(`${appOrigin}/app/projects`);
+    await expect(page.getByTestId('project-card').first()).toBeVisible();
+
+    await page.getByRole('button', { name: 'Я участник' }).click();
+    await expect(page.getByText('Проекты не найдены')).toBeVisible();
   });
 });

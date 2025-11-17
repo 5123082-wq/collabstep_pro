@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 
 const categories = [
   {
@@ -62,8 +63,8 @@ export default function SpecialistsPage() {
       </header>
       <section className="mt-12 grid gap-6 sm:grid-cols-2">
         {categories.map((category) => (
-          <article key={category.title} className="rounded-2xl border border-neutral-900 bg-neutral-900/50 p-6">
-            <h2 className="text-xl font-semibold">{category.title}</h2>
+          <ContentBlock key={category.title} as="article" size="sm">
+            <ContentBlockTitle as="h2">{category.title}</ContentBlockTitle>
             <p className="mt-3 text-sm text-neutral-400">{category.description}</p>
             <Link
               href={category.href}
@@ -71,11 +72,11 @@ export default function SpecialistsPage() {
             >
               Присоединиться
             </Link>
-          </article>
+          </ContentBlock>
         ))}
       </section>
-      <section id="rating" className="mt-16 rounded-2xl border border-neutral-900 bg-neutral-900/40 p-6">
-        <h2 className="text-2xl font-semibold">Как формируется рейтинг</h2>
+      <ContentBlock id="rating" className="mt-16" size="sm" variant="muted">
+        <ContentBlockTitle as="h2">Как формируется рейтинг</ContentBlockTitle>
         <ul className="mt-4 space-y-2 text-sm text-neutral-400">
           <li>✔ Отзывы заказчиков и команд.</li>
           <li>✔ Успешно завершённые проекты и соблюдение сроков.</li>
@@ -87,7 +88,7 @@ export default function SpecialistsPage() {
         >
           Читать гайд
         </Link>
-      </section>
+      </ContentBlock>
     </main>
   );
 }

@@ -35,7 +35,15 @@ export const flags = {
   PROJECT_ATTACHMENTS: resolveLegacyBooleanFlag([
     'NEXT_PUBLIC_FEATURE_PROJECT_ATTACHMENTS',
     'FEATURE_PROJECT_ATTACHMENTS'
-  ])
+  ]),
+  PM_NAV_PROJECTS_AND_TASKS: isFeatureEnabled('pmNavProjectsAndTasks'),
+  PM_PROJECTS_LIST: isFeatureEnabled('pmProjectsList'),
+  PM_PROJECT_CARD: isFeatureEnabled('pmProjectCard'),
+  PM_TASKS_BOARD: isFeatureEnabled('pmTasksBoard'),
+  PM_TASKS_LIST: isFeatureEnabled('pmTasksList'),
+  PM_TASKS_CALENDAR: isFeatureEnabled('pmTasksCalendar'),
+  PM_DASHBOARD: isFeatureEnabled('pmDashboard'),
+  PM_ARCHIVE: isFeatureEnabled('pmArchive')
 } as const;
 
 export type FlagName = keyof typeof flags;

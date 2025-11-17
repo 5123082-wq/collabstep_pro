@@ -8,7 +8,7 @@ export const defaultRailConfig: QuickAction[] = [
     label: 'Новый проект',
     icon: PlusCircle,
     intent: 'route',
-    payload: { to: '/project/new' },
+    payload: { to: '/projects/create' },
     section: 'actions'
   },
   {

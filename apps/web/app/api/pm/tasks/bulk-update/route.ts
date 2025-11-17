@@ -1,0 +1,230 @@
+/**
+ * API endpoint для массовых операций с задачами
+ * 
+ * POST /api/pm/tasks/bulk-update
+ * 
+ * Выполняет массовое изменение задач согласно фильтрам и обновлениям
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { getAuthFromRequest } from '@/lib/api/finance-access';
+import { jsonError, jsonOk } from '@/lib/api/http';
+import { getTasksRepository } from '@/api/src/repositories/tasks-repository';
+import { getProjectsRepository } from '@/api/src/repositories/projects-repository';
+import { getDomainEventsRepository } from '@/api/src/repositories/domain-events-repository';
+import type { BulkOperation } from '@/lib/ai/bulk-operations';
+
+export async function POST(req: NextRequest) {
+  try {
+    // Проверка авторизации
+    const auth = getAuthFromRequest(req);
+    if (!auth) {
+      return jsonError('UNAUTHORIZED', { status: 401 });
+    }
+
+    // Парсинг тела запроса
+    const body = await req.json();
+    const { projectId, operation } = body as {
+      projectId: string;
+      operation: BulkOperation;
+    };
+
+    // Валидация
+    if (!projectId || typeof projectId !== 'string') {
+      return jsonError('INVALID_REQUEST', {
+        status: 400,
+        message: 'projectId is required and must be a string'
+      });
+    }
+
+    if (!operation || !operation.type || !operation.filter || !operation.updates) {
+      return jsonError('INVALID_REQUEST', {
+        status: 400,
+        message: 'Invalid operation structure'
+      });
+    }
+
+    // Проверка доступа к проекту
+    const projectsRepo = getProjectsRepository();
+    const project = projectsRepo.findById(projectId);
+
+    if (!project) {
+      return jsonError('NOT_FOUND', {
+        status: 404,
+        message: 'Project not found'
+      });
+    }
+
+    const members = projectsRepo.listMembers(projectId);
+    const currentMember = members.find((m) => m.userId === auth.userId);
+
+    if (!currentMember) {
+      return jsonError('FORBIDDEN', {
+        status: 403,
+        message: 'You do not have access to this project'
+      });
+    }
+
+    // Only owners and admins can perform bulk operations
+    if (currentMember.role !== 'owner' && currentMember.role !== 'admin') {
+      return jsonError('FORBIDDEN', {
+        status: 403,
+        message: 'Only project owners and admins can perform bulk operations'
+      });
+    }
+
+    // Получение задач проекта
+    const tasksRepo = getTasksRepository();
+    const allTasks = tasksRepo.listByProject(projectId);
+
+    // Фильтрация задач согласно фильтру операции
+    const tasksToUpdate = allTasks.filter((task) => {
+      const { filter } = operation;
+
+      if (filter.status && task.status !== filter.status) {
+        return false;
+      }
+
+      if (filter.assigneeId && task.assigneeId !== filter.assigneeId) {
+        return false;
+      }
+
+      if (filter.priority && task.priority !== filter.priority) {
+        return false;
+      }
+
+      if (filter.labels && filter.labels.length > 0) {
+        const taskLabels = task.labels || [];
+        const hasAllLabels = filter.labels.every((label) => taskLabels.includes(label));
+        if (!hasAllLabels) {
+          return false;
+        }
+      }
+
+      if (filter.hasDeadline !== undefined) {
+        const hasDeadline = !!task.dueAt;
+        if (hasDeadline !== filter.hasDeadline) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    // Выполнение обновлений
+    let updatedCount = 0;
+    const eventsRepo = getDomainEventsRepository();
+
+    for (const task of tasksToUpdate) {
+      const updates: any = {};
+
+      // Применение обновлений согласно типу операции
+      switch (operation.type) {
+        case 'update_status':
+          if (operation.updates.status) {
+            updates.status = operation.updates.status;
+          }
+          break;
+
+        case 'update_deadline':
+          if (operation.updates.deadline) {
+            updates.dueAt = operation.updates.deadline;
+          }
+          break;
+
+        case 'update_priority':
+          if (operation.updates.priority) {
+            updates.priority = operation.updates.priority;
+          }
+          break;
+
+        case 'assign':
+          if (operation.updates.assigneeId) {
+            updates.assigneeId = operation.updates.assigneeId;
+          }
+          break;
+
+        case 'add_labels':
+          if (operation.updates.labels) {
+            const currentLabels = task.labels || [];
+            const newLabels = [...new Set([...currentLabels, ...operation.updates.labels])];
+            updates.labels = newLabels;
+          }
+          break;
+
+        case 'remove_labels':
+          if (operation.updates.labels) {
+            const currentLabels = task.labels || [];
+            const newLabels = currentLabels.filter(
+              (label) => !operation.updates.labels!.includes(label)
+            );
+            updates.labels = newLabels;
+          }
+          break;
+
+        case 'update_estimatedTime':
+          if (operation.updates.estimatedTime !== undefined) {
+            updates.estimatedTime = operation.updates.estimatedTime;
+          }
+          break;
+
+        default:
+          console.warn(`Unknown operation type: ${operation.type}`);
+          continue;
+      }
+
+      // Обновление задачи
+      if (Object.keys(updates).length > 0) {
+        const before = { ...task };
+        const updated = tasksRepo.update(task.id, {
+          ...updates,
+          updatedAt: new Date().toISOString()
+        });
+
+        if (updated) {
+          updatedCount++;
+
+          // Создание доменного события
+          eventsRepo.create({
+            type: 'task.bulk_updated',
+            entityId: task.id,
+            payload: {
+              projectId,
+              taskId: task.id,
+              operationType: operation.type,
+              before,
+              after: updated,
+              updatedBy: auth.userId
+            }
+          });
+        }
+      }
+    }
+
+    // Создание события о массовой операции
+    eventsRepo.create({
+      type: 'project.bulk_operation',
+      entityId: projectId,
+      payload: {
+        projectId,
+        operationType: operation.type,
+        affectedTasksCount: updatedCount,
+        filter: operation.filter,
+        updates: operation.updates,
+        executedBy: auth.userId
+      }
+    });
+
+    return jsonOk({
+      updatedCount,
+      message: `Successfully updated ${updatedCount} tasks`
+    });
+  } catch (error) {
+    console.error('Error executing bulk operation:', error);
+    return jsonError('INTERNAL_ERROR', {
+      status: 500,
+      message: 'Failed to execute bulk operation'
+    });
+  }
+}
+

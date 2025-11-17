@@ -65,10 +65,21 @@ export default function HoverRail({ permissions = [], featureFlags }: HoverRailP
   useEffect(() => {
     if (!expanded) {
       setRailExpanded(false);
+      document.documentElement.setAttribute('data-rail-expanded', 'false');
       return;
     }
     setRailExpanded(true);
+    document.documentElement.setAttribute('data-rail-expanded', 'true');
   }, [expanded, setRailExpanded]);
+
+  // Устанавливаем начальное значение при монтировании
+  useEffect(() => {
+    document.documentElement.setAttribute('data-rail-expanded', 'false');
+    return () => {
+      // При размонтировании убираем атрибут, если HoverRail был единственным
+      document.documentElement.removeAttribute('data-rail-expanded');
+    };
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -76,7 +87,7 @@ export default function HoverRail({ permissions = [], featureFlags }: HoverRailP
     };
   }, [clearTimer]);
 
-  const hideRail = activeDrawer === 'task' || activeDrawer === 'document';
+  const hideRail = activeDrawer === 'document';
 
   useEffect(() => {
     if (hideRail) {
@@ -118,7 +129,7 @@ export default function HoverRail({ permissions = [], featureFlags }: HoverRailP
       const payload = action.payload ?? {};
 
       if (intent === 'route') {
-        const target = typeof payload.to === 'string' ? payload.to : '/app/dashboard';
+        const target = typeof payload.to === 'string' ? payload.to : '/dashboard';
         router.push(target);
       }
 
@@ -163,7 +174,7 @@ export default function HoverRail({ permissions = [], featureFlags }: HoverRailP
         onMouseLeave={handleMouseLeave}
         onFocusCapture={handleFocus}
         onBlurCapture={handleBlur}
-        className="pointer-events-none fixed right-4 top-24 bottom-8 z-40 hidden lg:flex"
+        className="pointer-events-none fixed right-4 top-[140px] bottom-8 z-[60] hidden lg:flex"
         style={{ width: expanded ? EXPANDED_WIDTH : COLLAPSED_WIDTH, transition: 'width 200ms ease' }}
         data-expanded={expanded}
         >
@@ -207,7 +218,7 @@ export default function HoverRail({ permissions = [], featureFlags }: HoverRailP
       {shouldRenderRail ? (
         <button
         type="button"
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-500 text-white shadow-xl transition hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300 lg:hidden"
+        className="fixed bottom-6 right-6 z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-indigo-500 text-white shadow-xl transition hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300 lg:hidden"
         aria-label="Открыть быстрые действия"
         onClick={() => setMobileOpen(true)}
       >

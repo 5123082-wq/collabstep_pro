@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 
 const plans = [
   {
@@ -42,7 +43,7 @@ export default function PricingPage() {
       </header>
       <section className="mt-12 grid gap-6 md:grid-cols-2">
         {plans.map((plan) => (
-          <article key={plan.id} id={plan.id} className="rounded-2xl border border-neutral-900 bg-neutral-900/50 p-6">
+          <ContentBlock key={plan.id} id={plan.id} as="article" size="sm">
             <p className="text-sm uppercase text-indigo-400">{plan.name}</p>
             <h2 className="mt-2 text-2xl font-semibold">{plan.price}</h2>
             <ul className="mt-4 space-y-2 text-sm text-neutral-400">
@@ -56,11 +57,11 @@ export default function PricingPage() {
             >
               Подключить план
             </Link>
-          </article>
+          </ContentBlock>
         ))}
       </section>
-      <section className="mt-16 space-y-4 rounded-2xl border border-neutral-900 bg-neutral-900/40 p-6">
-        <h2 className="text-2xl font-semibold">Нужен индивидуальный тариф?</h2>
+      <ContentBlock className="mt-16 space-y-4" size="sm" variant="muted">
+        <ContentBlockTitle as="h2">Нужен индивидуальный тариф?</ContentBlockTitle>
         <p className="text-sm text-neutral-400">
           Мы подберём решение для крупных команд и enterprise-заказчиков. Расскажите о задачах — и мы
           подготовим предложение.
@@ -79,7 +80,7 @@ export default function PricingPage() {
             Посмотреть вебинары
           </Link>
         </div>
-      </section>
+      </ContentBlock>
     </main>
   );
 }

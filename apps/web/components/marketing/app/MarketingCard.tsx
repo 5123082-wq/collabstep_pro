@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
-import clsx from 'clsx';
+import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 
 type MarketingCardProps = {
   title: string;
@@ -31,24 +31,20 @@ export default function MarketingCard({
   } as CSSProperties;
 
   return (
-    <section
-      className={clsx(
-        'space-y-4 rounded-3xl border p-6 shadow-[0_0_20px_rgba(0,0,0,0.15)]',
-        accent === 'primary'
-          ? 'border-indigo-500/40 bg-indigo-500/10'
-          : 'border-neutral-900 bg-neutral-950/60'
-      )}
+    <ContentBlock
+      variant={accent === 'primary' ? 'primary' : 'default'}
+      header={
+        <ContentBlockTitle description={description}>
+          {title}
+        </ContentBlockTitle>
+      }
+      footer={footer ? <div className="text-xs text-[color:var(--text-tertiary)]">{footer}</div> : undefined}
     >
-      <header className="space-y-2">
-        <h3 className="text-lg font-semibold text-white">{title}</h3>
-        {description ? <p className="text-sm text-neutral-400">{description}</p> : null}
-      </header>
       {children ? (
         <div className="cs-auto-grid" style={gridStyle}>
           {children}
         </div>
       ) : null}
-      {footer ? <div className="border-t border-neutral-800/60 pt-4 text-xs text-neutral-400">{footer}</div> : null}
-    </section>
+    </ContentBlock>
   );
 }

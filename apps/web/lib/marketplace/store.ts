@@ -11,6 +11,7 @@ export type CartItem = {
 export type MarketplaceState = {
   favorites: string[];
   cart: CartItem[];
+  selectedTemplateId: string | null;
   addToCart: (templateId: string) => void;
   removeFromCart: (templateId: string) => void;
   updateQuantity: (templateId: string, quantity: number) => void;
@@ -18,12 +19,15 @@ export type MarketplaceState = {
   clearCart: () => void;
   resetFiltersSignal: number;
   triggerResetFilters: () => void;
+  openTemplateDetail: (templateId: string) => void;
+  closeTemplateDetail: () => void;
 };
 
 export const useMarketplaceStore = create<MarketplaceState>((set) => ({
   favorites: [],
   cart: [],
   resetFiltersSignal: 0,
+  selectedTemplateId: null,
   addToCart: (templateId) =>
     set((state) => {
       const existing = state.cart.find((item) => item.templateId === templateId);
@@ -51,7 +55,9 @@ export const useMarketplaceStore = create<MarketplaceState>((set) => ({
         : { favorites: [...state.favorites, templateId] }
     ),
   clearCart: () => set({ cart: [] }),
-  triggerResetFilters: () => set((state) => ({ resetFiltersSignal: state.resetFiltersSignal + 1 }))
+  triggerResetFilters: () => set((state) => ({ resetFiltersSignal: state.resetFiltersSignal + 1 })),
+  openTemplateDetail: (templateId) => set({ selectedTemplateId: templateId }),
+  closeTemplateDetail: () => set({ selectedTemplateId: null })
 }));
 
 export function enrichCartItems(cart: CartItem[], templates: MarketplaceTemplate[]) {

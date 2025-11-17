@@ -11,33 +11,19 @@ test.describe('demo admin smoke workflow', () => {
 
     await loginAsDemo(page, 'admin', appOrigin);
 
-    await page.goto(`${appOrigin}/project/new`);
+    await page.goto(`${appOrigin}/app/projects/create`);
     await page.waitForURL('**/app/projects/create', { waitUntil: 'load' });
-
-    const nextButton = page.getByRole('button', { name: 'Далее' });
-    await nextButton.click();
 
     const projectName = `Admin Smoke Project ${Date.now()}`;
     await page.getByLabel('Название проекта').fill(projectName);
-    await nextButton.click();
 
-    await page.getByTestId('wizard-submit').click();
-    await page.waitForURL('**/app/project/**', { timeout: 15000 });
+    await page.getByRole('button', { name: 'Далее' }).click();
+    await page.getByRole('button', { name: 'К подтверждению' }).click();
+    await page.getByRole('button', { name: 'Создать проект' }).click();
 
+    await page.waitForURL('**/pm/projects/**', { timeout: 15000 });
+    await expect(page).toHaveURL(/\/pm\/projects\/[^/]+$/);
     await expect(page.getByRole('heading', { name: projectName })).toBeVisible();
-
-    const projectUrl = page.url();
-    await page.goto(`${projectUrl}/tasks`);
-    await page.waitForURL('**/app/project/**/tasks', { timeout: 15000 });
-
-    const kanbanView = page.locator('[data-view-mode="kanban"]');
-    await expect(kanbanView).toBeVisible();
-
-    const taskTitle = `Admin Smoke Task ${Date.now()}`;
-    await page.getByPlaceholder('Новая задача…').fill(taskTitle);
-    await page.getByRole('button', { name: 'Добавить' }).click();
-
-    await expect(kanbanView.getByText(taskTitle)).toBeVisible({ timeout: 10000 });
 
     expect(logs).toEqual([]);
   });

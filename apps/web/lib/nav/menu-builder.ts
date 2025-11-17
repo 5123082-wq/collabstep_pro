@@ -1,27 +1,20 @@
 import { leftMenuConfig, type LeftMenuSection } from '@/components/app/LeftMenu.config';
-import { filterRoles, type UserRole, getUserRoles } from '@/lib/auth/roles';
-import { useMenuPreferencesStore } from '@/stores/menuPreferences';
+import { filterRoles, type UserRole } from '@/lib/auth/roles';
 
 type BuiltMenuSection = LeftMenuSection & { children?: LeftMenuSection['children'] };
 
-export function buildLeftMenu(roles: UserRole[]): BuiltMenuSection[] {
-  // Используем getUserRoles() для получения ролей с учётом типа пользователя
-  const currentRoles = getUserRoles();
+export function buildLeftMenu(roles: UserRole[], visibleMenuIds?: string[]): BuiltMenuSection[] {
+  // Используем переданные роли вместо вызова getUserRoles() для избежания проблем с гидратацией
+  // getUserRoles() читает из localStorage, что может давать разные результаты на сервере и клиенте
   
-  // Получаем настройки видимости меню
-  // В SSR контексте используем все меню по умолчанию
-  let visibleMenuIds: string[] = [];
-  if (typeof window !== 'undefined') {
-    visibleMenuIds = useMenuPreferencesStore.getState().visibleMenuIds;
-  } else {
-    // В SSR контексте показываем все меню
-    visibleMenuIds = leftMenuConfig.map((section) => section.id);
-  }
+  // Если visibleMenuIds не передан, используем все меню (для SSR совместимости)
+  // В SSR контексте показываем все меню по умолчанию
+  const effectiveVisibleMenuIds = visibleMenuIds ?? leftMenuConfig.map((section) => section.id);
   
   return leftMenuConfig
     .filter((section) => {
       // Проверяем видимость из настроек пользователя
-      if (!visibleMenuIds.includes(section.id)) {
+      if (!effectiveVisibleMenuIds.includes(section.id)) {
         return false;
       }
       
@@ -31,10 +24,10 @@ export function buildLeftMenu(roles: UserRole[]): BuiltMenuSection[] {
         return true;
       }
 
-      return section.roles.some((role) => currentRoles.includes(role));
+      return section.roles.some((role) => roles.includes(role));
     })
     .map((section) => {
-      const children = section.children ? filterRoles(section.children, currentRoles) : [];
+      const children = section.children ? filterRoles(section.children, roles) : [];
       return { ...section, children };
     });
 }

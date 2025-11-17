@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useMarketplaceStore, enrichCartItems } from '@/lib/marketplace/store';
 import type { MarketplaceTemplate } from '@/lib/marketplace/types';
 import { formatTemplatePrice, getTemplatePriceLabel } from '@/lib/marketplace/pricing';
+import { ContentBlock } from '@/components/ui/content-block';
 
 type CartViewProps = {
   templates: MarketplaceTemplate[];
@@ -26,8 +27,8 @@ export default function CartView({ templates }: CartViewProps) {
 
   if (items.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-neutral-800/80 bg-neutral-900/40 p-16 text-center">
-        <h2 className="text-xl font-semibold text-neutral-100">Корзина пуста</h2>
+      <ContentBlock variant="dashed" size="sm" className="flex flex-col items-center justify-center gap-4 p-16 text-center">
+        <h2 className="text-lg font-semibold text-neutral-100">Корзина пуста</h2>
         <p className="max-w-md text-sm text-neutral-400">Добавьте шаблоны из каталога, чтобы оформить заказ.</p>
         <Link
           href="/market/templates"
@@ -35,7 +36,7 @@ export default function CartView({ templates }: CartViewProps) {
         >
           Вернуться к каталогу
         </Link>
-      </div>
+      </ContentBlock>
     );
   }
 
@@ -46,9 +47,10 @@ export default function CartView({ templates }: CartViewProps) {
           const priceInfo = getTemplatePriceLabel(item.template);
 
           return (
-            <div
+            <ContentBlock
               key={item.templateId}
-              className="flex flex-col gap-3 rounded-2xl border border-neutral-800/70 bg-neutral-900/40 p-4 sm:flex-row sm:items-center"
+              size="sm"
+              className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center"
             >
               <div className="flex flex-1 flex-col gap-2">
                 <Link
@@ -93,11 +95,11 @@ export default function CartView({ templates }: CartViewProps) {
                   Удалить
                 </button>
               </div>
-            </div>
+            </ContentBlock>
           );
         })}
       </div>
-      <aside className="space-y-4 rounded-2xl border border-neutral-800/80 bg-neutral-900/60 p-6">
+      <ContentBlock as="aside" size="sm" className="space-y-4">
         <div className="space-y-3">
           <label className="flex flex-col gap-2">
             <span className="text-sm font-semibold text-neutral-300">Промокод</span>
@@ -129,7 +131,7 @@ export default function CartView({ templates }: CartViewProps) {
         >
           Оформить заказ
         </button>
-      </aside>
+      </ContentBlock>
     </div>
   );
 }

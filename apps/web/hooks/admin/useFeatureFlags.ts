@@ -22,7 +22,8 @@ export function useMenuSectionEnabled(sectionId: string): boolean {
     documents: 'projectCreateWizard',
     finance: 'budgetLimits',
     tasks: 'tasksWorkspace',
-    ai: 'financeAutomations'
+    ai: 'financeAutomations',
+    pm: 'pmNavProjectsAndTasks'
   };
 
   const featureKey = sectionToFeatureMap[sectionId];

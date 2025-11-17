@@ -165,6 +165,7 @@ export class MemoryExpenseStore implements ExpenseStore {
     }
 
     console.info('[MemoryExpenseStore] create', { expenseId: stored.id, actorId: input.actorId });
+    
     return cloneExpense(stored);
   }
 
@@ -225,7 +226,7 @@ export class MemoryExpenseStore implements ExpenseStore {
         memory.EXPENSE_ATTACHMENTS.push(cloneAttachment(attachment));
       }
     }
-
+    
     return cloneExpense(next);
   }
 
@@ -254,6 +255,7 @@ export class MemoryExpenseStore implements ExpenseStore {
 
     memory.EXPENSES[index] = next;
     console.info('[MemoryExpenseStore] changeStatus', { expenseId: id, actorId: context.actorId, status });
+    
     return cloneExpense(next);
   }
 
