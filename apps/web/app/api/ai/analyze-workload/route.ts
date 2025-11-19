@@ -6,16 +6,15 @@
  * Анализирует загруженность участников проекта и предлагает оптимизации
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { generateText } from '@/lib/ai/client';
 import { 
   analyzeWorkload,
   type WorkloadAnalysis 
-} from '@/api/src/services/ai-planning-service';
+} from '@collabverse/api/services/ai-planning-service';
 import { getAuthFromRequest } from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
-import { getProjectsRepository } from '@/api/src/repositories/projects-repository';
-import { getTasksRepository } from '@/api/src/repositories/tasks-repository';
+import { projectsRepository, tasksRepository } from '@collabverse/api';
 
 /**
  * Адаптер для использования AI клиента в сервисе
@@ -50,8 +49,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Получение проекта
-    const projectsRepo = getProjectsRepository();
-    const project = projectsRepo.findById(projectId);
+    const project = projectsRepository.findById(projectId);
 
     if (!project) {
       return jsonError('NOT_FOUND', { 
@@ -61,7 +59,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Проверка прав доступа
-    const members = projectsRepo.listMembers(projectId);
+    const members = projectsRepository.listMembers(projectId);
     const currentMember = members.find(m => m.userId === auth.userId);
     
     if (!currentMember) {
@@ -72,8 +70,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Получение задач проекта
-    const tasksRepo = getTasksRepository();
-    const tasks = tasksRepo.listByProject(projectId);
+    const tasks = tasksRepository.listByProject(projectId);
 
     // Получение информации об участниках
     const membersWithNames = members.map(m => {

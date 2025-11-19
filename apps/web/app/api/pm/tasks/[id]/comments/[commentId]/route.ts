@@ -4,7 +4,6 @@ import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
 import {
   commentsRepository,
   tasksRepository,
-  projectsRepository,
 } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { broadcastToProject } from '@/lib/websocket/event-broadcaster';

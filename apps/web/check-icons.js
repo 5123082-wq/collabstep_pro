@@ -1,0 +1,15 @@
+const icons = require('lucide-react');
+console.log('Download:', !!icons.Download);
+console.log('DownloadCloud:', !!icons.DownloadCloud);
+console.log('CheckCircle:', !!icons.CheckCircle);
+console.log('CheckCircle2:', !!icons.CheckCircle2);
+console.log('Bot:', !!icons.Bot);
+console.log('BotIcon:', !!icons.BotIcon);
+console.log('Copy:', !!icons.Copy);
+console.log('Check:', !!icons.Check);
+console.log('Mail:', !!icons.Mail);
+console.log('Store:', !!icons.Store);
+console.log('Megaphone:', !!icons.Megaphone);
+console.log('Archive:', !!icons.Archive);
+console.log('Palette:', !!icons.Palette);
+console.log('Globe:', !!icons.Globe);

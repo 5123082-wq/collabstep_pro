@@ -8,10 +8,6 @@ import { type Project } from '@/types/pm';
 import { trackEvent } from '@/lib/telemetry';
 
 export default function PMArchivePage() {
-  if (!flags.PM_NAV_PROJECTS_AND_TASKS || !flags.PM_ARCHIVE) {
-    return <FeatureComingSoon title="Архив" />;
-  }
-
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +39,10 @@ export default function PMArchivePage() {
 
     void loadArchivedProjects();
   }, []);
+
+  if (!flags.PM_NAV_PROJECTS_AND_TASKS || !flags.PM_ARCHIVE) {
+    return <FeatureComingSoon title="Архив" />;
+  }
 
   return (
     <div className="space-y-6">

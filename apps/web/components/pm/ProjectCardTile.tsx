@@ -1,12 +1,12 @@
 'use client';
 
-import Link from 'next/link';
 import { type Project } from '@/types/pm';
 import { cn } from '@/lib/utils';
 import { ContentBlock } from '@/components/ui/content-block';
 
 type ProjectCardTileProps = {
   project: Project;
+  onOpenProject?: (project: Project) => void;
 };
 
 const STATUS_COLORS: Record<Project['status'], string> = {
@@ -25,7 +25,7 @@ const STATUS_LABELS: Record<Project['status'], string> = {
   ARCHIVED: 'Архив'
 };
 
-export default function ProjectCardTile({ project }: ProjectCardTileProps) {
+export default function ProjectCardTile({ project, onOpenProject }: ProjectCardTileProps) {
   const statusColor = STATUS_COLORS[project.status];
   const statusLabel = STATUS_LABELS[project.status];
   const progress = project.metrics?.progressPct || 0;
@@ -33,11 +33,25 @@ export default function ProjectCardTile({ project }: ProjectCardTileProps) {
   const inProgress = project.metrics?.inProgress || 0;
   const overdue = project.metrics?.overdue || 0;
 
+  const handleClick = () => {
+    if (onOpenProject) {
+      onOpenProject(project);
+    }
+  };
+
+  const Component = onOpenProject ? 'button' : 'div';
+  const componentProps = onOpenProject
+    ? {
+        type: 'button' as const,
+        onClick: handleClick,
+        className: 'group block w-full text-left'
+      }
+    : {
+        className: 'group block'
+      };
+
   return (
-    <Link
-      href={`/pm/projects/${project.id}`}
-      className="group block"
-    >
+    <Component {...componentProps}>
       <ContentBlock interactive className="h-full">
       <header className="mb-4 flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
@@ -123,7 +137,7 @@ export default function ProjectCardTile({ project }: ProjectCardTileProps) {
         </div>
       )}
       </ContentBlock>
-    </Link>
+    </Component>
   );
 }
 

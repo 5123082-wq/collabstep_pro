@@ -26,12 +26,12 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Открытые проекты Collabverse',
     description: 'Исследуйте ленту проектов и откликайтесь на запросы команд.',
-    url: '/projects',
+    url: '/open-projects',
     type: 'website'
   }
 };
 
-export default function ProjectsPage() {
+export default function OpenProjectsPage() {
   return (
     <main className="mx-auto max-w-5xl px-6 py-16 sm:px-8 lg:px-12">
       <header className="space-y-4">
@@ -65,3 +65,4 @@ export default function ProjectsPage() {
     </main>
   );
 }
+

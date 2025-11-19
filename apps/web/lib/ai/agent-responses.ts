@@ -1,8 +1,7 @@
 import {
   aiAgentsRepository,
   projectChatRepository,
-  commentsRepository,
-  tasksRepository
+  commentsRepository
 } from '@collabverse/api';
 import type { AIAgent } from '@collabverse/api';
 

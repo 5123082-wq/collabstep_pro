@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { generateText } from '@/lib/ai/client';
-import { summarizeTaskComments } from '@collabverse/api/src/services/ai-service';
+import { summarizeTaskComments } from '@collabverse/api/services/ai-service';
 import { tasksRepository, commentsRepository, usersRepository } from '@collabverse/api';
 
 /**

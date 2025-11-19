@@ -2,15 +2,17 @@
 
 import { type Project } from '@/types/pm';
 import { cn } from '@/lib/utils';
+import { Settings } from 'lucide-react';
 import BudgetBanner from './BudgetBanner';
 import { ContentBlock } from '@/components/ui/content-block';
 
 type ProjectKPIsProps = {
   project: Project;
   onUpdateLimit?: () => void;
+  onBudgetSettingsClick?: () => void;
 };
 
-export default function ProjectKPIs({ project, onUpdateLimit }: ProjectKPIsProps) {
+export default function ProjectKPIs({ project, onUpdateLimit, onBudgetSettingsClick }: ProjectKPIsProps) {
   const metrics = project.metrics;
   if (!metrics) {
     return null;
@@ -53,20 +55,48 @@ export default function ProjectKPIs({ project, onUpdateLimit }: ProjectKPIsProps
         </ContentBlock>
 
         {/* Бюджет */}
-        {budgetLimit && (
-          <ContentBlock size="sm">
+        <ContentBlock 
+          size="sm" 
+          className={cn(
+            onBudgetSettingsClick && 'cursor-pointer transition hover:bg-neutral-900/80',
+            'relative'
+          )}
+          onClick={onBudgetSettingsClick}
+        >
+          <div className="flex items-center justify-between">
             <div className="text-xs text-[color:var(--text-tertiary)]">Бюджет</div>
-            <div className={cn('text-xl font-semibold', isBudgetExceeded ? 'text-rose-400' : 'text-[color:var(--text-primary)]')}>
-              {budgetUsed} / {budgetLimit}
+            {onBudgetSettingsClick && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onBudgetSettingsClick();
+                }}
+                className="rounded p-1 text-neutral-400 transition hover:bg-neutral-800 hover:text-white"
+                title="Настройки бюджета"
+              >
+                <Settings className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+          {budgetLimit ? (
+            <>
+              <div className={cn('text-xl font-semibold', isBudgetExceeded ? 'text-rose-400' : 'text-[color:var(--text-primary)]')}>
+                {budgetUsed} / {budgetLimit}
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-neutral-800">
+                <div
+                  className={cn('h-full transition-all', isBudgetExceeded ? 'bg-rose-500' : 'bg-indigo-500')}
+                  style={{ width: `${budgetPercentage}%` }}
+                />
+              </div>
+            </>
+          ) : (
+            <div className="text-xl font-semibold text-[color:var(--text-tertiary)]">
+              Не установлен
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-neutral-800">
-              <div
-                className={cn('h-full transition-all', isBudgetExceeded ? 'bg-rose-500' : 'bg-indigo-500')}
-                style={{ width: `${budgetPercentage}%` }}
-              />
-            </div>
-          </ContentBlock>
-        )}
+          )}
+        </ContentBlock>
 
         {/* Активность */}
         <ContentBlock size="sm">

@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/lib/ui/toast';
-import { Plus, X, Bot, Sparkles } from 'lucide-react';
+// @ts-ignore
+import { Bot, Brain, MessageSquare, Play, Plus, Settings, Sparkles, StopCircle, X, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type AIAgent = {
@@ -56,7 +57,7 @@ export default function ProjectAIAgents({
   const loadProjectAgents = async () => {
     try {
       const response = await fetch(`/api/pm/projects/${projectId}/ai-agents`);
-      
+
       if (!response.ok) {
         throw new Error('Failed to load project AI agents');
       }
@@ -73,7 +74,7 @@ export default function ProjectAIAgents({
   const loadAvailableAgents = async () => {
     try {
       const response = await fetch('/api/ai-agents');
-      
+
       if (!response.ok) {
         // Endpoint может не существовать, игнорируем ошибку
         setAvailableAgents([]);
@@ -82,11 +83,11 @@ export default function ProjectAIAgents({
 
       const data = await response.json();
       const allAgents = data.agents || [];
-      
+
       // Фильтруем агентов, которые уже добавлены в проект
       const projectAgentIds = new Set(projectAgents.map(a => a.id));
       const available = allAgents.filter((agent: AIAgent) => !projectAgentIds.has(agent.id));
-      
+
       setAvailableAgents(available);
     } catch (error) {
       console.error('Failed to load available AI agents:', error);
@@ -129,7 +130,7 @@ export default function ProjectAIAgents({
       setShowAvailable(false);
     } catch (error) {
       console.error('Failed to add AI agent:', error);
-      
+
       if (error instanceof Error) {
         if (error.message.includes('ACCESS_DENIED')) {
           toast('Недостаточно прав для добавления агентов', 'warning');
@@ -164,7 +165,7 @@ export default function ProjectAIAgents({
       await loadProjectAgents();
     } catch (error) {
       console.error('Failed to remove AI agent:', error);
-      
+
       if (error instanceof Error && error.message.includes('ACCESS_DENIED')) {
         toast('Недостаточно прав для удаления агентов', 'warning');
       } else {
@@ -217,7 +218,7 @@ export default function ProjectAIAgents({
             {canManage && (
               <Button
                 onClick={() => setShowAvailable(true)}
-                variant="outline"
+                variant="secondary"
                 size="sm"
               >
                 <Plus className="h-4 w-4 mr-1" />
@@ -303,7 +304,7 @@ export default function ProjectAIAgents({
                   <Button
                     onClick={() => handleAddAgent(agent.id)}
                     disabled={adding}
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                   >
                     <Plus className="h-4 w-4" />

@@ -16,7 +16,7 @@ const benefits = [
   {
     title: 'Интеграция с проектами',
     description: 'Подключайтесь к проектам из ленты, отправляйте предложения напрямую.',
-    href: '/projects'
+    href: '/open-projects'
   }
 ];
 

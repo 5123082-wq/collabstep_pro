@@ -77,7 +77,7 @@ export default function NotificationsPage() {
   }, [statusFilter, pagination.page, pagination.pageSize]);
 
   useEffect(() => {
-    loadNotifications();
+    void loadNotifications();
   }, [loadNotifications]);
 
   const handleNotificationClick = async (notification: Notification) => {

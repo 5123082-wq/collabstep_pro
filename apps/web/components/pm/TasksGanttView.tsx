@@ -4,9 +4,6 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { toast } from '@/lib/ui/toast';
 import type { Task, TaskDependency } from '@collabverse/api';
 import {
-  calculateCriticalPath,
-  transformTasksForGantt,
-  transformDependenciesForGantt,
   type GanttTask,
   type GanttLink,
 } from '@/lib/pm/gantt-utils';
@@ -69,7 +66,7 @@ export default function TasksGanttView({ projectId, tasks }: TasksGanttViewProps
   }, [tasks]);
 
   useEffect(() => {
-    loadDependencies();
+    void loadDependencies();
   }, [projectId, loadDependencies]);
 
   // Фильтрация задач

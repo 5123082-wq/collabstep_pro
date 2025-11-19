@@ -152,12 +152,16 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
 
   return (
     <div
-      className="fixed inset-0 z-[120] flex items-start justify-center bg-[color:var(--surface-overlay)] pt-24 backdrop-blur-sm"
+      className="fixed inset-0 z-[120] flex items-start justify-center bg-[color:var(--surface-overlay)] pt-24 backdrop-blur-sm p-4"
       role="dialog"
       aria-modal="true"
       aria-label="Командная палитра"
     >
-      <ContentBlock as="div" className="w-full max-w-3xl p-6 shadow-2xl">
+      <div style={{ maxWidth: '70vw', width: 'auto' }}>
+        <ContentBlock 
+          as="div" 
+          className="max-h-[90vh] overflow-y-auto p-6 shadow-2xl"
+        >
         <div className="flex items-center justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold text-[color:var(--text-primary)]">Командная палитра</h2>
@@ -213,7 +217,8 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
             );
           })}
         </ul>
-      </ContentBlock>
+        </ContentBlock>
+      </div>
     </div>
   );
 }

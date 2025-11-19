@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/lib/ui/toast';
-import { Sparkles, FileText, MessageSquare } from 'lucide-react';
+import { Sparkles, MessageSquare } from 'lucide-react';
 
 type TaskAIActionsProps = {
   taskId: string;

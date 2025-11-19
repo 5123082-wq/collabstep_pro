@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { encodeDemoSession, getDemoAccount } from '@/lib/auth/demo-session';
-import { withSessionCookie } from '@/lib/auth/session-cookie';
+import { getDemoAccount } from '@/lib/auth/demo-session';
 import { ensureDemoAccountsInitialized } from '@/lib/auth/init-demo-accounts';
 import { usersRepository } from '@collabverse/api';
 import { hashPassword, verifyPassword } from '@collabverse/api/utils/password';
@@ -49,16 +48,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (existingUser.passwordHash) {
       const isValidPassword = verifyPassword(password, existingUser.passwordHash);
       if (isValidPassword) {
-        // Пароль верный, создаём сессию
-        const role = emailLower === getDemoAccount('admin').email.toLowerCase() ? 'admin' : 'user';
-        const sessionToken = encodeDemoSession({ 
-          email: existingUser.email, 
-          userId: existingUser.id,
-          role, 
-          issuedAt: Date.now() 
-        });
-        const response = NextResponse.json({ redirect: '/dashboard' });
-        return withSessionCookie(response, sessionToken);
+        // Пароль верный - это не регистрация, а вход
+        // Возвращаем ошибку, так как пользователь должен использовать /api/auth/login
+        return NextResponse.json({ error: 'Пользователь с таким email уже зарегистрирован. Используйте форму входа.' }, { status: 400 });
       } else {
         // Пароль неверный, возвращаем ошибку
         return NextResponse.json({ error: EMAIL_EXISTS_MESSAGE }, { status: 400 });
@@ -68,36 +60,28 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       // Обновляем его, добавляя пароль
       const passwordHash = hashPassword(password);
       usersRepository.updatePassword(emailLower, passwordHash);
-      const role = emailLower === getDemoAccount('admin').email.toLowerCase() ? 'admin' : 'user';
-      const sessionToken = encodeDemoSession({ 
-        email: existingUser.email, 
-        userId: existingUser.id,
-        role, 
-        issuedAt: Date.now() 
-      });
-      const response = NextResponse.json({ redirect: '/dashboard' });
-      return withSessionCookie(response, sessionToken);
+      // Не создаем сессию - пользователь должен войти вручную
+      return NextResponse.json({ redirect: '/login?toast=register-success' });
     }
   }
 
+  // Проверяем, что это не попытка зарегистрировать demo-аккаунт
+  const demoAdminEmail = getDemoAccount('admin').email.toLowerCase();
+  const demoUserEmail = getDemoAccount('user').email.toLowerCase();
+  if (emailLower === demoAdminEmail || emailLower === demoUserEmail) {
+    return NextResponse.json({ error: 'Этот email зарезервирован для демо-аккаунта' }, { status: 400 });
+  }
+
   // Создаём нового пользователя с хэшированным паролем
+  // Все новые пользователи получают роль 'user' (не admin)
   const passwordHash = hashPassword(password);
-  const newUser = usersRepository.create({
+  usersRepository.create({
     name,
     email: emailLower,
     passwordHash,
     ...(title && { title })
   });
 
-  // Создаём сессию
-  const role = emailLower === getDemoAccount('admin').email.toLowerCase() ? 'admin' : 'user';
-  const sessionToken = encodeDemoSession({ 
-    email: newUser.email, 
-    userId: newUser.id,
-    role, 
-    issuedAt: Date.now() 
-  });
-  const response = NextResponse.json({ redirect: '/dashboard' });
-
-  return withSessionCookie(response, sessionToken);
+  // Не создаем сессию - пользователь должен войти вручную
+  return NextResponse.json({ redirect: '/login?toast=register-success' });
 }

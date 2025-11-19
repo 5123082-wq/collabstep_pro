@@ -84,7 +84,7 @@ export const marketingMenu: NavItem[] = [
     id: 'projects',
     label: 'Проекты',
     children: [
-      { id: 'feed', label: 'Лента открытых проектов', href: '/projects' },
+      { id: 'feed', label: 'Лента открытых проектов', href: '/open-projects' },
       { id: 'cases', label: 'Кейсы (истории)', href: '/projects/cases' }
     ]
   },

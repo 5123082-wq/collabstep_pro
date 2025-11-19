@@ -59,9 +59,9 @@ export default function WorkloadAnalysis({
 
   useEffect(() => {
     if (autoLoad) {
-      handleAnalyze();
+      void handleAnalyze();
     }
-  }, [projectId, autoLoad]);
+  }, [projectId, autoLoad, handleAnalyze]);
 
   const handleAnalyze = async () => {
     setLoading(true);
@@ -352,7 +352,7 @@ export default function WorkloadAnalysis({
       {!analysis && !loading && (
         <div className="rounded-xl border border-dashed border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] p-12 text-center">
           <p className="text-sm text-[color:var(--text-secondary)]">
-            Нажмите "Проанализировать" для анализа загруженности команды
+            Нажмите &quot;Проанализировать&quot; для анализа загруженности команды
           </p>
         </div>
       )}

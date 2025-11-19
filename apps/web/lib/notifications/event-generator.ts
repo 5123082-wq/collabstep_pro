@@ -3,8 +3,7 @@ import {
   projectsRepository,
   tasksRepository,
   commentsRepository,
-  projectChatRepository,
-  type ID
+  projectChatRepository
 } from '@collabverse/api';
 import { broadcastToUser } from '@/lib/websocket/event-broadcaster';
 

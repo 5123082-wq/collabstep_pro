@@ -131,7 +131,8 @@ export function ModalContent({ children, className, ...props }: ModalContentProp
 
   // Определяем ширину из className
   const hasLargeWidth = className?.includes('max-w-[95vw]') || className?.includes('max-w-7xl');
-  const maxWidthClass = hasLargeWidth ? 'max-w-[95vw]' : 'max-w-xl';
+  const hasMediumWidth = className?.includes('max-w-5xl') || className?.includes('max-w-6xl');
+  const maxWidthClass = hasLargeWidth ? 'max-w-[95vw]' : hasMediumWidth ? className?.match(/max-w-[56]xl/)?.[0] || 'max-w-5xl' : 'max-w-xl';
   
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
@@ -154,7 +155,7 @@ export function ModalContent({ children, className, ...props }: ModalContentProp
           className={cn(
             'relative overflow-hidden rounded-3xl border border-[color:var(--surface-border-strong)] bg-[color:var(--surface-popover)] shadow-[0_28px_68px_-28px_rgba(15,23,42,0.9)] outline-none transition-transform duration-200 ease-out',
             isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0',
-            className?.replace(/max-w-\[95vw\]|max-w-7xl/g, '').trim() || className
+            className?.replace(/max-w-\[95vw\]|max-w-7xl|max-w-[56]xl/g, '').trim() || className
           )}
           {...props}
         >

@@ -1,0 +1,41 @@
+
+> @collabverse/web@0.1.0 prebuild /Users/macbookaleks/Documents/GitHub/collabstep-new-3/apps/web
+> node scripts/clean-next.mjs
+
+[clean-next] removed /Users/macbookaleks/Documents/GitHub/collabstep-new-3/apps/web/.next
+
+> @collabverse/web@0.1.0 build /Users/macbookaleks/Documents/GitHub/collabstep-new-3/apps/web
+> next build && node scripts/fix-manifests.mjs
+
+  ▲ Next.js 14.2.4
+  - Environments: .env.local, .env
+  - Experiments (use with caution):
+    · externalDir
+
+   Creating an optimized production build ...
+Failed to compile.
+
+app/(app)/projects/page.tsx
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/projects/page and /(marketing)/projects/page. Refer to the route group docs for more information: https://nextjs.org/docs/app/building-your-application/routing/route-groups
+
+app/(marketing)/projects/page.tsx
+You cannot have two parallel pages that resolve to the same path. Please check /(app)/projects/page and /(marketing)/projects/page. Refer to the route group docs for more information: https://nextjs.org/docs/app/building-your-application/routing/route-groups
+
+./app/api/ai/analyze-workload/route.ts
+Module not found: Can't resolve '@/api/src/services/ai-planning-service'
+
+https://nextjs.org/docs/messages/module-not-found
+
+./app/api/ai/analyze-workload/route.ts
+Module not found: Can't resolve '@/api/src/repositories/projects-repository'
+
+https://nextjs.org/docs/messages/module-not-found
+
+./app/api/ai/analyze-workload/route.ts
+Module not found: Can't resolve '@/api/src/repositories/tasks-repository'
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+> Build failed because of webpack errors
+ ELIFECYCLE  Command failed with exit code 1.

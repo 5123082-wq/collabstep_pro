@@ -7,7 +7,7 @@
 
 import { tasksRepository, usersRepository } from '@collabverse/api';
 import { generateText } from './client';
-import { generateDeadlineReminder } from '@collabverse/api/src/services/ai-service';
+import { generateDeadlineReminder } from '@collabverse/api/services/ai-service';
 import { notifyDeadlineApproaching } from '../notifications/event-generator';
 
 /**
@@ -111,7 +111,7 @@ export async function sendDeadlineReminders(useAI = true): Promise<number> {
 
       // Отправка уведомления о приближающемся дедлайне
       if (task.assigneeId) {
-        notifyDeadlineApproaching(
+        void notifyDeadlineApproaching(
           task.assigneeId,
           task.id,
           task.projectId,

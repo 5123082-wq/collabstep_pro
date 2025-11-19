@@ -4,7 +4,6 @@ import { useState, useMemo, useCallback, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { type Task } from '@/types/pm';
 import { type TaskListFilters } from '@/lib/pm/task-filters';
-import { cn } from '@/lib/utils';
 import { useRouter, usePathname } from 'next/navigation';
 import { buildTaskFilterParams } from '@/lib/pm/task-filters';
 import { useTransition } from 'react';
@@ -204,7 +203,7 @@ export default function TasksListView({ tasks, loading, filters }: TasksListView
             onBlur={(e) => handleCellEdit(task.id, columnId, e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
-                handleCellEdit(task.id, columnId, e.currentTarget.value);
+                void handleCellEdit(task.id, columnId, e.currentTarget.value);
               } else if (e.key === 'Escape') {
                 setEditingCell(null);
               }

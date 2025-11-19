@@ -6,12 +6,12 @@
  * Принимает описание проекта и генерирует структуру задач
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { generateText } from '@/lib/ai/client';
 import { 
   generateProjectStructure,
   type ProjectStructure 
-} from '@/api/src/services/ai-planning-service';
+} from '@collabverse/api/services/ai-planning-service';
 import { getAuthFromRequest } from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
 

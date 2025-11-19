@@ -3,8 +3,7 @@ import { flags } from '@/lib/flags';
 import { getAuthFromRequest } from '@/lib/api/finance-access';
 import {
   projectsRepository,
-  tasksRepository,
-  DEFAULT_WORKSPACE_ID
+  tasksRepository
 } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
 
@@ -20,22 +19,26 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
 
   const currentUserId = auth.userId;
 
-  // Get all projects user has access to
+  // Get only user's own projects (not all accessible projects)
+  // This ensures users see only their projects by default, which is simpler and more scalable
   const allProjects = projectsRepository.list();
-  const accessibleProjects = allProjects.filter((project) =>
-    projectsRepository.hasAccess(project.id, currentUserId)
+  const userProjects = allProjects.filter((project) => project.ownerId === currentUserId);
+
+  // Filter active projects (only 'active' status, not 'draft')
+  const activeProjects = userProjects.filter(
+    (project) => project.status === 'active' && !project.archived
   );
 
-  // Filter active projects (status === 'active' or 'draft' and not archived)
-  const activeProjects = accessibleProjects.filter(
-    (project) => (project.status === 'active' || project.status === 'draft') && !project.archived
+  // Filter draft projects (status === 'draft' and not archived)
+  const draftProjects = userProjects.filter(
+    (project) => project.status === 'draft' && !project.archived
   );
 
-  // Get all tasks from accessible projects
+  // Get all tasks from user's projects
   const allTasks = tasksRepository.list();
-  const accessibleProjectIds = new Set(accessibleProjects.map((p) => p.id));
+  const userProjectIds = new Set(userProjects.map((p) => p.id));
   const accessibleTasks = allTasks.filter((task) =>
-    accessibleProjectIds.has(task.projectId)
+    userProjectIds.has(task.projectId)
   );
 
   // Count open tasks (not done)
@@ -58,6 +61,15 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
     return !Number.isNaN(dueTime) && dueTime < now;
   }).length;
 
+  // Count user's overdue tasks
+  const myOverdue = accessibleTasks.filter((task) => {
+    if (task.status === 'done' || task.assigneeId !== currentUserId) return false;
+    const dueAt = task.dueAt ?? task.dueDate;
+    if (!dueAt) return false;
+    const dueTime = new Date(dueAt).getTime();
+    return !Number.isNaN(dueTime) && dueTime < now;
+  }).length;
+
   // Get upcoming deadlines (next 7 days)
   const sevenDaysFromNow = now + 7 * 24 * 60 * 60 * 1000;
   const upcomingDeadlines = accessibleTasks
@@ -73,7 +85,7 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
       );
     })
     .map((task) => {
-      const project = accessibleProjects.find((p) => p.id === task.projectId);
+      const project = userProjects.find((p) => p.id === task.projectId);
       return {
         id: task.id,
         title: task.title,
@@ -86,6 +98,11 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
     })
     .sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime())
     .slice(0, 5); // Limit to 5 upcoming deadlines
+
+  // Count user's upcoming deadlines
+  const myUpcomingDeadlines = upcomingDeadlines.filter(
+    (deadline) => deadline.assigneeId === currentUserId
+  ).length;
 
   // Calculate progress data (burnup and burndown)
   // Group tasks by date (last 30 days)
@@ -178,7 +195,7 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
   };
 
   // Add finance data for projects with budgets
-  for (const project of accessibleProjects) {
+  for (const project of userProjects) {
     if (project.budgetPlanned !== null || project.budgetSpent !== null) {
       const spent = project.budgetSpent ?? 0;
       const limit = project.budgetPlanned ?? 0;
@@ -200,10 +217,13 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
   return jsonOk({
     pulse: {
       activeProjects: activeProjects.length,
+      draftProjects: draftProjects.length,
       openTasks,
       myOpenTasks,
       overdue,
-      upcomingDeadlines
+      myOverdue,
+      upcomingDeadlines,
+      myUpcomingDeadlines
     },
     progress: {
       burnup: burnupData,

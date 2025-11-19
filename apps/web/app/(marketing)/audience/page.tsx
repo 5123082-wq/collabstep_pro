@@ -18,7 +18,7 @@ const personas = [
     description: 'Получайте брифы, собирайте портфолио и подключайте AI-ассистентов.',
     actions: [
       { label: 'Создать профиль дизайнера', href: '/register' },
-      { label: 'Посмотреть проекты', href: '/projects' }
+      { label: 'Посмотреть проекты', href: '/open-projects' }
     ]
   },
   {
@@ -36,7 +36,7 @@ const personas = [
     description: 'Готовые шаблоны кампаний, генерация контента и аналитика эффективности.',
     actions: [
       { label: 'Создать профиль специалиста', href: '/register' },
-      { label: 'Присоединиться к проектам', href: '/projects' }
+      { label: 'Присоединиться к проектам', href: '/open-projects' }
     ]
   },
   {

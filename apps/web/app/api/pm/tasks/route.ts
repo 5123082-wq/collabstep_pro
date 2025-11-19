@@ -25,10 +25,11 @@ function parseFilters(url: URL) {
   const dateTo = url.searchParams.get('dateTo') || undefined;
   const search = url.searchParams.get('q') || undefined;
   const scopeParam = url.searchParams.get('scope');
+  // По умолчанию показываем только проекты пользователя
   const scope: ProjectScope =
     scopeParam === 'owned' || scopeParam === 'member' || scopeParam === 'all'
       ? scopeParam
-      : 'all';
+      : 'owned';
   return {
     projectId,
     status,

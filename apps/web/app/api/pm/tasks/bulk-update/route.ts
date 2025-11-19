@@ -6,12 +6,10 @@
  * Выполняет массовое изменение задач согласно фильтрам и обновлениям
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getAuthFromRequest } from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
-import { getTasksRepository } from '@/api/src/repositories/tasks-repository';
-import { getProjectsRepository } from '@/api/src/repositories/projects-repository';
-import { getDomainEventsRepository } from '@/api/src/repositories/domain-events-repository';
+import { tasksRepository, projectsRepository, domainEventsRepository } from '@collabverse/api';
 import type { BulkOperation } from '@/lib/ai/bulk-operations';
 
 export async function POST(req: NextRequest) {
@@ -45,8 +43,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Проверка доступа к проекту
-    const projectsRepo = getProjectsRepository();
-    const project = projectsRepo.findById(projectId);
+    const project = projectsRepository.findById(projectId);
 
     if (!project) {
       return jsonError('NOT_FOUND', {
@@ -55,7 +52,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const members = projectsRepo.listMembers(projectId);
+    const members = projectsRepository.listMembers(projectId);
     const currentMember = members.find((m) => m.userId === auth.userId);
 
     if (!currentMember) {
@@ -74,8 +71,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Получение задач проекта
-    const tasksRepo = getTasksRepository();
-    const allTasks = tasksRepo.listByProject(projectId);
+    const allTasks = tasksRepository.listByProject(projectId);
 
     // Фильтрация задач согласно фильтру операции
     const tasksToUpdate = allTasks.filter((task) => {
@@ -113,7 +109,6 @@ export async function POST(req: NextRequest) {
 
     // Выполнение обновлений
     let updatedCount = 0;
-    const eventsRepo = getDomainEventsRepository();
 
     for (const task of tasksToUpdate) {
       const updates: any = {};
@@ -176,7 +171,7 @@ export async function POST(req: NextRequest) {
       // Обновление задачи
       if (Object.keys(updates).length > 0) {
         const before = { ...task };
-        const updated = tasksRepo.update(task.id, {
+        const updated = tasksRepository.update(task.id, {
           ...updates,
           updatedAt: new Date().toISOString()
         });
@@ -185,7 +180,7 @@ export async function POST(req: NextRequest) {
           updatedCount++;
 
           // Создание доменного события
-          eventsRepo.create({
+          domainEventsRepository.emit({
             type: 'task.bulk_updated',
             entityId: task.id,
             payload: {
@@ -202,7 +197,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Создание события о массовой операции
-    eventsRepo.create({
+    domainEventsRepository.emit({
       type: 'project.bulk_operation',
       entityId: projectId,
       payload: {

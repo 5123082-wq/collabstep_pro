@@ -8,9 +8,11 @@ import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 type PulseWidgetProps = {
   data?: {
     activeProjects: number;
+    draftProjects?: number;
     openTasks: number;
     myOpenTasks: number;
     overdue: number;
+    myOverdue?: number;
     upcomingDeadlines: Array<{
       id: string;
       title: string;
@@ -20,6 +22,7 @@ type PulseWidgetProps = {
       status: string;
       assigneeId?: string;
     }>;
+    myUpcomingDeadlines?: number;
   };
 };
 
@@ -27,10 +30,13 @@ export default function PulseWidget({ data }: PulseWidgetProps) {
   // Default values to prevent errors when data is undefined
   const pulseData = data || {
     activeProjects: 0,
+    draftProjects: 0,
     openTasks: 0,
     myOpenTasks: 0,
     overdue: 0,
+    myOverdue: 0,
     upcomingDeadlines: [],
+    myUpcomingDeadlines: 0,
   };
   const router = useRouter();
 
@@ -38,6 +44,8 @@ export default function PulseWidget({ data }: PulseWidgetProps) {
     trackEvent('pm_dashboard_drilldown', { widget: 'pulse', type, ...params });
     if (type === 'projects') {
       router.push('/pm/projects?status=ACTIVE');
+    } else if (type === 'drafts') {
+      router.push('/pm/projects?status=DRAFT');
     } else if (type === 'tasks') {
       router.push('/pm/tasks');
     } else if (type === 'overdue') {
@@ -47,54 +55,116 @@ export default function PulseWidget({ data }: PulseWidgetProps) {
     }
   };
 
+  // Единая структура карточки
+  const CardContent = ({
+    title,
+    value,
+    valueColor = 'text-white',
+    subtitle,
+    onClick,
+    buttonClassName,
+  }: {
+    title: string;
+    value: number | string;
+    valueColor?: string;
+    subtitle?: string;
+    onClick?: () => void;
+    buttonClassName?: string;
+  }) => {
+    const content = (
+      <div className="flex flex-col h-full min-h-[80px]">
+        {/* Заголовок - всегда вверху */}
+        <div className="text-xs text-neutral-400 leading-tight">{title}</div>
+        
+        {/* Цифра - фиксированный отступ сверху для единообразия */}
+        <div className={cn('mt-1.5 text-xl font-bold', valueColor)}>
+          {value}
+        </div>
+        
+        {/* Дополнительная информация - внизу */}
+        {subtitle && (
+          <div className="mt-1 text-xs text-neutral-500 leading-tight">
+            {subtitle}
+          </div>
+        )}
+      </div>
+    );
+
+    if (onClick) {
+      return (
+        <button
+          type="button"
+          onClick={onClick}
+          className={cn(
+            'group rounded-xl border p-3 text-left transition',
+            buttonClassName || 'border-neutral-800 bg-neutral-900/50 hover:border-indigo-500/40 hover:bg-neutral-900'
+          )}
+        >
+          {content}
+        </button>
+      );
+    }
+
+    return (
+      <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-3">
+        {content}
+      </div>
+    );
+  };
+
   return (
     <ContentBlock size="sm">
       <ContentBlockTitle as="h2">Пульс</ContentBlockTitle>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         {/* Активные проекты */}
-        <button
-          type="button"
+        <CardContent
+          title="Активные проекты"
+          value={pulseData.activeProjects}
           onClick={() => handleDrilldown('projects')}
-          className="group rounded-xl border border-neutral-800 bg-neutral-900/50 p-3 text-left transition hover:border-indigo-500/40 hover:bg-neutral-900"
-        >
-          <div className="text-xs text-neutral-400">Активные проекты</div>
-          <div className="mt-1.5 text-xl font-bold text-white">{pulseData.activeProjects}</div>
-        </button>
+        />
+
+        {/* Черновики проектов */}
+        <CardContent
+          title="Черновики"
+          value={pulseData.draftProjects ?? 0}
+          valueColor={(pulseData.draftProjects ?? 0) > 0 ? 'text-amber-400' : 'text-white'}
+          onClick={() => handleDrilldown('drafts')}
+          buttonClassName={cn(
+            (pulseData.draftProjects ?? 0) > 0
+              ? 'border-amber-500/50 bg-amber-500/10 hover:border-amber-500/60'
+              : 'border-neutral-800 bg-neutral-900/50 hover:border-indigo-500/40 hover:bg-neutral-900'
+          )}
+        />
 
         {/* Открытые задачи */}
-        <button
-          type="button"
+        <CardContent
+          title="Открытые задачи"
+          value={pulseData.openTasks}
+          subtitle={`Мои: ${pulseData.myOpenTasks}`}
           onClick={() => handleDrilldown('tasks')}
-          className="group rounded-xl border border-neutral-800 bg-neutral-900/50 p-3 text-left transition hover:border-indigo-500/40 hover:bg-neutral-900"
-        >
-          <div className="text-xs text-neutral-400">Открытые задачи</div>
-          <div className="mt-1.5 text-xl font-bold text-white">{pulseData.openTasks}</div>
-          <div className="mt-1 text-xs text-neutral-500">Мои: {pulseData.myOpenTasks}</div>
-        </button>
+        />
 
         {/* Просрочки */}
-        <button
-          type="button"
+        <CardContent
+          title="Просрочено"
+          value={pulseData.overdue}
+          valueColor={pulseData.overdue > 0 ? 'text-rose-400' : 'text-rose-300'}
+          subtitle={pulseData.myOverdue !== undefined ? `Мои: ${pulseData.myOverdue}` : undefined}
           onClick={() => handleDrilldown('overdue')}
-          className={cn(
-            'group rounded-xl border p-3 text-left transition hover:bg-neutral-900',
+          buttonClassName={cn(
             pulseData.overdue > 0
               ? 'border-rose-500/50 bg-rose-500/10 hover:border-rose-500/60'
-              : 'border-neutral-800 bg-neutral-900/50 hover:border-indigo-500/40'
+              : 'border-rose-500/30 bg-rose-500/5 hover:border-rose-500/40 hover:bg-rose-500/10'
           )}
-        >
-          <div className="text-xs text-neutral-400">Просрочено</div>
-          <div className={cn('mt-1.5 text-xl font-bold', pulseData.overdue > 0 ? 'text-rose-400' : 'text-white')}>
-            {pulseData.overdue}
-          </div>
-        </button>
+        />
 
         {/* Ближайшие дедлайны */}
-        <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-3">
-          <div className="text-xs text-neutral-400">Ближайшие дедлайны</div>
-          <div className="mt-1.5 text-xl font-bold text-white">{pulseData.upcomingDeadlines.length}</div>
-        </div>
+        <CardContent
+          title="Ближайшие дедлайны"
+          value={pulseData.upcomingDeadlines.length}
+          subtitle={pulseData.myUpcomingDeadlines !== undefined ? `Мои: ${pulseData.myUpcomingDeadlines}` : undefined}
+        />
       </div>
 
       {/* Список ближайших дедлайнов */}

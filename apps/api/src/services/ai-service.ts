@@ -10,7 +10,7 @@
  * При деплое нужно убедиться, что OPENAI_API_KEY доступен в окружении API.
  */
 
-import type { Task, Comment } from '../types';
+// Types removed as they were unused
 
 /**
  * Интерфейс для AI клиента
@@ -153,7 +153,10 @@ export async function summarizeTaskComments(
   }
 
   if (comments.length === 1) {
-    return `Один комментарий от ${comments[0].authorName}: ${comments[0].body}`;
+    const comment = comments[0];
+    if (comment) {
+      return `Один комментарий от ${comment.authorName}: ${comment.body}`;
+    }
   }
 
   const commentsText = comments

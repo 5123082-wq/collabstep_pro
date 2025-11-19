@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { ExternalLink, Store, Megaphone, DollarSign } from 'lucide-react';
+// @ts-ignore
+import { DollarSign, ExternalLink, Figma, Github, Globe, Layout, Link as LinkIcon, Megaphone, Plus, Store, Trash2 } from 'lucide-react';
 import { type Project } from '@/types/pm';
 import { cn } from '@/lib/utils';
 import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';

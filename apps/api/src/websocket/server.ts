@@ -58,7 +58,7 @@ export function createWebSocketServer(options: WebSocketServerOptions): SocketSe
         return;
       }
 
-      socket.join(`project:${projectId}`);
+      void socket.join(`project:${projectId}`);
       const projects = socketProjects.get(socket.id);
       if (projects) {
         projects.add(projectId);
@@ -72,7 +72,7 @@ export function createWebSocketServer(options: WebSocketServerOptions): SocketSe
         return;
       }
 
-      socket.leave(`project:${projectId}`);
+      void socket.leave(`project:${projectId}`);
       const projects = socketProjects.get(socket.id);
       if (projects) {
         projects.delete(projectId);

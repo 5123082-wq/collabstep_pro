@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { type Project } from '@/types/pm';
-import { Clock, Download, Filter, Zap } from 'lucide-react';
+import { Download, Filter, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ContentBlock } from '@/components/ui/content-block';
 
@@ -124,7 +124,7 @@ export default function AutomationsLog({ project }: AutomationsLogProps) {
         <div className="flex items-center justify-center py-8">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-neutral-400 border-t-transparent" />
         </div>
-      </div>
+      </ContentBlock>
     );
   }
 

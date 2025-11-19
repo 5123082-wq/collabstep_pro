@@ -6,16 +6,15 @@
  * Предлагает оптимальное назначение задач участникам проекта
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { generateText } from '@/lib/ai/client';
 import { 
   suggestTaskAssignments,
   type AssignmentRecommendation 
-} from '@/api/src/services/ai-planning-service';
+} from '@collabverse/api/services/ai-planning-service';
 import { getAuthFromRequest } from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
-import { getProjectsRepository } from '@/api/src/repositories/projects-repository';
-import { getTasksRepository } from '@/api/src/repositories/tasks-repository';
+import { projectsRepository, tasksRepository } from '@collabverse/api';
 
 /**
  * Адаптер для использования AI клиента в сервисе
@@ -64,8 +63,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Получение проекта
-    const projectsRepo = getProjectsRepository();
-    const project = projectsRepo.findById(projectId);
+    const project = projectsRepository.findById(projectId);
 
     if (!project) {
       return jsonError('NOT_FOUND', { 
@@ -75,7 +73,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Проверка прав доступа
-    const members = projectsRepo.listMembers(projectId);
+    const members = projectsRepository.listMembers(projectId);
     const currentMember = members.find(m => m.userId === auth.userId);
     
     if (!currentMember || (currentMember.role !== 'owner' && currentMember.role !== 'admin')) {
@@ -86,9 +84,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Получение задач
-    const tasksRepo = getTasksRepository();
     const tasks = taskIds
-      .map(id => tasksRepo.findById(id))
+      .map(id => tasksRepository.findById(id))
       .filter(t => t !== undefined && t.projectId === projectId);
 
     if (tasks.length === 0) {
@@ -99,7 +96,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Подсчет текущей загруженности участников
-    const allProjectTasks = tasksRepo.listByProject(projectId);
+    const allProjectTasks = tasksRepository.listByProject(projectId);
     const memberWorkload = new Map<string, number>();
     
     allProjectTasks.forEach(t => {

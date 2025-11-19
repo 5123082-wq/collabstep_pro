@@ -14,7 +14,7 @@ import { type Task } from '@/types/pm';
 import TasksBoardView from '@/components/pm/TasksBoardView';
 import TasksListView from '@/components/pm/TasksListView';
 import TasksCalendarView from '@/components/pm/TasksCalendarView';
-import TaskDetailDrawer from '@/components/pm/TaskDetailDrawer';
+import TaskDetailModal from '@/components/pm/TaskDetailModal';
 import { ContentBlock } from '@/components/ui/content-block';
 import { cn } from '@/lib/utils';
 import { trackEvent } from '@/lib/telemetry';
@@ -53,22 +53,41 @@ export default function PMTasksPage() {
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
-  if (!flags.PM_NAV_PROJECTS_AND_TASKS) {
-    return <FeatureComingSoon title="Задачи" />;
-  }
-
   const urlFilters = useMemo(() => parseTaskFilters(searchParams), [searchParams]);
   const view = urlFilters.view || 'board';
-  const activeScope = urlFilters.scope ?? 'all';
+  // По умолчанию показываем только проекты пользователя
+  const activeScope = urlFilters.scope ?? 'owned';
 
   // Кэш для хранения данных по ключу фильтров
   const cacheRef = useRef<Map<string, TasksCacheData>>(new Map());
+  // Стабильный ключ кэша, который не меняется при каждом рендере
   const cacheKey = useMemo(() => {
     const params = buildTaskFilterParams(urlFilters);
     // Исключаем view из ключа кэша, так как он не влияет на данные
     params.delete('view');
-    return params.toString();
-  }, [urlFilters]);
+    // Сортируем параметры для стабильности ключа
+    const sortedParams = new URLSearchParams();
+    Array.from(params.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .forEach(([key, value]) => sortedParams.set(key, value));
+    return sortedParams.toString();
+  }, [
+    urlFilters.projectId,
+    urlFilters.status,
+    urlFilters.assigneeId,
+    urlFilters.priority,
+    urlFilters.labels?.join(','),
+    urlFilters.dateFrom,
+    urlFilters.dateTo,
+    urlFilters.q,
+    urlFilters.page,
+    urlFilters.pageSize,
+    urlFilters.sortBy,
+    urlFilters.sortOrder,
+    urlFilters.groupBy,
+    urlFilters.swimlane,
+    urlFilters.scope
+  ]);
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projectOptions, setProjectOptions] = useState<TaskProjectOption[]>([]);
@@ -78,6 +97,8 @@ export default function PMTasksPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string>('');
+  // Ref для отслеживания предыдущего cacheKey, чтобы избежать лишних перезагрузок
+  const prevCacheKeyRef = useRef<string>('');
 
   useEffect(() => {
     async function loadCurrentUser() {
@@ -98,6 +119,14 @@ export default function PMTasksPage() {
   }, []);
 
   useEffect(() => {
+    // Проверяем, изменился ли cacheKey - если нет, не перезагружаем данные
+    if (cacheKey === prevCacheKeyRef.current) {
+      return;
+    }
+    
+    // Обновляем предыдущий ключ
+    prevCacheKeyRef.current = cacheKey;
+    
     // Проверяем кэш перед загрузкой
     const cached = cacheRef.current.get(cacheKey);
     if (cached) {
@@ -116,10 +145,9 @@ export default function PMTasksPage() {
     async function loadTasks() {
       try {
         const params = buildTaskFilterParams(urlFilters);
-        // Убираем timestamp для возможности кэширования браузером
+        // Отключаем кэширование браузера, чтобы избежать конфликтов со старыми данными
         const response = await fetch(`/api/pm/tasks?${params.toString()}`, {
-          // Используем stale-while-revalidate паттерн
-          headers: { 'cache-control': 'max-age=30, stale-while-revalidate=60' }
+          headers: { 'cache-control': 'no-store' }
         });
         if (!response.ok) {
           throw new Error('Failed to load tasks');
@@ -266,6 +294,10 @@ export default function PMTasksPage() {
   const activeView = viewEnabled[view] ? view : (viewEnabled.board ? 'board' : viewEnabled.list ? 'list' : 'calendar');
   const activeProject = projectOptions.find((option) => option.id === urlFilters.projectId);
 
+  if (!flags.PM_NAV_PROJECTS_AND_TASKS) {
+    return <FeatureComingSoon title="Задачи" />;
+  }
+
   return (
     <div className="space-y-6 min-w-0 max-w-full overflow-x-hidden">
       <header className="flex items-center justify-between min-w-0 flex-wrap gap-4 max-w-full">
@@ -394,9 +426,9 @@ export default function PMTasksPage() {
 
       {/* Детальный вид задачи с комментариями */}
       {currentUserId && (
-        <TaskDetailDrawer
+        <TaskDetailModal
           task={selectedTask}
-          open={selectedTask !== null}
+          isOpen={selectedTask !== null}
           onClose={() => setSelectedTask(null)}
           currentUserId={currentUserId}
         />

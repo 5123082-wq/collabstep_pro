@@ -271,7 +271,7 @@ export default function AdminFeaturesPage() {
           >
             Повторить попытку
           </button>
-        </div>
+        </ContentBlock>
       )}
 
       {/* Features Tree */}

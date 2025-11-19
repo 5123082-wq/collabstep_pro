@@ -49,8 +49,14 @@ export default function InviteDialog() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/80 backdrop-blur-sm">
-      <ContentBlock as="div" className="w-full max-w-md p-6 shadow-2xl" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/80 backdrop-blur-sm p-4">
+      <div style={{ maxWidth: '70vw', width: 'auto' }}>
+        <ContentBlock 
+          as="div" 
+          className="max-h-[90vh] overflow-y-auto p-6 shadow-2xl" 
+          role="dialog" 
+          aria-modal="true"
+        >
         <div className="flex items-center justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold text-neutral-50">Пригласить участника</h2>
@@ -109,7 +115,8 @@ export default function InviteDialog() {
             </button>
           </div>
         </form>
-      </ContentBlock>
+        </ContentBlock>
+      </div>
     </div>
   );
 }

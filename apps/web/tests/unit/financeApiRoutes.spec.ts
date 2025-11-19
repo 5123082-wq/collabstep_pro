@@ -10,7 +10,12 @@ import { PATCH as updateExpense } from '@/app/api/expenses/[id]/route';
 
 describe('Finance API routes', () => {
   const projectId = projectsRepository.list()[0]?.id ?? TEST_PROJECT_DEMO_ID;
-  const session = encodeDemoSession({ email: 'admin.demo@collabverse.test', role: 'admin', issuedAt: Date.now() });
+  const session = encodeDemoSession({
+    email: 'admin.demo@collabverse.test',
+    userId: 'admin.demo@collabverse.test',
+    role: 'admin',
+    issuedAt: Date.now()
+  });
   const headers = {
     cookie: `cv_session=${session}`,
     'content-type': 'application/json'

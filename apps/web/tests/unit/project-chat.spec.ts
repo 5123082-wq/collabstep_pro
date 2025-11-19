@@ -5,12 +5,14 @@ import {
   resetFinanceMemory
 } from '@collabverse/api';
 import { GET as getChatMessages, POST as createChatMessage } from '@/app/api/pm/projects/[id]/chat/route';
+import { NextRequest } from 'next/server';
 
 describe('Project Chat API', () => {
   let projectId: string;
   const userId = 'admin.demo@collabverse.test';
   const session = encodeDemoSession({
     email: userId,
+    userId,
     role: 'admin',
     issuedAt: Date.now()
   });
@@ -21,19 +23,22 @@ describe('Project Chat API', () => {
 
   beforeEach(() => {
     resetFinanceMemory();
-    
+
     // Создаем проект для тестов
-    const project = projectsRepository.list()[0];
-    if (!project) {
-      throw new Error('No project found');
-    }
+    const project = projectsRepository.create({
+      title: 'Test Project',
+      description: 'Test Description',
+      ownerId: userId,
+      workspaceId: 'workspace-id',
+      status: 'active'
+    });
     projectId = project.id;
   });
 
   describe('GET /api/pm/projects/[id]/chat', () => {
     it('should return empty array when no messages exist', async () => {
       const response = await getChatMessages(
-        new Request(`http://localhost/api/pm/projects/${projectId}/chat`, {
+        new NextRequest(`http://localhost/api/pm/projects/${projectId}/chat`, {
           method: 'GET',
           headers: { cookie: headers.cookie }
         }),
@@ -55,7 +60,7 @@ describe('Project Chat API', () => {
       });
 
       const response = await getChatMessages(
-        new Request(`http://localhost/api/pm/projects/${projectId}/chat`, {
+        new NextRequest(`http://localhost/api/pm/projects/${projectId}/chat`, {
           method: 'GET',
           headers: { cookie: headers.cookie }
         }),
@@ -80,7 +85,7 @@ describe('Project Chat API', () => {
       }
 
       const response = await getChatMessages(
-        new Request(`http://localhost/api/pm/projects/${projectId}/chat?page=1&pageSize=2`, {
+        new NextRequest(`http://localhost/api/pm/projects/${projectId}/chat?page=1&pageSize=2`, {
           method: 'GET',
           headers: { cookie: headers.cookie }
         }),
@@ -97,7 +102,7 @@ describe('Project Chat API', () => {
 
     it('should return 404 if project not found', async () => {
       const response = await getChatMessages(
-        new Request('http://localhost/api/pm/projects/non-existent/chat', {
+        new NextRequest('http://localhost/api/pm/projects/non-existent/chat', {
           method: 'GET',
           headers: { cookie: headers.cookie }
         }),
@@ -109,7 +114,7 @@ describe('Project Chat API', () => {
 
     it('should return 401 if not authenticated', async () => {
       const response = await getChatMessages(
-        new Request(`http://localhost/api/pm/projects/${projectId}/chat`, {
+        new NextRequest(`http://localhost/api/pm/projects/${projectId}/chat`, {
           method: 'GET'
         }),
         { params: { id: projectId } }
@@ -122,12 +127,13 @@ describe('Project Chat API', () => {
       // Создаем сессию для viewer
       const viewerSession = encodeDemoSession({
         email: 'viewer@example.com',
+        userId: 'viewer@example.com',
         role: 'user',
         issuedAt: Date.now()
       });
 
       const response = await getChatMessages(
-        new Request(`http://localhost/api/pm/projects/${projectId}/chat`, {
+        new NextRequest(`http://localhost/api/pm/projects/${projectId}/chat`, {
           method: 'GET',
           headers: { cookie: `cv_session=${viewerSession}` }
         }),
@@ -142,7 +148,7 @@ describe('Project Chat API', () => {
   describe('POST /api/pm/projects/[id]/chat', () => {
     it('should create a new message', async () => {
       const response = await createChatMessage(
-        new Request(`http://localhost/api/pm/projects/${projectId}/chat`, {
+        new NextRequest(`http://localhost/api/pm/projects/${projectId}/chat`, {
           method: 'POST',
           headers,
           body: JSON.stringify({
@@ -162,7 +168,7 @@ describe('Project Chat API', () => {
 
     it('should validate message body', async () => {
       const response = await createChatMessage(
-        new Request(`http://localhost/api/pm/projects/${projectId}/chat`, {
+        new NextRequest(`http://localhost/api/pm/projects/${projectId}/chat`, {
           method: 'POST',
           headers,
           body: JSON.stringify({
@@ -178,7 +184,7 @@ describe('Project Chat API', () => {
 
     it('should support attachments', async () => {
       const response = await createChatMessage(
-        new Request(`http://localhost/api/pm/projects/${projectId}/chat`, {
+        new NextRequest(`http://localhost/api/pm/projects/${projectId}/chat`, {
           method: 'POST',
           headers,
           body: JSON.stringify({
@@ -196,7 +202,7 @@ describe('Project Chat API', () => {
 
     it('should trim message body', async () => {
       const response = await createChatMessage(
-        new Request(`http://localhost/api/pm/projects/${projectId}/chat`, {
+        new NextRequest(`http://localhost/api/pm/projects/${projectId}/chat`, {
           method: 'POST',
           headers,
           body: JSON.stringify({
@@ -214,7 +220,7 @@ describe('Project Chat API', () => {
 
     it('should return 404 if project not found', async () => {
       const response = await createChatMessage(
-        new Request('http://localhost/api/pm/projects/non-existent/chat', {
+        new NextRequest('http://localhost/api/pm/projects/non-existent/chat', {
           method: 'POST',
           headers,
           body: JSON.stringify({
@@ -230,7 +236,7 @@ describe('Project Chat API', () => {
 
     it('should return 401 if not authenticated', async () => {
       const response = await createChatMessage(
-        new Request(`http://localhost/api/pm/projects/${projectId}/chat`, {
+        new NextRequest(`http://localhost/api/pm/projects/${projectId}/chat`, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
@@ -293,8 +299,8 @@ describe('Project Chat API', () => {
       });
 
       const result = projectChatRepository.listByProject(projectId);
-      expect(result.messages[0].id).toBe(msg2.id);
-      expect(result.messages[1].id).toBe(msg1.id);
+      expect(result.messages[0]!.id).toBe(msg2.id);
+      expect(result.messages[1]!.id).toBe(msg1.id);
     });
 
     it('should update a message', () => {
@@ -340,4 +346,3 @@ describe('Project Chat API', () => {
     });
   });
 });
-

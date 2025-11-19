@@ -17,8 +17,6 @@ import type {
   ProjectBudgetSnapshot,
   ProjectMember,
   ProjectTemplate,
-  ProjectStatus,
-  ProjectType,
   ProjectVisibility,
   ProjectWorkflow,
   Task,

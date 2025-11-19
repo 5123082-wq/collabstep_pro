@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import TaskCommentForm from './TaskCommentForm';
-import { cn } from '@/lib/utils';
 import type { TaskCommentNode } from '@collabverse/api';
 import { ContentBlock } from '@/components/ui/content-block';
 

@@ -262,7 +262,8 @@ export class AdminService {
         }
         if (user?.email) {
           // Используем часть email до @ как имя
-          return user.email.split('@')[0];
+          const emailPart = user.email.split('@')[0];
+          return emailPart || 'Без имени';
         }
         return 'Без имени';
       };
@@ -426,9 +427,9 @@ export class AdminService {
     }
 
     const modules = adminModulesRepository.list();
-    for (const module of modules) {
-      const targetSet = desired.get(module.id) ?? new Set<string>();
-      const currentSet = new Set(module.testers);
+    for (const moduleItem of modules) {
+      const targetSet = desired.get(moduleItem.id) ?? new Set<string>();
+      const currentSet = new Set(moduleItem.testers);
       let changed = false;
       if (currentSet.size !== targetSet.size) {
         changed = true;
@@ -441,7 +442,7 @@ export class AdminService {
         }
       }
       if (changed) {
-        adminModulesRepository.replaceTesters(module.id, Array.from(targetSet), actorId);
+        adminModulesRepository.replaceTesters(moduleItem.id, Array.from(targetSet), actorId);
       }
     }
   }

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Copy, Check, Mail, Clock, Users } from 'lucide-react';
+// @ts-ignore
+import { Check, Clock, Copy, Mail, MoreHorizontal, Shield, Trash2, UserPlus, Users, X } from 'lucide-react';
 import { type Project, type ProjectMember } from '@/types/pm';
 import { trackEvent } from '@/lib/telemetry';
 import { toast } from '@/lib/ui/toast';
@@ -41,7 +42,7 @@ export default function ProjectTeam({ project, currentUserId }: ProjectTeamProps
 
   const handleCreateInviteLink = async () => {
     if (!canManageTeam) {
-      toast('Недостаточно прав для создания инвайт-ссылки', 'error');
+      toast('Недостаточно прав для создания инвайт-ссылки', 'warning');
       return;
     }
 
@@ -67,7 +68,7 @@ export default function ProjectTeam({ project, currentUserId }: ProjectTeamProps
         source: 'project_team'
       });
     } catch (error) {
-      toast('Не удалось создать инвайт-ссылку', 'error');
+      toast('Не удалось создать инвайт-ссылку', 'warning');
     } finally {
       setLoading(false);
     }
@@ -77,10 +78,13 @@ export default function ProjectTeam({ project, currentUserId }: ProjectTeamProps
     if (!inviteLink) return;
 
     const fullLink = `${window.location.origin}/pm/projects/${project.id}/join?token=${inviteLink.token}`;
-    navigator.clipboard.writeText(fullLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    toast('Ссылка скопирована', 'success');
+    void navigator.clipboard.writeText(fullLink).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast('Ссылка скопирована', 'success');
+    }).catch((error) => {
+      console.error('Error copying to clipboard:', error);
+    });
   };
 
   const formatExpiresAt = (dateString: string) => {

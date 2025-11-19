@@ -9,7 +9,7 @@ import {
 } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { transformProject as transformProjectFromAggregator, buildTaskMetrics } from '@/lib/pm/stage2-aggregator';
-import type { Project } from '@/types/pm';
+// Project type removed as it was unused
 
 export async function GET(
   _req: NextRequest,

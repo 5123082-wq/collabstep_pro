@@ -7,12 +7,14 @@ import {
 } from '@collabverse/api';
 import { GET as getComments, POST as createComment } from '@/app/api/pm/tasks/[id]/comments/route';
 import { PATCH as updateComment, DELETE as deleteComment } from '@/app/api/pm/tasks/[id]/comments/[commentId]/route';
+import { NextRequest } from 'next/server';
 
 describe('Task Comments API', () => {
   let projectId: string;
   let taskId: string;
   const session = encodeDemoSession({
     email: 'admin.demo@collabverse.test',
+    userId: 'admin.demo@collabverse.test',
     role: 'admin',
     issuedAt: Date.now()
   });
@@ -23,12 +25,15 @@ describe('Task Comments API', () => {
 
   beforeEach(() => {
     resetFinanceMemory();
-    
+
     // Создаем проект и задачу для тестов
-    const project = projectsRepository.list()[0];
-    if (!project) {
-      throw new Error('No project found');
-    }
+    const project = projectsRepository.create({
+      title: 'Test Project',
+      description: 'Test Description',
+      ownerId: 'admin.demo@collabverse.test',
+      workspaceId: 'workspace-id',
+      status: 'active'
+    });
     projectId = project.id;
 
     const tasks = tasksRepository.list({ projectId });
@@ -40,14 +45,14 @@ describe('Task Comments API', () => {
       });
       taskId = task.id;
     } else {
-      taskId = tasks[0].id;
+      taskId = tasks[0]!.id;
     }
   });
 
   describe('GET /api/pm/tasks/[id]/comments', () => {
     it('should return empty array when no comments exist', async () => {
       const response = await getComments(
-        new Request(`http://localhost/api/pm/tasks/${taskId}/comments`, {
+        new NextRequest(`http://localhost/api/pm/tasks/${taskId}/comments`, {
           method: 'GET',
           headers: { cookie: headers.cookie }
         }),
@@ -69,7 +74,7 @@ describe('Task Comments API', () => {
       });
 
       const response = await getComments(
-        new Request(`http://localhost/api/pm/tasks/${taskId}/comments`, {
+        new NextRequest(`http://localhost/api/pm/tasks/${taskId}/comments`, {
           method: 'GET',
           headers: { cookie: headers.cookie }
         }),
@@ -79,12 +84,12 @@ describe('Task Comments API', () => {
       expect(response.status).toBe(200);
       const data = await response.json();
       expect(data.data.comments).toHaveLength(1);
-      expect(data.data.comments[0].body).toBe('Test comment');
+      expect(data.data.comments[0]!.body).toBe('Test comment');
     });
 
     it('should return 404 if task not found', async () => {
       const response = await getComments(
-        new Request('http://localhost/api/pm/tasks/non-existent/comments', {
+        new NextRequest('http://localhost/api/pm/tasks/non-existent/comments', {
           method: 'GET',
           headers: { cookie: headers.cookie }
         }),
@@ -96,7 +101,7 @@ describe('Task Comments API', () => {
 
     it('should return 401 if not authenticated', async () => {
       const response = await getComments(
-        new Request(`http://localhost/api/pm/tasks/${taskId}/comments`, {
+        new NextRequest(`http://localhost/api/pm/tasks/${taskId}/comments`, {
           method: 'GET'
         }),
         { params: { id: taskId } }
@@ -109,7 +114,7 @@ describe('Task Comments API', () => {
   describe('POST /api/pm/tasks/[id]/comments', () => {
     it('should create a new comment', async () => {
       const response = await createComment(
-        new Request(`http://localhost/api/pm/tasks/${taskId}/comments`, {
+        new NextRequest(`http://localhost/api/pm/tasks/${taskId}/comments`, {
           method: 'POST',
           headers,
           body: JSON.stringify({
@@ -137,7 +142,7 @@ describe('Task Comments API', () => {
       });
 
       const response = await createComment(
-        new Request(`http://localhost/api/pm/tasks/${taskId}/comments`, {
+        new NextRequest(`http://localhost/api/pm/tasks/${taskId}/comments`, {
           method: 'POST',
           headers,
           body: JSON.stringify({
@@ -158,7 +163,7 @@ describe('Task Comments API', () => {
 
     it('should validate comment body', async () => {
       const response = await createComment(
-        new Request(`http://localhost/api/pm/tasks/${taskId}/comments`, {
+        new NextRequest(`http://localhost/api/pm/tasks/${taskId}/comments`, {
           method: 'POST',
           headers,
           body: JSON.stringify({
@@ -175,7 +180,7 @@ describe('Task Comments API', () => {
 
     it('should support mentions and attachments', async () => {
       const response = await createComment(
-        new Request(`http://localhost/api/pm/tasks/${taskId}/comments`, {
+        new NextRequest(`http://localhost/api/pm/tasks/${taskId}/comments`, {
           method: 'POST',
           headers,
           body: JSON.stringify({
@@ -204,7 +209,7 @@ describe('Task Comments API', () => {
       });
 
       const response = await updateComment(
-        new Request(`http://localhost/api/pm/tasks/${taskId}/comments/${comment.id}`, {
+        new NextRequest(`http://localhost/api/pm/tasks/${taskId}/comments/${comment.id}`, {
           method: 'PATCH',
           headers,
           body: JSON.stringify({
@@ -221,7 +226,7 @@ describe('Task Comments API', () => {
 
     it('should return 404 if comment not found', async () => {
       const response = await updateComment(
-        new Request(`http://localhost/api/pm/tasks/${taskId}/comments/non-existent`, {
+        new NextRequest(`http://localhost/api/pm/tasks/${taskId}/comments/non-existent`, {
           method: 'PATCH',
           headers,
           body: JSON.stringify({
@@ -243,7 +248,7 @@ describe('Task Comments API', () => {
       });
 
       const response = await updateComment(
-        new Request(`http://localhost/api/pm/tasks/${taskId}/comments/${comment.id}`, {
+        new NextRequest(`http://localhost/api/pm/tasks/${taskId}/comments/${comment.id}`, {
           method: 'PATCH',
           headers,
           body: JSON.stringify({
@@ -268,7 +273,7 @@ describe('Task Comments API', () => {
       });
 
       const response = await deleteComment(
-        new Request(`http://localhost/api/pm/tasks/${taskId}/comments/${comment.id}`, {
+        new NextRequest(`http://localhost/api/pm/tasks/${taskId}/comments/${comment.id}`, {
           method: 'DELETE',
           headers
         }),
@@ -299,7 +304,7 @@ describe('Task Comments API', () => {
       });
 
       const response = await deleteComment(
-        new Request(`http://localhost/api/pm/tasks/${taskId}/comments/${parent.id}`, {
+        new NextRequest(`http://localhost/api/pm/tasks/${taskId}/comments/${parent.id}`, {
           method: 'DELETE',
           headers
         }),
@@ -316,7 +321,7 @@ describe('Task Comments API', () => {
 
     it('should return 404 if comment not found', async () => {
       const response = await deleteComment(
-        new Request(`http://localhost/api/pm/tasks/${taskId}/comments/non-existent`, {
+        new NextRequest(`http://localhost/api/pm/tasks/${taskId}/comments/non-existent`, {
           method: 'DELETE',
           headers
         }),
@@ -327,4 +332,3 @@ describe('Task Comments API', () => {
     });
   });
 });
-

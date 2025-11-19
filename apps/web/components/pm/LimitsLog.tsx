@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { type Project } from '@/types/pm';
+// @ts-ignore
 import { Clock, Download, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
@@ -92,8 +93,8 @@ export default function LimitsLog({ project }: LimitsLogProps) {
     const rows = filteredEvents.map(event => {
       const date = new Date(event.createdAt).toLocaleString('ru-RU');
       const action = event.action === 'expense.created' ? 'Создана трата' : 'Обновлён бюджет';
-      const details = event.after && typeof event.after === 'object' && 'amount' in event.after 
-        ? `Сумма: ${(event.after as { amount?: string }).amount}` 
+      const details = event.after && typeof event.after === 'object' && 'amount' in event.after
+        ? `Сумма: ${(event.after as { amount?: string }).amount}`
         : '';
       return [date, action, details];
     });
@@ -238,9 +239,9 @@ export default function LimitsLog({ project }: LimitsLogProps) {
                     minute: '2-digit'
                   })}
                 </p>
-                {event.after && typeof event.after === 'object' && 'amount' in event.after && (
+                {event.after && typeof event.after === 'object' && (event.after as any).amount && (
                   <p className="text-xs text-neutral-400 mt-1">
-                    Сумма: {(event.after as { amount?: string }).amount}
+                    Сумма: {(event.after as any).amount}
                   </p>
                 )}
               </div>

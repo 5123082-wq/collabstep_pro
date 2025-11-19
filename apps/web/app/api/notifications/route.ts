@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getAuthFromRequest } from '@/lib/api/finance-access';
 import { notificationsRepository, type NotificationStatus } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';

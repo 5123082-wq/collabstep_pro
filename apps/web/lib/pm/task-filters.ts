@@ -30,7 +30,7 @@ export const DEFAULT_TASK_FILTERS: TaskListFilters = {
   view: 'board',
   groupBy: 'status',
   swimlane: 'none',
-  scope: 'all'
+  scope: 'owned' // По умолчанию показываем только проекты пользователя
 };
 
 export function parseTaskFilters(searchParams: URLSearchParams): TaskListFilters {
@@ -50,20 +50,13 @@ export function parseTaskFilters(searchParams: URLSearchParams): TaskListFilters
   const groupBy = (searchParams.get('groupBy') as TaskListFilters['groupBy']) || 'status';
   const swimlane = (searchParams.get('swimlane') as TaskListFilters['swimlane']) || 'none';
   const scopeParam = searchParams.get('scope');
+  // По умолчанию показываем только проекты пользователя
   const scope: ProjectScope =
     scopeParam === 'owned' || scopeParam === 'member' || scopeParam === 'all'
       ? scopeParam
-      : 'all';
+      : 'owned';
 
-  return {
-    projectId,
-    status,
-    assigneeId,
-    priority,
-    labels,
-    dateFrom,
-    dateTo,
-    q,
+  const filters: TaskListFilters = {
     page,
     pageSize,
     sortBy,
@@ -73,6 +66,17 @@ export function parseTaskFilters(searchParams: URLSearchParams): TaskListFilters
     swimlane,
     scope
   };
+
+  if (projectId) filters.projectId = projectId;
+  if (status) filters.status = status;
+  if (assigneeId) filters.assigneeId = assigneeId;
+  if (priority) filters.priority = priority;
+  if (labels) filters.labels = labels;
+  if (dateFrom) filters.dateFrom = dateFrom;
+  if (dateTo) filters.dateTo = dateTo;
+  if (q) filters.q = q;
+
+  return filters;
 }
 
 export function buildTaskFilterParams(filters: TaskListFilters): URLSearchParams {
@@ -92,7 +96,8 @@ export function buildTaskFilterParams(filters: TaskListFilters): URLSearchParams
   if (filters.view) params.set('view', filters.view);
   if (filters.groupBy && filters.groupBy !== 'status') params.set('groupBy', filters.groupBy);
   if (filters.swimlane && filters.swimlane !== 'none') params.set('swimlane', filters.swimlane);
-  if (filters.scope && filters.scope !== 'all') params.set('scope', filters.scope);
+  // Добавляем scope в URL только если он отличается от дефолтного 'owned'
+  if (filters.scope && filters.scope !== 'owned') params.set('scope', filters.scope);
   return params;
 }
 
@@ -137,13 +142,23 @@ export function updateTaskFilterPreset(id: string, updates: Partial<Omit<TaskFil
   const presets = loadTaskFilterPresets();
   const index = presets.findIndex((p) => p.id === id);
   if (index === -1) return null;
-  presets[index] = {
-    ...presets[index],
+
+  const current = presets[index];
+  if (!current) return null;
+
+  const updated: TaskFilterPreset = {
+    ...current,
     ...updates,
+    id: current.id,
+    name: updates.name ?? current.name,
+    filters: updates.filters ?? current.filters,
+    createdAt: current.createdAt,
     updatedAt: new Date().toISOString()
   };
+
+  presets[index] = updated;
   localStorage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(presets));
-  return presets[index];
+  return updated;
 }
 
 export function deleteTaskFilterPreset(id: string): boolean {

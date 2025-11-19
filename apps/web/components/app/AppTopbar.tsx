@@ -80,9 +80,10 @@ type AppTopbarProps = {
   profile: DemoProfile;
   onLogout: () => void;
   isLoggingOut: boolean;
+  createButtonRef?: React.RefObject<HTMLButtonElement>;
 };
 
-export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings, profile, onLogout, isLoggingOut }: AppTopbarProps) {
+export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings, profile, onLogout, isLoggingOut, createButtonRef }: AppTopbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   // TODO: Подключить к реальному API специалистов и вакансий
@@ -92,6 +93,8 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
   const [isSearchFocused, setSearchFocused] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const internalCreateButtonRef = useRef<HTMLButtonElement>(null);
+  const buttonRef = createButtonRef || internalCreateButtonRef;
   const listboxId = useId();
   const hintId = `${listboxId}-hint`;
 
@@ -319,6 +322,7 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
             )}
           </form>
           <button
+            ref={buttonRef}
             type="button"
             onClick={onOpenCreate}
             className="inline-flex items-center gap-[7.2px] rounded-2xl border border-indigo-500/50 bg-indigo-500/10 px-[14.4px] py-[7.2px] text-[12.6px] font-semibold text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"

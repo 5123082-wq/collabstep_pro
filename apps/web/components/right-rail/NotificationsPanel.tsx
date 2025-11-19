@@ -42,8 +42,8 @@ export default function NotificationsPanel({ onMarkAllRead }: NotificationsPanel
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadNotifications();
-  }, []);
+    void loadNotifications();
+  }, [loadNotifications]);
 
   // Подписка на WebSocket события для уведомлений
   // wsClient уже подключен глобально в useUnreadNotifications

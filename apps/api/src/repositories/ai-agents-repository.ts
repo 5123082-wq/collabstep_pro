@@ -1,7 +1,7 @@
 import { usersRepository } from './users-repository';
 import { projectsRepository } from './projects-repository';
 import { memory } from '../data/memory';
-import type { AIAgent, AIAgentType, WorkspaceUser } from '../types';
+import type { AIAgent, AIAgentType } from '../types';
 
 export class AIAgentsRepository {
   private initialized = false;
@@ -165,7 +165,12 @@ export class AIAgentsRepository {
       userInMemory.name = updates.name.trim();
     }
     if (updates.title !== undefined) {
-      userInMemory.title = updates.title.trim() || undefined;
+      const trimmedTitle = updates.title.trim();
+      if (trimmedTitle) {
+        userInMemory.title = trimmedTitle;
+      } else {
+        delete userInMemory.title;
+      }
     }
     if (updates.responseTemplates !== undefined) {
       (userInMemory as any).responseTemplates = updates.responseTemplates;

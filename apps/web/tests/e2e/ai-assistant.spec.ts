@@ -5,7 +5,7 @@
  * и могут быть пропущены в CI/CD без ключа
  */
 
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 
 // Пропускаем тесты если нет OPENAI_API_KEY
 const skipIfNoAPIKey = process.env.OPENAI_API_KEY ? test : test.skip;

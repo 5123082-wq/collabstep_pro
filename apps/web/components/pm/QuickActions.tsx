@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, UserPlus, DollarSign, Store, Archive } from 'lucide-react';
+// @ts-ignore
+import { Archive, DollarSign, Plus, Store, UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type Project } from '@/types/pm';
 import { trackEvent } from '@/lib/telemetry';
@@ -70,7 +71,7 @@ export default function QuickActions({
 
   const handleArchive = async () => {
     // Проверяем оба формата статуса (uppercase и lowercase)
-    if (project.status === 'ARCHIVED' || project.status === 'archived' || archiving) {
+    if ((project.status as string) === 'ARCHIVED' || (project.status as string) === 'archived' || archiving) {
       return;
     }
 
@@ -144,7 +145,7 @@ export default function QuickActions({
         Выставить в маркетплейс
       </button>
 
-      {project.status !== 'ARCHIVED' && project.status !== 'archived' && (
+      {(project.status as string) !== 'ARCHIVED' && (project.status as string) !== 'archived' && (
         <button
           type="button"
           onClick={handleArchive}

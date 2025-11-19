@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useQueryToast } from '@/lib/ui/useQueryToast';
 
 const TOASTS = {
-  'auth-required': { message: 'Нужно войти в систему', tone: 'warning' }
+  'auth-required': { message: 'Нужно войти в систему', tone: 'warning' },
+  'register-success': { message: 'Регистрация успешна! Войдите в систему, используя свои учетные данные.', tone: 'success' }
 } as const;
 
 type FormState = {

@@ -6,14 +6,14 @@
  * Генерирует типовые подзадачи для задачи
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { generateText } from '@/lib/ai/client';
 import { 
   generateSubtasks
-} from '@/api/src/services/ai-planning-service';
+} from '@collabverse/api/services/ai-planning-service';
 import { getAuthFromRequest } from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
-import { getTasksRepository } from '@/api/src/repositories/tasks-repository';
+import { tasksRepository } from '@collabverse/api';
 
 /**
  * Адаптер для использования AI клиента в сервисе
@@ -63,8 +63,7 @@ export async function POST(req: NextRequest) {
 
     // Если указан taskId, проверяем права доступа
     if (taskId) {
-      const tasksRepo = getTasksRepository();
-      const task = tasksRepo.findById(taskId);
+      const task = tasksRepository.findById(taskId);
 
       if (!task) {
         return jsonError('NOT_FOUND', { 

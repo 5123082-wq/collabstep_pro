@@ -4,7 +4,7 @@ const footerLinks = [
   { label: 'Главная', href: '/' },
   { label: 'Продукт', href: '/product' },
   { label: 'Для кого', href: '/audience' },
-  { label: 'Проекты', href: '/projects' },
+  { label: 'Проекты', href: '/open-projects' },
   { label: 'Специалисты', href: '/specialists' },
   { label: 'Подрядчики', href: '/contractors' },
   { label: 'Тарифы', href: '/pricing' },

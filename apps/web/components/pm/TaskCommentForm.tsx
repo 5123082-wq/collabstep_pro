@@ -4,7 +4,6 @@ import { useState, FormEvent, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/lib/ui/toast';
-import { cn } from '@/lib/utils';
 
 type ProjectMember = {
   id: string;

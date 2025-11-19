@@ -7,7 +7,7 @@
  * - Анализ загруженности команды
  */
 
-import type { Task, ProjectMember, WorkspaceUser } from '../types';
+// Types removed as they were unused
 import { parseAIJsonResponse } from './ai-service';
 
 /**

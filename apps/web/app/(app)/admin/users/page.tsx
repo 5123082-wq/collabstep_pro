@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Filter, Shield, UserX, UserCheck, MoreVertical, RefreshCw, Bot, Trash2, Edit } from 'lucide-react';
+import { Search, Filter, Shield, UserX, UserCheck, RefreshCw, Bot, Trash2, Edit } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import clsx from 'clsx';
 import type { AdminUserView } from '@collabverse/api';

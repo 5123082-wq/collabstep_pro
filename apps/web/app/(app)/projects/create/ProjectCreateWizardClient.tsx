@@ -2,9 +2,11 @@
 
 import { FormEvent, useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Sparkles, X } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import { trackEvent } from '@/lib/telemetry';
 import { cn } from '@/lib/utils';
+import ProjectTemplateSelectorModal, { type ProjectTemplate } from '@/components/pm/ProjectTemplateSelectorModal';
 
 type WizardStep = 'details' | 'visibility' | 'confirm';
 
@@ -22,6 +24,8 @@ export default function ProjectCreateWizardClient({ currentUserId }: ProjectCrea
   const [status, setStatus] = useState<'draft' | 'active'>('draft');
   const [submitting, setSubmitting] = useState(false);
   const [touched, setTouched] = useState(false);
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<ProjectTemplate | null>(null);
 
   const canContinue = name.trim().length >= 3;
 
@@ -47,7 +51,22 @@ export default function ProjectCreateWizardClient({ currentUserId }: ProjectCrea
     setStep('details');
     setSubmitting(false);
     setTouched(false);
+    setSelectedTemplate(null);
   }, []);
+
+  const handleTemplateSelect = useCallback((template: ProjectTemplate | null) => {
+    if (template) {
+      setSelectedTemplate(template);
+      // Автозаполнение полей из шаблона
+      if (!name.trim()) {
+        setName(template.title);
+      }
+      if (!description.trim()) {
+        setDescription(template.summary);
+      }
+      toast('Шаблон применён', 'success');
+    }
+  }, [name, description]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -118,6 +137,51 @@ export default function ProjectCreateWizardClient({ currentUserId }: ProjectCrea
       <form className="space-y-10" onSubmit={handleSubmit}>
         {step === 'details' && (
           <section className="space-y-6">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1">
+                <button
+                  type="button"
+                  onClick={() => setIsTemplateModalOpen(true)}
+                  className="flex w-full items-center gap-3 rounded-xl border border-neutral-900 bg-neutral-950/60 px-4 py-3 text-left transition hover:border-indigo-500/40 hover:bg-neutral-950/80"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/20 text-indigo-300">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-semibold text-white">Выбрать шаблон</div>
+                    <div className="text-xs text-neutral-400">
+                      Используйте готовый шаблон для быстрого старта проекта
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {selectedTemplate && (
+              <div className="relative rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedTemplate(null);
+                    if (name === selectedTemplate.title) setName('');
+                    if (description === selectedTemplate.summary) setDescription('');
+                  }}
+                  className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full border border-neutral-900 bg-neutral-950/60 text-neutral-400 transition hover:border-indigo-500/40 hover:text-indigo-300"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+                <div className="pr-8">
+                  <div className="mb-1 flex items-center gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-indigo-300">
+                      Выбран шаблон
+                    </span>
+                  </div>
+                  <div className="text-sm font-semibold text-white">{selectedTemplate.title}</div>
+                  <div className="mt-1 text-xs text-neutral-400">{selectedTemplate.summary}</div>
+                </div>
+              </div>
+            )}
+
             <div>
               <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">
                 Название проекта
@@ -338,6 +402,12 @@ export default function ProjectCreateWizardClient({ currentUserId }: ProjectCrea
           </div>
         </footer>
       </form>
+
+      <ProjectTemplateSelectorModal
+        open={isTemplateModalOpen}
+        onOpenChange={setIsTemplateModalOpen}
+        onSelect={handleTemplateSelect}
+      />
     </div>
   );
 }

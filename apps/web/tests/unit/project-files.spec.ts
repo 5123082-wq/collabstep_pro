@@ -6,12 +6,14 @@ import {
   resetFinanceMemory
 } from '@collabverse/api';
 import { GET as getProjectFiles, POST as uploadFile } from '@/app/api/pm/projects/[id]/files/route';
+import { NextRequest } from 'next/server';
 
 describe('Project Files API', () => {
   let projectId: string;
   const userId = 'admin.demo@collabverse.test';
   const session = encodeDemoSession({
     email: userId,
+    userId,
     role: 'admin',
     issuedAt: Date.now()
   });
@@ -21,19 +23,22 @@ describe('Project Files API', () => {
 
   beforeEach(() => {
     resetFinanceMemory();
-    
+
     // Создаем проект для тестов
-    const project = projectsRepository.list()[0];
-    if (!project) {
-      throw new Error('No project found');
-    }
+    const project = projectsRepository.create({
+      title: 'Test Project',
+      description: 'Test Description',
+      ownerId: userId,
+      workspaceId: 'workspace-id',
+      status: 'active'
+    });
     projectId = project.id;
   });
 
   describe('GET /api/pm/projects/[id]/files', () => {
     it('should return empty array when no files exist', async () => {
       const response = await getProjectFiles(
-        new Request(`http://localhost/api/pm/projects/${projectId}/files`, {
+        new NextRequest(`http://localhost/api/pm/projects/${projectId}/files`, {
           method: 'GET',
           headers: { cookie: headers.cookie }
         }),
@@ -63,7 +68,7 @@ describe('Project Files API', () => {
       });
 
       const response = await getProjectFiles(
-        new Request(`http://localhost/api/pm/projects/${projectId}/files`, {
+        new NextRequest(`http://localhost/api/pm/projects/${projectId}/files`, {
           method: 'GET',
           headers: { cookie: headers.cookie }
         }),
@@ -73,8 +78,8 @@ describe('Project Files API', () => {
       expect(response.status).toBe(200);
       const data = await response.json();
       expect(data.data.files).toHaveLength(1);
-      expect(data.data.files[0].filename).toBe('test.txt');
-      expect(data.data.files[0].source).toBe('project');
+      expect(data.data.files[0]!.filename).toBe('test.txt');
+      expect(data.data.files[0]!.source).toBe('project');
     });
 
     it('should filter files by source', async () => {
@@ -110,7 +115,7 @@ describe('Project Files API', () => {
       });
 
       const response = await getProjectFiles(
-        new Request(`http://localhost/api/pm/projects/${projectId}/files?source=project`, {
+        new NextRequest(`http://localhost/api/pm/projects/${projectId}/files?source=project`, {
           method: 'GET',
           headers: { cookie: headers.cookie }
         }),
@@ -120,7 +125,7 @@ describe('Project Files API', () => {
       expect(response.status).toBe(200);
       const data = await response.json();
       expect(data.data.files).toHaveLength(1);
-      expect(data.data.files[0].source).toBe('project');
+      expect(data.data.files[0]!.source).toBe('project');
     });
 
     it('should group files by source', async () => {
@@ -156,7 +161,7 @@ describe('Project Files API', () => {
       });
 
       const response = await getProjectFiles(
-        new Request(`http://localhost/api/pm/projects/${projectId}/files`, {
+        new NextRequest(`http://localhost/api/pm/projects/${projectId}/files`, {
           method: 'GET',
           headers: { cookie: headers.cookie }
         }),
@@ -166,7 +171,7 @@ describe('Project Files API', () => {
       expect(response.status).toBe(200);
       const data = await response.json();
       expect(data.data.files).toHaveLength(2);
-      
+
       const sources = data.data.files.map((f: { source: string }) => f.source);
       expect(sources).toContain('project');
       expect(sources).toContain('tasks');
@@ -174,7 +179,7 @@ describe('Project Files API', () => {
 
     it('should return 404 if project not found', async () => {
       const response = await getProjectFiles(
-        new Request('http://localhost/api/pm/projects/non-existent/files', {
+        new NextRequest('http://localhost/api/pm/projects/non-existent/files', {
           method: 'GET',
           headers: { cookie: headers.cookie }
         }),
@@ -186,7 +191,7 @@ describe('Project Files API', () => {
 
     it('should return 401 if not authenticated', async () => {
       const response = await getProjectFiles(
-        new Request(`http://localhost/api/pm/projects/${projectId}/files`, {
+        new NextRequest(`http://localhost/api/pm/projects/${projectId}/files`, {
           method: 'GET'
         }),
         { params: { id: projectId } }
@@ -204,7 +209,7 @@ describe('Project Files API', () => {
       formData.append('file', file);
 
       const response = await uploadFile(
-        new Request(`http://localhost/api/pm/projects/${projectId}/files`, {
+        new NextRequest(`http://localhost/api/pm/projects/${projectId}/files`, {
           method: 'POST',
           headers: { cookie: headers.cookie },
           body: formData
@@ -224,7 +229,7 @@ describe('Project Files API', () => {
       const formData = new FormData();
 
       const response = await uploadFile(
-        new Request(`http://localhost/api/pm/projects/${projectId}/files`, {
+        new NextRequest(`http://localhost/api/pm/projects/${projectId}/files`, {
           method: 'POST',
           headers: { cookie: headers.cookie },
           body: formData
@@ -241,7 +246,7 @@ describe('Project Files API', () => {
       formData.append('file', file);
 
       const response = await uploadFile(
-        new Request('http://localhost/api/pm/projects/non-existent/files', {
+        new NextRequest('http://localhost/api/pm/projects/non-existent/files', {
           method: 'POST',
           headers: { cookie: headers.cookie },
           body: formData
@@ -258,7 +263,7 @@ describe('Project Files API', () => {
       formData.append('file', file);
 
       const response = await uploadFile(
-        new Request(`http://localhost/api/pm/projects/${projectId}/files`, {
+        new NextRequest(`http://localhost/api/pm/projects/${projectId}/files`, {
           method: 'POST',
           body: formData
         }),
@@ -275,7 +280,7 @@ describe('Project Files API', () => {
       formData.append('file', file);
 
       const response = await uploadFile(
-        new Request(`http://localhost/api/pm/projects/${projectId}/files`, {
+        new NextRequest(`http://localhost/api/pm/projects/${projectId}/files`, {
           method: 'POST',
           headers: { cookie: headers.cookie },
           body: formData
@@ -285,7 +290,7 @@ describe('Project Files API', () => {
 
       expect(response.status).toBe(200);
       const data = await response.json();
-      
+
       // Проверяем, что attachment создан
       const attachments = attachmentsRepository.listByProject(projectId);
       const attachment = attachments.find(a => a.fileId === data.data.file.id);
@@ -295,4 +300,3 @@ describe('Project Files API', () => {
     });
   });
 });
-

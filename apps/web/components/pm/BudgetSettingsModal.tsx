@@ -50,9 +50,9 @@ export default function BudgetSettingsModal({
 
   useEffect(() => {
     if (isOpen && projectId) {
-      loadBudgetSettings();
+      void loadBudgetSettings();
     }
-  }, [isOpen, projectId]);
+  }, [isOpen, projectId, loadBudgetSettings]);
 
   async function loadBudgetSettings() {
     try {
@@ -175,7 +175,11 @@ export default function BudgetSettingsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <ContentBlock as="div" className="w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl">
+      <div style={{ maxWidth: '70vw', width: 'auto' }}>
+        <ContentBlock 
+          as="div" 
+          className="max-h-[90vh] overflow-y-auto p-6 shadow-2xl"
+        >
         <div className="mb-6 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-white">Настройки бюджета проекта</h3>
           <button
@@ -375,7 +379,8 @@ export default function BudgetSettingsModal({
             </div>
           </div>
         )}
-      </ContentBlock>
+        </ContentBlock>
+      </div>
     </div>
   );
 }

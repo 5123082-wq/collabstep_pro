@@ -19,7 +19,7 @@ export const DEFAULT_PROJECT_FILTERS: ProjectListFilters = {
   pageSize: 20,
   sortBy: 'updated',
   sortOrder: 'desc',
-  scope: 'all'
+  scope: 'owned' // По умолчанию показываем только проекты пользователя
 };
 
 export function parseProjectFilters(searchParams: URLSearchParams): ProjectListFilters {

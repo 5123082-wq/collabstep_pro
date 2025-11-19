@@ -60,10 +60,13 @@ export class UsersRepository {
     if (userIndex < 0) {
       return false;
     }
-    memory.WORKSPACE_USERS[userIndex] = {
-      ...memory.WORKSPACE_USERS[userIndex],
-      passwordHash
-    };
+    const existingUser = memory.WORKSPACE_USERS[userIndex];
+    if (existingUser) {
+      memory.WORKSPACE_USERS[userIndex] = {
+        ...existingUser,
+        passwordHash
+      };
+    }
     return true;
   }
 
@@ -144,9 +147,12 @@ export class UsersRepository {
 
     // Удаляем из WORKSPACE_MEMBERS
     for (const workspaceId in memory.WORKSPACE_MEMBERS) {
-      memory.WORKSPACE_MEMBERS[workspaceId] = memory.WORKSPACE_MEMBERS[workspaceId].filter(
-        (member) => member.userId !== trimmed
-      );
+      const members = memory.WORKSPACE_MEMBERS[workspaceId];
+      if (members) {
+        memory.WORKSPACE_MEMBERS[workspaceId] = members.filter(
+          (member) => member.userId !== trimmed
+        );
+      }
     }
 
     return true;

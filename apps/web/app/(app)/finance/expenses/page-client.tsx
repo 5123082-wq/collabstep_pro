@@ -5,12 +5,13 @@ import {
   useEffect,
   useMemo,
   useReducer,
+  useRef,
   useState
 } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import ExpenseDrawer, { type ExpenseProjectOption } from '@/components/finance/ExpenseDrawer';
+import CsvImportModal from '@/components/finance/CsvImportModal';
 import { Badge } from '@/components/ui/badge';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import {
   DEMO_WORKSPACE_ID,
   PAGE_SIZE_OPTIONS,
@@ -29,7 +30,6 @@ import {
   type ExpenseStatus,
   type FinanceRole
 } from '@/domain/finance/expenses';
-import { parseExpensesCsv, type CsvParseError } from '@/lib/finance/csv-import';
 import { buildExpenseFilterParams, parseExpenseFilters, type ExpenseListFilters } from '@/lib/finance/filters';
 import { formatMoney, parseAmountInput } from '@/lib/finance/format-money';
 import { getExpensePermissions } from '@/lib/finance/permissions';
@@ -47,17 +47,8 @@ type PeriodPresetId = (typeof PERIOD_PRESETS)[number]['id'] | 'custom';
 
 type ProjectOption = ExpenseProjectOption & { role: FinanceRole };
 
-type ImportReport = {
-  processed: number;
-  created: number;
-  errors: CsvParseError[];
-};
-
 type ImportState = {
   open: boolean;
-  loading: boolean;
-  report: ImportReport | null;
-  fileName?: string;
 };
 
 function mapDemoRole(role: string | null): FinanceRole {
@@ -151,7 +142,7 @@ export default function FinanceExpensesPageClient({
   const [projects, setProjects] = useState<ProjectOption[]>([]);
   const [role, setRole] = useState<FinanceRole>('viewer');
   const [exporting, setExporting] = useState(false);
-  const [importState, setImportState] = useState<ImportState>({ open: false, loading: false, report: null });
+  const [importState, setImportState] = useState<ImportState>({ open: false });
 
   const [drawerState, dispatchDrawer] = useReducer(drawerReducer, {
     open: false,
@@ -169,7 +160,10 @@ export default function FinanceExpensesPageClient({
   }, [liveSearchParams]);
 
   const permissions = useMemo(() => getExpensePermissions(role), [role]);
+  // Ref для отслеживания предыдущего queryKey, чтобы избежать лишних перезагрузок
+  const prevQueryKeyRef = useRef<string>('');
 
+  // Стабильный ключ кэша, который не меняется при каждом рендере
   const queryKey = useMemo(() => {
     const params = new URLSearchParams();
     params.set('page', `${filters.page}`);
@@ -181,8 +175,23 @@ export default function FinanceExpensesPageClient({
     if (filters.q) params.set('q', filters.q);
     if (filters.dateFrom) params.set('dateFrom', filters.dateFrom);
     if (filters.dateTo) params.set('dateTo', filters.dateTo);
-    return params.toString();
-  }, [filters]);
+    // Сортируем параметры для стабильности ключа
+    const sortedParams = new URLSearchParams();
+    Array.from(params.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .forEach(([key, value]) => sortedParams.set(key, value));
+    return sortedParams.toString();
+  }, [
+    filters.page,
+    filters.pageSize,
+    filters.projectId,
+    filters.status,
+    filters.category,
+    filters.vendor,
+    filters.q,
+    filters.dateFrom,
+    filters.dateTo
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -204,6 +213,11 @@ export default function FinanceExpensesPageClient({
   }, []);
 
   useEffect(() => {
+    // Убеждаемся, что код выполняется на клиенте
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     let cancelled = false;
     async function loadProjects() {
       try {
@@ -217,11 +231,9 @@ export default function FinanceExpensesPageClient({
         }
       } catch (err) {
         if (!cancelled) {
-          console.error(err);
+          console.error('Failed to load projects:', err);
           setProjects([]);
         }
-      } finally {
-        // noop
       }
     }
     void loadProjects();
@@ -231,6 +243,14 @@ export default function FinanceExpensesPageClient({
   }, []);
 
   useEffect(() => {
+    // Проверяем, изменился ли queryKey - если нет, не перезагружаем данные
+    if (queryKey === prevQueryKeyRef.current) {
+      return;
+    }
+    
+    // Обновляем предыдущий ключ
+    prevQueryKeyRef.current = queryKey;
+    
     const controller = new AbortController();
     async function loadExpenses() {
       setLoading(true);
@@ -277,7 +297,7 @@ export default function FinanceExpensesPageClient({
     }
     void loadExpenses();
     return () => controller.abort();
-  }, [filters.page, filters.pageSize, queryKey]);
+  }, [queryKey]);
 
   const updateQuery = useCallback(
     (patch: Partial<ExpenseListFilters>) => {
@@ -527,83 +547,9 @@ export default function FinanceExpensesPageClient({
     }
   }, [permissions.canExport, queryKey]);
 
-  const resolveProjectId = useCallback(
-    (value: string): string | null => {
-      if (!value) {
-        return null;
-      }
-      const normalized = value.trim().toLowerCase();
-      const direct = projects.find((project) => project.id.toLowerCase() === normalized);
-      if (direct) {
-        return direct.id;
-      }
-      const byName = projects.find((project) => project.name.trim().toLowerCase() === normalized);
-      return byName ? byName.id : null;
-    },
-    [projects]
-  );
-
-  const handleImportFile = useCallback(
-    async (file: File) => {
-      if (!permissions.canImport) {
-        return;
-      }
-      setImportState((state) => ({ ...state, loading: true, report: null, fileName: file.name }));
-      try {
-        const text = await file.text();
-        const { records, errors: validationErrors, processed } = parseExpensesCsv(text);
-        const report: ImportReport = { processed, created: 0, errors: [...validationErrors] };
-        for (const row of records) {
-          const rowNumber = row.rowNumber;
-          const projectId = resolveProjectId(row.project);
-          if (!projectId) {
-            report.errors.push({ row: rowNumber, reason: 'Проект не найден' });
-            continue;
-          }
-          const projectRole = projects.find((project) => project.id === projectId)?.role ?? 'viewer';
-          if (projectRole === 'viewer') {
-            report.errors.push({ row: rowNumber, reason: 'Недостаточно прав для проекта' });
-            continue;
-          }
-          const payload = {
-            workspaceId: DEMO_WORKSPACE_ID,
-            projectId,
-            date: row.date || new Date().toISOString().slice(0, 10),
-            amount: parseAmountInput(row.amount || '0'),
-            currency: row.currency || 'RUB',
-            category: row.category || 'Uncategorized',
-            description: row.description || undefined,
-            vendor: row.vendor || undefined,
-            status: 'draft' as ExpenseStatus
-          };
-          try {
-            const response = await fetch('/api/expenses', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
-            });
-            if (!response.ok) {
-              throw new Error('CREATE_ERROR');
-            }
-            report.created += 1;
-          } catch (err) {
-            console.error(err);
-            report.errors.push({ row: rowNumber, reason: 'Ошибка создания' });
-          }
-        }
-        setImportState((state) => ({ ...state, loading: false, report }));
-        updateQuery({ page: 1 });
-      } catch (err) {
-        console.error(err);
-        setImportState((state) => ({
-          ...state,
-          loading: false,
-          report: { processed: 0, created: 0, errors: [{ row: 0, reason: 'Не удалось обработать файл' }] }
-        }));
-      }
-    },
-    [permissions.canImport, projects, resolveProjectId, updateQuery]
-  );
+  const handleImportComplete = useCallback(() => {
+    updateQuery({ page: 1 });
+  }, [updateQuery]);
 
   const presetButtons = PERIOD_PRESETS.map((preset) => {
     const active = preset.id === presetId;
@@ -646,7 +592,7 @@ export default function FinanceExpensesPageClient({
           {permissions.canImport ? (
             <button
               type="button"
-              onClick={() => setImportState((state) => ({ ...state, open: true, report: null }))}
+              onClick={() => setImportState({ open: true })}
               className="rounded-full border border-neutral-700 px-4 py-2 text-sm text-neutral-100 transition hover:border-indigo-400/60 hover:text-white"
             >
               Импорт CSV
@@ -914,71 +860,14 @@ export default function FinanceExpensesPageClient({
         projectSelectionDisabled={Boolean(drawerState.expense)}
       />
 
-      <Sheet
-        open={importState.open}
-        onOpenChange={(open) =>
-          setImportState((state) => ({ ...state, open, report: open ? state.report : null }))
-        }
-      >
-        <SheetContent side="right" className="flex h-full flex-col bg-neutral-950/95">
-          <SheetHeader className="space-y-2">
-            <SheetTitle>Импорт CSV</SheetTitle>
-            <button
-              type="button"
-              onClick={() => setImportState((state) => ({ ...state, open: false }))}
-              className="absolute right-4 top-4 rounded-full border border-neutral-800 px-2 py-1 text-xs text-neutral-400 hover:text-white"
-            >
-              ×
-            </button>
-          </SheetHeader>
-          <div className="mt-4 space-y-4 text-sm text-neutral-200">
-            <p>Формат: Date, Amount, Currency, Category, Description, Vendor, Project(name|id).</p>
-            <label className="flex flex-col gap-2">
-              <span className="text-xs text-neutral-400">Выберите файл CSV</span>
-              <input
-                type="file"
-                accept=".csv"
-                // [PLAN:S1] Expenses CSV pre-validation
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (file) {
-                    void handleImportFile(file);
-                    event.target.value = '';
-                  }
-                }}
-                className="rounded-lg border border-neutral-800 bg-neutral-900/60 px-3 py-2 text-sm text-neutral-100"
-              />
-            </label>
-            {importState.loading ? (
-              <div className="flex items-center gap-2 text-sm text-neutral-300">
-                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-neutral-400 border-t-transparent" />
-                Загрузка...
-              </div>
-            ) : null}
-            {importState.report ? (
-              <div className="space-y-2 rounded-xl border border-neutral-800 bg-neutral-900/60 p-4 text-sm text-neutral-100">
-                <p className="text-neutral-300">
-                  Обработано строк: {importState.report.processed}, создано черновиков: {importState.report.created}
-                </p>
-                {importState.report.errors.length ? (
-                  <div className="space-y-1 text-sm text-rose-300">
-                    <p>Ошибки:</p>
-                    <ul className="list-disc space-y-1 pl-5">
-                      {importState.report.errors.map((error, index) => (
-                        <li key={`${error.row}-${index}`}>
-                          Строка {error.row}: {error.reason}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : (
-                  <p className="text-sm text-emerald-300">Ошибок нет</p>
-                )}
-              </div>
-            ) : null}
-          </div>
-        </SheetContent>
-      </Sheet>
+      <CsvImportModal
+        isOpen={importState.open}
+        onClose={() => setImportState({ open: false })}
+        onImportComplete={handleImportComplete}
+        projects={projects}
+        workspaceId={DEMO_WORKSPACE_ID}
+        canImport={permissions.canImport}
+      />
     </div>
   );
 }

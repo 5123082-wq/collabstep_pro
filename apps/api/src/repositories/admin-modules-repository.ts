@@ -61,8 +61,8 @@ export class AdminModulesRepository {
   }
 
   findById(id: string): PlatformModule | null {
-    const module = memory.ADMIN_PLATFORM_MODULES.find((item) => item.id === id);
-    return module ? cloneModule(module) : null;
+    const moduleItem = memory.ADMIN_PLATFORM_MODULES.find((item) => item.id === id);
+    return moduleItem ? cloneModule(moduleItem) : null;
   }
 
   update(
@@ -135,23 +135,23 @@ export class AdminModulesRepository {
   buildTree(): PlatformModuleNode[] {
     const modules = this.list();
     const map = new Map<string, PlatformModuleNode>();
-    for (const module of modules) {
-      map.set(module.id, {
-        ...module,
-        testers: [...module.testers],
-        tags: [...module.tags],
+    for (const moduleItem of modules) {
+      map.set(moduleItem.id, {
+        ...moduleItem,
+        testers: [...moduleItem.testers],
+        tags: [...moduleItem.tags],
         children: []
       });
     }
 
     const roots: PlatformModuleNode[] = [];
-    for (const module of modules) {
-      const node = map.get(module.id);
+    for (const moduleItem of modules) {
+      const node = map.get(moduleItem.id);
       if (!node) {
         continue;
       }
-      if (module.parentId && map.has(module.parentId)) {
-        const parent = map.get(module.parentId)!;
+      if (moduleItem.parentId && map.has(moduleItem.parentId)) {
+        const parent = map.get(moduleItem.parentId)!;
         if (!parent.children) {
           parent.children = [];
         }

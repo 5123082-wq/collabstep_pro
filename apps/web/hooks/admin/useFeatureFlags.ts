@@ -27,6 +27,23 @@ export function useMenuSectionEnabled(sectionId: string): boolean {
   };
 
   const featureKey = sectionToFeatureMap[sectionId];
-  return featureKey ? useFeatureFlag(featureKey) : true;
+  // Always call hook unconditionally
+  const marketingEnabled = useFeatureFlag('projectsCore');
+  const documentsEnabled = useFeatureFlag('projectCreateWizard');
+  const financeEnabled = useFeatureFlag('budgetLimits');
+  const tasksEnabled = useFeatureFlag('tasksWorkspace');
+  const aiEnabled = useFeatureFlag('financeAutomations');
+  const pmEnabled = useFeatureFlag('pmNavProjectsAndTasks');
+  
+  const flagMap: Record<string, boolean> = {
+    marketing: marketingEnabled,
+    documents: documentsEnabled,
+    finance: financeEnabled,
+    tasks: tasksEnabled,
+    ai: aiEnabled,
+    pm: pmEnabled
+  };
+  
+  return featureKey ? flagMap[sectionId] ?? true : true;
 }
 

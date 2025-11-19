@@ -2,16 +2,14 @@
  * Unit тесты для AI Service
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-
 // Mock AI клиента
 const mockAIClient = {
-  generateText: vi.fn()
+  generateText: jest.fn()
 };
 
 describe('AI Service', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   describe('generateTaskDescription', () => {
@@ -19,7 +17,7 @@ describe('AI Service', () => {
       // Мы не можем напрямую тестировать без реального клиента
       // Поэтому создадим базовый тест структуры
       const taskTitle = 'Создать API endpoint';
-      
+
       expect(taskTitle).toBeTruthy();
       expect(taskTitle.length).toBeGreaterThan(0);
     });
@@ -29,7 +27,7 @@ describe('AI Service', () => {
         projectName: 'Test Project',
         projectDescription: 'Test Description'
       };
-      
+
       expect(context.projectName).toBe('Test Project');
       expect(context.projectDescription).toBe('Test Description');
     });
@@ -73,14 +71,14 @@ describe('AI Prompts', () => {
     it('should include task title', () => {
       const taskTitle = 'Test Task';
       const prompt = `Generate description for ${taskTitle}`;
-      
+
       expect(prompt).toContain(taskTitle);
     });
 
     it('should include project context when provided', () => {
       const projectName = 'Test Project';
       const prompt = `Project: ${projectName}`;
-      
+
       expect(prompt).toContain(projectName);
     });
   });
@@ -92,14 +90,14 @@ describe('AI Rate Limiting', () => {
       const userId = 'user1';
       const requestCount = 5;
       const limit = 20;
-      
+
       expect(requestCount).toBeLessThan(limit);
     });
 
     it('should reject requests over limit', () => {
       const requestCount = 25;
       const limit = 20;
-      
+
       expect(requestCount).toBeGreaterThan(limit);
     });
   });
@@ -111,7 +109,7 @@ describe('AI Rate Limiting', () => {
         endpoint: '/api/ai/generate-description',
         timestamp: Date.now()
       };
-      
+
       expect(request.userId).toBeTruthy();
       expect(request.endpoint).toBeTruthy();
       expect(request.timestamp).toBeGreaterThan(0);
@@ -123,20 +121,20 @@ describe('AI Security', () => {
   describe('validateAIInput', () => {
     it('should accept valid input', () => {
       const input = 'This is a valid question for AI';
-      
+
       expect(input.length).toBeGreaterThan(3);
       expect(input.length).toBeLessThan(5000);
     });
 
     it('should reject empty input', () => {
       const input = '';
-      
+
       expect(input.length).toBe(0);
     });
 
     it('should reject very long input', () => {
       const input = 'a'.repeat(6000);
-      
+
       expect(input.length).toBeGreaterThan(5000);
     });
   });
@@ -145,14 +143,14 @@ describe('AI Security', () => {
     it('should remove script tags', () => {
       const response = 'Content <script>alert("xss")</script>';
       const sanitized = response.replace(/<script[^>]*>.*?<\/script>/gi, '');
-      
+
       expect(sanitized).not.toContain('<script>');
     });
 
     it('should remove event handlers', () => {
       const response = '<div onclick="alert()">Content</div>';
       const sanitized = response.replace(/on\w+\s*=\s*["'][^"']*["']/gi, '');
-      
+
       expect(sanitized).not.toContain('onclick');
     });
   });
@@ -166,10 +164,10 @@ describe('AI Agents', () => {
         'Response 2',
         'Response 3'
       ];
-      
+
       const randomIndex = Math.floor(Math.random() * templates.length);
       const selected = templates[randomIndex];
-      
+
       expect(templates).toContain(selected);
     });
   });
@@ -178,16 +176,15 @@ describe('AI Agents', () => {
     it('should extract @ai-assistant mention', () => {
       const text = 'Hello @ai-assistant, how are you?';
       const hasMention = text.includes('@ai-assistant');
-      
+
       expect(hasMention).toBe(true);
     });
 
     it('should extract multiple mentions', () => {
       const text = '@ai-assistant and @ai-reviewer';
       const mentions = text.match(/@ai-\w+/g);
-      
+
       expect(mentions).toHaveLength(2);
     });
   });
 });
-

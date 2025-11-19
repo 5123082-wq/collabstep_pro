@@ -15,6 +15,7 @@ type ProjectsListProps = {
   projects: Project[];
   loading?: boolean;
   error?: string | null;
+  onOpenProject?: (project: Project) => void;
 };
 
 type PaginationProps = {
@@ -85,7 +86,7 @@ const SORT_OPTIONS: Array<{ value: ProjectListFilters['sortBy']; label: string }
   { value: 'progress', label: 'По прогрессу' }
 ];
 
-export default function ProjectsList({ projects, loading, error }: ProjectsListProps) {
+export default function ProjectsList({ projects, loading, error, onOpenProject }: ProjectsListProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -160,12 +161,15 @@ export default function ProjectsList({ projects, loading, error }: ProjectsListP
   }, [debouncedQuery, filters.q, updateFilters]);
 
   // Фильтрация проектов
+  // Примечание: фильтрация по статусу выполняется на сервере через API,
+  // поэтому здесь мы фильтруем только по поисковому запросу (q)
   const filteredProjects = useMemo(() => {
     let result = [...projects];
 
-    if (filters.status) {
-      result = result.filter((p) => p.status === filters.status);
-    }
+    // Фильтрация по статусу убрана, так как API уже фильтрует по статусу
+    // if (filters.status) {
+    //   result = result.filter((p) => p.status === filters.status);
+    // }
 
     if (filters.q) {
       const query = filters.q.toLowerCase();
@@ -311,7 +315,7 @@ export default function ProjectsList({ projects, loading, error }: ProjectsListP
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {pageItems.map((project) => (
-              <ProjectCardTile key={project.id} project={project} />
+              <ProjectCardTile key={project.id} project={project} onOpenProject={onOpenProject} />
             ))}
           </div>
 

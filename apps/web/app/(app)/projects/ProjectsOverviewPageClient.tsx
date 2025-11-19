@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
-import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowUpRight, DollarSign, Plus, KanbanSquare } from 'lucide-react';
 import { type Project } from '@/types/pm';
@@ -12,6 +11,7 @@ import { toast } from '@/lib/ui/toast';
 import { useAppShell } from '@/components/app/AppShellContext';
 import { cn } from '@/lib/utils';
 import { ContentBlock } from '@/components/ui/content-block';
+import ProjectDetailModal from '@/components/pm/ProjectDetailModal';
 import {
   deleteProjectFilterPreset,
   loadProjectFilterPresets,
@@ -149,12 +149,13 @@ function ProjectsOverviewCard({
               {statusLabel}
             </span>
           </div>
-          <Link
-            href={`/pm/projects/${project.id}`}
-            className="text-lg font-semibold text-white transition-colors hover:text-indigo-300"
+          <button
+            type="button"
+            onClick={() => onOpenProject(project)}
+            className="text-left text-lg font-semibold text-white transition-colors hover:text-indigo-300"
           >
             {project.name}
-          </Link>
+          </button>
           {project.owner?.name && (
             <p className="text-xs text-neutral-500">
               Владелец: <span className="text-neutral-300">{project.owner.name}</span>
@@ -336,13 +337,39 @@ export default function ProjectsOverviewPageClient({ initialFilters, initialData
 
   // Кэш для хранения данных по ключу фильтров
   const cacheRef = useRef<Map<string, ProjectsOverviewResult>>(new Map());
+  // Ref для отслеживания предыдущего queryKey, чтобы избежать лишних перезагрузок
+  const prevQueryKeyRef = useRef<string>('');
 
+  // Стабильный ключ кэша, который не меняется при каждом рендере
   const queryKey = useMemo(() => {
     const params = buildProjectFilterParams(filters);
-    return params.toString();
-  }, [filters]);
+    // Сортируем параметры для стабильности ключа
+    const sortedParams = new URLSearchParams();
+    Array.from(params.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .forEach(([key, value]) => sortedParams.set(key, value));
+    return sortedParams.toString();
+  }, [
+    filters.status,
+    filters.ownerId,
+    filters.memberId,
+    filters.q,
+    filters.page,
+    filters.pageSize,
+    filters.sortBy,
+    filters.sortOrder,
+    filters.scope
+  ]);
 
   useEffect(() => {
+    // Проверяем, изменился ли queryKey - если нет, не перезагружаем данные
+    if (queryKey === prevQueryKeyRef.current) {
+      return;
+    }
+    
+    // Обновляем предыдущий ключ
+    prevQueryKeyRef.current = queryKey;
+    
     // Проверяем кэш перед загрузкой
     const cached = cacheRef.current.get(queryKey);
     if (cached) {
@@ -600,6 +627,8 @@ export default function ProjectsOverviewPageClient({ initialFilters, initialData
     updateFilters({ page }, { resetPage: false, track: false });
   };
 
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+
   const handleOpenProject = (project: Project) => {
     trackEvent('projects_overview_quick_action', {
       userId: currentUserId,
@@ -607,7 +636,7 @@ export default function ProjectsOverviewPageClient({ initialFilters, initialData
       action: 'open_project',
       scope: filtersRef.current.scope ?? DEFAULT_SCOPE
     });
-    router.push(`/pm/projects/${project.id}`);
+    setSelectedProjectId(project.id);
   };
 
   const handleCreateTask = (project: Project) => {
@@ -636,7 +665,9 @@ export default function ProjectsOverviewPageClient({ initialFilters, initialData
       action: 'create_expense',
       scope: filtersRef.current.scope ?? DEFAULT_SCOPE
     });
-    router.push(`/pm/projects/${project.id}?open=expense`);
+    // Открываем проект в модальном окне
+    setSelectedProjectId(project.id);
+    // TODO: Добавить логику для автоматического открытия expense drawer в модальном окне
   };
 
   const handleViewTasks = (project: Project) => {
@@ -946,6 +977,15 @@ export default function ProjectsOverviewPageClient({ initialFilters, initialData
             </nav>
           )}
         </>
+      )}
+
+      {/* Модальное окно проекта */}
+      {selectedProjectId && (
+        <ProjectDetailModal
+          projectId={selectedProjectId}
+          isOpen={!!selectedProjectId}
+          onClose={() => setSelectedProjectId(null)}
+        />
       )}
     </div>
   );

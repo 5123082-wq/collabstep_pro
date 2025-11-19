@@ -6,7 +6,7 @@
 
 import { projectsRepository, tasksRepository, projectChatRepository } from '@collabverse/api';
 import { generateText } from './client';
-import { generateChatResponse } from '@collabverse/api/src/services/ai-service';
+import { generateChatResponse } from '@collabverse/api/services/ai-service';
 
 /**
  * Проверка, адресовано ли сообщение AI

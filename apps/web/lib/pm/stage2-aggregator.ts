@@ -108,7 +108,7 @@ export function buildTaskMetrics(tasks: Task[]): Map<string, TaskMetrics> {
       entry.inProgress += 1;
     }
 
-    const dueRaw = task.dueAt ?? task.dueDate;
+    const dueRaw = task.dueAt;
     if (dueRaw) {
       const dueTime = new Date(dueRaw).getTime();
       if (!Number.isNaN(dueTime) && dueTime < now && task.status !== 'done') {
@@ -153,7 +153,7 @@ export function mapMembers(apiMembers: ApiProjectMember[], ownerId: string): Pro
 
   return withOwner.map((member) => ({
     userId: member.userId,
-    role: MEMBER_ROLE_MAP[member.role] ?? 'MEMBER'
+    role: (member.role in MEMBER_ROLE_MAP ? MEMBER_ROLE_MAP[member.role as keyof typeof MEMBER_ROLE_MAP] : undefined) ?? 'MEMBER'
   }));
 }
 
@@ -221,19 +221,19 @@ export function transformProject(
     },
     ...(listing
       ? {
-          marketplace: {
-            listingId: listing.id,
-            state:
-              listing.state === 'draft' || listing.state === 'published' || listing.state === 'rejected'
-                ? listing.state
-                : 'draft'
-          }
+        marketplace: {
+          listingId: listing.id,
+          state:
+            listing.state === 'draft' || listing.state === 'published' || listing.state === 'rejected'
+              ? listing.state
+              : 'draft'
         }
+      }
       : {
-          marketplace: {
-            state: 'none' as const
-          }
-        }),
+        marketplace: {
+          state: 'none' as const
+        }
+      }),
     ...(owner ? { owner } : {})
   } as Project;
 }
@@ -254,17 +254,20 @@ export function normalizeFilters(filters: Partial<ProjectListFilters>): Internal
     ...filters
   };
 
-  return {
-    status: merged.status,
-    ownerId: merged.ownerId,
-    memberId: merged.memberId,
-    q: merged.q,
+  const result: InternalFilters = {
     page: merged.page ?? DEFAULT_PROJECT_FILTERS.page,
     pageSize: merged.pageSize ?? DEFAULT_PROJECT_FILTERS.pageSize,
     sortBy: merged.sortBy ?? 'updated',
     sortOrder: merged.sortOrder ?? 'desc',
-    scope: merged.scope ?? 'all'
+    scope: merged.scope ?? 'owned'
   };
+
+  if (merged.status !== undefined) result.status = merged.status;
+  if (merged.ownerId !== undefined) result.ownerId = merged.ownerId;
+  if (merged.memberId !== undefined) result.memberId = merged.memberId;
+  if (merged.q !== undefined) result.q = merged.q;
+
+  return result;
 }
 
 export function sortProjects(
@@ -303,19 +306,19 @@ export function sortProjects(
  */
 function getUserWorkspaceIds(userId: string): Set<string> {
   const workspaceIds = new Set<string>();
-  
+
   // Администраторы имеют доступ ко всем workspace
   if (isAdminUserId(userId)) {
     return workspaceIds; // Пустой Set означает "все workspace"
   }
-  
+
   // Ищем пользователя во всех workspace
   for (const [workspaceId, members] of Object.entries(memory.WORKSPACE_MEMBERS)) {
     if (members.some((member) => member.userId === userId)) {
       workspaceIds.add(workspaceId);
     }
   }
-  
+
   return workspaceIds;
 }
 
@@ -328,15 +331,15 @@ export function collectStage2Projects(
   const allTasks = tasksRepository.list();
   const metricsMap = buildTaskMetrics(allTasks);
   const tasksByProject = groupTasksByProject(allTasks);
-  
+
   // Получаем workspaceId пользователя
   const userWorkspaceIds = getUserWorkspaceIds(currentUserId);
   const isAdmin = isAdminUserId(currentUserId);
-  
+
   // Если указан конкретный workspaceId в options, используем его
   // Иначе фильтруем по workspaceId пользователя (если не админ)
   let projectsFilter: { workspaceId?: string } | undefined = undefined;
-  if (options.workspaceId !== undefined) {
+  if (typeof options.workspaceId === 'string') {
     projectsFilter = { workspaceId: options.workspaceId };
   } else if (!isAdmin && userWorkspaceIds.size > 0) {
     // Для не-админов фильтруем проекты по их workspace
@@ -344,13 +347,18 @@ export function collectStage2Projects(
     // поэтому нам нужно получить все проекты и отфильтровать вручную
     projectsFilter = undefined; // Получим все проекты, затем отфильтруем
   }
-  
+
   const allProjects = projectsRepository.list(projectsFilter);
   const ownersMap = new Map<string, ProjectsOverviewOwner>();
   const membersCache = new Map<string, ApiProjectMember[]>();
 
   const search = normalizedFilters.q?.trim().toLowerCase() ?? '';
   const apiStatus = toApiStatus(normalizedFilters.status);
+
+  // Логирование для отладки
+  if (normalizedFilters.status) {
+    console.log(`[collectStage2Projects] Filtering by status: ${normalizedFilters.status} -> ${apiStatus}`);
+  }
 
   const entries: Stage2ProjectEntry[] = [];
 
@@ -410,6 +418,9 @@ export function collectStage2Projects(
     if (apiStatus) {
       // Если статус явно указан, фильтруем по нему
       if (project.status !== apiStatus) {
+        if (normalizedFilters.status) {
+          console.log(`[collectStage2Projects] Project ${project.id} (${project.title}) status ${project.status} doesn't match filter ${apiStatus}`);
+        }
         continue;
       }
     } else {

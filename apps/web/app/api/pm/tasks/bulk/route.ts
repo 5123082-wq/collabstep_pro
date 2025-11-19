@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+// NextRequest and NextResponse removed - using Request instead
 import { flags } from '@/lib/flags';
 import { getAuthFromRequest } from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';

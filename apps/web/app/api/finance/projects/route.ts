@@ -15,7 +15,9 @@ export async function GET(request: Request) {
       return projectsRepository.hasAccess(project.id, auth.userId);
     })
     .map((project) => {
-      const role = getProjectRole(project.id, auth.userId);
+      // Передаём email для обратной совместимости со старыми проектами
+      // Для новых пользователей userId всегда UUID, email используется только для fallback
+      const role = getProjectRole(project.id, auth.userId, auth.email);
       return {
         id: project.id,
         name: project.title,

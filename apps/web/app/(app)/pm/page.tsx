@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { flags } from '@/lib/flags';
-import { FeatureComingSoon } from '@/components/app/FeatureComingSoon';
 import PulseWidget from '@/components/pm/PulseWidget';
 import ProgressWidget from '@/components/pm/ProgressWidget';
 import WorkloadWidget from '@/components/pm/WorkloadWidget';
@@ -13,6 +11,7 @@ import { trackEvent } from '@/lib/telemetry';
 type DashboardData = {
   pulse: {
     activeProjects: number;
+    draftProjects?: number;
     openTasks: number;
     myOpenTasks: number;
     overdue: number;
@@ -147,6 +146,7 @@ export default function PMDashboardPage() {
   const safeData = {
     pulse: data.pulse || {
       activeProjects: 0,
+      draftProjects: 0,
       openTasks: 0,
       myOpenTasks: 0,
       overdue: 0,

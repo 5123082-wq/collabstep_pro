@@ -17,7 +17,7 @@ export default function MarketingError({ reset }: RouteErrorProps) {
           reset={reset}
           links={[
             { href: '/', label: 'На главную' },
-            { href: '/projects', label: 'Проекты' }
+            { href: '/open-projects', label: 'Проекты' }
           ]}
         />
       </div>

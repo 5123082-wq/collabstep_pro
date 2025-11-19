@@ -212,7 +212,7 @@ export default function BulkOperationsPanel({
             onChange={(e) => setCommand(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-                handleParse();
+                void handleParse();
               }
             }}
             placeholder="Например: Измени статус всех задач в работе на готово"

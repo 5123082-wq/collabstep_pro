@@ -61,10 +61,6 @@ export default function PMProjectDetailPage() {
     loadingHistory: false
   } satisfies DrawerState);
 
-  if (!flags.PM_NAV_PROJECTS_AND_TASKS || !flags.PM_PROJECT_CARD) {
-    return <FeatureComingSoon title="Проект" />;
-  }
-
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -148,7 +144,7 @@ export default function PMProjectDetailPage() {
         setError(null);
 
         // Загрузить задачи проекта для диаграммы Ганта
-        loadProjectTasks(projectId);
+        void loadProjectTasks(projectId);
 
         // Аналитика просмотра проекта
         trackEvent('pm_project_viewed', {
@@ -168,6 +164,10 @@ export default function PMProjectDetailPage() {
       void loadProject();
     }
   }, [projectId, router, currentUserId]);
+
+  if (!flags.PM_NAV_PROJECTS_AND_TASKS || !flags.PM_PROJECT_CARD) {
+    return <FeatureComingSoon title="Проект" />;
+  }
 
   const loadProjectTasks = async (projId: string) => {
     try {
@@ -467,20 +467,11 @@ export default function PMProjectDetailPage() {
       {/* Контент вкладок */}
       {activeTab === 'overview' && (
         <>
-          <ProjectKPIs project={project} onUpdateLimit={handleUpdateLimit} />
-
-      {/* Кнопка настроек бюджета */}
-      {flags.BUDGET_LIMITS && (
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => setShowBudgetSettingsModal(true)}
-            className="rounded-lg border border-neutral-800 bg-neutral-900/60 px-4 py-2 text-sm font-medium text-neutral-300 transition hover:bg-neutral-800 hover:text-white"
-          >
-            Настройки бюджета
-          </button>
-        </div>
-      )}
+          <ProjectKPIs 
+            project={project} 
+            onUpdateLimit={handleUpdateLimit}
+            onBudgetSettingsClick={flags.BUDGET_LIMITS ? () => setShowBudgetSettingsModal(true) : undefined}
+          />
 
       <QuickActions
         project={project}
@@ -600,19 +591,21 @@ export default function PMProjectDetailPage() {
           onClose={() => setShowBudgetSettingsModal(false)}
           onSaved={() => {
             // Перезагружаем проект для обновления метрик
-            const projectResponse = fetch(`/api/pm/projects/${projectId}`);
-            if (projectResponse) {
-              projectResponse.then((res) => {
+            void fetch(`/api/pm/projects/${projectId}`)
+              .then((res) => {
                 if (res.ok) {
                   return res.json();
                 }
                 return null;
-              }).then((data) => {
+              })
+              .then((data) => {
                 if (data?.ok && data.data?.project) {
                   setProject(data.data.project);
                 }
+              })
+              .catch((error) => {
+                console.error('Error reloading project:', error);
               });
-            }
           }}
         />
       )}
@@ -624,7 +617,7 @@ export default function PMProjectDetailPage() {
         onClose={() => setShowCreateTaskModal(false)}
         onSuccess={() => {
           // Перезагружаем проект для обновления метрик
-          fetch(`/api/pm/projects/${projectId}`)
+          void fetch(`/api/pm/projects/${projectId}`)
             .then((res) => {
               if (res.ok) {
                 return res.json();
@@ -635,6 +628,9 @@ export default function PMProjectDetailPage() {
               if (data?.ok && data.data?.project) {
                 setProject(data.data.project);
               }
+            })
+            .catch((error) => {
+              console.error('Error reloading project:', error);
             });
         }}
       />
@@ -648,7 +644,7 @@ export default function PMProjectDetailPage() {
           onClose={() => setShowInviteModal(false)}
           onSuccess={() => {
             // Перезагружаем проект для обновления списка участников
-            fetch(`/api/pm/projects/${projectId}`)
+            void fetch(`/api/pm/projects/${projectId}`)
               .then((res) => {
                 if (res.ok) {
                   return res.json();
@@ -659,6 +655,9 @@ export default function PMProjectDetailPage() {
                 if (data?.ok && data.data?.project) {
                   setProject(data.data.project);
                 }
+              })
+              .catch((error) => {
+                console.error('Error reloading project:', error);
               });
           }}
         />

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Database, Trash2, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Box, Trash2, RefreshCw, AlertTriangle } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import { canAccessAdmin, getUserRoles } from '@/lib/auth/roles';
 import { ContentBlock } from '@/components/ui/content-block';
@@ -63,7 +63,7 @@ export default function AdminDataPage() {
       return;
     }
     
-    loadStats();
+    void loadStats();
   }, [loadStats, router]);
 
   const handleClearAll = useCallback(async () => {
@@ -155,7 +155,7 @@ export default function AdminDataPage() {
                 <p className="text-sm text-neutral-400">Всего проектов</p>
                 <p className="text-3xl font-semibold text-neutral-50">{stats.summary.totalProjects}</p>
               </div>
-              <Database className="h-8 w-8 text-blue-400" />
+              <Box className="h-8 w-8 text-blue-400" />
             </div>
           </ContentBlock>
 
@@ -165,7 +165,7 @@ export default function AdminDataPage() {
                 <p className="text-sm text-neutral-400">Всего задач</p>
                 <p className="text-3xl font-semibold text-neutral-50">{stats.summary.totalTasks}</p>
               </div>
-              <Database className="h-8 w-8 text-green-400" />
+              <Box className="h-8 w-8 text-green-400" />
             </div>
           </ContentBlock>
 
@@ -175,7 +175,7 @@ export default function AdminDataPage() {
                 <p className="text-sm text-neutral-400">Пользователей</p>
                 <p className="text-3xl font-semibold text-neutral-50">{stats.summary.totalUsers}</p>
               </div>
-              <Database className="h-8 w-8 text-purple-400" />
+              <Box className="h-8 w-8 text-purple-400" />
             </div>
           </ContentBlock>
         </div>
@@ -281,7 +281,7 @@ export default function AdminDataPage() {
       {/* Empty State */}
       {stats && stats.users.length === 0 && (
         <ContentBlock variant="dashed" className="text-center">
-          <Database className="h-12 w-12 text-neutral-600 mx-auto mb-4" />
+          <Box className="h-12 w-12 text-neutral-600 mx-auto mb-4" />
           <p className="text-neutral-400">Нет данных для отображения</p>
           <p className="text-sm text-neutral-500 mt-1">Проекты и задачи отсутствуют в памяти системы</p>
         </ContentBlock>

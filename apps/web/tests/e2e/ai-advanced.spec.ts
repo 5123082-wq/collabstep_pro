@@ -25,7 +25,7 @@ async function setupTestProject(page: any) {
   await page.fill('[name="description"]', 'Project for AI testing');
   await page.click('button:has-text("Создать")');
   await expect(page).toHaveURL(/\/pm\/projects\//);
-  
+
   const projectId = page.url().split('/').pop();
   return projectId;
 }
@@ -35,9 +35,9 @@ test.describe('AI Advanced Features', () => {
     // Mock AI API responses
     await page.route('**/api/ai/**', (route) => {
       const url = route.request().url();
-      
+
       if (url.includes('/generate-project-structure')) {
-        route.fulfill({
+        void route.fulfill({
           status: 200,
           body: JSON.stringify({
             structure: {
@@ -81,7 +81,7 @@ test.describe('AI Advanced Features', () => {
           })
         });
       } else if (url.includes('/analyze-workload')) {
-        route.fulfill({
+        void route.fulfill({
           status: 200,
           body: JSON.stringify({
             analysis: {
@@ -103,7 +103,7 @@ test.describe('AI Advanced Features', () => {
           })
         });
       } else {
-        route.continue();
+        void route.continue();
       }
     });
   });
@@ -116,13 +116,13 @@ test.describe('AI Advanced Features', () => {
     await expect(page.locator('text=Планирование проекта через AI')).toBeVisible();
 
     // Enter project description
-    await page.fill('textarea[placeholder*="Опишите проект"]', 
+    await page.fill('textarea[placeholder*="Опишите проект"]',
       'Создать веб-приложение для управления задачами с REST API и современным UI');
 
     // Generate structure
     await page.click('button:has-text("Сгенерировать структуру")');
     await expect(page.locator('text=Генерация...')).toBeVisible();
-    
+
     // Wait for results
     await expect(page.locator('text=Предпросмотр структуры проекта')).toBeVisible({ timeout: 10000 });
 
@@ -182,13 +182,13 @@ test.describe('AI Advanced Features', () => {
     for (let i = 1; i <= 3; i++) {
       await page.click('text=Создать задачу');
       await page.fill('[name="title"]', `Task ${i}`);
-      await page.select('[name="status"]', 'in_progress');
+      await page.selectOption('[name="status"]', 'in_progress');
       await page.click('button:has-text("Создать")');
     }
 
     // Mock bulk operations API
     await page.route('**/api/pm/tasks/bulk-update', (route) => {
-      route.fulfill({
+      void route.fulfill({
         status: 200,
         body: JSON.stringify({
           data: {
@@ -200,9 +200,9 @@ test.describe('AI Advanced Features', () => {
 
     await page.route('**/api/ai/**', (route) => {
       const url = route.request().url();
-      
+
       // Mock for parseBulkCommand (called by BulkOperationsPanel)
-      route.fulfill({
+      void route.fulfill({
         status: 200,
         body: JSON.stringify({
           operation: {
@@ -227,7 +227,7 @@ test.describe('AI Advanced Features', () => {
     await expect(page.locator('text=Массовые операции через AI')).toBeVisible();
 
     // Enter command
-    await page.fill('textarea[placeholder*="Например"]', 
+    await page.fill('textarea[placeholder*="Например"]',
       'Измени статус всех задач в работе на готово');
 
     // Parse command
@@ -253,7 +253,7 @@ test.describe('AI Advanced Features', () => {
     await expect(page.locator('text=Примеры команд')).toBeVisible();
 
     // Click on first example
-    await page.click('button:has-text("Измени статус всех задач")').first();
+    await page.locator('button:has-text("Измени статус всех задач")').first().click();
 
     // Verify command is filled
     const textarea = page.locator('textarea[placeholder*="Например"]');
@@ -285,7 +285,7 @@ test.describe('AI Advanced Features', () => {
 
     // Mock AI error
     await page.route('**/api/ai/generate-project-structure', (route) => {
-      route.fulfill({
+      void route.fulfill({
         status: 503,
         body: JSON.stringify({
           error: 'AI service is not configured'
@@ -307,7 +307,7 @@ test.describe('AI Advanced Features', () => {
 
     // Mock successful bulk operation
     await page.route('**/api/pm/tasks/bulk-update', (route) => {
-      route.fulfill({
+      void route.fulfill({
         status: 200,
         body: JSON.stringify({ data: { updatedCount: 2 } })
       });
@@ -331,4 +331,3 @@ test.describe('AI Advanced Features', () => {
     await expect(page.locator('text=Тестовая команда')).toBeVisible();
   });
 });
-

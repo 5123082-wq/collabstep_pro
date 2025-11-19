@@ -1,12 +1,11 @@
 'use client';
 
-import Link from 'next/link';
 import Image from 'next/image';
 import { useMemo } from 'react';
 import clsx from 'clsx';
 import type { MarketplaceTemplate } from '@/lib/marketplace/types';
 import { useMarketplaceStore } from '@/lib/marketplace/store';
-import { getTemplatePriceLabel, getTemplatePricingBadge } from '@/lib/marketplace/pricing';
+import { getTemplatePricingBadge } from '@/lib/marketplace/pricing';
 import { ContentBlock } from '@/components/ui/content-block';
 
 const CATEGORY_BADGES: Record<string, string> = {

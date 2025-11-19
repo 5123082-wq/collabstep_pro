@@ -9,21 +9,17 @@
  * - Subtasks generation
  */
 
-import { describe, it, expect, vi, beforeEach } from '@jest/globals';
 import {
   generateProjectStructure,
   suggestTaskAssignments,
   analyzeWorkload,
   generateSubtasks,
-  type AIClient,
-  type ProjectStructure,
-  type AssignmentRecommendation,
-  type WorkloadAnalysis
-} from '@/api/src/services/ai-planning-service';
+  type AIClient
+} from '@collabverse/api/services/ai-planning-service';
 
 // Mock AI Client
 const createMockAIClient = (response: string): AIClient => ({
-  generateText: vi.fn().mockResolvedValue(response)
+  generateText: jest.fn().mockResolvedValue(response)
 });
 
 describe('AI Planning Service', () => {
@@ -57,8 +53,8 @@ describe('AI Planning Service', () => {
 
       expect(result).toBeDefined();
       expect(result.phases).toHaveLength(1);
-      expect(result.phases[0].name).toBe('Разработка');
-      expect(result.phases[0].tasks).toHaveLength(1);
+      expect(result.phases[0]!.name).toBe('Разработка');
+      expect(result.phases[0]!.tasks).toHaveLength(1);
       expect(result.estimatedTotalDays).toBe(30);
       expect(result.suggestedTeamSize).toBe(3);
     });
@@ -93,7 +89,7 @@ describe('AI Planning Service', () => {
 
       expect(result).toBeDefined();
       expect(result.phases).toHaveLength(1);
-      expect(result.phases[0].name).toBe('Тестирование');
+      expect(result.phases[0]!.name).toBe('Тестирование');
     });
 
     it('should throw error for invalid AI response', async () => {
@@ -114,7 +110,7 @@ describe('AI Planning Service', () => {
 
       await expect(
         generateProjectStructure(mockClient, 'Test project')
-      ).rejects.toThrow('AI returned invalid project structure');
+      ).rejects.toThrow('Failed to generate project structure');
     });
 
     it('should include risks and recommendations when requested', async () => {
@@ -189,9 +185,9 @@ describe('AI Planning Service', () => {
       const result = await suggestTaskAssignments(mockClient, tasks, members);
 
       expect(result).toHaveLength(1);
-      expect(result[0].taskId).toBe('task-1');
-      expect(result[0].recommendedAssigneeId).toBe('user-1');
-      expect(result[0].confidence).toBe(0.9);
+      expect(result[0]!.taskId).toBe('task-1');
+      expect(result[0]!.recommendedAssigneeId).toBe('user-1');
+      expect(result[0]!.confidence).toBe(0.9);
     });
 
     it('should return empty array for no tasks', async () => {
@@ -234,8 +230,8 @@ describe('AI Planning Service', () => {
 
       const result = await suggestTaskAssignments(mockClient, tasks, members);
 
-      expect(result[0].alternativeAssignees).toHaveLength(1);
-      expect(result[0].alternativeAssignees![0].userId).toBe('user-2');
+      expect(result[0]!.alternativeAssignees).toHaveLength(1);
+      expect(result[0]!.alternativeAssignees![0]!.userId).toBe('user-2');
     });
   });
 
@@ -282,8 +278,8 @@ describe('AI Planning Service', () => {
 
       expect(result).toBeDefined();
       expect(result.members).toHaveLength(1);
-      expect(result.members[0].userId).toBe('user-1');
-      expect(result.members[0].overloadLevel).toBe('medium');
+      expect(result.members[0]!.userId).toBe('user-1');
+      expect(result.members[0]!.overloadLevel).toBe('medium');
     });
 
     it('should identify overloaded members', async () => {
@@ -343,7 +339,7 @@ describe('AI Planning Service', () => {
       // Should return basic analysis even on error
       expect(result).toBeDefined();
       expect(result.members).toHaveLength(1);
-      expect(result.members[0].userId).toBe('user-1');
+      expect(result.members[0]!.userId).toBe('user-1');
     });
 
     it('should suggest task redistribution', async () => {
@@ -396,8 +392,8 @@ describe('AI Planning Service', () => {
 
       expect(result.redistributionSuggestions).toBeDefined();
       expect(result.redistributionSuggestions!.length).toBeGreaterThan(0);
-      expect(result.redistributionSuggestions![0].fromUserId).toBe('user-1');
-      expect(result.redistributionSuggestions![0].toUserId).toBe('user-2');
+      expect(result.redistributionSuggestions![0]!.fromUserId).toBe('user-1');
+      expect(result.redistributionSuggestions![0]!.toUserId).toBe('user-2');
     });
   });
 
@@ -427,9 +423,9 @@ describe('AI Planning Service', () => {
       );
 
       expect(result).toHaveLength(2);
-      expect(result[0].title).toBe('Subtask 1');
-      expect(result[0].estimatedHours).toBe(4);
-      expect(result[1].title).toBe('Subtask 2');
+      expect(result[0]!.title).toBe('Subtask 1');
+      expect(result[0]!.estimatedHours).toBe(4);
+      expect(result[1]!.title).toBe('Subtask 2');
     });
 
     it('should throw error for invalid subtasks response', async () => {
@@ -441,7 +437,7 @@ describe('AI Planning Service', () => {
 
       await expect(
         generateSubtasks(mockClient, 'Test task')
-      ).rejects.toThrow('AI returned invalid subtasks');
+      ).rejects.toThrow('Failed to generate subtasks');
     });
 
     it('should work without task description', async () => {
@@ -463,4 +459,3 @@ describe('AI Planning Service', () => {
     });
   });
 });
-

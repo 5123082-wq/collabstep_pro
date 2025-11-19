@@ -27,7 +27,7 @@ export function useUnreadNotifications(userId: string | null) {
     };
 
     // Загружаем сразу
-    loadUnreadCount();
+    void loadUnreadCount();
 
     // Подключаемся к WebSocket для real-time обновлений (если включен)
     let unsubscribe: (() => void) | null = null;
@@ -37,7 +37,7 @@ export function useUnreadNotifications(userId: string | null) {
       // Подписка на события уведомлений
       unsubscribe = wsClient.onEventType('notification.new', (event) => {
         // Обновляем счетчик при получении нового уведомления
-        loadUnreadCount();
+        void loadUnreadCount();
       });
     }
 

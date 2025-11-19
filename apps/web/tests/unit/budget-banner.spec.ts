@@ -1,5 +1,3 @@
-import { describe, it, expect } from '@jest/globals';
-
 describe('BudgetBanner', () => {
   const mockProject = {
     id: 'test-1',
@@ -26,7 +24,7 @@ describe('BudgetBanner', () => {
         }
       };
 
-      expect(project.metrics.budgetLimit).toBeUndefined();
+      expect((project.metrics as any).budgetLimit).toBeUndefined();
     });
 
     it('should not render when budget is below 80% of limit', () => {
@@ -93,14 +91,14 @@ describe('BudgetBanner', () => {
       const budgetUsed = 8500;
       const budgetLimit = 10000;
       const percentage = (budgetUsed / budgetLimit) * 100;
-      
+
       expect(percentage).toBeCloseTo(85, 1);
     });
 
     it('should handle zero budget limit gracefully', () => {
       const budgetUsed = 5000;
       const budgetLimit = 0;
-      
+
       // Должно обрабатываться как отсутствие лимита
       expect(budgetLimit).toBe(0);
     });
@@ -109,7 +107,7 @@ describe('BudgetBanner', () => {
       const budgetUsed = -1000;
       const budgetLimit = 10000;
       const percentage = (budgetUsed / budgetLimit) * 100;
-      
+
       expect(percentage).toBeLessThan(0);
     });
   });
@@ -119,7 +117,7 @@ describe('BudgetBanner', () => {
       const budgetUsed = 12000;
       const budgetLimit = 10000;
       const exceeded = budgetUsed - budgetLimit;
-      
+
       expect(exceeded).toBe(2000);
     });
 
@@ -127,9 +125,8 @@ describe('BudgetBanner', () => {
       const budgetUsed = 8000;
       const budgetLimit = 10000;
       const isExceeded = budgetUsed > budgetLimit;
-      
+
       expect(isExceeded).toBe(false);
     });
   });
 });
-

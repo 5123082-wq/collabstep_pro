@@ -15,7 +15,7 @@ import { jsonError, jsonOk } from '@/lib/api/http';
 import { parseProjectFilters, type ProjectScope } from '@/lib/pm/filters';
 import { getProjectsOverview } from '@/lib/pm/projects-overview.server';
 import { isDemoAdminEmail } from '@/lib/auth/demo-session';
-import type { Project } from '@/types/pm';
+// Project type removed as it was unused
 
 async function createTestProject(ownerId: string, projectTitle: string, projectDescription: string) {
   const project = projectsRepository.create({
@@ -169,10 +169,18 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const parsedFilters = parseProjectFilters(searchParams);
   const scopeParam = searchParams.get('scope');
-  const scope: ProjectScope | undefined =
+  // По умолчанию показываем только проекты пользователя
+  const scope: ProjectScope =
     scopeParam === 'owned' || scopeParam === 'member' || scopeParam === 'all'
       ? scopeParam
-      : parsedFilters.scope;
+      : parsedFilters.scope ?? 'owned';
+
+  // Логирование для отладки
+  console.log(`[Projects API] Filters:`, {
+    status: parsedFilters.status,
+    scope,
+    userId: auth.userId
+  });
 
   const overview = await getProjectsOverview(auth.userId, {
     ...parsedFilters,
@@ -185,7 +193,7 @@ export async function GET(request: NextRequest) {
 
   // Логирование для отладки
   const allProjects = projectsRepository.list();
-  console.log(`[Projects API] User: ${auth.userId}, Total projects in memory: ${allProjects.length}, Accessible: ${overview.items.length}`);
+  console.log(`[Projects API] User: ${auth.userId}, Total projects in memory: ${allProjects.length}, Accessible: ${overview.items.length}, Status filter: ${parsedFilters.status}`);
 
   return NextResponse.json(
     {

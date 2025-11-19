@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, type HTMLAttributes } from 'react';
+import { type ReactNode, type HTMLAttributes, forwardRef, createElement } from 'react';
 import clsx from 'clsx';
 
 type ContentBlockSize = 'sm' | 'md';
@@ -22,45 +22,52 @@ type ContentBlockProps = Omit<HTMLAttributes<HTMLElement>, 'className'> & {
  * Универсальный компонент для блоков контента
  * Основан на эталонном блоке: rounded-3xl border border-neutral-900 bg-neutral-950/70 p-6 shadow-[0_0_12px_rgba(0,0,0,0.12)]
  */
-export function ContentBlock({
-  as: Component = 'section',
-  size = 'md',
-  variant = 'default',
-  interactive = false,
-  header,
-  footer,
-  children,
-  className,
-  ...props
-}: ContentBlockProps) {
-  const sizeClass = size === 'sm' ? 'content-block-sm' : '';
-  
-  const variantClass = {
-    default: '',
-    primary: 'content-block-primary',
-    muted: 'content-block-muted',
-    error: 'content-block-error',
-    borderless: 'content-block-borderless',
-    dashed: 'content-block-dashed'
-  }[variant];
+export const ContentBlock = forwardRef<HTMLElement, ContentBlockProps>(
+  function ContentBlock(
+    {
+      as: Component = 'section',
+      size = 'md',
+      variant = 'default',
+      interactive = false,
+      header,
+      footer,
+      children,
+      className,
+      ...props
+    },
+    ref
+  ) {
+    const sizeClass = size === 'sm' ? 'content-block-sm' : '';
+    
+    const variantClass = {
+      default: '',
+      primary: 'content-block-primary',
+      muted: 'content-block-muted',
+      error: 'content-block-error',
+      borderless: 'content-block-borderless',
+      dashed: 'content-block-dashed'
+    }[variant];
 
-  return (
-    <Component
-      className={clsx(
-        'content-block',
-        sizeClass,
-        variantClass,
-        interactive && 'content-block-interactive',
-        className
-      )}
-      {...props}
-    >
-      {header && <div className="content-block-header">{header}</div>}
-      <div className="content-block-body">{children}</div>
-      {footer && <div className="content-block-footer">{footer}</div>}
-    </Component>
-  );
-}
+    const classNames = clsx(
+      'content-block',
+      sizeClass,
+      variantClass,
+      interactive && 'content-block-interactive',
+      className
+    );
+
+    const content = (
+      <>
+        {header && <div className="content-block-header">{header}</div>}
+        <div className="content-block-body">{children}</div>
+        {footer && <div className="content-block-footer">{footer}</div>}
+      </>
+    );
+
+    // Используем createElement для правильной обработки ref с динамическими компонентами
+    return createElement(Component, { ref, className: classNames, ...props }, content);
+  }
+);
 
 /**
  * Компонент для заголовка блока с описанием и действиями
