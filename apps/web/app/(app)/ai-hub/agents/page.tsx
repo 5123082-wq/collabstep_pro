@@ -106,7 +106,7 @@ export default function AiAgentsPage() {
 
         // Загрузить информацию о том, в каких проектах используется каждый агент
         const agentProjectsMap: Record<string, ProjectInfo[]> = {};
-        
+
         // Для каждого проекта проверяем наличие агентов
         for (const project of projectsList) {
           try {
@@ -118,7 +118,7 @@ export default function AiAgentsPage() {
                 if (!agentProjectsMap[agent.id]) {
                   agentProjectsMap[agent.id] = [];
                 }
-                agentProjectsMap[agent.id].push(project);
+                agentProjectsMap[agent.id]!.push(project);
               }
             }
           } catch (err) {
@@ -129,7 +129,7 @@ export default function AiAgentsPage() {
       }
     } catch (error) {
       console.error('Error loading data:', error);
-      toast('Не удалось загрузить данные', 'error');
+      toast('Не удалось загрузить данные', 'warning');
     } finally {
       setLoading(false);
     }
@@ -152,7 +152,7 @@ export default function AiAgentsPage() {
       void loadData();
     } catch (error) {
       console.error('Error adding agent:', error);
-      toast(error instanceof Error ? error.message : 'Не удалось добавить агента', 'error');
+      toast(error instanceof Error ? error.message : 'Не удалось добавить агента', 'warning');
     }
   };
 
@@ -171,7 +171,7 @@ export default function AiAgentsPage() {
       void loadData();
     } catch (error) {
       console.error('Error removing agent:', error);
-      toast(error instanceof Error ? error.message : 'Не удалось удалить агента', 'error');
+      toast(error instanceof Error ? error.message : 'Не удалось удалить агента', 'warning');
     }
   };
 
@@ -220,7 +220,7 @@ export default function AiAgentsPage() {
       void loadData();
     } catch (error) {
       console.error('Error saving agent:', error);
-      toast(error instanceof Error ? error.message : 'Не удалось сохранить изменения', 'error');
+      toast(error instanceof Error ? error.message : 'Не удалось сохранить изменения', 'warning');
     } finally {
       setSaving(false);
     }
@@ -242,122 +242,122 @@ export default function AiAgentsPage() {
           Загрузка агентов...
         </div>
       ) : (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {agents.length === 0 ? (
-          <div className="col-span-full rounded-xl border border-neutral-800 bg-neutral-950/40 p-6 text-center text-sm text-neutral-400">
-            Нет доступных AI-агентов
-          </div>
-        ) : (
-          agents.map((agent) => {
-            const agentProjectsList = agentProjects[agent.id] || [];
-            return (
-              <ContentBlock
-                key={agent.id}
-                as="article"
-                interactive
-                className="group flex flex-col cursor-pointer"
-                onClick={() => setViewingAgent(agent)}
-              >
-                <header className="mb-3">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="text-lg font-semibold text-neutral-50">{agent.name}</h3>
-                    <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-indigo-200 shrink-0">
-                      AI
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {agents.length === 0 ? (
+            <div className="col-span-full rounded-xl border border-neutral-800 bg-neutral-950/40 p-6 text-center text-sm text-neutral-400">
+              Нет доступных AI-агентов
+            </div>
+          ) : (
+            agents.map((agent) => {
+              const agentProjectsList = agentProjects[agent.id] || [];
+              return (
+                <ContentBlock
+                  key={agent.id}
+                  as="article"
+                  interactive
+                  className="group flex flex-col cursor-pointer"
+                  onClick={() => setViewingAgent(agent)}
+                >
+                  <header className="mb-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-lg font-semibold text-neutral-50">{agent.name}</h3>
+                      <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-indigo-200 shrink-0">
+                        AI
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs uppercase tracking-wide text-indigo-300">
+                      {AGENT_TYPE_LABELS[agent.agentType]}
+                    </p>
+                    <p className="mt-1.5 text-sm text-neutral-400 line-clamp-2">
+                      {agent.title}
+                    </p>
+                  </header>
+
+                  <div className="mb-3 flex flex-wrap gap-1.5 text-xs text-neutral-500">
+                    {agent.behavior?.autoRespond && (
+                      <span className="rounded-full border border-neutral-800 bg-neutral-900/70 px-2 py-0.5">
+                        ✓ Автоответы
+                      </span>
+                    )}
+                    <span className="rounded-full border border-neutral-800 bg-neutral-900/70 px-2 py-0.5">
+                      {agent.behavior?.responseStyle === 'detailed' ? 'Подробный' : 'Краткий'}
                     </span>
                   </div>
-                  <p className="mt-1 text-xs uppercase tracking-wide text-indigo-300">
-                    {AGENT_TYPE_LABELS[agent.agentType]}
-                  </p>
-                  <p className="mt-1.5 text-sm text-neutral-400 line-clamp-2">
-                    {agent.title}
-                  </p>
-                </header>
 
-                <div className="mb-3 flex flex-wrap gap-1.5 text-xs text-neutral-500">
-                  {agent.behavior?.autoRespond && (
-                    <span className="rounded-full border border-neutral-800 bg-neutral-900/70 px-2 py-0.5">
-                      ✓ Автоответы
-                    </span>
-                  )}
-                  <span className="rounded-full border border-neutral-800 bg-neutral-900/70 px-2 py-0.5">
-                    {agent.behavior?.responseStyle === 'detailed' ? 'Подробный' : 'Краткий'}
-                  </span>
-                </div>
-
-                {/* Проекты, где используется агент */}
-                <div className="mb-3 min-h-[3rem]" onClick={(e) => e.stopPropagation()}>
-                  {agentProjectsList.length > 0 ? (
-                    <>
-                      <p className="mb-1.5 text-xs font-medium text-neutral-400">В проектах:</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {agentProjectsList.slice(0, 2).map((project) => (
-                          <span
-                            key={project.id}
-                            className="inline-flex items-center gap-1 rounded-lg border border-neutral-800 bg-neutral-900/60 px-2 py-0.5 text-xs text-neutral-300"
-                          >
-                            {project.key}
-                            <button
-                              type="button"
-                              onClick={() => void handleRemoveFromProject(agent.id, project.id)}
-                              className="text-neutral-500 hover:text-neutral-200"
-                              title="Удалить из проекта"
+                  {/* Проекты, где используется агент */}
+                  <div className="mb-3 min-h-[3rem]" onClick={(e) => e.stopPropagation()}>
+                    {agentProjectsList.length > 0 ? (
+                      <>
+                        <p className="mb-1.5 text-xs font-medium text-neutral-400">В проектах:</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {agentProjectsList.slice(0, 2).map((project) => (
+                            <span
+                              key={project.id}
+                              className="inline-flex items-center gap-1 rounded-lg border border-neutral-800 bg-neutral-900/60 px-2 py-0.5 text-xs text-neutral-300"
                             >
-                              ×
-                            </button>
-                          </span>
-                        ))}
-                        {agentProjectsList.length > 2 && (
-                          <span className="inline-flex items-center rounded-lg border border-neutral-800 bg-neutral-900/60 px-2 py-0.5 text-xs text-neutral-400">
-                            +{agentProjectsList.length - 2}
-                          </span>
-                        )}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="h-0" aria-hidden="true" />
-                  )}
-                </div>
+                              {project.key}
+                              <button
+                                type="button"
+                                onClick={() => void handleRemoveFromProject(agent.id, project.id)}
+                                className="text-neutral-500 hover:text-neutral-200"
+                                title="Удалить из проекта"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                          {agentProjectsList.length > 2 && (
+                            <span className="inline-flex items-center rounded-lg border border-neutral-800 bg-neutral-900/60 px-2 py-0.5 text-xs text-neutral-400">
+                              +{agentProjectsList.length - 2}
+                            </span>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="h-0" aria-hidden="true" />
+                    )}
+                  </div>
 
-                {/* Добавить в проект */}
-                <div className="mt-auto space-y-2" onClick={(e) => e.stopPropagation()}>
-                  <select
-                    value={selectedProjects[agent.id] || ''}
-                    onChange={(e) => {
-                      setSelectedProjects({ ...selectedProjects, [agent.id]: e.target.value });
-                    }}
-                    className="w-full rounded-lg border border-neutral-800 bg-neutral-900/60 px-3 py-1.5 text-xs text-white focus:border-indigo-500 focus:outline-none"
-                  >
-                    <option value="">Добавить в проект...</option>
-                    {projects
-                      .filter((p) => !agentProjectsList.some((ap) => ap.id === p.id))
-                      .map((project) => (
-                        <option key={project.id} value={project.id}>
-                          {project.key}: {project.name}
-                        </option>
-                      ))}
-                  </select>
-                  {selectedProjects[agent.id] && (
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => {
-                        const projectId = selectedProjects[agent.id];
-                        if (projectId) {
-                          void handleAddToProject(agent.id, projectId);
-                          setSelectedProjects({ ...selectedProjects, [agent.id]: '' });
-                        }
+                  {/* Добавить в проект */}
+                  <div className="mt-auto space-y-2" onClick={(e) => e.stopPropagation()}>
+                    <select
+                      value={selectedProjects[agent.id] || ''}
+                      onChange={(e) => {
+                        setSelectedProjects({ ...selectedProjects, [agent.id]: e.target.value });
                       }}
-                      className="w-full"
+                      className="w-full rounded-lg border border-neutral-800 bg-neutral-900/60 px-3 py-1.5 text-xs text-white focus:border-indigo-500 focus:outline-none"
                     >
-                      Добавить
-                    </Button>
-                  )}
-                </div>
-              </ContentBlock>
-            );
-          })
-        )}
-      </div>
+                      <option value="">Добавить в проект...</option>
+                      {projects
+                        .filter((p) => !agentProjectsList.some((ap) => ap.id === p.id))
+                        .map((project) => (
+                          <option key={project.id} value={project.id}>
+                            {project.key}: {project.name}
+                          </option>
+                        ))}
+                    </select>
+                    {selectedProjects[agent.id] && (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => {
+                          const projectId = selectedProjects[agent.id];
+                          if (projectId) {
+                            void handleAddToProject(agent.id, projectId);
+                            setSelectedProjects({ ...selectedProjects, [agent.id]: '' });
+                          }
+                        }}
+                        className="w-full"
+                      >
+                        Добавить
+                      </Button>
+                    )}
+                  </div>
+                </ContentBlock>
+              );
+            })
+          )}
+        </div>
       )}
 
       {/* Модальное окно просмотра/редактирования агента */}
@@ -400,13 +400,13 @@ export default function AiAgentsPage() {
                 )}
 
                 {/* Проекты */}
-                {agentProjects[viewingAgent.id] && agentProjects[viewingAgent.id].length > 0 && (
+                {agentProjects[viewingAgent.id] && agentProjects[viewingAgent.id]!.length > 0 && (
                   <div>
                     <h4 className="mb-3 text-sm font-semibold text-neutral-200">
-                      Используется в проектах ({agentProjects[viewingAgent.id].length})
+                      Используется в проектах ({agentProjects[viewingAgent.id]!.length})
                     </h4>
                     <div className="flex flex-wrap gap-2">
-                      {agentProjects[viewingAgent.id].map((project) => (
+                      {agentProjects[viewingAgent.id]!.map((project) => (
                         <div
                           key={project.id}
                           className="flex items-center gap-2 rounded-lg border border-neutral-800 bg-neutral-900/60 px-3 py-1.5 text-sm"

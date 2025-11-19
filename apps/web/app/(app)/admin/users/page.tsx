@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Filter, Shield, UserX, UserCheck, RefreshCw, Bot, Trash2, Edit } from 'lucide-react';
+// @ts-ignore
+import { Search, Filter, Shield, UserX, UserCheck, RefreshCw, User, Trash2, Edit } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import clsx from 'clsx';
 import type { AdminUserView } from '@collabverse/api';
@@ -39,7 +40,8 @@ function convertAdminUserToUser(adminUser: AdminUserView): User {
     }
     // Если имя - это UUID, пытаемся использовать email
     if (isValidEmail(adminUser.email)) {
-      return adminUser.email.split('@')[0]; // Используем часть до @ как имя
+      const emailParts = adminUser.email!.split('@');
+      return emailParts[0] || 'Без имени'; // Используем часть до @ как имя
     }
     return 'Без имени';
   };
@@ -47,7 +49,7 @@ function convertAdminUserToUser(adminUser: AdminUserView): User {
   // Получаем валидный email (не UUID)
   const getEmail = (): string => {
     if (isValidEmail(adminUser.email)) {
-      return adminUser.email;
+      return adminUser.email!;
     }
     return 'Без email';
   };
@@ -327,206 +329,206 @@ export default function AdminUsersPage() {
       {/* Users Table */}
       {!loading && !error && (
         <ContentBlock size="sm" className="overflow-hidden">
-        <div className="overflow-x-auto max-h-[calc(100vh-400px)] overflow-y-auto">
-          <table className="w-full">
-            <thead className="border-b border-neutral-800 bg-neutral-950/80">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wide text-neutral-400">
-                  Пользователь
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wide text-neutral-400">
-                  Роли
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wide text-neutral-400">
-                  Последний вход
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wide text-neutral-400">
-                  Статус
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wide text-neutral-400">
-                  Действия
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-800">
-              {filteredUsers.map((user) => (
-                <tr
-                  key={user.id}
-                  className={clsx(
-                    "transition",
-                    user.isAI 
-                      ? "hover:bg-purple-950/20 border-l-2 border-l-purple-500/50" 
-                      : "hover:bg-neutral-900/40"
-                  )}
-                >
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
+          <div className="overflow-x-auto max-h-[calc(100vh-400px)] overflow-y-auto">
+            <table className="w-full">
+              <thead className="border-b border-neutral-800 bg-neutral-950/80">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wide text-neutral-400">
+                    Пользователь
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wide text-neutral-400">
+                    Роли
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wide text-neutral-400">
+                    Последний вход
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wide text-neutral-400">
+                    Статус
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wide text-neutral-400">
+                    Действия
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-800">
+                {filteredUsers.map((user) => (
+                  <tr
+                    key={user.id}
+                    className={clsx(
+                      "transition",
+                      user.isAI
+                        ? "hover:bg-purple-950/20 border-l-2 border-l-purple-500/50"
+                        : "hover:bg-neutral-900/40"
+                    )}
+                  >
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className={clsx(
+                              "font-medium",
+                              user.isAI ? "text-purple-300" : "text-neutral-50"
+                            )}>
+                              {user.displayName}
+                            </p>
+                            {user.isAI && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/20 border border-purple-500/40 px-2 py-0.5 text-xs font-medium text-purple-200">
+                                <User className="h-3 w-3" />
+                                AI
+                              </span>
+                            )}
+                            {(user.displayName === 'Без имени' || user.email === 'Без email') && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/20 border border-orange-500/40 px-2 py-0.5 text-xs font-medium text-orange-200" title="Запись в системе управления без соответствующего пользователя">
+                                ⚠️ Сиротская запись
+                              </span>
+                            )}
+                          </div>
                           <p className={clsx(
-                            "font-medium",
-                            user.isAI ? "text-purple-300" : "text-neutral-50"
+                            "text-sm",
+                            user.isAI ? "text-purple-400/80" : "text-neutral-400"
                           )}>
-                            {user.displayName}
+                            {user.email}
                           </p>
-                          {user.isAI && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/20 border border-purple-500/40 px-2 py-0.5 text-xs font-medium text-purple-200">
-                              <Bot className="h-3 w-3" />
-                              AI
-                            </span>
-                          )}
                           {(user.displayName === 'Без имени' || user.email === 'Без email') && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/20 border border-orange-500/40 px-2 py-0.5 text-xs font-medium text-orange-200" title="Запись в системе управления без соответствующего пользователя">
-                              ⚠️ Сиротская запись
-                            </span>
+                            <p className="text-xs text-neutral-500 mt-1 font-mono">
+                              ID: {user.id}
+                            </p>
                           )}
                         </div>
-                        <p className={clsx(
-                          "text-sm",
-                          user.isAI ? "text-purple-400/80" : "text-neutral-400"
-                        )}>
-                          {user.email}
-                        </p>
-                        {(user.displayName === 'Без имени' || user.email === 'Без email') && (
-                          <p className="text-xs text-neutral-500 mt-1 font-mono">
-                            ID: {user.id}
-                          </p>
-                        )}
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-wrap gap-1">
-                      {user.roles.map((role) => (
-                        <span
-                          key={role}
-                          className="inline-flex items-center gap-1 rounded-full bg-blue-500/20 px-2 py-1 text-xs font-medium text-blue-100"
-                        >
-                          <Shield className="h-3 w-3" />
-                          {role}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-neutral-400">
-                    {new Date(user.lastLoginAt).toLocaleDateString('ru-RU', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric'
-                    })}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={clsx(
-                        'inline-flex items-center rounded-full px-2 py-1 text-xs font-medium',
-                        user.status === 'active'
-                          ? 'bg-green-500/20 text-green-100'
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-1">
+                        {user.roles.map((role) => (
+                          <span
+                            key={role}
+                            className="inline-flex items-center gap-1 rounded-full bg-blue-500/20 px-2 py-1 text-xs font-medium text-blue-100"
+                          >
+                            <Shield className="h-3 w-3" />
+                            {role}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-neutral-400">
+                      {new Date(user.lastLoginAt).toLocaleDateString('ru-RU', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                      })}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={clsx(
+                          'inline-flex items-center rounded-full px-2 py-1 text-xs font-medium',
+                          user.status === 'active'
+                            ? 'bg-green-500/20 text-green-100'
+                            : user.status === 'suspended'
+                              ? 'bg-orange-500/20 text-orange-100'
+                              : 'bg-blue-500/20 text-blue-100'
+                        )}
+                      >
+                        {user.status === 'active'
+                          ? 'Активен'
                           : user.status === 'suspended'
-                          ? 'bg-orange-500/20 text-orange-100'
-                          : 'bg-blue-500/20 text-blue-100'
-                      )}
-                    >
-                      {user.status === 'active'
-                        ? 'Активен'
-                        : user.status === 'suspended'
-                        ? 'Заблокирован'
-                        : 'Приглашён'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {user.status !== 'active' ? (
-                        <button
-                          onClick={() => handleActivate(user.id)}
-                          disabled={updatingIds.has(user.id)}
-                          className={clsx(
-                            'rounded-xl border border-green-500/40 bg-green-500/10 p-2 text-green-100 transition hover:bg-green-500/20',
-                            updatingIds.has(user.id) && 'cursor-not-allowed opacity-50'
-                          )}
-                          title="Активировать"
-                        >
-                          {updatingIds.has(user.id) ? (
-                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
-                          ) : (
-                            <UserCheck className="h-4 w-4" />
-                          )}
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleSuspend(user.id)}
-                          disabled={updatingIds.has(user.id)}
-                          className={clsx(
-                            'rounded-xl border border-orange-500/40 bg-orange-500/10 p-2 text-orange-100 transition hover:bg-orange-500/20',
-                            updatingIds.has(user.id) && 'cursor-not-allowed opacity-50'
-                          )}
-                          title="Заблокировать"
-                        >
-                          {updatingIds.has(user.id) ? (
-                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
-                          ) : (
-                            <UserX className="h-4 w-4" />
-                          )}
-                        </button>
-                      )}
-                      <button
-                        onClick={() => setEditingUser(user)}
-                        disabled={updatingIds.has(user.id)}
-                        className={clsx(
-                          'rounded-xl border border-neutral-800 bg-neutral-900/60 p-2 text-neutral-400 transition hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-indigo-100',
-                          updatingIds.has(user.id) && 'cursor-not-allowed opacity-50'
-                        )}
-                        title="Редактировать пользователя"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(user.id, user.displayName)}
-                        disabled={updatingIds.has(user.id) || user.isAI}
-                        className={clsx(
-                          'rounded-xl border border-red-500/40 bg-red-500/10 p-2 text-red-100 transition hover:bg-red-500/20',
-                          (updatingIds.has(user.id) || user.isAI) && 'cursor-not-allowed opacity-50'
-                        )}
-                        title={user.isAI ? 'AI-агентов нельзя удалить' : 'Удалить пользователя'}
-                      >
-                        {updatingIds.has(user.id) ? (
-                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
+                            ? 'Заблокирован'
+                            : 'Приглашён'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {user.status !== 'active' ? (
+                          <button
+                            onClick={() => handleActivate(user.id)}
+                            disabled={updatingIds.has(user.id)}
+                            className={clsx(
+                              'rounded-xl border border-green-500/40 bg-green-500/10 p-2 text-green-100 transition hover:bg-green-500/20',
+                              updatingIds.has(user.id) && 'cursor-not-allowed opacity-50'
+                            )}
+                            title="Активировать"
+                          >
+                            {updatingIds.has(user.id) ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
+                            ) : (
+                              <UserCheck className="h-4 w-4" />
+                            )}
+                          </button>
                         ) : (
-                          <Trash2 className="h-4 w-4" />
+                          <button
+                            onClick={() => handleSuspend(user.id)}
+                            disabled={updatingIds.has(user.id)}
+                            className={clsx(
+                              'rounded-xl border border-orange-500/40 bg-orange-500/10 p-2 text-orange-100 transition hover:bg-orange-500/20',
+                              updatingIds.has(user.id) && 'cursor-not-allowed opacity-50'
+                            )}
+                            title="Заблокировать"
+                          >
+                            {updatingIds.has(user.id) ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
+                            ) : (
+                              <UserX className="h-4 w-4" />
+                            )}
+                          </button>
                         )}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {filteredUsers.length === 0 && !loading && (
-          <ContentBlock variant="dashed" className="text-center">
-            <p className="text-sm text-neutral-400">Пользователи не найдены</p>
-            {searchQuery && (
-              <p className="mt-2 text-xs text-neutral-500">
-                Попробуйте изменить поисковый запрос или фильтр статуса
-              </p>
-            )}
-          </ContentBlock>
-        )}
-        
-        {/* Информация о количестве пользователей */}
-        {!loading && !error && filteredUsers.length > 0 && (
-          <div className="text-center text-xs text-neutral-500">
-            Показано {filteredUsers.length} из {users.length} пользователей
-            {searchQuery && ` (поиск: "${searchQuery}")`}
-            {statusFilter !== 'all' && ` (статус: ${statusFilter})`}
+                        <button
+                          onClick={() => setEditingUser(user)}
+                          disabled={updatingIds.has(user.id)}
+                          className={clsx(
+                            'rounded-xl border border-neutral-800 bg-neutral-900/60 p-2 text-neutral-400 transition hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-indigo-100',
+                            updatingIds.has(user.id) && 'cursor-not-allowed opacity-50'
+                          )}
+                          title="Редактировать пользователя"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(user.id, user.displayName)}
+                          disabled={updatingIds.has(user.id) || user.isAI}
+                          className={clsx(
+                            'rounded-xl border border-red-500/40 bg-red-500/10 p-2 text-red-100 transition hover:bg-red-500/20',
+                            (updatingIds.has(user.id) || user.isAI) && 'cursor-not-allowed opacity-50'
+                          )}
+                          title={user.isAI ? 'AI-агентов нельзя удалить' : 'Удалить пользователя'}
+                        >
+                          {updatingIds.has(user.id) ? (
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        )}
-      </ContentBlock>
+
+          {filteredUsers.length === 0 && !loading && (
+            <ContentBlock variant="dashed" className="text-center">
+              <p className="text-sm text-neutral-400">Пользователи не найдены</p>
+              {searchQuery && (
+                <p className="mt-2 text-xs text-neutral-500">
+                  Попробуйте изменить поисковый запрос или фильтр статуса
+                </p>
+              )}
+            </ContentBlock>
+          )}
+
+          {/* Информация о количестве пользователей */}
+          {!loading && !error && filteredUsers.length > 0 && (
+            <div className="text-center text-xs text-neutral-500">
+              Показано {filteredUsers.length} из {users.length} пользователей
+              {searchQuery && ` (поиск: "${searchQuery}")`}
+              {statusFilter !== 'all' && ` (статус: ${statusFilter})`}
+            </div>
+          )}
+        </ContentBlock>
       )}
 
       {/* Модальное окно редактирования пользователя */}
       {editingUser && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
@@ -534,7 +536,7 @@ export default function AdminUsersPage() {
             }
           }}
         >
-          <ContentBlock 
+          <ContentBlock
             className="w-full max-w-md shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
@@ -547,7 +549,7 @@ export default function AdminUsersPage() {
                 ✕
               </button>
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-neutral-300 mb-1">Имя</label>
@@ -558,7 +560,7 @@ export default function AdminUsersPage() {
                   </p>
                 )}
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-neutral-300 mb-1">Email</label>
                 <p className="text-neutral-100">{editingUser.email}</p>

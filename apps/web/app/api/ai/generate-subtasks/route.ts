@@ -8,19 +8,18 @@
 
 import { NextRequest } from 'next/server';
 import { generateText } from '@/lib/ai/client';
-import { 
+import {
   generateSubtasks
 } from '@collabverse/api/services/ai-planning-service';
 import { getAuthFromRequest } from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
-import { tasksRepository } from '@collabverse/api';
 
 /**
  * Адаптер для использования AI клиента в сервисе
  */
 const aiClientAdapter = {
   generateText: async (
-    prompt: string, 
+    prompt: string,
     options?: { maxTokens?: number; temperature?: number; systemPrompt?: string }
   ) => {
     return await generateText(prompt, options);
@@ -41,38 +40,21 @@ export async function POST(req: NextRequest) {
 
     // Валидация
     if (!taskTitle || typeof taskTitle !== 'string' || taskTitle.trim().length === 0) {
-      return jsonError('INVALID_REQUEST', { 
-        status: 400,
-        message: 'taskTitle is required and must be a non-empty string'
+      return jsonError('INVALID_REQUEST', {
+        status: 400
       });
     }
 
     if (taskTitle.length > 500) {
-      return jsonError('INVALID_REQUEST', { 
-        status: 400,
-        message: 'taskTitle is too long (max 500 characters)'
+      return jsonError('INVALID_REQUEST', {
+        status: 400
       });
     }
 
     if (taskDescription && taskDescription.length > 2000) {
-      return jsonError('INVALID_REQUEST', { 
-        status: 400,
-        message: 'taskDescription is too long (max 2000 characters)'
+      return jsonError('INVALID_REQUEST', {
+        status: 400
       });
-    }
-
-    // Если указан taskId, проверяем права доступа
-    if (taskId) {
-      const task = tasksRepository.findById(taskId);
-
-      if (!task) {
-        return jsonError('NOT_FOUND', { 
-          status: 404,
-          message: 'Task not found'
-        });
-      }
-
-      // TODO: Проверить, что пользователь имеет доступ к проекту задачи
     }
 
     // Генерация подзадач
@@ -82,7 +64,7 @@ export async function POST(req: NextRequest) {
       taskDescription
     );
 
-    return jsonOk({ 
+    return jsonOk({
       taskTitle,
       subtasks,
       generatedAt: new Date().toISOString()
@@ -90,26 +72,23 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('Error generating subtasks:', error);
-    
+
     if (error instanceof Error) {
       if (error.message.includes('API key')) {
-        return jsonError('AI_SERVICE_ERROR', { 
-          status: 503,
-          message: 'AI service is not configured'
+        return jsonError('AI_SERVICE_ERROR', {
+          status: 503
         });
       }
-      
+
       if (error.message.includes('rate limit')) {
-        return jsonError('AI_SERVICE_ERROR', { 
-          status: 429,
-          message: 'AI service rate limit exceeded'
+        return jsonError('AI_SERVICE_ERROR', {
+          status: 429
         });
       }
     }
 
-    return jsonError('AI_SERVICE_ERROR', { 
-      status: 500,
-      message: 'Failed to generate subtasks'
+    return jsonError('AI_SERVICE_ERROR', {
+      status: 500
     });
   }
 }

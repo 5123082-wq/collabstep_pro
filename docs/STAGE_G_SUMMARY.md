@@ -251,7 +251,7 @@ apps/web/tests/e2e/pm-integrations.spec.ts
 4. **Stage 2 — Projects Overview (✅ выполнено):**
    - Rollout-план и мониторинг фич-флага `projectsOverview` задокументированы (см. `docs/monitoring/projects-overview.md`)
    - Собрать пользовательский фидбек по табам/фильтрам и запланировать итерацию пресетов
-   - Синхронизировать backlog Stage 3 (workspace tasks) с новым обзором
+   - Синхронизировать backlog следующего этапа (workspace tasks) с новым обзором
 
 ---
 

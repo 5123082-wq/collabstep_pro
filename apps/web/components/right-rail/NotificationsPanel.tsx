@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ContentBlock } from '@/components/ui/content-block';
@@ -41,6 +41,22 @@ export default function NotificationsPanel({ onMarkAllRead }: NotificationsPanel
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const loadNotifications = useCallback(async () => {
+    try {
+      const response = await fetch('/api/notifications?pageSize=20');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.ok && data.data) {
+          setNotifications(data.data.notifications || []);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading notifications:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     void loadNotifications();
   }, [loadNotifications]);
@@ -66,22 +82,6 @@ export default function NotificationsPanel({ onMarkAllRead }: NotificationsPanel
 
     return unsubscribe;
   }, [onMarkAllRead]);
-
-  const loadNotifications = async () => {
-    try {
-      const response = await fetch('/api/notifications?pageSize=20');
-      if (response.ok) {
-        const data = await response.json();
-        if (data.ok && data.data) {
-          setNotifications(data.data.notifications || []);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading notifications:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleNotificationClick = async (notification: Notification) => {
     // Отмечаем как прочитанное

@@ -241,7 +241,7 @@ export function transformProject(
 export function applyPermissions(
   project: Project,
   permissions: ProjectPermissions
-): Project {
+): Project & { permissions: ProjectPermissions } {
   return {
     ...project,
     permissions

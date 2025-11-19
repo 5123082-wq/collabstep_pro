@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { captureConsole } from './utils/console';
 import { loginAsDemo } from './utils/auth';
 
-const baseUrl = 'http://localhost:3000';
+const baseUrl = 'http://127.0.0.1:3000';
 
 test('protected-redirect', async ({ page }) => {
   const logs: string[] = [];

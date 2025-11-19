@@ -157,7 +157,7 @@ export default function ProjectsList({ projects, loading, error, onOpenProject }
       return;
     }
     const value = debouncedQuery.trim();
-    updateFilters({ q: value || undefined });
+    updateFilters(value ? { q: value } : {});
   }, [debouncedQuery, filters.q, updateFilters]);
 
   // Фильтрация проектов
@@ -178,8 +178,8 @@ export default function ProjectsList({ projects, loading, error, onOpenProject }
 
     // Сортировка
     result.sort((a, b) => {
-      let aValue: number | string | undefined;
-      let bValue: number | string | undefined;
+      let aValue: number | string = '';
+      let bValue: number | string = '';
 
       switch (filters.sortBy) {
         case 'updated':
@@ -256,7 +256,7 @@ export default function ProjectsList({ projects, loading, error, onOpenProject }
           {/* Фильтр по статусу */}
           <select
             value={filters.status || ''}
-            onChange={(e) => updateFilters({ status: (e.target.value || undefined) as Project['status'] | undefined })}
+            onChange={(e) => updateFilters(e.target.value ? { status: e.target.value as Project['status'] } : {})}
             className="rounded-xl border border-neutral-800 bg-neutral-950/60 px-4 py-2 text-sm text-white focus:border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
           >
             {STATUS_OPTIONS.map((option) => (
@@ -269,7 +269,10 @@ export default function ProjectsList({ projects, loading, error, onOpenProject }
           {/* Сортировка */}
           <select
             value={filters.sortBy}
-            onChange={(e) => updateFilters({ sortBy: e.target.value as ProjectListFilters['sortBy'] })}
+            onChange={(e) => {
+              const value = e.target.value as ProjectListFilters['sortBy'];
+              updateFilters(value ? { sortBy: value } : {});
+            }}
             className="rounded-xl border border-neutral-800 bg-neutral-950/60 px-4 py-2 text-sm text-white focus:border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
           >
             {SORT_OPTIONS.map((option) => (
@@ -315,7 +318,11 @@ export default function ProjectsList({ projects, loading, error, onOpenProject }
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {pageItems.map((project) => (
-              <ProjectCardTile key={project.id} project={project} onOpenProject={onOpenProject} />
+              <ProjectCardTile 
+                key={project.id} 
+                project={project} 
+                {...(onOpenProject && { onOpenProject })}
+              />
             ))}
           </div>
 

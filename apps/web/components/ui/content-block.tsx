@@ -5,7 +5,7 @@ import clsx from 'clsx';
 
 type ContentBlockSize = 'sm' | 'md';
 type ContentBlockVariant = 'default' | 'primary' | 'muted' | 'error' | 'borderless' | 'dashed';
-type ContentBlockElement = 'section' | 'div' | 'article' | 'aside';
+type ContentBlockElement = 'section' | 'div' | 'article' | 'aside' | 'nav' | 'button' | 'form';
 
 type ContentBlockProps = Omit<HTMLAttributes<HTMLElement>, 'className'> & {
   as?: ContentBlockElement;
@@ -16,6 +16,7 @@ type ContentBlockProps = Omit<HTMLAttributes<HTMLElement>, 'className'> & {
   footer?: ReactNode;
   children: ReactNode;
   className?: string;
+  type?: 'button' | 'submit' | 'reset';
 };
 
 /**

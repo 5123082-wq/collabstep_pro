@@ -7,6 +7,8 @@ module.exports = {
     "**/dist/**",
     "**/.next/**",
     "apps/web/postcss.config.js",
+    "apps/web/check-icons.js",
+    "apps/web/list-icons.js",
     "playwright.config.ts",
     "apps/api/**",
     "scripts/**",

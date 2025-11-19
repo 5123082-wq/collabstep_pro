@@ -32,8 +32,7 @@ export async function POST(req: NextRequest) {
     // Валидация
     if (!taskId || typeof taskId !== 'string') {
       return jsonError('INVALID_REQUEST', {
-        status: 400,
-        details: 'taskId is required and must be a string'
+        status: 400
       });
     }
 
@@ -41,8 +40,7 @@ export async function POST(req: NextRequest) {
     const task = tasksRepository.findById(taskId);
     if (!task) {
       return jsonError('NOT_FOUND', {
-        status: 404,
-        details: 'Task not found'
+        status: 404
       });
     }
 
@@ -50,13 +48,12 @@ export async function POST(req: NextRequest) {
     const role = getProjectRole(task.projectId, auth.userId);
     if (!role) {
       return jsonError('ACCESS_DENIED', {
-        status: 403,
-        details: 'You do not have access to this project'
+        status: 403
       });
     }
 
     // Получение комментариев задачи
-    const comments = commentsRepository.listByTask(taskId);
+    const comments = commentsRepository.listByTask(task.projectId, taskId);
 
     if (comments.length === 0) {
       return jsonOk({
@@ -104,22 +101,19 @@ export async function POST(req: NextRequest) {
     if (error instanceof Error) {
       if (error.message.includes('OPENAI_API_KEY')) {
         return jsonError('AI_NOT_CONFIGURED', {
-          status: 503,
-          details: 'AI service is not configured. Please contact administrator.'
+          status: 503
         });
       }
       
       if (error.message.includes('rate limit')) {
         return jsonError('AI_RATE_LIMIT', {
-          status: 429,
-          details: 'AI service rate limit exceeded. Please try again later.'
+          status: 429
         });
       }
     }
 
     return jsonError('AI_SERVICE_ERROR', {
-      status: 500,
-      details: 'Failed to summarize comments'
+      status: 500
     });
   }
 }

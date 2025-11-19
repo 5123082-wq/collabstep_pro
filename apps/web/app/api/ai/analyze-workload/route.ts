@@ -8,9 +8,9 @@
 
 import { NextRequest } from 'next/server';
 import { generateText } from '@/lib/ai/client';
-import { 
+import {
   analyzeWorkload,
-  type WorkloadAnalysis 
+  type WorkloadAnalysis
 } from '@collabverse/api/services/ai-planning-service';
 import { getAuthFromRequest } from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
@@ -21,7 +21,7 @@ import { projectsRepository, tasksRepository } from '@collabverse/api';
  */
 const aiClientAdapter = {
   generateText: async (
-    prompt: string, 
+    prompt: string,
     options?: { maxTokens?: number; temperature?: number; systemPrompt?: string }
   ) => {
     return await generateText(prompt, options);
@@ -42,9 +42,8 @@ export async function POST(req: NextRequest) {
 
     // Валидация
     if (!projectId || typeof projectId !== 'string') {
-      return jsonError('INVALID_REQUEST', { 
-        status: 400,
-        message: 'projectId is required and must be a string'
+      return jsonError('INVALID_REQUEST', {
+        status: 400
       });
     }
 
@@ -52,20 +51,18 @@ export async function POST(req: NextRequest) {
     const project = projectsRepository.findById(projectId);
 
     if (!project) {
-      return jsonError('NOT_FOUND', { 
-        status: 404,
-        message: 'Project not found'
+      return jsonError('NOT_FOUND', {
+        status: 404
       });
     }
 
     // Проверка прав доступа
     const members = projectsRepository.listMembers(projectId);
     const currentMember = members.find(m => m.userId === auth.userId);
-    
+
     if (!currentMember) {
-      return jsonError('FORBIDDEN', { 
-        status: 403,
-        message: 'You do not have access to this project'
+      return jsonError('FORBIDDEN', {
+        status: 403
       });
     }
 
@@ -88,16 +85,16 @@ export async function POST(req: NextRequest) {
       tasks.map(t => ({
         id: t.id,
         title: t.title,
-        assigneeId: t.assigneeId,
+        ...(t.assigneeId ? { assigneeId: t.assigneeId } : {}),
         status: t.status,
-        estimatedTime: t.estimatedTime || undefined,
-        dueAt: t.dueAt,
-        priority: t.priority
+        ...(t.estimatedTime ? { estimatedTime: t.estimatedTime } : {}),
+        ...(t.dueAt ? { dueAt: t.dueAt } : {}),
+        ...(t.priority ? { priority: t.priority } : {})
       })),
       membersWithNames
     );
 
-    return jsonOk({ 
+    return jsonOk({
       projectId,
       analysis,
       analyzedAt: new Date().toISOString()
@@ -105,26 +102,23 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('Error analyzing workload:', error);
-    
+
     if (error instanceof Error) {
       if (error.message.includes('API key')) {
-        return jsonError('AI_SERVICE_ERROR', { 
-          status: 503,
-          message: 'AI service is not configured'
+        return jsonError('AI_SERVICE_ERROR', {
+          status: 503
         });
       }
-      
+
       if (error.message.includes('rate limit')) {
-        return jsonError('AI_SERVICE_ERROR', { 
-          status: 429,
-          message: 'AI service rate limit exceeded'
+        return jsonError('AI_SERVICE_ERROR', {
+          status: 429
         });
       }
     }
 
-    return jsonError('AI_SERVICE_ERROR', { 
-      status: 500,
-      message: 'Failed to analyze workload'
+    return jsonError('AI_SERVICE_ERROR', {
+      status: 500
     });
   }
 }

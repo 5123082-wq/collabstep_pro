@@ -4,15 +4,16 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
-import { 
-  Users, 
-  Shield, 
-  Flag, 
-  File, 
+// @ts-ignore
+import {
+  Users,
+  Shield,
+  Flag,
+  File,
   Calendar,
   HelpCircle,
   TrendingUp,
-  Database
+  FileText
 } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import { canAccessAdmin, getUserRoles } from '@/lib/auth/roles';
@@ -79,7 +80,7 @@ const overviewCards = [
     id: 'data',
     title: 'Управление данными',
     description: 'Просмотр и удаление проектов и задач',
-    icon: Database,
+    icon: FileText,
     href: '/admin/data',
     color: 'bg-yellow-500/10 border-yellow-500/30 text-yellow-100'
   }

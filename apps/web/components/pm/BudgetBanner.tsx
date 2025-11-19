@@ -1,7 +1,7 @@
 'use client';
 
 import { type Project } from '@/types/pm';
-import { AlertTriangle, ExternalLink, Settings } from 'lucide-react';
+import { HelpCircle, ExternalLink, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { ContentBlock } from '@/components/ui/content-block';
@@ -38,7 +38,7 @@ export default function BudgetBanner({ project, onUpdateLimit }: BudgetBannerPro
       )}
     >
       <div className="flex items-start gap-3">
-        <AlertTriangle
+        <HelpCircle
           className={cn('h-5 w-5 flex-shrink-0 mt-0.5', isExceeded ? 'text-rose-400' : 'text-amber-400')}
         />
         <div className="flex-1 space-y-3">

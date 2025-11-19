@@ -54,6 +54,37 @@ export class ProjectsRepository {
     return (memory.PROJECT_MEMBERS[projectId] ?? []).map((member) => ({ ...member }));
   }
 
+  upsertMember(projectId: string, userId: string, role: ProjectMember['role']): ProjectMember {
+    const members = memory.PROJECT_MEMBERS[projectId] ?? [];
+    const index = members.findIndex((item) => item.userId === userId);
+    const member: ProjectMember = { userId, role };
+    if (index === -1) {
+      members.push(member);
+    } else {
+      members[index] = member;
+    }
+    memory.PROJECT_MEMBERS[projectId] = members;
+    return { ...member };
+  }
+
+  removeMember(projectId: string, userId: string): boolean {
+    const members = memory.PROJECT_MEMBERS[projectId];
+    if (!members) {
+      return false;
+    }
+    const index = members.findIndex((item) => item.userId === userId);
+    if (index === -1) {
+      return false;
+    }
+    members.splice(index, 1);
+    if (members.length === 0) {
+      delete memory.PROJECT_MEMBERS[projectId];
+    } else {
+      memory.PROJECT_MEMBERS[projectId] = members;
+    }
+    return true;
+  }
+
   hasAccess(projectId: string, userId: string): boolean {
     const project = this.findById(projectId);
     if (!project) {

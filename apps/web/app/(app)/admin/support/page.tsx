@@ -48,7 +48,6 @@ export default function AdminSupportPage() {
       {/* Quick Actions */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <ContentBlock
-          as="button"
           size="sm"
           interactive
           className="group text-left"
@@ -64,7 +63,6 @@ export default function AdminSupportPage() {
         </ContentBlock>
 
         <ContentBlock
-          as="button"
           size="sm"
           interactive
           className="group text-left"
@@ -80,7 +78,6 @@ export default function AdminSupportPage() {
         </ContentBlock>
 
         <ContentBlock
-          as="button"
           size="sm"
           interactive
           className="group text-left"
@@ -146,9 +143,8 @@ export default function AdminSupportPage() {
                   <p className="text-xs text-neutral-400">{service.latency}</p>
                 </div>
                 <span
-                  className={`h-2 w-2 rounded-full ${
-                    service.status === 'healthy' ? 'bg-green-500' : 'bg-orange-500'
-                  }`}
+                  className={`h-2 w-2 rounded-full ${service.status === 'healthy' ? 'bg-green-500' : 'bg-orange-500'
+                    }`}
                 />
               </div>
             </div>

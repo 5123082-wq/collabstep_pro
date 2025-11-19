@@ -30,15 +30,13 @@ export async function POST(req: NextRequest) {
     // Валидация
     if (!projectId || typeof projectId !== 'string') {
       return jsonError('INVALID_REQUEST', {
-        status: 400,
-        message: 'projectId is required and must be a string'
+        status: 400
       });
     }
 
     if (!operation || !operation.type || !operation.filter || !operation.updates) {
       return jsonError('INVALID_REQUEST', {
-        status: 400,
-        message: 'Invalid operation structure'
+        status: 400
       });
     }
 
@@ -47,8 +45,7 @@ export async function POST(req: NextRequest) {
 
     if (!project) {
       return jsonError('NOT_FOUND', {
-        status: 404,
-        message: 'Project not found'
+        status: 404
       });
     }
 
@@ -57,16 +54,14 @@ export async function POST(req: NextRequest) {
 
     if (!currentMember) {
       return jsonError('FORBIDDEN', {
-        status: 403,
-        message: 'You do not have access to this project'
+        status: 403
       });
     }
 
     // Only owners and admins can perform bulk operations
     if (currentMember.role !== 'owner' && currentMember.role !== 'admin') {
       return jsonError('FORBIDDEN', {
-        status: 403,
-        message: 'Only project owners and admins can perform bulk operations'
+        status: 403
       });
     }
 
@@ -181,6 +176,7 @@ export async function POST(req: NextRequest) {
 
           // Создание доменного события
           domainEventsRepository.emit({
+            id: crypto.randomUUID(),
             type: 'task.bulk_updated',
             entityId: task.id,
             payload: {
@@ -190,7 +186,8 @@ export async function POST(req: NextRequest) {
               before,
               after: updated,
               updatedBy: auth.userId
-            }
+            },
+            createdAt: new Date().toISOString()
           });
         }
       }
@@ -198,6 +195,7 @@ export async function POST(req: NextRequest) {
 
     // Создание события о массовой операции
     domainEventsRepository.emit({
+      id: crypto.randomUUID(),
       type: 'project.bulk_operation',
       entityId: projectId,
       payload: {
@@ -207,18 +205,19 @@ export async function POST(req: NextRequest) {
         filter: operation.filter,
         updates: operation.updates,
         executedBy: auth.userId
-      }
+      },
+      createdAt: new Date().toISOString()
     });
 
     return jsonOk({
       updatedCount,
-      message: `Successfully updated ${updatedCount} tasks`
+      // Successfully updated tasks
     });
   } catch (error) {
     console.error('Error executing bulk operation:', error);
     return jsonError('INTERNAL_ERROR', {
       status: 500,
-      message: 'Failed to execute bulk operation'
+      // Failed to execute bulk operation
     });
   }
 }

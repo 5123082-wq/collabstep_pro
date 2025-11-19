@@ -14,7 +14,7 @@ import {
 } from '@collabverse/api/services/ai-planning-service';
 import { getAuthFromRequest } from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
-import { projectsRepository, tasksRepository } from '@collabverse/api';
+import { projectsRepository, tasksRepository, type Task } from '@collabverse/api';
 
 /**
  * Адаптер для использования AI клиента в сервисе
@@ -43,22 +43,19 @@ export async function POST(req: NextRequest) {
     // Валидация
     if (!projectId || typeof projectId !== 'string') {
       return jsonError('INVALID_REQUEST', { 
-        status: 400,
-        message: 'projectId is required and must be a string'
+        status: 400
       });
     }
 
     if (!taskIds || !Array.isArray(taskIds) || taskIds.length === 0) {
       return jsonError('INVALID_REQUEST', { 
-        status: 400,
-        message: 'taskIds is required and must be a non-empty array'
+        status: 400
       });
     }
 
     if (taskIds.length > 50) {
       return jsonError('INVALID_REQUEST', { 
-        status: 400,
-        message: 'Too many tasks (max 50 tasks at once)'
+        status: 400
       });
     }
 
@@ -67,8 +64,7 @@ export async function POST(req: NextRequest) {
 
     if (!project) {
       return jsonError('NOT_FOUND', { 
-        status: 404,
-        message: 'Project not found'
+        status: 404
       });
     }
 
@@ -78,20 +74,18 @@ export async function POST(req: NextRequest) {
     
     if (!currentMember || (currentMember.role !== 'owner' && currentMember.role !== 'admin')) {
       return jsonError('FORBIDDEN', { 
-        status: 403,
-        message: 'Only project owners and admins can request assignment suggestions'
+        status: 403
       });
     }
 
     // Получение задач
     const tasks = taskIds
       .map(id => tasksRepository.findById(id))
-      .filter(t => t !== undefined && t.projectId === projectId);
+      .filter((t): t is Task => t !== null && t.projectId === projectId);
 
     if (tasks.length === 0) {
       return jsonError('INVALID_REQUEST', { 
-        status: 400,
-        message: 'No valid tasks found'
+        status: 400
       });
     }
 
@@ -120,9 +114,9 @@ export async function POST(req: NextRequest) {
       tasks.map(t => ({
         id: t.id,
         title: t.title,
-        description: t.description,
-        priority: t.priority,
-        estimatedTime: t.estimatedTime || undefined
+        ...(t.description ? { description: t.description } : {}),
+        ...(t.priority ? { priority: t.priority } : {}),
+        ...(t.estimatedTime !== null && t.estimatedTime !== undefined ? { estimatedTime: t.estimatedTime } : {})
       })),
       membersWithInfo
     );
@@ -139,22 +133,19 @@ export async function POST(req: NextRequest) {
     if (error instanceof Error) {
       if (error.message.includes('API key')) {
         return jsonError('AI_SERVICE_ERROR', { 
-          status: 503,
-          message: 'AI service is not configured'
+          status: 503
         });
       }
       
       if (error.message.includes('rate limit')) {
         return jsonError('AI_SERVICE_ERROR', { 
-          status: 429,
-          message: 'AI service rate limit exceeded'
+          status: 429
         });
       }
     }
 
     return jsonError('AI_SERVICE_ERROR', { 
-      status: 500,
-      message: 'Failed to suggest task assignments'
+      status: 500
     });
   }
 }

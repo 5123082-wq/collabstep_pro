@@ -351,6 +351,7 @@ export default function TasksListView({ tasks, loading, filters }: TasksListView
               {/* Строки */}
               {rowVirtualizer.getVirtualItems().map((virtualRow) => {
                 const task = sortedTasks[virtualRow.index];
+                if (!task) return null;
                 return (
                   <div
                     key={virtualRow.key}

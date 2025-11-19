@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/lib/ui/toast';
@@ -42,7 +42,7 @@ export default function ProjectChat({ projectId, currentUserId }: ProjectChatPro
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const loadMessages = async (pageNum: number = 1, append: boolean = false) => {
+  const loadMessages = useCallback(async (pageNum: number = 1, append: boolean = false) => {
     try {
       if (append) {
         setLoadingMore(true);
@@ -75,12 +75,12 @@ export default function ProjectChat({ projectId, currentUserId }: ProjectChatPro
       setPage(pageNum);
     } catch (err) {
       console.error('Error loading messages:', err);
-      toast(err instanceof Error ? err.message : 'Неизвестная ошибка', 'error');
+      toast(err instanceof Error ? err.message : 'Неизвестная ошибка', 'warning');
     } finally {
       setLoading(false);
       setLoadingMore(false);
     }
-  };
+  }, [projectId]);
 
   useEffect(() => {
     void loadMessages(1, false);
@@ -95,7 +95,7 @@ export default function ProjectChat({ projectId, currentUserId }: ProjectChatPro
         clearInterval(pollingIntervalRef.current);
       }
     };
-  }, [projectId]);
+  }, [projectId, loadMessages]);
 
   // Подписка на WebSocket события для чата
   useProjectEvents(projectId, currentUserId, 'chat.message', (event) => {
@@ -166,7 +166,7 @@ export default function ProjectChat({ projectId, currentUserId }: ProjectChatPro
       void loadMessages(1, false);
     } catch (err) {
       console.error('Error sending message:', err);
-      toast(err instanceof Error ? err.message : 'Неизвестная ошибка', 'error');
+      toast(err instanceof Error ? err.message : 'Неизвестная ошибка', 'warning');
     } finally {
       setSending(false);
     }
@@ -202,7 +202,7 @@ export default function ProjectChat({ projectId, currentUserId }: ProjectChatPro
       }
     } catch (err) {
       console.error('Error uploading file:', err);
-      toast(err instanceof Error ? err.message : 'Не удалось загрузить файл', 'error');
+      toast(err instanceof Error ? err.message : 'Не удалось загрузить файл', 'warning');
     }
   };
 
@@ -371,8 +371,8 @@ export default function ProjectChat({ projectId, currentUserId }: ProjectChatPro
                   }
                 }}
               />
-              <Button type="button" variant="secondary" size="sm" asChild>
-                <span>📎</span>
+              <Button type="button" variant="secondary" size="sm">
+                📎
               </Button>
             </label>
             <Button type="submit" variant="primary" size="sm" loading={sending} disabled={(!body.trim() && attachments.length === 0) || sending}>

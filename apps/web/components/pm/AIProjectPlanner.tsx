@@ -101,7 +101,7 @@ export default function AIProjectPlanner({
       toast('Структура проекта сгенерирована', 'success');
     } catch (error) {
       console.error('Error generating structure:', error);
-      toast(error instanceof Error ? error.message : 'Ошибка генерации структуры', 'error');
+      toast(error instanceof Error ? error.message : 'Ошибка генерации структуры', 'warning');
     } finally {
       setLoading(false);
     }
@@ -144,7 +144,7 @@ export default function AIProjectPlanner({
       setDescription('');
     } catch (error) {
       console.error('Error applying structure:', error);
-      toast(error instanceof Error ? error.message : 'Ошибка применения структуры', 'error');
+      toast(error instanceof Error ? error.message : 'Ошибка применения структуры', 'warning');
     } finally {
       setApplying(false);
     }
@@ -154,8 +154,12 @@ export default function AIProjectPlanner({
     if (!structure) return;
 
     const newStructure = { ...structure };
-    newStructure.phases[phaseIndex].tasks[taskIndex] = {
-      ...newStructure.phases[phaseIndex].tasks[taskIndex],
+    const phase = newStructure.phases[phaseIndex];
+    const task = phase?.tasks[taskIndex];
+    if (!phase || !task) return;
+
+    phase.tasks[taskIndex] = {
+      ...task,
       ...updates
     };
     setStructure(newStructure);
@@ -165,7 +169,10 @@ export default function AIProjectPlanner({
     if (!structure) return;
 
     const newStructure = { ...structure };
-    newStructure.phases[phaseIndex].tasks.splice(taskIndex, 1);
+    const phase = newStructure.phases[phaseIndex];
+    if (!phase) return;
+
+    phase.tasks.splice(taskIndex, 1);
     setStructure(newStructure);
   };
 

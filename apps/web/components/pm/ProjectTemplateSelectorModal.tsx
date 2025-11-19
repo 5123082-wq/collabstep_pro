@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 // @ts-ignore
-import { Check, FileText, Globe, Layout, Megaphone, Palette, Search, Sparkles, X } from 'lucide-react';
+import { Check, FileText, Globe, Megaphone, Palette, Sparkles } from 'lucide-react';
 import {
   Modal,
   ModalBody,
@@ -99,9 +99,8 @@ export default function ProjectTemplateSelectorModal({
     onOpenChange(false);
   };
 
-  const getKindIcon = (kind: string) => {
-    const Icon = KIND_ICONS[kind] || KIND_ICONS.default;
-    return Icon;
+  const getKindIcon = (kind: string): React.ComponentType<{ className?: string }> => {
+    return KIND_ICONS[kind] ?? KIND_ICONS.default!;
   };
 
   const getKindColor = (kind: string) => {

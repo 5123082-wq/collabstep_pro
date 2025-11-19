@@ -15,7 +15,7 @@ export async function POST(request: Request) {
       PM_TASKS_LIST: flags.PM_TASKS_LIST,
       PM_TASKS_CALENDAR: flags.PM_TASKS_CALENDAR,
     });
-    return NextResponse.json({ error: 'Feature not enabled' }, { status: 404 });
+    return jsonError('FEATURE_NOT_ENABLED', { status: 404 });
   }
 
   const auth = getAuthFromRequest(request);
@@ -99,7 +99,8 @@ export async function POST(request: Request) {
           patch.startDate = startValue;
         } else if (startValue === null || startValue === undefined) {
           // Явно удаляем дату, если передано null/undefined
-          patch.startDate = undefined;
+          // Используем пустую строку, чтобы указать на удаление (репозиторий обработает это)
+          patch.startDate = '';
         }
       }
       if ('dueAt' in updates) {
@@ -109,7 +110,8 @@ export async function POST(request: Request) {
           patch.dueAt = dueValue;
         } else if (dueValue === null || dueValue === undefined) {
           // Явно удаляем дату, если передано null/undefined
-          patch.dueAt = undefined;
+          // Используем пустую строку, чтобы указать на удаление (репозиторий обработает это)
+          patch.dueAt = '';
         }
       }
 

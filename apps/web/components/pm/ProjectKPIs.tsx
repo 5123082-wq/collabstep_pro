@@ -106,7 +106,10 @@ export default function ProjectKPIs({ project, onUpdateLimit, onBudgetSettingsCl
         </ContentBlock>
       </div>
 
-      <BudgetBanner project={project} onUpdateLimit={onUpdateLimit} />
+      <BudgetBanner 
+        project={project} 
+        {...(onUpdateLimit && { onUpdateLimit })}
+      />
     </div>
   );
 }

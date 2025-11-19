@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+// @ts-ignore
 import { ArrowUpRight, DollarSign, Plus, KanbanSquare } from 'lucide-react';
 import { type Project } from '@/types/pm';
 import { buildProjectFilterParams, parseProjectFilters, type ProjectListFilters, type ProjectScope } from '@/lib/pm/filters';
@@ -329,7 +330,7 @@ export default function ProjectsOverviewPageClient({ initialFilters, initialData
     };
     setFilters(merged);
     filtersRef.current = merged;
-  }, [initialFilters.pageSize, liveSearchParams]);
+  }, [initialFilters.pageSize, liveSearchParams, filters.scope]);
 
   useEffect(() => {
     setSearchDraft(filters.q ?? '');
@@ -358,7 +359,9 @@ export default function ProjectsOverviewPageClient({ initialFilters, initialData
     filters.pageSize,
     filters.sortBy,
     filters.sortOrder,
-    filters.scope
+    filters.scope,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    filters
   ]);
 
   useEffect(() => {
@@ -366,10 +369,10 @@ export default function ProjectsOverviewPageClient({ initialFilters, initialData
     if (queryKey === prevQueryKeyRef.current) {
       return;
     }
-    
+
     // Обновляем предыдущий ключ
     prevQueryKeyRef.current = queryKey;
-    
+
     // Проверяем кэш перед загрузкой
     const cached = cacheRef.current.get(queryKey);
     if (cached) {
@@ -385,7 +388,7 @@ export default function ProjectsOverviewPageClient({ initialFilters, initialData
 
     const controller = new AbortController();
     const hasCached = !!cached;
-    
+
     async function loadProjects() {
       setError(null);
       try {
@@ -401,7 +404,7 @@ export default function ProjectsOverviewPageClient({ initialFilters, initialData
         if (!controller.signal.aborted) {
           // Сохраняем в кэш
           cacheRef.current.set(queryKey, payload);
-          
+
           setData(payload.items);
           setOwners(payload.owners ?? []);
           setPagination(payload.pagination);
@@ -561,7 +564,7 @@ export default function ProjectsOverviewPageClient({ initialFilters, initialData
       return;
     }
     updateFilters(
-      { q: trimmed ? trimmed : undefined },
+      trimmed ? { q: trimmed } : {},
       { resetPage: true, track: !!isInitialHydrated.current, reason: 'search' }
     );
   }, [debouncedQuery, updateFilters]);
@@ -579,7 +582,7 @@ export default function ProjectsOverviewPageClient({ initialFilters, initialData
 
   const handleStatusChange = (status: Project['status'] | '') => {
     updateFilters(
-      { status: status || undefined },
+      status ? { status } : {},
       {
         resetPage: true,
         track: true,
@@ -590,7 +593,7 @@ export default function ProjectsOverviewPageClient({ initialFilters, initialData
 
   const handleOwnerChange = (ownerId: string) => {
     updateFilters(
-      { ownerId: ownerId || undefined },
+      ownerId ? { ownerId } : {},
       {
         resetPage: true,
         track: true,
@@ -614,10 +617,7 @@ export default function ProjectsOverviewPageClient({ initialFilters, initialData
     setSearchDraft('');
     updateFilters(
       {
-        scope: DEFAULT_SCOPE,
-        status: undefined,
-        ownerId: undefined,
-        q: undefined
+        scope: DEFAULT_SCOPE
       },
       { resetPage: true, track: true, reason: 'reset' }
     );
@@ -881,7 +881,9 @@ export default function ProjectsOverviewPageClient({ initialFilters, initialData
             <ContentBlock
               key={index}
               className="h-64 animate-pulse"
-            />
+            >
+              <div />
+            </ContentBlock>
           ))}
         </div>
       ) : empty ? (

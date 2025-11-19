@@ -96,11 +96,21 @@ export default function BulkOperationsPanel({
 
     setParsing(true);
     try {
-      const result = await parseBulkCommand(command.trim(), {
-        availableStatuses,
-        availableMembers,
-        availablePriorities
-      });
+      const context: {
+        availableStatuses?: string[];
+        availableMembers?: Array<{ id: string; name: string }>;
+        availablePriorities?: string[];
+      } = {};
+      if (availableStatuses) {
+        context.availableStatuses = availableStatuses;
+      }
+      if (availableMembers) {
+        context.availableMembers = availableMembers;
+      }
+      if (availablePriorities) {
+        context.availablePriorities = availablePriorities;
+      }
+      const result = await parseBulkCommand(command.trim(), context);
 
       setParsedCommand(result);
 
@@ -121,7 +131,7 @@ export default function BulkOperationsPanel({
       setShowExamples(false);
     } catch (error) {
       console.error('Error parsing command:', error);
-      toast('Ошибка обработки команды', 'error');
+      toast('Ошибка обработки команды', 'warning');
     } finally {
       setParsing(false);
     }
@@ -164,11 +174,11 @@ export default function BulkOperationsPanel({
         setParsedCommand(null);
         onOperationExecuted?.();
       } else {
-        toast('Ошибка выполнения операции', 'error');
+        toast('Ошибка выполнения операции', 'warning');
       }
     } catch (error) {
       console.error('Error executing operation:', error);
-      toast(error instanceof Error ? error.message : 'Ошибка выполнения операции', 'error');
+      toast(error instanceof Error ? error.message : 'Ошибка выполнения операции', 'warning');
     } finally {
       setExecuting(false);
     }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import TaskCommentItem from './TaskCommentItem';
 import TaskCommentForm from './TaskCommentForm';
 import type { TaskCommentNode } from '@collabverse/api';
@@ -19,7 +19,7 @@ export default function TaskComments({ taskId, projectId, currentUserId }: TaskC
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadComments = async () => {
+  const loadComments = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -38,11 +38,11 @@ export default function TaskComments({ taskId, projectId, currentUserId }: TaskC
     } finally {
       setLoading(false);
     }
-  };
+  }, [taskId]);
 
   useEffect(() => {
     void loadComments();
-  }, [taskId]);
+  }, [taskId, loadComments]);
 
   // Подписка на WebSocket события для комментариев
   useProjectEvents(projectId, currentUserId, 'comment.added', (event) => {

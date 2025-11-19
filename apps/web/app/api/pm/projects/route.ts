@@ -58,6 +58,7 @@ async function createTestProject(ownerId: string, projectTitle: string, projectD
   const createdTasks = [];
   for (let i = 0; i < tasks.length; i++) {
     const task = tasks[i];
+    if (!task) continue;
     const createdTask = tasksRepository.create({
       projectId: project.id,
       title: task.title,
@@ -71,9 +72,9 @@ async function createTestProject(ownerId: string, projectTitle: string, projectD
 
   // Создаем траты
   const expenses = [
-    { taskId: createdTasks[0].id, amount: '15000', category: 'Разработка', description: 'Оплата работы разработчика', vendor: 'Внешний подрядчик', status: 'approved' as ExpenseStatus },
-    { taskId: createdTasks[1].id, amount: '8000', category: 'Разработка', description: 'Оплата за разработку API', vendor: 'Команда разработки', status: 'approved' as ExpenseStatus },
-    { taskId: createdTasks[2].id, amount: '12000', category: 'Дизайн', description: 'Оплата услуг дизайнера', vendor: 'Дизайн-студия', status: 'payable' as ExpenseStatus },
+    { taskId: createdTasks[0]?.id, amount: '15000', category: 'Разработка', description: 'Оплата работы разработчика', vendor: 'Внешний подрядчик', status: 'approved' as ExpenseStatus },
+    { taskId: createdTasks[1]?.id, amount: '8000', category: 'Разработка', description: 'Оплата за разработку API', vendor: 'Команда разработки', status: 'approved' as ExpenseStatus },
+    { taskId: createdTasks[2]?.id, amount: '12000', category: 'Дизайн', description: 'Оплата услуг дизайнера', vendor: 'Дизайн-студия', status: 'payable' as ExpenseStatus },
     { amount: '5000', category: 'Маркетинг', description: 'Рекламная кампания', vendor: 'Рекламное агентство', status: 'closed' as ExpenseStatus },
     { amount: '3000', category: 'Разработка', description: 'Покупка лицензий', vendor: 'Поставщик ПО', status: 'pending' as ExpenseStatus }
   ];
@@ -187,8 +188,8 @@ export async function GET(request: NextRequest) {
     scope,
     page: parsedFilters.page,
     pageSize: parsedFilters.pageSize,
-    sortBy: parsedFilters.sortBy,
-    sortOrder: parsedFilters.sortOrder
+    ...(parsedFilters.sortBy ? { sortBy: parsedFilters.sortBy } : {}),
+    ...(parsedFilters.sortOrder ? { sortOrder: parsedFilters.sortOrder } : {})
   });
 
   // Логирование для отладки

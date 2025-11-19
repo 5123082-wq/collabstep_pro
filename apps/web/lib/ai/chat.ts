@@ -67,18 +67,18 @@ export async function generateProjectChatAIResponse(
   const members = projectsRepository.listMembers(projectId);
 
   // Получение недавних сообщений чата для контекста (последние 5)
-  const recentMessages = projectChatRepository.list({ projectId, limit: 5 });
-  const recentActivity = recentMessages
+  const recentMessagesResult = projectChatRepository.listByProject(projectId, { pageSize: 5 });
+  const recentActivity = recentMessagesResult.messages
     .map(m => m.body)
     .slice(0, 3)
     .join('; ');
 
   const projectContext = {
     projectId,
-    projectName: project.name,
+    projectName: project.title,
     tasksCount: tasks.length,
     membersCount: members.length,
-    recentActivity: recentActivity || undefined
+    ...(recentActivity ? { recentActivity } : {})
   };
 
   // Создаём адаптер для AI клиента

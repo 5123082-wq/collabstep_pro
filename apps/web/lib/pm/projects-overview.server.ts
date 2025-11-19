@@ -47,11 +47,16 @@ export async function getProjectsOverview(
   const start = (page - 1) * pageSize;
   const end = start + pageSize;
 
-  const items = sorted.slice(start, end).map(({ project, members, metrics }) => {
+  const items: ProjectWithPermissions[] = sorted.slice(start, end).map(({ project, members, metrics }) => {
     const ownerInfo = ownersMap.get(project.ownerId) ?? null;
     const transformed = transformProject(project, members, metrics, ownerInfo);
     const permissions = resolvePermissions(project, currentUserId, members);
-    return applyPermissions(transformed, permissions);
+    const withPermissions = applyPermissions(transformed, permissions);
+    return {
+      ...withPermissions,
+      permissions,
+      ...(ownerInfo ? { owner: ownerInfo } : {})
+    };
   });
 
   const owners = Array.from(ownersMap.values()).sort((a, b) =>

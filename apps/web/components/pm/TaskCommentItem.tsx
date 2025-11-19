@@ -97,7 +97,7 @@ export default function TaskCommentItem({
       const isMention = mentionIds.some((id) => {
         // Простая проверка: если ID содержит имя пользователя
         const userName = id.split('@')[0];
-        return mentionText.includes(userName);
+        return userName ? mentionText.includes(userName) : false;
       });
 
       parts.push({ text: mentionText, isMention });

@@ -2,7 +2,8 @@ import { encodeDemoSession } from '@/lib/auth/demo-session';
 import {
   tasksRepository,
   notificationsRepository,
-  resetFinanceMemory
+  resetFinanceMemory,
+  memory
 } from '@collabverse/api';
 import { GET as getNotifications } from '@/app/api/notifications/route';
 import { PATCH as markRead } from '@/app/api/notifications/[id]/route';
@@ -25,6 +26,8 @@ describe('Notifications API', () => {
 
   beforeEach(() => {
     resetFinanceMemory();
+    // Очищаем все уведомления
+    memory.NOTIFICATIONS = [];
 
     // Создаем задачу для тестов
     const task = tasksRepository.create({

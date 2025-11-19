@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/lib/ui/toast';
 // @ts-ignore
-import { Bot, Brain, MessageSquare, Play, Plus, Settings, Sparkles, StopCircle, X, Zap } from 'lucide-react';
+import { Bot, Plus, Sparkles, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type AIAgent = {
@@ -54,7 +54,7 @@ export default function ProjectAIAgents({
   const [showAvailable, setShowAvailable] = useState(false);
 
   // Загрузка AI-агентов проекта
-  const loadProjectAgents = async () => {
+  const loadProjectAgents = useCallback(async () => {
     try {
       const response = await fetch(`/api/pm/projects/${projectId}/ai-agents`);
 
@@ -68,10 +68,10 @@ export default function ProjectAIAgents({
       console.error('Failed to load project AI agents:', error);
       toast('Ошибка загрузки AI-агентов', 'warning');
     }
-  };
+  }, [projectId]);
 
   // Загрузка всех доступных AI-агентов
-  const loadAvailableAgents = async () => {
+  const loadAvailableAgents = useCallback(async () => {
     try {
       const response = await fetch('/api/ai-agents');
 
@@ -93,7 +93,7 @@ export default function ProjectAIAgents({
       console.error('Failed to load available AI agents:', error);
       setAvailableAgents([]);
     }
-  };
+  }, [projectAgents]);
 
   useEffect(() => {
     const load = async () => {
@@ -102,13 +102,13 @@ export default function ProjectAIAgents({
       setLoading(false);
     };
     void load();
-  }, [projectId]);
+  }, [projectId, loadProjectAgents]);
 
   useEffect(() => {
     if (showAvailable) {
       void loadAvailableAgents();
     }
-  }, [showAvailable, projectAgents]);
+  }, [showAvailable, projectAgents, loadAvailableAgents]);
 
   // Добавление агента в проект
   const handleAddAgent = async (agentId: string) => {

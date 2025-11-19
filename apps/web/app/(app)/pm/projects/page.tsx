@@ -39,8 +39,7 @@ export default function PMProjectsPage() {
     }
 
     void loadProjects();
-    // Используем строковое представление searchParams для правильной работы зависимостей
-  }, [searchParams.toString()]);
+  }, [searchParams]);
 
   if (!flags.PM_NAV_PROJECTS_AND_TASKS || !flags.PM_PROJECTS_LIST) {
     return <FeatureComingSoon title="Проекты" />;

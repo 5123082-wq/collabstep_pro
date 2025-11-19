@@ -240,7 +240,7 @@ export async function safeAIRequest<T>(
     if (!inputValidation.valid) {
       return {
         success: false,
-        error: inputValidation.reason
+        ...(inputValidation.reason ? { error: inputValidation.reason } : {})
       };
     }
 

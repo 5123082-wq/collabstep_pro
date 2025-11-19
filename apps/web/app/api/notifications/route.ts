@@ -21,14 +21,14 @@ export async function GET(req: NextRequest) {
   const { page, pageSize } = parsePagination(url);
 
   const notifications = notificationsRepository.listByUser(auth.userId, {
-    status: status ?? undefined,
+    ...(status ? { status } : {}),
     page,
     pageSize
   });
 
   // Получаем общее количество для пагинации
   const allNotifications = notificationsRepository.listByUser(auth.userId, {
-    status: status ?? undefined
+    ...(status ? { status } : {})
   });
   const total = allNotifications.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));

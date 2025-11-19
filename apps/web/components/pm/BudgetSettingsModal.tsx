@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { ContentBlock } from '@/components/ui/content-block';
 import { toast } from '@/lib/ui/toast';
@@ -41,35 +41,35 @@ export default function BudgetSettingsModal({
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<BudgetSettings>({
     currency: 'RUB',
-    total: undefined,
-    warnThreshold: undefined,
     categories: []
   });
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryLimit, setNewCategoryLimit] = useState('');
 
-  useEffect(() => {
-    if (isOpen && projectId) {
-      void loadBudgetSettings();
-    }
-  }, [isOpen, projectId, loadBudgetSettings]);
-
-  async function loadBudgetSettings() {
+  const loadBudgetSettings = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/pm/projects/${projectId}/budget-settings`);
       if (response.ok) {
         const data = await response.json();
         if (data.budget) {
-          setSettings({
+          const settings: BudgetSettings = {
             currency: data.budget.currency || 'RUB',
-            total: data.budget.total ? parseFloat(data.budget.total) : undefined,
-            warnThreshold: data.budget.warnThreshold !== undefined ? Math.round(data.budget.warnThreshold * 100) : undefined,
-            categories: data.budget.categories?.map((cat: { name: string; limit?: string }) => ({
-              name: cat.name,
-              limit: cat.limit ? parseFloat(cat.limit) : undefined
-            })) || []
-          });
+            categories: data.budget.categories?.map((cat: { name: string; limit?: string }) => {
+              const category: BudgetCategory = { name: cat.name };
+              if (cat.limit) {
+                category.limit = parseFloat(cat.limit);
+              }
+              return category;
+            }) || []
+          };
+          if (data.budget.total) {
+            settings.total = parseFloat(data.budget.total);
+          }
+          if (data.budget.warnThreshold !== undefined) {
+            settings.warnThreshold = Math.round(data.budget.warnThreshold * 100);
+          }
+          setSettings(settings);
         }
       }
     } catch (err) {
@@ -77,7 +77,13 @@ export default function BudgetSettingsModal({
     } finally {
       setLoading(false);
     }
-  }
+  }, [projectId]);
+
+  useEffect(() => {
+    if (isOpen && projectId) {
+      void loadBudgetSettings();
+    }
+  }, [isOpen, projectId, loadBudgetSettings]);
 
   function handleAddCategory() {
     if (!newCategoryName.trim()) {
@@ -91,14 +97,15 @@ export default function BudgetSettingsModal({
       return;
     }
 
+    const newCategory: BudgetCategory = { name: newCategoryName.trim() };
+    if (limit !== undefined) {
+      newCategory.limit = limit;
+    }
     setSettings({
       ...settings,
       categories: [
         ...(settings.categories || []),
-        {
-          name: newCategoryName.trim(),
-          limit
-        }
+        newCategory
       ]
     });
 
@@ -115,10 +122,23 @@ export default function BudgetSettingsModal({
 
   function handleUpdateCategory(index: number, field: 'name' | 'limit', value: string | number) {
     const updated = [...(settings.categories || [])];
-    updated[index] = {
-      ...updated[index],
-      [field]: field === 'limit' ? (value === '' ? undefined : typeof value === 'number' ? value : parseFloat(value as string)) : value
+    const currentCategory = updated[index];
+    if (!currentCategory) return;
+    
+    const updatedCategory: BudgetCategory = {
+      name: currentCategory.name,
+      ...(currentCategory.limit !== undefined && { limit: currentCategory.limit })
     };
+    if (field === 'limit') {
+      if (value === '') {
+        delete updatedCategory.limit;
+      } else {
+        updatedCategory.limit = typeof value === 'number' ? value : parseFloat(value as string);
+      }
+    } else {
+      updatedCategory.name = value as string;
+    }
+    updated[index] = updatedCategory;
     setSettings({
       ...settings,
       categories: updated
@@ -227,12 +247,15 @@ export default function BudgetSettingsModal({
                 step="0.01"
                 min="0"
                 value={settings.total ?? ''}
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    total: e.target.value === '' ? undefined : parseFloat(e.target.value)
-                  })
-                }
+                onChange={(e) => {
+                  const newSettings: BudgetSettings = { ...settings };
+                  if (e.target.value === '') {
+                    delete newSettings.total;
+                  } else {
+                    newSettings.total = parseFloat(e.target.value);
+                  }
+                  setSettings(newSettings);
+                }}
                 className="w-full rounded-lg border border-neutral-800 bg-neutral-900/60 px-4 py-2 text-white"
                 placeholder="Введите лимит бюджета"
                 disabled={saving}
@@ -250,12 +273,15 @@ export default function BudgetSettingsModal({
                 min="0"
                 max="100"
                 value={settings.warnThreshold ?? ''}
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    warnThreshold: e.target.value === '' ? undefined : parseInt(e.target.value, 10)
-                  })
-                }
+                onChange={(e) => {
+                  const newSettings: BudgetSettings = { ...settings };
+                  if (e.target.value === '') {
+                    delete newSettings.warnThreshold;
+                  } else {
+                    newSettings.warnThreshold = parseInt(e.target.value, 10);
+                  }
+                  setSettings(newSettings);
+                }}
                 className="w-full rounded-lg border border-neutral-800 bg-neutral-900/60 px-4 py-2 text-white"
                 placeholder="0-100"
                 disabled={saving}

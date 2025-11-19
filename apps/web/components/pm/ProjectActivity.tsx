@@ -1,7 +1,7 @@
 'use client';
 
 // @ts-ignore
-import { Activity, CheckCircle, Clock, DollarSign, FileText, MessageSquare, User } from 'lucide-react';
+import { CheckCircle, Clock, DollarSign, MessageSquare } from 'lucide-react';
 import { type Project } from '@/types/pm';
 import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 

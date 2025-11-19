@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/lib/ui/toast';
 
@@ -34,7 +34,7 @@ export default function ProjectFilesCatalog({ projectId }: ProjectFilesCatalogPr
   const [filter, setFilter] = useState<FileSource>('all');
   const [uploading, setUploading] = useState(false);
 
-  const loadFiles = async () => {
+  const loadFiles = useCallback(async () => {
     try {
       setLoading(true);
       const url = filter === 'all' 
@@ -52,15 +52,15 @@ export default function ProjectFilesCatalog({ projectId }: ProjectFilesCatalogPr
       setFiles(data.data?.files || []);
     } catch (err) {
       console.error('Error loading files:', err);
-      toast(err instanceof Error ? err.message : 'Неизвестная ошибка', 'error');
+      toast(err instanceof Error ? err.message : 'Неизвестная ошибка', 'warning');
     } finally {
       setLoading(false);
     }
-  };
+  }, [projectId, filter]);
 
   useEffect(() => {
     void loadFiles();
-  }, [projectId, filter]);
+  }, [projectId, filter, loadFiles]);
 
   const handleFileUpload = async (file: File) => {
     try {
@@ -82,7 +82,7 @@ export default function ProjectFilesCatalog({ projectId }: ProjectFilesCatalogPr
       void loadFiles();
     } catch (err) {
       console.error('Error uploading file:', err);
-      toast(err instanceof Error ? err.message : 'Не удалось загрузить файл', 'error');
+      toast(err instanceof Error ? err.message : 'Не удалось загрузить файл', 'warning');
     } finally {
       setUploading(false);
     }
@@ -181,8 +181,8 @@ export default function ProjectFilesCatalog({ projectId }: ProjectFilesCatalogPr
             }}
             disabled={uploading}
           />
-          <Button variant="primary" size="sm" loading={uploading} asChild>
-            <span>📎 Загрузить файл</span>
+          <Button variant="primary" size="sm" loading={uploading}>
+            📎 Загрузить файл
           </Button>
         </label>
       </div>

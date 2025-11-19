@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/lib/ui/toast';
-import { Sparkles, X, Send, Loader2 } from 'lucide-react';
+import { Sparkles, X, ChevronRight, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type Message = {
@@ -254,7 +254,7 @@ export default function AIAssistant({
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Send className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4" />
             )}
           </Button>
         </div>

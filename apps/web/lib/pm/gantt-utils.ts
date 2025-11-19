@@ -244,10 +244,10 @@ export function transformTasksForGantt(
       end_date: formatDateForGantt(endDate),
       duration: calculateTaskDuration(task),
       progress,
-      parent: task.parentId || undefined,
+      ...(task.parentId ? { parent: task.parentId } : {}),
       type: task.parentId ? 'project' : 'task',
       open: true,
-      color: isCritical ? '#ff6b6b' : undefined,
+      ...(isCritical ? { color: '#ff6b6b' } : {}),
       isCritical,
     };
   });

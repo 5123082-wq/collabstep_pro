@@ -126,7 +126,9 @@ export default function TasksCalendarView({ tasks, loading, filters }: TasksCale
       low: { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: 'rgba(59, 130, 246, 0.5)' }
     };
 
-    const style = priority ? colors[priority] : { backgroundColor: 'rgba(100, 100, 100, 0.2)', borderColor: 'rgba(100, 100, 100, 0.5)' };
+    const style = priority && colors[priority] 
+      ? colors[priority] 
+      : { backgroundColor: 'rgba(100, 100, 100, 0.2)', borderColor: 'rgba(100, 100, 100, 0.5)' };
 
     return {
       style: {
@@ -263,10 +265,7 @@ export default function TasksCalendarView({ tasks, loading, filters }: TasksCale
           onView={setView}
           date={date}
           onNavigate={setDate}
-          onEventDrop={handleEventDrop}
           eventPropGetter={eventStyleGetter}
-          resizable
-          draggableAccessor={() => true}
           style={{ height: 600 }}
         />
       </ContentBlock>

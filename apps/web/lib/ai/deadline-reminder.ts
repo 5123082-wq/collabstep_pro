@@ -53,10 +53,10 @@ export function checkUpcomingDeadlines(daysThreshold = 3): TaskWithDeadline[] {
         id: task.id,
         title: task.title,
         projectId: task.projectId,
-        assigneeId: task.assigneeId,
         dueAt: task.dueAt,
-        priority: task.priority,
-        daysUntilDeadline
+        daysUntilDeadline,
+        ...(task.assigneeId ? { assigneeId: task.assigneeId } : {}),
+        ...(task.priority ? { priority: task.priority } : {})
       });
     }
   }
@@ -93,8 +93,8 @@ export async function sendDeadlineReminders(useAI = true): Promise<number> {
         reminderMessage = await generateDeadlineReminder(aiClient, {
           title: task.title,
           dueAt: new Date(task.dueAt).toLocaleDateString('ru-RU'),
-          assignee: assignee?.name,
-          priority: task.priority
+          ...(assignee?.name ? { assignee: assignee.name } : {}),
+          ...(task.priority ? { priority: task.priority } : {})
         });
       } else {
         // Простое напоминание без AI
@@ -112,11 +112,9 @@ export async function sendDeadlineReminders(useAI = true): Promise<number> {
       // Отправка уведомления о приближающемся дедлайне
       if (task.assigneeId) {
         void notifyDeadlineApproaching(
-          task.assigneeId,
           task.id,
           task.projectId,
-          task.daysUntilDeadline,
-          reminderMessage
+          task.assigneeId
         );
         sentCount++;
       }

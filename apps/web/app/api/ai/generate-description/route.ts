@@ -32,32 +32,30 @@ export async function POST(req: NextRequest) {
     // Валидация
     if (!taskTitle || typeof taskTitle !== 'string' || taskTitle.trim().length === 0) {
       return jsonError('INVALID_REQUEST', {
-        status: 400,
-        details: 'taskTitle is required and must be a non-empty string'
+        status: 400
       });
     }
 
     if (taskTitle.length > 200) {
       return jsonError('INVALID_REQUEST', {
-        status: 400,
-        details: 'taskTitle must be less than 200 characters'
+        status: 400
       });
     }
 
     // Получение контекста проекта (если указан projectId)
     let projectContext: { projectName?: string; projectDescription?: string } = {};
-    
+
     if (projectId) {
       const project = projectsRepository.findById(projectId);
       if (project) {
         // Проверяем, есть ли доступ к проекту
         const members = projectsRepository.listMembers(projectId);
         const isMember = members.some(m => m.userId === auth.userId);
-        
+
         if (isMember) {
           projectContext = {
-            projectName: project.name,
-            projectDescription: project.description
+            projectName: project.title,
+            ...(project.description ? { projectDescription: project.description } : {})
           };
         }
       }
@@ -86,22 +84,19 @@ export async function POST(req: NextRequest) {
     if (error instanceof Error) {
       if (error.message.includes('OPENAI_API_KEY')) {
         return jsonError('AI_NOT_CONFIGURED', {
-          status: 503,
-          details: 'AI service is not configured. Please contact administrator.'
+          status: 503
         });
       }
-      
+
       if (error.message.includes('rate limit')) {
         return jsonError('AI_RATE_LIMIT', {
-          status: 429,
-          details: 'AI service rate limit exceeded. Please try again later.'
+          status: 429
         });
       }
     }
 
     return jsonError('AI_SERVICE_ERROR', {
-      status: 500,
-      details: 'Failed to generate description'
+      status: 500
     });
   }
 }

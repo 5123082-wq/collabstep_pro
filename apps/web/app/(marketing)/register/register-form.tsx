@@ -90,7 +90,7 @@ export default function RegisterForm() {
   const handleChange = (field: 'name' | 'email' | 'password') => (event: ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
     setState((prev) => ({ ...prev, [field]: value, error: null }));
-    
+
     // Валидация в реальном времени
     const error = validateField(field, value);
     setFieldErrors((prev) => ({ ...prev, [field]: error }));
@@ -116,17 +116,17 @@ export default function RegisterForm() {
     const nameError = validateField('name', state.name);
     const emailError = validateField('email', state.email);
     const passwordError = validateField('password', state.password);
-    
+
     setFieldErrors({
-      name: nameError,
-      email: emailError,
-      password: passwordError
+      ...(nameError ? { name: nameError } : {}),
+      ...(emailError ? { email: emailError } : {}),
+      ...(passwordError ? { password: passwordError } : {})
     });
 
     if (nameError || emailError || passwordError || !state.consent) {
-      setState((prev) => ({ 
-        ...prev, 
-        error: !state.consent ? 'Необходимо подтвердить согласие с условиями использования' : 'Проверьте правильность заполнения полей' 
+      setState((prev) => ({
+        ...prev,
+        error: !state.consent ? 'Необходимо подтвердить согласие с условиями использования' : 'Проверьте правильность заполнения полей'
       }));
       return;
     }
@@ -173,11 +173,10 @@ export default function RegisterForm() {
             value={state.name}
             onChange={handleChange('name')}
             onBlur={handleBlur('name')}
-            className={`mt-1 w-full rounded-lg border bg-neutral-900 px-3 py-2 text-neutral-100 focus:outline-none ${
-              fieldErrors.name 
-                ? 'border-rose-500 focus:border-rose-400' 
+            className={`mt-1 w-full rounded-lg border bg-neutral-900 px-3 py-2 text-neutral-100 focus:outline-none ${fieldErrors.name
+                ? 'border-rose-500 focus:border-rose-400'
                 : 'border-neutral-800 focus:border-indigo-400'
-            }`}
+              }`}
             placeholder="Анна Смирнова"
             required
             aria-invalid={!!fieldErrors.name}
@@ -200,11 +199,10 @@ export default function RegisterForm() {
             value={state.email}
             onChange={handleChange('email')}
             onBlur={handleBlur('email')}
-            className={`mt-1 w-full rounded-lg border bg-neutral-900 px-3 py-2 text-neutral-100 focus:outline-none ${
-              fieldErrors.email 
-                ? 'border-rose-500 focus:border-rose-400' 
+            className={`mt-1 w-full rounded-lg border bg-neutral-900 px-3 py-2 text-neutral-100 focus:outline-none ${fieldErrors.email
+                ? 'border-rose-500 focus:border-rose-400'
                 : 'border-neutral-800 focus:border-indigo-400'
-            }`}
+              }`}
             placeholder="user@collabverse.dev"
             required
             aria-invalid={!!fieldErrors.email}
@@ -227,11 +225,10 @@ export default function RegisterForm() {
             value={state.password}
             onChange={handleChange('password')}
             onBlur={handleBlur('password')}
-            className={`mt-1 w-full rounded-lg border bg-neutral-900 px-3 py-2 text-neutral-100 focus:outline-none ${
-              fieldErrors.password 
-                ? 'border-rose-500 focus:border-rose-400' 
+            className={`mt-1 w-full rounded-lg border bg-neutral-900 px-3 py-2 text-neutral-100 focus:outline-none ${fieldErrors.password
+                ? 'border-rose-500 focus:border-rose-400'
                 : 'border-neutral-800 focus:border-indigo-400'
-            }`}
+              }`}
             placeholder="Минимум 6 символов"
             minLength={MIN_PASSWORD_LENGTH}
             required
@@ -249,29 +246,27 @@ export default function RegisterForm() {
             <div className="flex items-center gap-2">
               <div className="flex-1 h-1.5 rounded-full bg-neutral-800 overflow-hidden">
                 <div
-                  className={`h-full transition-all ${
-                    passwordStrength.strength === 'weak'
+                  className={`h-full transition-all ${passwordStrength.strength === 'weak'
                       ? 'bg-rose-500 w-1/3'
                       : passwordStrength.strength === 'medium'
-                      ? 'bg-amber-500 w-2/3'
-                      : 'bg-emerald-500 w-full'
-                  }`}
+                        ? 'bg-amber-500 w-2/3'
+                        : 'bg-emerald-500 w-full'
+                    }`}
                 />
               </div>
               <span
-                className={`text-xs font-medium ${
-                  passwordStrength.strength === 'weak'
+                className={`text-xs font-medium ${passwordStrength.strength === 'weak'
                     ? 'text-rose-400'
                     : passwordStrength.strength === 'medium'
-                    ? 'text-amber-400'
-                    : 'text-emerald-400'
-                }`}
+                      ? 'text-amber-400'
+                      : 'text-emerald-400'
+                  }`}
               >
                 {passwordStrength.strength === 'weak'
                   ? 'Слабый'
                   : passwordStrength.strength === 'medium'
-                  ? 'Средний'
-                  : 'Сильный'}
+                    ? 'Средний'
+                    : 'Сильный'}
               </span>
             </div>
             <p className="text-xs text-neutral-400">

@@ -150,7 +150,7 @@ export default function PulseWidget({ data }: PulseWidgetProps) {
           title="Просрочено"
           value={pulseData.overdue}
           valueColor={pulseData.overdue > 0 ? 'text-rose-400' : 'text-rose-300'}
-          subtitle={pulseData.myOverdue !== undefined ? `Мои: ${pulseData.myOverdue}` : undefined}
+          {...(pulseData.myOverdue !== undefined && { subtitle: `Мои: ${pulseData.myOverdue}` })}
           onClick={() => handleDrilldown('overdue')}
           buttonClassName={cn(
             pulseData.overdue > 0
@@ -163,7 +163,7 @@ export default function PulseWidget({ data }: PulseWidgetProps) {
         <CardContent
           title="Ближайшие дедлайны"
           value={pulseData.upcomingDeadlines.length}
-          subtitle={pulseData.myUpcomingDeadlines !== undefined ? `Мои: ${pulseData.myUpcomingDeadlines}` : undefined}
+          {...(pulseData.myUpcomingDeadlines !== undefined && { subtitle: `Мои: ${pulseData.myUpcomingDeadlines}` })}
         />
       </div>
 

@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import AppSection from '@/components/app/AppSection';
 import type { Notification, NotificationStatus } from '@collabverse/api';
 
 function formatTime(createdAt: string): string {
@@ -145,17 +144,23 @@ export default function NotificationsPage() {
   };
 
   return (
-    <AppSection
-      title="Уведомления"
-      description="Контролируйте важные события, дедлайны и алерты."
-      actions={[
-        {
-          label: 'Отметить все как прочитанные',
-          message: 'mark-all-read',
-          onClick: handleMarkAllRead
-        }
-      ]}
-    >
+    <section className="space-y-6">
+      <header className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-semibold text-neutral-50">Уведомления</h1>
+            <p className="text-sm text-neutral-400">Контролируйте важные события, дедлайны и алерты.</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleMarkAllRead}
+            className="rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-4 py-2 text-sm font-medium text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/20"
+          >
+            Отметить все как прочитанные
+          </button>
+        </div>
+      </header>
+
       <div className="mt-6">
         {/* Фильтры */}
         <div className="mb-6 flex gap-2">
@@ -167,11 +172,10 @@ export default function NotificationsPage() {
                 setStatusFilter(status);
                 setPagination((prev) => ({ ...prev, page: 1 }));
               }}
-              className={`rounded-lg px-4 py-2 text-sm transition ${
-                statusFilter === status
-                  ? 'bg-indigo-500/20 text-indigo-200'
-                  : 'bg-[color:var(--surface-muted)] text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-border-subtle)]'
-              }`}
+              className={`rounded-lg px-4 py-2 text-sm transition ${statusFilter === status
+                ? 'bg-indigo-500/20 text-indigo-200'
+                : 'bg-[color:var(--surface-muted)] text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-border-subtle)]'
+                }`}
             >
               {status === 'all' ? 'Все' : status === 'unread' ? 'Непрочитанные' : status === 'read' ? 'Прочитанные' : 'Архив'}
             </button>
@@ -193,9 +197,8 @@ export default function NotificationsPage() {
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`group cursor-pointer rounded-xl border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] p-4 transition hover:bg-[color:var(--surface-border-subtle)] ${
-                    notification.status === 'unread' ? 'border-indigo-500/50' : ''
-                  }`}
+                  className={`group cursor-pointer rounded-xl border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] p-4 transition hover:bg-[color:var(--surface-border-subtle)] ${notification.status === 'unread' ? 'border-indigo-500/50' : ''
+                    }`}
                   onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="flex items-start justify-between gap-4">
@@ -258,6 +261,6 @@ export default function NotificationsPage() {
           </>
         )}
       </div>
-    </AppSection>
+    </section>
   );
 }

@@ -9,7 +9,7 @@ import { POST as createExpense, GET as listExpenses } from '@/app/api/expenses/r
 import { PATCH as updateExpense } from '@/app/api/expenses/[id]/route';
 
 describe('Finance API routes', () => {
-  const projectId = projectsRepository.list()[0]?.id ?? TEST_PROJECT_DEMO_ID;
+  let projectId: string;
   const session = encodeDemoSession({
     email: 'admin.demo@collabverse.test',
     userId: 'admin.demo@collabverse.test',
@@ -23,6 +23,20 @@ describe('Finance API routes', () => {
 
   beforeEach(async () => {
     resetFinanceMemory();
+    // Создаём проект для теста, если его нет
+    const existingProjects = projectsRepository.list();
+    if (existingProjects.length === 0) {
+      const project = projectsRepository.create({
+        title: 'Test Project',
+        ownerId: 'admin.demo@collabverse.test',
+        workspaceId: 'workspace',
+        status: 'active'
+      });
+      projectId = project.id;
+    } else {
+      projectId = existingProjects[0]!.id;
+    }
+    
     await financeService.upsertBudget(
       projectId,
       { currency: 'USD', total: '2000', warnThreshold: 0.7 },
@@ -78,6 +92,8 @@ describe('Finance API routes', () => {
       })
     );
     const listBody = await listResponse.json();
-    expect(listBody.data.items[0].status).toBe('approved');
+    expect(listBody.data.items).toBeDefined();
+    expect(listBody.data.items.length).toBeGreaterThan(0);
+    expect(listBody.data.items[0]!.status).toBe('approved');
   });
 });

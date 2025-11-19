@@ -90,6 +90,14 @@ export class TasksRepository {
     return this.list({ projectId });
   }
 
+  findById(id: string): Task | null {
+    const task = memory.TASKS.find((task) => task.id === id);
+    if (!task) {
+      return null;
+    }
+    return enrichTask(task);
+  }
+
   /**
    * Gets the next task number for a project
    */

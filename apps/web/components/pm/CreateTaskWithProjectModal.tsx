@@ -67,7 +67,7 @@ export default function CreateTaskWithProjectModal({ isOpen, onClose }: CreateTa
     }
 
     void loadProjects();
-  }, [isOpen, loadProjects]);
+  }, [isOpen]);
 
   // Фильтрация проектов по поисковому запросу
   const filteredProjects = useMemo(() => {

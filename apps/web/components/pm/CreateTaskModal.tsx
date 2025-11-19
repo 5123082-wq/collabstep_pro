@@ -96,7 +96,7 @@ export default function CreateTaskModal({ projectId, isOpen, onClose, onSuccess 
       onSuccess?.();
       onClose();
     } catch (err) {
-      toast(err instanceof Error ? err.message : 'Не удалось создать задачу', 'error');
+      toast(err instanceof Error ? err.message : 'Не удалось создать задачу', 'warning');
     } finally {
       setLoading(false);
     }

@@ -8,9 +8,9 @@
 
 import { NextRequest } from 'next/server';
 import { generateText } from '@/lib/ai/client';
-import { 
+import {
   generateProjectStructure,
-  type ProjectStructure 
+  type ProjectStructure
 } from '@collabverse/api/services/ai-planning-service';
 import { getAuthFromRequest } from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
@@ -20,7 +20,7 @@ import { jsonError, jsonOk } from '@/lib/api/http';
  */
 const aiClientAdapter = {
   generateText: async (
-    prompt: string, 
+    prompt: string,
     options?: { maxTokens?: number; temperature?: number; systemPrompt?: string }
   ) => {
     return await generateText(prompt, options);
@@ -37,26 +37,24 @@ export async function POST(req: NextRequest) {
 
     // Парсинг тела запроса
     const body = await req.json();
-    const { 
-      description, 
-      projectName, 
-      teamSize, 
+    const {
+      description,
+      projectName,
+      teamSize,
       deadline,
-      preferences 
+      preferences
     } = body;
 
     // Валидация
     if (!description || typeof description !== 'string' || description.trim().length === 0) {
-      return jsonError('INVALID_REQUEST', { 
-        status: 400,
-        message: 'Description is required and must be a non-empty string'
+      return jsonError('INVALID_REQUEST', {
+        status: 400
       });
     }
 
     if (description.length > 5000) {
-      return jsonError('INVALID_REQUEST', { 
-        status: 400,
-        message: 'Description is too long (max 5000 characters)'
+      return jsonError('INVALID_REQUEST', {
+        status: 400
       });
     }
 
@@ -66,7 +64,7 @@ export async function POST(req: NextRequest) {
       description,
       {
         projectName,
-        teamSize: teamSize ? parseInt(teamSize) : undefined,
+        ...(teamSize ? { teamSize: parseInt(teamSize) } : {}),
         deadline,
         preferences: preferences || {
           taskGranularity: 'medium',
@@ -76,33 +74,30 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    return jsonOk({ 
+    return jsonOk({
       structure,
       generatedAt: new Date().toISOString()
     });
 
   } catch (error) {
     console.error('Error generating project structure:', error);
-    
+
     if (error instanceof Error) {
       if (error.message.includes('API key')) {
-        return jsonError('AI_SERVICE_ERROR', { 
-          status: 503,
-          message: 'AI service is not configured'
+        return jsonError('AI_SERVICE_ERROR', {
+          status: 503
         });
       }
-      
+
       if (error.message.includes('rate limit')) {
-        return jsonError('AI_SERVICE_ERROR', { 
-          status: 429,
-          message: 'AI service rate limit exceeded'
+        return jsonError('AI_SERVICE_ERROR', {
+          status: 429
         });
       }
     }
 
-    return jsonError('AI_SERVICE_ERROR', { 
-      status: 500,
-      message: 'Failed to generate project structure'
+    return jsonError('AI_SERVICE_ERROR', {
+      status: 500
     });
   }
 }

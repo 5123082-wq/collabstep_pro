@@ -12,17 +12,20 @@
 ## Установка
 
 1. Клонируйте репозиторий:
+
 ```bash
 git clone <repository-url>
 cd collabstep-new-3
 ```
 
 2. Установите зависимости:
+
 ```bash
 pnpm install
 ```
 
 3. Подготовьте переменные окружения:
+
 ```bash
 pnpm ensure-env
 ```
@@ -42,23 +45,25 @@ pnpm dev
 Для быстрого тестирования доступны два демо-аккаунта:
 
 ### Администратор
+
 - Email: `admin.demo@collabverse.test`
 - Пароль: `demo-admin`
 
 ### Пользователь
+
 - Email: `user.demo@collabverse.test`
 - Пароль: `demo-user`
 
 ## Основные команды
 
-| Команда | Описание |
-|---------|----------|
-| `pnpm dev` | Запуск в режиме разработки |
-| `pnpm build` | Сборка для production |
-| `pnpm start` | Запуск production сборки |
-| `pnpm test` | Запуск юнит-тестов |
-| `pnpm test:e2e` | Запуск E2E тестов |
-| `pnpm verify` | Полная проверка (линт, typecheck, build, тесты) |
+| Команда         | Описание                                        |
+| --------------- | ----------------------------------------------- |
+| `pnpm dev`      | Запуск в режиме разработки                      |
+| `pnpm build`    | Сборка для production                           |
+| `pnpm start`    | Запуск production сборки                        |
+| `pnpm test`     | Запуск юнит-тестов                              |
+| `pnpm test:e2e` | Запуск E2E тестов                               |
+| `pnpm verify`   | Полная проверка (линт, typecheck, build, тесты) |
 
 ## Структура проекта
 
@@ -86,4 +91,3 @@ collabstep-new-3/
 2. Проверьте, что `.env` файл создан и содержит все необходимые переменные
 3. Попробуйте очистить кэш: `rm -rf node_modules .next && pnpm install`
 4. Обратитесь к [полному руководству по настройке](setup.md)
-

@@ -26,8 +26,7 @@ export async function GET(
   const project = projectsRepository.findById(projectId);
   if (!project) {
     return jsonError('NOT_FOUND', {
-      status: 404,
-      details: 'Project not found'
+      status: 404
     });
   }
 
@@ -35,8 +34,7 @@ export async function GET(
   const role = getProjectRole(projectId, auth.userId);
   if (!role) {
     return jsonError('ACCESS_DENIED', {
-      status: 403,
-      details: 'You do not have access to this project'
+      status: 403
     });
   }
 
@@ -73,8 +71,7 @@ export async function POST(
   const project = projectsRepository.findById(projectId);
   if (!project) {
     return jsonError('NOT_FOUND', {
-      status: 404,
-      details: 'Project not found'
+      status: 404
     });
   }
 
@@ -82,8 +79,7 @@ export async function POST(
   const role = getProjectRole(projectId, auth.userId);
   if (role !== 'owner' && role !== 'admin') {
     return jsonError('ACCESS_DENIED', {
-      status: 403,
-      details: 'Only project owner or admin can add AI agents'
+      status: 403
     });
   }
 
@@ -95,8 +91,7 @@ export async function POST(
     // Валидация
     if (!agentId || typeof agentId !== 'string') {
       return jsonError('INVALID_REQUEST', {
-        status: 400,
-        details: 'agentId is required and must be a string'
+        status: 400
       });
     }
 
@@ -104,8 +99,7 @@ export async function POST(
     const agent = aiAgentsRepository.findById(agentId);
     if (!agent) {
       return jsonError('NOT_FOUND', {
-        status: 404,
-        details: 'AI agent not found'
+        status: 404
       });
     }
 
@@ -115,13 +109,12 @@ export async function POST(
 
     if (alreadyAdded) {
       return jsonError('ALREADY_EXISTS', {
-        status: 409,
-        details: 'AI agent already added to this project'
+        status: 409
       });
     }
 
     // Добавление агента как участника проекта
-    projectsRepository.addMember(projectId, agentId, 'viewer');
+    projectsRepository.upsertMember(projectId, agentId, 'viewer');
 
     return jsonOk({
       success: true,
@@ -131,8 +124,7 @@ export async function POST(
   } catch (error) {
     console.error('Add AI agent error:', error);
     return jsonError('INTERNAL_ERROR', {
-      status: 500,
-      details: 'Failed to add AI agent to project'
+      status: 500
     });
   }
 }
@@ -162,8 +154,7 @@ export async function DELETE(
 
   if (!agentId) {
     return jsonError('INVALID_REQUEST', {
-      status: 400,
-      details: 'agentId query parameter is required'
+      status: 400
     });
   }
 
@@ -171,8 +162,7 @@ export async function DELETE(
   const project = projectsRepository.findById(projectId);
   if (!project) {
     return jsonError('NOT_FOUND', {
-      status: 404,
-      details: 'Project not found'
+      status: 404
     });
   }
 
@@ -180,8 +170,7 @@ export async function DELETE(
   const role = getProjectRole(projectId, auth.userId);
   if (role !== 'owner' && role !== 'admin') {
     return jsonError('ACCESS_DENIED', {
-      status: 403,
-      details: 'Only project owner or admin can remove AI agents'
+      status: 403
     });
   }
 
@@ -190,8 +179,7 @@ export async function DELETE(
     const agent = aiAgentsRepository.findById(agentId);
     if (!agent) {
       return jsonError('NOT_FOUND', {
-        status: 404,
-        details: 'AI agent not found'
+        status: 404
       });
     }
 
@@ -200,8 +188,7 @@ export async function DELETE(
 
     if (!removed) {
       return jsonError('NOT_FOUND', {
-        status: 404,
-        details: 'AI agent not found in project'
+        status: 404
       });
     }
 
@@ -210,8 +197,7 @@ export async function DELETE(
   } catch (error) {
     console.error('Remove AI agent error:', error);
     return jsonError('INTERNAL_ERROR', {
-      status: 500,
-      details: 'Failed to remove AI agent from project'
+      status: 500
     });
   }
 }

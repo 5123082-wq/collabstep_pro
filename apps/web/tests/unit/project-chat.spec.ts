@@ -303,11 +303,21 @@ describe('Project Chat API', () => {
       expect(result.messages[1]!.id).toBe(msg1.id);
     });
 
-    it('should update a message', () => {
+    it('should update a message', async () => {
       const message = projectChatRepository.create({
         projectId,
         authorId: userId,
         body: 'Original message'
+      });
+
+      // Небольшая задержка, чтобы updatedAt точно изменился
+      const originalUpdatedAt = message.updatedAt;
+      
+      // Ждём немного, чтобы время обновления было другим
+      await new Promise<void>((resolve) => {
+        setTimeout(() => {
+          resolve();
+        }, 10);
       });
 
       const updated = projectChatRepository.update(message.id, {
@@ -316,7 +326,7 @@ describe('Project Chat API', () => {
 
       expect(updated).not.toBeNull();
       expect(updated?.body).toBe('Updated message');
-      expect(updated?.updatedAt).not.toBe(message.updatedAt);
+      expect(updated?.updatedAt).not.toBe(originalUpdatedAt);
     });
 
     it('should delete a message', () => {

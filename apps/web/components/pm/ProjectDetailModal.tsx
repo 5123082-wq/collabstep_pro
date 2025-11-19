@@ -455,7 +455,7 @@ export default function ProjectDetailModal({ projectId, isOpen, onClose }: Proje
                 <ProjectKPIs 
                   project={project} 
                   onUpdateLimit={handleUpdateLimit}
-                  onBudgetSettingsClick={flags.BUDGET_LIMITS ? () => setShowBudgetSettingsModal(true) : undefined}
+                  {...(flags.BUDGET_LIMITS && { onBudgetSettingsClick: () => setShowBudgetSettingsModal(true) })}
                 />
 
                 <QuickActions

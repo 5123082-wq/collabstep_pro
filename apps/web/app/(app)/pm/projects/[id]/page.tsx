@@ -206,7 +206,7 @@ export default function PMProjectDetailPage() {
 
       // Получаем workspaceId из проекта или используем дефолтный
       const workspaceId = project.workspaceId || DEMO_WORKSPACE_ID;
-      
+
       const response = await fetch('/api/expenses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -301,9 +301,9 @@ export default function PMProjectDetailPage() {
       }
 
       const data = await response.json();
-      
+
       toast('Листинг успешно создан', 'success');
-      
+
       // Перезагружаем проект для обновления marketplace информации
       const projectResponse = await fetch(`/api/pm/projects/${projectId}`);
       if (projectResponse.ok) {
@@ -396,7 +396,7 @@ export default function PMProjectDetailPage() {
   }
 
   // Проверка доступа к проекту (только для участников, не viewers)
-  const canAccessChatAndFiles = currentUserId && project.ownerId === currentUserId || 
+  const canAccessChatAndFiles = currentUserId && project.ownerId === currentUserId ||
     (project.members || []).some((m: { userId: string }) => m.userId === currentUserId);
 
   return (
@@ -409,55 +409,50 @@ export default function PMProjectDetailPage() {
           <button
             type="button"
             onClick={() => setActiveTab('overview')}
-            className={`px-4 py-2 text-sm font-medium transition ${
-              activeTab === 'overview'
+            className={`px-4 py-2 text-sm font-medium transition ${activeTab === 'overview'
                 ? 'border-b-2 border-indigo-500 text-white'
                 : 'text-neutral-400 hover:text-neutral-200'
-            }`}
+              }`}
           >
             Обзор
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('chat')}
-            className={`px-4 py-2 text-sm font-medium transition ${
-              activeTab === 'chat'
+            className={`px-4 py-2 text-sm font-medium transition ${activeTab === 'chat'
                 ? 'border-b-2 border-indigo-500 text-white'
                 : 'text-neutral-400 hover:text-neutral-200'
-            }`}
+              }`}
           >
             Чат
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('files')}
-            className={`px-4 py-2 text-sm font-medium transition ${
-              activeTab === 'files'
+            className={`px-4 py-2 text-sm font-medium transition ${activeTab === 'files'
                 ? 'border-b-2 border-indigo-500 text-white'
                 : 'text-neutral-400 hover:text-neutral-200'
-            }`}
+              }`}
           >
             Файлы
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('gantt')}
-            className={`px-4 py-2 text-sm font-medium transition ${
-              activeTab === 'gantt'
+            className={`px-4 py-2 text-sm font-medium transition ${activeTab === 'gantt'
                 ? 'border-b-2 border-indigo-500 text-white'
                 : 'text-neutral-400 hover:text-neutral-200'
-            }`}
+              }`}
           >
             Гант
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('ai-agents')}
-            className={`px-4 py-2 text-sm font-medium transition ${
-              activeTab === 'ai-agents'
+            className={`px-4 py-2 text-sm font-medium transition ${activeTab === 'ai-agents'
                 ? 'border-b-2 border-indigo-500 text-white'
                 : 'text-neutral-400 hover:text-neutral-200'
-            }`}
+              }`}
           >
             AI-агенты
           </button>
@@ -467,40 +462,40 @@ export default function PMProjectDetailPage() {
       {/* Контент вкладок */}
       {activeTab === 'overview' && (
         <>
-          <ProjectKPIs 
-            project={project} 
+          <ProjectKPIs
+            project={project}
             onUpdateLimit={handleUpdateLimit}
-            onBudgetSettingsClick={flags.BUDGET_LIMITS ? () => setShowBudgetSettingsModal(true) : undefined}
+            {...(flags.BUDGET_LIMITS ? { onBudgetSettingsClick: () => setShowBudgetSettingsModal(true) } : {})}
           />
 
-      <QuickActions
-        project={project}
-        onTaskCreate={() => {
-          setShowCreateTaskModal(true);
-        }}
-        onInvite={() => {
-          setShowInviteModal(true);
-        }}
-        onExpenseCreate={handleExpenseCreate}
-        onMarketplacePublish={handleMarketplacePublish}
-      />
+          <QuickActions
+            project={project}
+            onTaskCreate={() => {
+              setShowCreateTaskModal(true);
+            }}
+            onInvite={() => {
+              setShowInviteModal(true);
+            }}
+            onExpenseCreate={handleExpenseCreate}
+            onMarketplacePublish={handleMarketplacePublish}
+          />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <ProjectTeam project={project} currentUserId={currentUserId} />
-        <ProjectLinks project={project} />
-      </div>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <ProjectTeam project={project} currentUserId={currentUserId} />
+            <ProjectLinks project={project} />
+          </div>
 
-      {/* LimitsLog - Журнал событий бюджета */}
-      {project.metrics?.budgetLimit && (
-        <LimitsLog project={project} />
-      )}
+          {/* LimitsLog - Журнал событий бюджета */}
+          {project.metrics?.budgetLimit && (
+            <LimitsLog project={project} />
+          )}
 
-      {/* AutomationsLog - Журнал автоматизаций */}
-      {flags.FINANCE_AUTOMATIONS && (
-        <AutomationsLog project={project} />
-      )}
+          {/* AutomationsLog - Журнал автоматизаций */}
+          {flags.FINANCE_AUTOMATIONS && (
+            <AutomationsLog project={project} />
+          )}
 
-      <ProjectActivity project={project} />
+          <ProjectActivity project={project} />
         </>
       )}
 
@@ -518,11 +513,11 @@ export default function PMProjectDetailPage() {
 
       {activeTab === 'ai-agents' && (
         <div className="space-y-6">
-          <ProjectAIAgents 
-            projectId={projectId} 
+          <ProjectAIAgents
+            projectId={projectId}
             canManage={
-              project.ownerId === currentUserId || 
-              role === 'owner' || 
+              project.ownerId === currentUserId ||
+              role === 'owner' ||
               role === 'admin'
             }
           />

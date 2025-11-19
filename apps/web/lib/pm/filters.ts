@@ -38,15 +38,15 @@ export function parseProjectFilters(searchParams: URLSearchParams): ProjectListF
       : undefined;
 
   return {
-    status: status || undefined,
-    ownerId,
-    memberId,
-    q,
     page,
     pageSize,
     sortBy,
     sortOrder,
-    scope
+    ...(status ? { status } : {}),
+    ...(ownerId ? { ownerId } : {}),
+    ...(memberId ? { memberId } : {}),
+    ...(q ? { q } : {}),
+    ...(scope ? { scope } : {})
   };
 }
 

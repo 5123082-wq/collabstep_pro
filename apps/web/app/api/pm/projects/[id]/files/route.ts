@@ -160,16 +160,18 @@ export async function GET(
         sizeBytes: file.sizeBytes,
         uploadedAt: file.uploadedAt,
         uploaderId: file.uploaderId,
-        uploader: uploader
+        ...(uploader
           ? {
-              id: uploader.id,
-              name: uploader.name,
-              email: uploader.email
+              uploader: {
+                id: uploader.id,
+                name: uploader.name,
+                email: uploader.email
+              }
             }
-          : undefined,
+          : {}),
         source,
-        sourceEntityId,
-        sourceEntityTitle,
+        ...(sourceEntityId ? { sourceEntityId } : {}),
+        ...(sourceEntityTitle ? { sourceEntityTitle } : {}),
         url: file.storageUrl
       });
     });

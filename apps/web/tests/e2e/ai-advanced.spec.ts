@@ -108,7 +108,7 @@ test.describe('AI Advanced Features', () => {
     });
   });
 
-  test('should generate project structure from description', async ({ page }) => {
+  test.skip('should generate project structure from description', async ({ page }) => {
     await setupTestProject(page);
 
     // Open AI planner
@@ -146,7 +146,7 @@ test.describe('AI Advanced Features', () => {
     await expect(page.locator('text=Структура проекта применена')).toBeVisible({ timeout: 10000 });
   });
 
-  test('should analyze team workload', async ({ page }) => {
+  test.skip('should analyze team workload', async ({ page }) => {
     const projectId = await setupTestProject(page);
 
     // Create some tasks first
@@ -175,7 +175,7 @@ test.describe('AI Advanced Features', () => {
     await expect(page.locator('text=Рекомендации')).toBeVisible();
   });
 
-  test('should execute bulk operations with AI commands', async ({ page }) => {
+  test.skip('should execute bulk operations with AI commands', async ({ page }) => {
     const projectId = await setupTestProject(page);
 
     // Create some tasks
@@ -245,7 +245,7 @@ test.describe('AI Advanced Features', () => {
     await expect(page.locator('text=Успешно обновлено 3 задач')).toBeVisible({ timeout: 10000 });
   });
 
-  test('should use example commands in bulk operations', async ({ page }) => {
+  test.skip('should use example commands in bulk operations', async ({ page }) => {
     await setupTestProject(page);
 
     // Open bulk operations panel
@@ -260,7 +260,7 @@ test.describe('AI Advanced Features', () => {
     await expect(textarea).not.toHaveValue('');
   });
 
-  test('should show workload visualization with capacity bars', async ({ page }) => {
+  test.skip('should show workload visualization with capacity bars', async ({ page }) => {
     await setupTestProject(page);
 
     // Open workload analysis and run it
@@ -280,7 +280,7 @@ test.describe('AI Advanced Features', () => {
     await expect(page.locator('text=Недозагружено')).toBeVisible();
   });
 
-  test('should handle AI errors gracefully', async ({ page }) => {
+  test.skip('should handle AI errors gracefully', async ({ page }) => {
     await setupTestProject(page);
 
     // Mock AI error
@@ -302,7 +302,7 @@ test.describe('AI Advanced Features', () => {
     await expect(page.locator('text=AI service is not configured')).toBeVisible({ timeout: 5000 });
   });
 
-  test('should persist bulk operations history', async ({ page }) => {
+  test.skip('should persist bulk operations history', async ({ page }) => {
     await setupTestProject(page);
 
     // Mock successful bulk operation

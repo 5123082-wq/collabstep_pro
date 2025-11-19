@@ -9,7 +9,7 @@ const SECTION_CONFIG = {
   specialists: {
     render: () => {
       // TODO: Подключить к реальному API специалистов
-      const items: Array<{ id: string; name: string; role: string; skills: string[]; handle: string }> = [];
+      const items: any[] = [];
       const error: string | null = null;
       return (
         <div className="space-y-6">
@@ -39,7 +39,7 @@ const SECTION_CONFIG = {
   vacancies: {
     render: () => {
       // TODO: Подключить к реальному API вакансий
-      const items: Array<{ id: string; title: string; project: string; summary: string; tags: string[]; level: string }> = [];
+      const items: any[] = [];
       const error: string | null = null;
       return (
         <div className="space-y-6">

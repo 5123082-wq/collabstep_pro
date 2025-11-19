@@ -1,18 +1,18 @@
 import { test, expect } from '@playwright/test';
+import { loginAsDemo } from './utils/auth';
+
+const appOrigin = 'http://127.0.0.1:3000';
 
 test.describe('PM Integrations', () => {
   test.beforeEach(async ({ page }) => {
-    // Авторизация
-    await page.goto('/login');
-    await page.fill('input[type="email"]', 'admin.demo@collabverse.test');
-    await page.fill('input[type="password"]', 'demo');
-    await page.click('button[type="submit"]');
-    await page.waitForURL('/pm/projects');
+    // Авторизация через демо-логин
+    await loginAsDemo(page, 'admin', appOrigin);
+    await page.goto(`${appOrigin}/pm/projects`);
   });
 
   test('should create expense from project quick actions', async ({ page }) => {
     // Переходим на страницу проекта
-    await page.goto('/pm/projects');
+    await page.goto(`${appOrigin}/pm/projects`);
     await page.waitForSelector('a[href*="/pm/projects/"]');
     
     // Находим первый проект и переходим на его страницу
@@ -22,7 +22,7 @@ test.describe('PM Integrations', () => {
       throw new Error('Project link not found');
     }
     
-    await page.goto(projectHref);
+    await page.goto(`${appOrigin}${projectHref}`);
     await page.waitForSelector('button:has-text("Создать трату")');
 
     // Нажимаем кнопку создания траты
@@ -56,7 +56,7 @@ test.describe('PM Integrations', () => {
       throw new Error('Project link not found');
     }
     
-    await page.goto(projectHref);
+    await page.goto(`${appOrigin}${projectHref}`);
     await page.waitForSelector('button:has-text("Выставить в маркетплейс")');
 
     // Нажимаем кнопку публикации в маркетплейс
@@ -85,7 +85,7 @@ test.describe('PM Integrations', () => {
     }
     
     const projectId = projectHref.split('/').pop();
-    await page.goto(projectHref);
+    await page.goto(`${appOrigin}${projectHref}`);
     await page.waitForSelector('a[href*="/app/marketing/overview"]');
 
     // Нажимаем ссылку на маркетинг
@@ -112,7 +112,7 @@ test.describe('PM Integrations', () => {
       throw new Error('Project link not found');
     }
     
-    await page.goto(projectHref);
+    await page.goto(`${appOrigin}${projectHref}`);
     
     // Проверяем наличие BudgetBanner (может быть не виден, если лимит не превышен)
     const budgetBanner = page.locator('text=Превышен лимит бюджета, text=Приближение к лимиту бюджета');
@@ -133,7 +133,7 @@ test.describe('PM Integrations', () => {
       throw new Error('Project link not found');
     }
     
-    await page.goto(projectHref);
+    await page.goto(`${appOrigin}${projectHref}`);
     
     // Проверяем, есть ли кнопка изменения лимита (только если есть BudgetBanner)
     const updateLimitButton = page.locator('button:has-text("Изменить лимит")');
@@ -165,7 +165,7 @@ test.describe('PM Integrations', () => {
       throw new Error('Project link not found');
     }
     
-    await page.goto(projectHref);
+    await page.goto(`${appOrigin}${projectHref}`);
     await page.waitForSelector('button:has-text("Выставить в маркетплейс")');
 
     // Пытаемся создать листинг первый раз
@@ -174,7 +174,7 @@ test.describe('PM Integrations', () => {
     
     // Если редирект произошёл, возвращаемся на страницу проекта
     if (page.url().includes('/market/')) {
-      await page.goto(projectHref);
+      await page.goto(`${appOrigin}${projectHref}`);
       await page.waitForSelector('button:has-text("Выставить в маркетплейс")');
       
       // Пытаемся создать листинг повторно
@@ -201,7 +201,7 @@ test.describe('PM Integrations', () => {
       throw new Error('Project link not found');
     }
     
-    await page.goto(projectHref);
+    await page.goto(`${appOrigin}${projectHref}`);
     
     // Ищем компонент LimitsLog
     const limitsLog = page.locator('text=Журнал лимитов');
@@ -236,7 +236,7 @@ test.describe('PM Integrations', () => {
       throw new Error('Project link not found');
     }
     
-    await page.goto(projectHref);
+    await page.goto(`${appOrigin}${projectHref}`);
     
     // Ищем компонент LimitsLog
     const limitsLog = page.locator('text=Журнал лимитов');
@@ -269,7 +269,7 @@ test.describe('PM Integrations', () => {
       throw new Error('Project link not found');
     }
     
-    await page.goto(projectHref);
+    await page.goto(`${appOrigin}${projectHref}`);
     await page.waitForSelector('button:has-text("Создать трату")');
 
     // Нажимаем кнопку создания траты
@@ -299,7 +299,7 @@ test.describe('PM Integrations', () => {
       throw new Error('Project link not found');
     }
     
-    await page.goto(projectHref);
+    await page.goto(`${appOrigin}${projectHref}`);
     
     // Ищем кнопку настроек бюджета
     const budgetSettingsButton = page.locator('button:has-text("Настройки бюджета")');
@@ -338,7 +338,7 @@ test.describe('PM Integrations', () => {
       throw new Error('Project link not found');
     }
     
-    await page.goto(projectHref);
+    await page.goto(`${appOrigin}${projectHref}`);
     
     // Сначала настраиваем бюджет с небольшим лимитом
     const budgetSettingsButton = page.locator('button:has-text("Настройки бюджета")');
@@ -386,7 +386,7 @@ test.describe('PM Integrations', () => {
       throw new Error('Project link not found');
     }
     
-    await page.goto(projectHref);
+    await page.goto(`${appOrigin}${projectHref}`);
     
     // Ищем компонент AutomationsLog
     const automationsLog = page.locator('text=Журнал автоматизаций');

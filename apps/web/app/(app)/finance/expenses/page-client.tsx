@@ -297,6 +297,7 @@ export default function FinanceExpensesPageClient({
     }
     void loadExpenses();
     return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryKey]);
 
   const updateQuery = useCallback(

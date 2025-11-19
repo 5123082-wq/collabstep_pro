@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 // @ts-ignore
-import { Check, Clock, Copy, Mail, MoreHorizontal, Shield, Trash2, UserPlus, Users, X } from 'lucide-react';
+import { Check, Clock, Copy, Users } from 'lucide-react';
 import { type Project, type ProjectMember } from '@/types/pm';
 import { trackEvent } from '@/lib/telemetry';
 import { toast } from '@/lib/ui/toast';

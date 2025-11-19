@@ -20,6 +20,7 @@ export function extractAgentMentions(text: string): AgentMention[] {
   let match;
 
   while ((match = regex.exec(text)) !== null) {
+    if (!match[1]) continue;
     const agentType = match[1].toLowerCase();
     const agent = aiAgentsRepository.list().find((a) => a.agentType === agentType);
     if (agent) {
@@ -41,7 +42,7 @@ export function selectAgentResponse(agent: AIAgent, context?: string): string {
   // Простой случайный выбор шаблона
   // В будущем можно улучшить логику на основе контекста
   const randomIndex = Math.floor(Math.random() * agent.responseTemplates.length);
-  return agent.responseTemplates[randomIndex];
+  return agent.responseTemplates[randomIndex] ?? 'Принял к сведению.';
 }
 
 /**

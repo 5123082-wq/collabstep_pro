@@ -55,7 +55,7 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
   const now = Date.now();
   const overdue = accessibleTasks.filter((task) => {
     if (task.status === 'done') return false;
-    const dueAt = task.dueAt ?? task.dueDate;
+    const dueAt = task.dueAt;
     if (!dueAt) return false;
     const dueTime = new Date(dueAt).getTime();
     return !Number.isNaN(dueTime) && dueTime < now;
@@ -64,7 +64,7 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
   // Count user's overdue tasks
   const myOverdue = accessibleTasks.filter((task) => {
     if (task.status === 'done' || task.assigneeId !== currentUserId) return false;
-    const dueAt = task.dueAt ?? task.dueDate;
+    const dueAt = task.dueAt;
     if (!dueAt) return false;
     const dueTime = new Date(dueAt).getTime();
     return !Number.isNaN(dueTime) && dueTime < now;
@@ -75,7 +75,7 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
   const upcomingDeadlines = accessibleTasks
     .filter((task) => {
       if (task.status === 'done') return false;
-      const dueAt = task.dueAt ?? task.dueDate;
+      const dueAt = task.dueAt;
       if (!dueAt) return false;
       const dueTime = new Date(dueAt).getTime();
       return (
@@ -91,7 +91,7 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
         title: task.title,
         projectId: task.projectId,
         projectKey: project?.key ?? 'UNK',
-        dueAt: (task.dueAt ?? task.dueDate) as string,
+        dueAt: task.dueAt as string,
         status: task.status,
         assigneeId: task.assigneeId
       };
@@ -114,7 +114,10 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
   const dates: string[] = [];
   for (let i = 30; i >= 0; i--) {
     const date = new Date(now - i * 24 * 60 * 60 * 1000);
-    dates.push(date.toISOString().split('T')[0]);
+    const dateStr = date.toISOString().split('T')[0];
+    if (dateStr) {
+      dates.push(dateStr);
+    }
   }
 
   // Calculate burnup (total tasks and completed tasks over time)
@@ -206,8 +209,8 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
         projectKey: project.key,
         projectTitle: project.title,
         spent: spent.toString(),
-        limit: limit > 0 ? limit.toString() : undefined,
-        remaining: remaining > 0 ? remaining.toString() : undefined,
+        ...(limit > 0 ? { limit: limit.toString() } : {}),
+        ...(remaining > 0 ? { remaining: remaining.toString() } : {}),
         currency: 'RUB', // Default currency
         categories: []
       });

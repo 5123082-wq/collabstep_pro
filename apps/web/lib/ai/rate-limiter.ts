@@ -75,6 +75,9 @@ export function checkRateLimit(userId: string, endpoint?: string): {
   // Проверка минимального интервала между запросами
   if (userEntries.length > 0) {
     const lastRequest = userEntries[userEntries.length - 1];
+    if (!lastRequest) {
+      return { allowed: true };
+    }
     const timeSinceLastRequest = now - lastRequest.timestamp;
     
     if (timeSinceLastRequest < RATE_LIMITS.MIN_INTERVAL_MS) {
@@ -91,6 +94,9 @@ export function checkRateLimit(userId: string, endpoint?: string): {
   if (userEntries.length >= RATE_LIMITS.PER_USER_PER_HOUR) {
     // Находим самую старую запись, чтобы определить когда лимит обновится
     const oldestEntry = userEntries[0];
+    if (!oldestEntry) {
+      return { allowed: true };
+    }
     const retryAfter = Math.ceil((oldestEntry.timestamp + 60 * 60 * 1000 - now) / 1000);
     
     return {
@@ -106,6 +112,9 @@ export function checkRateLimit(userId: string, endpoint?: string): {
     
     if (endpointEntries.length >= RATE_LIMITS.PER_ENDPOINT_PER_USER_HOUR) {
       const oldestEndpointEntry = endpointEntries[0];
+      if (!oldestEndpointEntry) {
+        return { allowed: true };
+      }
       const retryAfter = Math.ceil((oldestEndpointEntry.timestamp + 60 * 60 * 1000 - now) / 1000);
       
       return {

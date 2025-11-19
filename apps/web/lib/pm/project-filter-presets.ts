@@ -79,6 +79,9 @@ export function updateProjectFilterPreset(
     return null;
   }
   const current = presets[index];
+  if (!current) {
+    return null;
+  }
   const updated: ProjectFilterPreset = {
     ...current,
     ...updates,

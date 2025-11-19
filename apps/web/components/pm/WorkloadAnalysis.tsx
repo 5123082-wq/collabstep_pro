@@ -9,7 +9,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/lib/ui/toast';
 import { cn } from '@/lib/utils';
@@ -57,13 +57,7 @@ export default function WorkloadAnalysis({
   const [loading, setLoading] = useState(false);
   const [redistributing, setRedistributing] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (autoLoad) {
-      void handleAnalyze();
-    }
-  }, [projectId, autoLoad, handleAnalyze]);
-
-  const handleAnalyze = async () => {
+  const handleAnalyze = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch('/api/ai/analyze-workload', {
@@ -82,11 +76,17 @@ export default function WorkloadAnalysis({
       toast('Анализ загруженности завершён', 'success');
     } catch (error) {
       console.error('Error analyzing workload:', error);
-      toast(error instanceof Error ? error.message : 'Ошибка анализа загруженности', 'error');
+      toast(error instanceof Error ? error.message : 'Ошибка анализа загруженности', 'warning');
     } finally {
       setLoading(false);
     }
-  };
+  }, [projectId]);
+
+  useEffect(() => {
+    if (autoLoad) {
+      void handleAnalyze();
+    }
+  }, [autoLoad, handleAnalyze]);
 
   const handleRedistribute = async (suggestion: RedistributionSuggestion) => {
     setRedistributing(suggestion.taskId);
@@ -113,7 +113,7 @@ export default function WorkloadAnalysis({
       await handleAnalyze();
     } catch (error) {
       console.error('Error redistributing task:', error);
-      toast(error instanceof Error ? error.message : 'Ошибка перераспределения задачи', 'error');
+      toast(error instanceof Error ? error.message : 'Ошибка перераспределения задачи', 'warning');
     } finally {
       setRedistributing(null);
     }

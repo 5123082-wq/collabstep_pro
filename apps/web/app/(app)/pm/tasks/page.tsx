@@ -123,10 +123,10 @@ export default function PMTasksPage() {
     if (cacheKey === prevCacheKeyRef.current) {
       return;
     }
-    
+
     // Обновляем предыдущий ключ
     prevCacheKeyRef.current = cacheKey;
-    
+
     // Проверяем кэш перед загрузкой
     const cached = cacheRef.current.get(cacheKey);
     if (cached) {
@@ -155,7 +155,7 @@ export default function PMTasksPage() {
         const responseData = await response.json();
         // jsonOk возвращает { ok: true, data: ... }
         const data = responseData.ok ? responseData.data : responseData;
-        
+
         if (cancelled) return;
 
         const cacheData: TasksCacheData = {
@@ -200,12 +200,12 @@ export default function PMTasksPage() {
     // Подписка на WebSocket события для real-time обновлений (если включен)
     if (currentUserId && wsClient.isWebSocketEnabled()) {
       wsClient.connect(currentUserId);
-      
+
       // Подписываемся на события задач
       const unsubscribeTaskCreated = wsClient.onEventType('task.created', () => {
         handleTaskEvent();
       });
-      
+
       const unsubscribeTaskUpdated = wsClient.onEventType('task.updated', () => {
         handleTaskEvent();
       });
@@ -240,10 +240,10 @@ export default function PMTasksPage() {
         return;
       }
       trackEvent('pm_filter_applied', { filter: 'scope', scope });
+      const { projectId, ...restFilters } = urlFilters;
       const nextFilters: TaskListFilters = {
-        ...urlFilters,
+        ...restFilters,
         scope,
-        projectId: undefined,
         page: 1
       };
       const params = buildTaskFilterParams(nextFilters);
@@ -265,7 +265,7 @@ export default function PMTasksPage() {
       });
       const nextFilters: TaskListFilters = {
         ...urlFilters,
-        projectId,
+        ...(projectId ? { projectId } : {}),
         scope: nextScope,
         page: 1
       };

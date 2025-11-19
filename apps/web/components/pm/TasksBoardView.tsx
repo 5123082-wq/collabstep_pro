@@ -204,7 +204,11 @@ function StatusColumn({ status, tasks, isOver, onOpenDetail }: StatusColumnProps
       </div>
       <div className="flex-1 space-y-2">
         {tasks.map((task) => (
-          <TaskCard key={task.id} task={task} onOpenDetail={onOpenDetail} />
+          <TaskCard 
+            key={task.id} 
+            task={task} 
+            {...(onOpenDetail && { onOpenDetail })}
+          />
         ))}
         {tasks.length === 0 && (
           <div className="py-8 text-center text-sm text-neutral-500">Нет задач</div>
@@ -348,7 +352,7 @@ export default function TasksBoardView({ tasks, loading, filters, onTaskClick }:
       <div className="min-w-0 max-w-full">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 items-start">
           {DEFAULT_STATUSES.map((status) => (
-            <StatusColumn key={status} status={status} tasks={tasksByStatus[status]} onOpenDetail={onTaskClick} />
+            <StatusColumn key={status} status={status} tasks={tasksByStatus[status]} {...(onTaskClick && { onOpenDetail: onTaskClick })} />
           ))}
         </div>
       </div>

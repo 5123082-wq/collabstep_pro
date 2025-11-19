@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   if (body.userId) {
     const userProjects = projectsRepository.list().filter(p => p.ownerId === body.userId);
     const projectIds = userProjects.map(p => p.id);
-    
+
     // Get all task IDs BEFORE deleting projects
     const deletedTaskIds = new Set<string>();
     for (const project of userProjects) {
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       deletedTasks += projectTasks.length;
       projectTasks.forEach(t => deletedTaskIds.add(t.id));
     }
-    
+
     // Now delete projects (will cascade delete tasks)
     for (const project of userProjects) {
       const deleted = projectsRepository.delete(project.id);
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
 
       // Clean up task dependencies
       memory.TASK_DEPENDENCIES = memory.TASK_DEPENDENCIES.filter(
-        dep => !deletedTaskIds.has(dep.taskId) && !deletedTaskIds.has(dep.dependsOnTaskId)
+        dep => !deletedTaskIds.has(dep.dependentTaskId) && !deletedTaskIds.has(dep.blockerTaskId)
       );
 
       // Clean up project members
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
 
       // Clean up notifications related to deleted projects
       memory.NOTIFICATIONS = memory.NOTIFICATIONS.filter(
-        n => !n.metadata?.projectId || !projectIds.includes(n.metadata.projectId)
+        n => !n.projectId || !projectIds.includes(n.projectId)
       );
 
       // Clean up chat messages
@@ -98,12 +98,12 @@ export async function POST(req: NextRequest) {
   } else {
     // Delete all projects and tasks
     const allProjects = projectsRepository.list();
-    
+
     for (const project of allProjects) {
       // Count tasks for this project
       const projectTasks = tasksRepository.list({ projectId: project.id });
       deletedTasks += projectTasks.length;
-      
+
       // Delete project (will cascade delete tasks)
       const deleted = projectsRepository.delete(project.id);
       if (deleted) {
@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
     memory.EXPENSES = [];
     memory.EXPENSE_ATTACHMENTS = [];
     memory.PROJECT_BUDGETS = [];
-    memory.NOTIFICATIONS = memory.NOTIFICATIONS.filter(n => n.type !== 'task_assigned' && n.type !== 'project_update');
+    memory.NOTIFICATIONS = memory.NOTIFICATIONS.filter(n => n.type !== 'task_assigned');
     memory.PROJECT_CHAT_MESSAGES = [];
   }
 

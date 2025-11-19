@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { type Project } from '@/types/pm';
-import { Download, Filter, Zap } from 'lucide-react';
+import { ExternalLink, Filter, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ContentBlock } from '@/components/ui/content-block';
 
@@ -164,7 +164,7 @@ export default function AutomationsLog({ project }: AutomationsLogProps) {
             disabled={filteredEvents.length === 0}
             className="inline-flex items-center gap-1.5 rounded-lg bg-neutral-800/50 px-3 py-1.5 text-xs font-medium text-neutral-400 transition hover:bg-neutral-800 disabled:opacity-50"
           >
-            <Download className="h-3.5 w-3.5" />
+            <ExternalLink className="h-3.5 w-3.5" />
             Экспорт CSV
           </button>
         </div>

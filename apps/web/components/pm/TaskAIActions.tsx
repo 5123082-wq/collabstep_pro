@@ -159,7 +159,7 @@ export default function TaskAIActions({
           <Button
             onClick={handleGenerateDescription}
             disabled={isAnyActionInProgress}
-            variant="outline"
+            variant="secondary"
             size="sm"
           >
             <Sparkles className="h-4 w-4 mr-2" />
@@ -169,7 +169,7 @@ export default function TaskAIActions({
           <Button
             onClick={handleSummarizeComments}
             disabled={isAnyActionInProgress}
-            variant="outline"
+            variant="secondary"
             size="sm"
           >
             <MessageSquare className="h-4 w-4 mr-2" />

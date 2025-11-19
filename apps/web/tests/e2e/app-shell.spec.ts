@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { captureConsole } from './utils/console';
 import { loginAsDemo } from './utils/auth';
 
-const appOrigin = 'http://localhost:3000';
+const appOrigin = 'http://127.0.0.1:3000';
 
 test.describe('app shell', () => {
   test.beforeEach(async ({ page }) => {

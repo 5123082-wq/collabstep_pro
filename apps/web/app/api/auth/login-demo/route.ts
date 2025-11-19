@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { encodeDemoSession, getDemoAccount, isDemoAuthEnabled, parseDemoRole, type DemoRole } from '@/lib/auth/demo-session';
 import { withSessionCookie } from '@/lib/auth/session-cookie';
+import { usersRepository } from '@collabverse/api';
 
 type DemoLoginResponse = NextResponse<unknown>;
 
@@ -44,7 +45,11 @@ export async function POST(request: NextRequest): Promise<DemoLoginResponse> {
 
   const account = getDemoAccount(role);
 
-  const sessionToken = encodeDemoSession({ email: account.email, role, issuedAt: Date.now() });
+  // Получаем userId из репозитория пользователей
+  const user = usersRepository.findByEmail(account.email);
+  const userId = user?.id || account.email; // Fallback на email для обратной совместимости
+
+  const sessionToken = encodeDemoSession({ email: account.email, userId, role, issuedAt: Date.now() });
   const response = NextResponse.redirect(new URL('/dashboard', request.url), { status: 303 });
   return withSessionCookie(response, sessionToken);
 }

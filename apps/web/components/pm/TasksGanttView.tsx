@@ -91,10 +91,16 @@ export default function TasksGanttView({ projectId, tasks }: TasksGanttViewProps
       return { start: new Date(), end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) };
     }
 
-    let minDate = new Date(filteredTasks[0].start_date);
-    let maxDate = new Date(filteredTasks[0].end_date);
+    const firstTask = filteredTasks[0];
+    if (!firstTask || !firstTask.start_date || !firstTask.end_date) {
+      return { start: new Date(), end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) };
+    }
+
+    let minDate = new Date(firstTask.start_date);
+    let maxDate = new Date(firstTask.end_date);
 
     for (const task of filteredTasks) {
+      if (!task.start_date || !task.end_date) continue;
       const start = new Date(task.start_date);
       const end = new Date(task.end_date);
       if (start < minDate) minDate = start;
@@ -165,6 +171,9 @@ export default function TasksGanttView({ projectId, tasks }: TasksGanttViewProps
       setGanttTasks((prev) =>
         prev.map((t) => {
           if (t.id === draggedTaskId) {
+            if (!t.start_date || !t.end_date) {
+              return t;
+            }
             const duration = (new Date(t.end_date).getTime() - new Date(t.start_date).getTime()) / (1000 * 60 * 60 * 24);
             const newEndDate = new Date(newStartDate.getTime() + duration * 24 * 60 * 60 * 1000);
             
@@ -172,7 +181,7 @@ export default function TasksGanttView({ projectId, tasks }: TasksGanttViewProps
               ...t,
               start_date: newStartDate.toISOString().split('T')[0],
               end_date: newEndDate.toISOString().split('T')[0],
-            };
+            } as GanttTask;
           }
           return t;
         })

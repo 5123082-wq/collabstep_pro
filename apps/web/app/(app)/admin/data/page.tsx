@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Box, Trash2, RefreshCw, AlertTriangle } from 'lucide-react';
+// @ts-ignore
+import { FileText, Trash2, RefreshCw, AlertTriangle } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import { canAccessAdmin, getUserRoles } from '@/lib/auth/roles';
 import { ContentBlock } from '@/components/ui/content-block';
@@ -49,7 +50,7 @@ export default function AdminDataPage() {
       setStats(data);
     } catch (error) {
       console.error('Error loading stats:', error);
-      toast('Ошибка при загрузке статистики', 'error');
+      toast('Ошибка при загрузке статистики', 'warning');
     } finally {
       setLoading(false);
     }
@@ -62,7 +63,7 @@ export default function AdminDataPage() {
       toast('Недостаточно прав для доступа к админ-панели', 'warning');
       return;
     }
-    
+
     void loadStats();
   }, [loadStats, router]);
 
@@ -87,7 +88,7 @@ export default function AdminDataPage() {
       await loadStats();
     } catch (error) {
       console.error('Error clearing data:', error);
-      toast('Ошибка при удалении данных', 'error');
+      toast('Ошибка при удалении данных', 'warning');
     }
   }, [loadStats]);
 
@@ -112,7 +113,7 @@ export default function AdminDataPage() {
       await loadStats();
     } catch (error) {
       console.error('Error clearing user data:', error);
-      toast('Ошибка при удалении данных пользователя', 'error');
+      toast('Ошибка при удалении данных пользователя', 'warning');
     }
   }, [loadStats]);
 
@@ -155,7 +156,7 @@ export default function AdminDataPage() {
                 <p className="text-sm text-neutral-400">Всего проектов</p>
                 <p className="text-3xl font-semibold text-neutral-50">{stats.summary.totalProjects}</p>
               </div>
-              <Box className="h-8 w-8 text-blue-400" />
+              <FileText className="h-8 w-8 text-blue-400" />
             </div>
           </ContentBlock>
 
@@ -165,7 +166,7 @@ export default function AdminDataPage() {
                 <p className="text-sm text-neutral-400">Всего задач</p>
                 <p className="text-3xl font-semibold text-neutral-50">{stats.summary.totalTasks}</p>
               </div>
-              <Box className="h-8 w-8 text-green-400" />
+              <FileText className="h-8 w-8 text-green-400" />
             </div>
           </ContentBlock>
 
@@ -175,7 +176,7 @@ export default function AdminDataPage() {
                 <p className="text-sm text-neutral-400">Пользователей</p>
                 <p className="text-3xl font-semibold text-neutral-50">{stats.summary.totalUsers}</p>
               </div>
-              <Box className="h-8 w-8 text-purple-400" />
+              <FileText className="h-8 w-8 text-purple-400" />
             </div>
           </ContentBlock>
         </div>
@@ -281,7 +282,7 @@ export default function AdminDataPage() {
       {/* Empty State */}
       {stats && stats.users.length === 0 && (
         <ContentBlock variant="dashed" className="text-center">
-          <Box className="h-12 w-12 text-neutral-600 mx-auto mb-4" />
+          <FileText className="h-12 w-12 text-neutral-600 mx-auto mb-4" />
           <p className="text-neutral-400">Нет данных для отображения</p>
           <p className="text-sm text-neutral-500 mt-1">Проекты и задачи отсутствуют в памяти системы</p>
         </ContentBlock>

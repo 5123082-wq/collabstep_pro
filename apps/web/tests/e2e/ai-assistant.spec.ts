@@ -40,7 +40,7 @@ test.describe('AI Assistant', () => {
     // TODO: Реализовать после интеграции в UI
   });
 
-  test('should show AI actions in task form', async ({ page }) => {
+  test.skip('should show AI actions in task form', async ({ page }) => {
     // TODO: Реализовать после интеграции в UI
   });
 });
@@ -50,15 +50,15 @@ test.describe('AI Agents', () => {
     await page.goto('/');
   });
 
-  test('should show available AI agents', async ({ page }) => {
+  test.skip('should show available AI agents', async ({ page }) => {
     // TODO: Реализовать после создания страницы управления агентами
   });
 
-  test('should add AI agent to project', async ({ page }) => {
+  test.skip('should add AI agent to project', async ({ page }) => {
     // TODO: Реализовать после интеграции в UI
   });
 
-  test('should respond to agent mention in chat', async ({ page }) => {
+  test.skip('should respond to agent mention in chat', async ({ page }) => {
     // TODO: Реализовать после интеграции в UI
   });
 });
@@ -70,7 +70,7 @@ test.describe('AI Rate Limiting', () => {
 });
 
 test.describe('AI Security', () => {
-  test('should reject malicious input', async ({ page }) => {
+  test.skip('should reject malicious input', async ({ page }) => {
     // TODO: Реализовать тест безопасности
   });
 

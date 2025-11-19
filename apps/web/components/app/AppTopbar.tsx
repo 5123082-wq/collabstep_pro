@@ -86,9 +86,6 @@ type AppTopbarProps = {
 export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings, profile, onLogout, isLoggingOut, createButtonRef }: AppTopbarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  // TODO: Подключить к реальному API специалистов и вакансий
-  const specialistItems: Array<{ id: string; name: string; role: string; skills: string[]; handle: string }> = [];
-  const vacancyItems: Array<{ id: string; title: string; project: string; summary: string; tags: string[]; level: string }> = [];
   const [searchValue, setSearchValue] = useState('');
   const [isSearchFocused, setSearchFocused] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState(0);
@@ -99,6 +96,10 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
   const hintId = `${listboxId}-hint`;
 
   const suggestions: QuickSuggestion[] = useMemo(() => {
+    // TODO: Подключить к реальному API специалистов и вакансий
+    const specialistItems: Array<{ id: string; name: string; role: string; skills: string[]; handle: string }> = [];
+    const vacancyItems: Array<{ id: string; title: string; project: string; summary: string; tags: string[]; level: string }> = [];
+    
     const trimmed = searchValue.trim();
     if (!trimmed) {
       return [];
@@ -155,7 +156,7 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
         }));
     }
     return [];
-  }, [searchValue, specialistItems, vacancyItems]);
+  }, [searchValue]);
 
   useEffect(() => {
     setActiveSuggestion(0);
