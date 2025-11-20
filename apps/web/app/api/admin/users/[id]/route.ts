@@ -4,6 +4,8 @@ import { adminService } from '@collabverse/api';
 import type { PlatformRole } from '@collabverse/api';
 import { getDemoSessionFromCookies } from '@/lib/auth/demo-session.server';
 
+export const dynamic = 'force-dynamic';
+
 const UserUpdateSchema = z
   .object({
     status: z.enum(['active', 'suspended', 'invited']).optional(),

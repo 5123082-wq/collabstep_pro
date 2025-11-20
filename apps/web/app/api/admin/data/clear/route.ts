@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { projectsRepository, tasksRepository, memory } from '@collabverse/api';
 import { getDemoSessionFromCookies } from '@/lib/auth/demo-session.server';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/admin/data/clear
  * Deletes all projects and tasks from memory

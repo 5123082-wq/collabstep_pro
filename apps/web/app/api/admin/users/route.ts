@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { adminService } from '@collabverse/api';
 import { getDemoSessionFromCookies } from '@/lib/auth/demo-session.server';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const session = getDemoSessionFromCookies();
