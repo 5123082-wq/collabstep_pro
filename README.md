@@ -32,53 +32,65 @@
 - **[Архитектура](docs/architecture/system-analysis.md)** — системный обзор
 
 ## Переменные окружения
-
-- `NAV_V1` — флаг навигации (off/on)
-- `APP_LOCALE` — локаль приложения (по умолчанию ru)
-- `FEATURE_PROJECTS_V1` — включает CRM «Проекты v1» (0/1)
-- `AUTH_DEV` — включает dev-авторизацию (on/off)
-- `DEMO_ADMIN_EMAIL`, `DEMO_ADMIN_PASSWORD` — реквизиты демо-админа
-- `DEMO_USER_EMAIL`, `DEMO_USER_PASSWORD` — реквизиты демо-пользователя
-- `FIN_EXPENSES_STORAGE` — выбирает драйвер хранилища расходов (`memory` или `db`). Значение по умолчанию в dev — `memory`, в staging/prod (`NODE_ENV` или `VERCEL_ENV`) — `db`. На Vercel задайте `FIN_EXPENSES_STORAGE=db` для окружений `staging` и `production`, а в `preview` оставьте `memory`, если не требуется реальная база.
-- `NEXT_PUBLIC_FEATURE_*` — флаги второго поколения для UI. По умолчанию включены `NEXT_PUBLIC_FEATURE_FINANCE_GLOBAL=1`, `NEXT_PUBLIC_FEATURE_PROJECTS_OVERVIEW=1` и `NEXT_PUBLIC_FEATURE_CREATE_WIZARD=1`; остальные (`NEXT_PUBLIC_FEATURE_PROJECT_DASHBOARD`, `NEXT_PUBLIC_FEATURE_TASKS_WORKSPACE`, `NEXT_PUBLIC_FEATURE_BUDGET_LIMITS`, `NEXT_PUBLIC_FEATURE_FINANCE_AUTOMATIONS`) стартуют в состоянии `0` и включаются по мере готовности.
-- `NEXT_PUBLIC_WS_URL` — URL WebSocket сервера (например, `http://localhost:8080`). Если не указан, WebSocket отключен и используется polling fallback.
-- `NEXT_PUBLIC_WS_ENABLED` — явное включение/отключение WebSocket (`true`/`false`, `1`/`0`, `on`/`off`). По умолчанию WebSocket включен, если указан `NEXT_PUBLIC_WS_URL`.
-- (опционально) `SKIP_VERCEL_BUILD=1` — отключает локальную симуляцию `vercel build` при отсутствии токена
-- На Vercel установите `NAV_V1=on`, `APP_LOCALE=ru`, `AUTH_DEV=on`, данные демо-аккаунтов и `FIN_EXPENSES_STORAGE` согласно окружению (`memory` для `preview`, `db` для `staging`/`production`).
-
-Пример `.env`:
-
-```env
-NAV_V1=on
-# WebSocket (опционально): если не указан NEXT_PUBLIC_WS_URL, используется polling fallback
-# NEXT_PUBLIC_WS_URL=http://localhost:8080
-# NEXT_PUBLIC_WS_ENABLED=true
-APP_LOCALE=ru
-FEATURE_PROJECTS_V1=1
-AUTH_DEV=on
-FIN_EXPENSES_STORAGE=memory
-DEMO_ADMIN_EMAIL=admin.demo@collabverse.test
-DEMO_ADMIN_PASSWORD=demo-admin
-DEMO_USER_EMAIL=user.demo@collabverse.test
-DEMO_USER_PASSWORD=demo-user
-```
-
-### Finance Storage
-
-Флаг `FIN_EXPENSES_STORAGE` определяет, использовать ли in-memory или DB-хранилище для расходов. По умолчанию dev-окружение остаётся на `memory`, а staging/prod (в том числе Vercel `VERCEL_ENV=staging|production`) переключаются на `db`. Для QA можно принудительно задать `FIN_EXPENSES_STORAGE=db`, чтобы проверить интеграцию с базой, либо оставить `memory`, чтобы воспроизвести in-memory режим.
-
-При инициализации выводится лог `console.info` вида `[ExpenseStoreFactory] selecting expense store` с выбранным драйвером; если зависимости для `db` недоступны, появляется `console.warn` о возврате к in-memory. Эти сообщения стоит отслеживать в телеметрии/логах окружения.
-
-На Vercel сборки `preview` остаются на `memory`, поэтому для прогонов, требующих БД, задайте `FIN_EXPENSES_STORAGE=db` вручную (например, через переменные окружения проекта или команду).
-
-## Dev-авторизация и демо-аккаунты
-
-- Быстрый вход доступен на `/login` кнопками «Войти демо-пользователем» и «Войти демо-админом» — данные берутся из переменных `DEMO_*`.
-- POST `/api/auth/login` проверяет e-mail и пароль демо-аккаунтов, при ошибке возвращает текст «Неверная почта или пароль».
-- POST `/api/auth/register` (при `AUTH_DEV=on`) создаёт dev-сессию `role=user` и перенаправляет на `/app/dashboard` с тостом «Регистрация успешна».
-- POST `/api/auth/logout` очищает cookie `cv_session` и возвращает на `/login`.
-- Защищённые маршруты `/app/*` и `/project/*` требуют cookie `cv_session`. При отсутствии сессии выполняется редирект на `/login` с тостом «Нужно войти в систему».
-- Раздел `/app/admin` доступен только администратору; не-админа перенаправляет на `/app/dashboard` с тостом «Недостаточно прав».
+ 
+ - `NAV_V1` — флаг навигации (off/on)
+ - `APP_LOCALE` — локаль приложения (по умолчанию ru)
+ - `FEATURE_PROJECTS_V1` — включает CRM «Проекты v1» (0/1)
+ - `AUTH_DEV` — включает dev-авторизацию (on/off)
+ - `AUTH_STORAGE` — хранилище пользователей (`memory` или `db`). Для работы с БД установите `db`.
+ - `DATABASE_URL` — строка подключения к PostgreSQL (Vercel Postgres).
+ - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` — ключи для Google OAuth.
+ - `AUTH_SECRET` — секретный ключ для NextAuth (сгенерировать: `openssl rand -base64 32`).
+ - `NEXTAUTH_URL` — URL приложения (например, `http://localhost:3000`).
+ - `DEMO_ADMIN_EMAIL`, `DEMO_ADMIN_PASSWORD` — реквизиты демо-админа
+ - `DEMO_USER_EMAIL`, `DEMO_USER_PASSWORD` — реквизиты демо-пользователя
+ - `FIN_EXPENSES_STORAGE` — выбирает драйвер хранилища расходов (`memory` или `db`).
+ - `NEXT_PUBLIC_FEATURE_*` — флаги второго поколения для UI.
+ - `NEXT_PUBLIC_WS_URL` — URL WebSocket сервера.
+ - `NEXT_PUBLIC_WS_ENABLED` — явное включение/отключение WebSocket.
+ 
+ Пример `.env`:
+ 
+ ```env
+ NAV_V1=on
+ APP_LOCALE=ru
+ FEATURE_PROJECTS_V1=1
+ AUTH_DEV=on
+ 
+ # Auth & Database
+ AUTH_STORAGE=db
+ DATABASE_URL=postgresql://...
+ GOOGLE_CLIENT_ID=...
+ GOOGLE_CLIENT_SECRET=...
+ AUTH_SECRET=...
+ NEXTAUTH_URL=http://localhost:3000
+ 
+ FIN_EXPENSES_STORAGE=memory
+ DEMO_ADMIN_EMAIL=admin.demo@collabverse.test
+ DEMO_ADMIN_PASSWORD=demo-admin
+ DEMO_USER_EMAIL=user.demo@collabverse.test
+ DEMO_USER_PASSWORD=demo-user
+ ```
+ 
+ ### Database & Migrations
+ 
+ Для работы с базой данных используются следующие команды:
+ 
+ - `pnpm --filter @collabverse/api db:generate` — генерация SQL миграций на основе схемы.
+ - `pnpm --filter @collabverse/api db:push` — применение миграций к базе данных (локально или Vercel Postgres).
+ 
+ ## Авторизация
+ 
+ Проект поддерживает гибридную систему авторизации:
+ 
+ 1. **Google OAuth** — основной способ входа для пользователей (требует настройки `GOOGLE_CLIENT_ID`/`SECRET`).
+ 2. **Email/Password** — вход по логину и паролю (хранятся в БД).
+ 3. **Демо-аккаунты** — для разработки и тестирования (работают через `AUTH_DEV=on`).
+ 
+ - Быстрый вход доступен на `/login` кнопками «Войти демо-пользователем» и «Войти демо-админом».
+ - Кнопка "Войти через Google" инициирует OAuth flow.
+ - Защищённые маршруты `/app/*` и `/admin/*` требуют авторизации (NextAuth сессия или демо-сессия).
+ - Раздел `/admin` доступен только пользователям с ролью `admin`.
 
 ## Этапы разработки
 

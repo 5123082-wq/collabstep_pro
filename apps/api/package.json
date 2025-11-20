@@ -8,12 +8,19 @@
     "./*": "./src/*"
   },
   "scripts": {
-    "dev:ws": "tsx src/websocket/server-runner.ts"
+    "dev:ws": "tsx src/websocket/server-runner.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push"
   },
   "dependencies": {
+    "@vercel/postgres": "^0.10.0",
+    "drizzle-orm": "^0.44.7",
+    "postgres": "^3.4.7",
     "socket.io": "^4.8.1"
   },
   "devDependencies": {
+    "@auth/core": "^0.34.3",
+    "drizzle-kit": "^0.31.7",
     "tsx": "^4.16.5"
   }
 }

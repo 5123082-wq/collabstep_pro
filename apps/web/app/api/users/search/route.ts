@@ -7,8 +7,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
   const query = (req.nextUrl.searchParams.get('q') ?? '').toLowerCase().trim();
-  const items = usersRepository
-    .list()
+  const allUsers = await usersRepository.list();
+  const items = allUsers
     .filter((user) => {
       if (!query) {
         return true;

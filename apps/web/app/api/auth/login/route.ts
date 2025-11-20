@@ -65,7 +65,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   // Инициализируем демо-аккаунты при первом использовании
-  ensureDemoAccountsInitialized();
+  await ensureDemoAccountsInitialized();
 
   const payload = await readPayload(request);
   const email = typeof payload.email === 'string' ? payload.email.trim() : '';
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   if (demoAccount) {
     // Получаем пользователя из БД для получения userId
-    const user = usersRepository.findByEmail(demoAccount.email);
+    const user = await usersRepository.findByEmail(demoAccount.email);
     const userId = user?.id || demoAccount.email; // Fallback на email для обратной совместимости
     const sessionToken = encodeDemoSession({ 
       email: demoAccount.email, 
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   // Затем проверяем пользователей из БД
-  const user = usersRepository.findByEmail(email);
+  const user = await usersRepository.findByEmail(email);
   if (user && user.passwordHash) {
     const isValidPassword = verifyPassword(password, user.passwordHash);
     if (isValidPassword) {

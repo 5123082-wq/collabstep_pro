@@ -1,4 +1,4 @@
-import { DEFAULT_WORKSPACE_USER_ID } from '../data/memory';
+import { DEFAULT_WORKSPACE_USER_ID, memory } from '../data/memory';
 import { projectsRepository } from '../repositories/projects-repository';
 import { tasksRepository } from '../repositories/tasks-repository';
 import { templatesRepository } from '../repositories/templates-repository';
@@ -81,10 +81,10 @@ export class ProjectCatalogService {
     }
 
     const currentUserId = options.currentUserId ?? DEFAULT_WORKSPACE_USER_ID;
-    const projects = projectsRepository.list({ 
-      archived: options.archived ?? null 
+    const projects = projectsRepository.list({
+      archived: options.archived ?? null
     });
-    
+
     return projects
       .filter((project) => {
         // For private projects, check if user has access
@@ -135,9 +135,9 @@ export class ProjectCatalogService {
           : 'all',
       types: Array.isArray(params.filters?.types)
         ? (params.filters.types.filter((item): item is ProjectType =>
-            typeof item === 'string' &&
-            ['product', 'marketing', 'operations', 'service', 'internal'].includes(item)
-          ) as ProjectType[])
+          typeof item === 'string' &&
+          ['product', 'marketing', 'operations', 'service', 'internal'].includes(item)
+        ) as ProjectType[])
         : []
     };
 
@@ -182,13 +182,13 @@ export class ProjectCatalogService {
     const membershipCache = new Map<string, ProjectCardMember[]>();
 
     const resolveUser = (userId: string): WorkspaceUser => {
-      return (
-        usersRepository.findById(userId) ?? {
-          id: userId,
-          name: userId,
-          email: userId
-        }
-      );
+      // Direct memory access for sync operation
+      const user = memory.WORKSPACE_USERS.find(u => u.id === userId);
+      return user ?? {
+        id: userId,
+        name: userId,
+        email: userId
+      };
     };
 
     const toMember = (userId: string, role: ProjectCardMember['role']): ProjectCardMember => {

@@ -102,9 +102,9 @@ export async function GET(
     // Группировка файлов по источникам
     const files: ProjectFile[] = [];
 
-    attachments.forEach((attachment) => {
+    for (const attachment of attachments) {
       const file = fileLookup.get(attachment.fileId);
-      if (!file) return;
+      if (!file) continue;
 
       let source: FileSource;
       let sourceEntityId: string | undefined;
@@ -148,10 +148,10 @@ export async function GET(
 
       // Применяем фильтр по источнику
       if (sourceFilter && source !== sourceFilter) {
-        return;
+        continue;
       }
 
-      const uploader = usersRepository.findById(file.uploaderId);
+      const uploader = await usersRepository.findById(file.uploaderId);
 
       files.push({
         id: file.id,
@@ -162,19 +162,19 @@ export async function GET(
         uploaderId: file.uploaderId,
         ...(uploader
           ? {
-              uploader: {
-                id: uploader.id,
-                name: uploader.name,
-                email: uploader.email
-              }
+            uploader: {
+              id: uploader.id,
+              name: uploader.name,
+              email: uploader.email
             }
+          }
           : {}),
         source,
         ...(sourceEntityId ? { sourceEntityId } : {}),
         ...(sourceEntityTitle ? { sourceEntityTitle } : {}),
         url: file.storageUrl
       });
-    });
+    }
 
     // Сортировка по дате загрузки (новые сначала)
     files.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
@@ -245,17 +245,17 @@ export async function POST(
     });
 
     // Получение информации об авторе
-    const uploader = usersRepository.findById(fileObject.uploaderId);
+    const uploader = await usersRepository.findById(fileObject.uploaderId);
 
     return jsonOk({
       file: {
         ...fileObject,
         uploader: uploader
           ? {
-              id: uploader.id,
-              name: uploader.name,
-              email: uploader.email
-            }
+            id: uploader.id,
+            name: uploader.name,
+            email: uploader.email
+          }
           : undefined,
         url: fileObject.storageUrl,
         source: 'project' as const

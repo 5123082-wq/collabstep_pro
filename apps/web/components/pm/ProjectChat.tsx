@@ -269,6 +269,7 @@ export default function ProjectChat({ projectId, currentUserId }: ProjectChatPro
               {message.author && (
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-500 text-sm font-medium text-white">
                   {message.author.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img src={message.author.avatarUrl} alt={message.author.name} className="h-full w-full rounded-full object-cover" />
                   ) : (
                     message.author.name.charAt(0).toUpperCase()

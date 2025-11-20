@@ -21,7 +21,8 @@ export {
   commentsRepository,
   type TaskCommentNode
 } from './repositories/comments-repository';
-export { UsersRepository, usersRepository } from './repositories/users-repository';
+export { usersRepository } from './repositories/users-repository';
+export type { UsersRepository } from './repositories/users-repository';
 export { WorkspacesRepository, workspacesRepository } from './repositories/workspaces-repository';
 export {
   ProjectCatalogService,
@@ -67,7 +68,8 @@ export {
 } from './stores/expense-store-factory';
 export { amountToCents, centsToAmount } from './utils/money';
 export { formatTaskKey, parseTaskKey } from './utils/task-key';
-export { hashPassword, verifyPassword } from './utils/password';
+// Password utilities are server-only and should be imported directly from './utils/password'
+// export { hashPassword, verifyPassword } from './utils/password';
 export {
   adminModulesRepository,
   AdminModulesRepository

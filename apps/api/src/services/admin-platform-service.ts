@@ -26,9 +26,9 @@ function toMap<T extends { id: ID }>(items: T[]): Map<ID, T> {
   return new Map(items.map((item) => [item.id, item]));
 }
 
-function computeModuleTree(): ModuleNodeView[] {
+async function computeModuleTree(): Promise<ModuleNodeView[]> {
   const tree = adminPlatformRepository.listModuleTree();
-  const users = usersRepository.list();
+  const users = await usersRepository.list();
   const userMap = toMap(users);
 
   const decorate = (nodes: PlatformModuleNode[], parentStatus: PlatformModuleStatus): ModuleNodeView[] =>
@@ -122,20 +122,20 @@ function syncControlTesterAssignments(userId: ID, testerAccess: ID[], actorId: I
   });
 }
 
-export function getAdminModuleTree(): ModuleNodeView[] {
+export async function getAdminModuleTree(): Promise<ModuleNodeView[]> {
   return computeModuleTree();
 }
 
-export function setModuleStatus(moduleId: ID, status: PlatformModuleStatus, actorId: ID): ModuleNodeView[] {
+export async function setModuleStatus(moduleId: ID, status: PlatformModuleStatus, actorId: ID): Promise<ModuleNodeView[]> {
   adminPlatformRepository.updateModuleStatus(moduleId, status, actorId);
   return computeModuleTree();
 }
 
-export function updateModuleDefaults(
+export async function updateModuleDefaults(
   moduleId: ID,
   values: { audience?: PlatformAudience; testers?: ID[]; summary?: string },
   actorId: ID
-): ModuleNodeView[] {
+): Promise<ModuleNodeView[]> {
   const updates: Partial<Pick<PlatformModuleNode, 'defaultAudience' | 'testers' | 'summary'>> = {};
   const audience = sanitizeAudience(values.audience);
   if (audience) {
@@ -154,11 +154,11 @@ export function updateModuleDefaults(
     syncModuleTestersWithControls(moduleId, updates.testers, actorId);
   }
 
-  return result ? computeModuleTree() : computeModuleTree();
+  return computeModuleTree();
 }
 
-export function listAdminUsers(): AdminUserView[] {
-  const users = usersRepository.list();
+export async function listAdminUsers(): Promise<AdminUserView[]> {
+  const users = await usersRepository.list();
   const controls = adminPlatformRepository.listUserControls();
   const modules = adminPlatformRepository.getFlatModules();
   const controlsMap = new Map<ID, PlatformUserControl>(controls.map((item) => [item.userId, item]));

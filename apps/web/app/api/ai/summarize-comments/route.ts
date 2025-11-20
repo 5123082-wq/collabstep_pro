@@ -63,8 +63,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Подготовка данных комментариев с информацией об авторах
-    const commentsWithAuthors = comments.map(comment => {
-      const author = usersRepository.findById(comment.authorId);
+    const commentsWithAuthors = await Promise.all(comments.map(async comment => {
+      const author = await usersRepository.findById(comment.authorId);
       return {
         id: comment.id,
         authorName: author?.name || 'Неизвестный пользователь',
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
           minute: '2-digit'
         })
       };
-    });
+    }));
 
     // Создаём адаптер для AI клиента
     const aiClient = {
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
           status: 503
         });
       }
-      
+
       if (error.message.includes('rate limit')) {
         return jsonError('AI_RATE_LIMIT', {
           status: 429

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { flags } from '@/lib/flags';
 import { getAuthFromRequest } from '@/lib/api/finance-access';
-import { 
-  projectsRepository, 
-  tasksRepository, 
+import {
+  projectsRepository,
+  tasksRepository,
   financeService,
   DEFAULT_WORKSPACE_ID,
   DEFAULT_WORKSPACE_USER_ID,
@@ -124,16 +124,16 @@ async function createTestProject(ownerId: string, projectTitle: string, projectD
 async function ensureTestProject(userId: string) {
   const allProjects = projectsRepository.list();
   const DEMO_USER_EMAIL = 'user.demo@collabverse.test';
-  
+
   // Проверяем, есть ли проект от администратора
   const hasAdminProject = allProjects.some(p => p.ownerId === DEFAULT_WORKSPACE_USER_ID || isAdminUserId(p.ownerId));
   // Проверяем, есть ли проект от демо пользователя
   const hasDemoUserProject = allProjects.some(p => p.ownerId === DEMO_USER_EMAIL);
-  
+
   // Если проектов нет и пользователь - администратор, создаем тестовый проект для админа
   if (!hasAdminProject && (isAdminUserId(userId) || isDemoAdminEmail(userId))) {
     console.log('[Auto-seed] Creating test project for admin user:', DEFAULT_WORKSPACE_USER_ID);
-    
+
     const adminProject = await createTestProject(
       DEFAULT_WORKSPACE_USER_ID,
       'Тестовый проект с задачами и тратами',
@@ -141,7 +141,7 @@ async function ensureTestProject(userId: string) {
     );
     console.log('[Auto-seed] Admin test project created:', adminProject.id);
   }
-  
+
   // Создаем проект для демо пользователя, если его нет
   if (!hasDemoUserProject && (isAdminUserId(userId) || isDemoAdminEmail(userId))) {
     console.log('[Auto-seed] Creating test project for demo user:', DEMO_USER_EMAIL);
@@ -164,8 +164,8 @@ export async function GET(request: NextRequest) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }
 
-  // Автоматическое создание тестовых проектов отключено
-  // await ensureTestProject(auth.userId);
+  // Автоматическое создание тестовых проектов
+  await ensureTestProject(auth.userId);
 
   const searchParams = request.nextUrl.searchParams;
   const parsedFilters = parseProjectFilters(searchParams);
@@ -230,7 +230,7 @@ export async function POST(request: Request) {
     const status = typeof body.status === 'string' ? body.status.toLowerCase() : 'draft';
     const workspaceId = body.workspaceId || DEFAULT_WORKSPACE_ID;
     console.log(`[Projects API POST] Creating project: title=${title}, ownerId=${auth.userId}, workspaceId=${workspaceId}, status=${status}, visibility=${visibility}`);
-    
+
     const project = projectsRepository.create({
       title,
       description: typeof body.description === 'string' ? body.description : undefined,

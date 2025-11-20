@@ -48,7 +48,7 @@ export function checkUpcomingDeadlines(daysThreshold = 3): TaskWithDeadline[] {
     // Дедлайн в пределах порога или уже просрочен
     if (timeUntilDeadline <= thresholdMs && timeUntilDeadline >= -24 * 60 * 60 * 1000) {
       const daysUntilDeadline = Math.ceil(timeUntilDeadline / (24 * 60 * 60 * 1000));
-      
+
       upcomingTasks.push({
         id: task.id,
         title: task.title,
@@ -80,8 +80,8 @@ export async function sendDeadlineReminders(useAI = true): Promise<number> {
 
       if (useAI) {
         // Генерация персонализированного напоминания через AI
-        const assignee = task.assigneeId 
-          ? usersRepository.findById(task.assigneeId) 
+        const assignee = task.assigneeId
+          ? await usersRepository.findById(task.assigneeId)
           : null;
 
         const aiClient = {

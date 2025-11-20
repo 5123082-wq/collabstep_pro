@@ -307,7 +307,7 @@ export default function CreateMenu({ open, onClose, triggerRef }: CreateMenuProp
                 }}
                 type="button"
                 role="menuitem"
-                aria-selected={activeIndex === index}
+                aria-current={activeIndex === index ? 'true' : undefined}
                 onClick={() => handleAction(action)}
                 onMouseEnter={() => setActiveIndex(index)}
                 className={`flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 ${

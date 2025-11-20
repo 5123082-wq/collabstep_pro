@@ -9,7 +9,7 @@ export class AIAgentsRepository {
   /**
    * Инициализирует предустановленных AI-агентов при первом использовании
    */
-  private ensureInitialized(): void {
+  private async ensureInitialized(): Promise<void> {
     if (this.initialized) {
       return;
     }
@@ -88,10 +88,10 @@ export class AIAgentsRepository {
     ];
 
     for (const agentData of defaultAgents) {
-      const existing = usersRepository.findById(agentData.email);
-      if (!existing || !existing.isAI) {
+      const existing = await usersRepository.findById(agentData.email);
+      if (!existing || !(existing as any).isAI) {
         // Создаём пользователя-агента через usersRepository
-        const user = usersRepository.create({
+        const user = await usersRepository.create({
           id: agentData.email,
           name: agentData.name,
           email: agentData.email,
@@ -112,41 +112,48 @@ export class AIAgentsRepository {
     this.initialized = true;
   }
 
-  findById(id: string): AIAgent | null {
-    this.ensureInitialized();
-    const user = usersRepository.findById(id);
-    return user && user.isAI ? (user as AIAgent) : null;
+  async findById(id: string): Promise<AIAgent | null> {
+    await this.ensureInitialized();
+    const user = await usersRepository.findById(id);
+    return user && (user as any).isAI ? (user as AIAgent) : null;
   }
 
-  list(): AIAgent[] {
-    this.ensureInitialized();
-    return usersRepository
-      .list()
-      .filter((user) => user.isAI)
+  async list(): Promise<AIAgent[]> {
+    await this.ensureInitialized();
+    const allUsers = await usersRepository.list();
+    return allUsers
+      .filter((user) => (user as any).isAI)
       .map((user) => user as AIAgent);
   }
 
-  listByProject(projectId: string): AIAgent[] {
-    this.ensureInitialized();
+  async listByProject(projectId: string): Promise<AIAgent[]> {
+    await this.ensureInitialized();
     const members = projectsRepository.listMembers(projectId);
-    const agentIds = members
-      .filter((m) => {
-        const user = usersRepository.findById(m.userId);
-        return user?.isAI;
-      })
-      .map((m) => m.userId);
+    const agentIds: string[] = [];
+    for (const m of members) {
+      const user = await usersRepository.findById(m.userId);
+      if (user && (user as any).isAI) {
+        agentIds.push(m.userId);
+      }
+    }
 
-    return agentIds
-      .map((id) => this.findById(id))
-      .filter((agent): agent is AIAgent => agent !== null);
+    const agents: AIAgent[] = [];
+    for (const id of agentIds) {
+      const agent = await this.findById(id);
+      if (agent) {
+        agents.push(agent);
+      }
+    }
+    return agents;
   }
 
-  findByType(agentType: AIAgentType): AIAgent | null {
-    this.ensureInitialized();
-    return this.list().find((agent) => agent.agentType === agentType) || null;
+  async findByType(agentType: AIAgentType): Promise<AIAgent | null> {
+    await this.ensureInitialized();
+    const agents = await this.list();
+    return agents.find((agent) => agent.agentType === agentType) || null;
   }
 
-  update(agentId: string, updates: {
+  async update(agentId: string, updates: {
     name?: string;
     title?: string;
     responseTemplates?: string[];
@@ -154,8 +161,8 @@ export class AIAgentsRepository {
       autoRespond?: boolean;
       responseStyle?: 'short' | 'detailed';
     };
-  }): AIAgent | null {
-    this.ensureInitialized();
+  }): Promise<AIAgent | null> {
+    await this.ensureInitialized();
     const userInMemory = memory.WORKSPACE_USERS.find((u) => u.id === agentId);
     if (!userInMemory || !(userInMemory as any).isAI) {
       return null;

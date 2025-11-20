@@ -21,7 +21,7 @@ function isValidEmail(value: string): boolean {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   // Инициализируем демо-аккаунты при первом использовании
-  ensureDemoAccountsInitialized();
+  await ensureDemoAccountsInitialized();
 
   let payload: Record<string, unknown> = {};
   try {
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const emailLower = email.toLowerCase();
 
   // Проверяем, существует ли пользователь
-  const existingUser = usersRepository.findByEmail(emailLower);
+  const existingUser = await usersRepository.findByEmail(emailLower);
   if (existingUser) {
     // Если пользователь существует и у него есть пароль, проверяем его
     if (existingUser.passwordHash) {
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       // Пользователь существует, но без пароля (старый пользователь)
       // Обновляем его, добавляя пароль
       const passwordHash = hashPassword(password);
-      usersRepository.updatePassword(emailLower, passwordHash);
+      await usersRepository.updatePassword(emailLower, passwordHash);
       // Не создаем сессию - пользователь должен войти вручную
       return NextResponse.json({ redirect: '/login?toast=register-success' });
     }
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // Создаём нового пользователя с хэшированным паролем
   // Все новые пользователи получают роль 'user' (не admin)
   const passwordHash = hashPassword(password);
-  usersRepository.create({
+  await usersRepository.create({
     name,
     email: emailLower,
     passwordHash,
