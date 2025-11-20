@@ -21,7 +21,8 @@ export {
   commentsRepository,
   type TaskCommentNode
 } from './repositories/comments-repository';
-export { UsersRepository, usersRepository } from './repositories/users-repository';
+export { usersRepository } from './repositories/users-repository';
+export type { UsersRepository } from './repositories/users-repository';
 export { WorkspacesRepository, workspacesRepository } from './repositories/workspaces-repository';
 export {
   ProjectCatalogService,

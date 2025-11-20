@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { auth } from '@/lib/auth/config';
 
 type RedirectRule = {
   test: (pathname: string) => boolean;
@@ -34,22 +35,42 @@ const redirectRules: RedirectRule[] = [
   }
 ];
 
-export function middleware(request: NextRequest) {
-  const { pathname } = new URL(request.url);
-  
+export default auth((req) => {
+  const { pathname } = req.nextUrl;
+  const isLoggedIn = !!req.auth;
+
+  // Auth protection
+  const isAppRoute = pathname.startsWith('/app');
+  const isAdminRoute = pathname.startsWith('/admin');
+
+  if (isAppRoute && !isLoggedIn) {
+    return NextResponse.redirect(new URL('/login', req.url));
+  }
+
+  if (isAdminRoute) {
+    if (!isLoggedIn) {
+      return NextResponse.redirect(new URL('/login', req.url));
+    }
+    if (req.auth?.user?.role !== 'admin') {
+      return NextResponse.redirect(new URL('/app/dashboard', req.url));
+    }
+  }
+
+  // Existing redirects
   // Пропускаем /projects/create - это специальный маршрут, который не должен редиректиться
   if (pathname === '/projects/create') {
     return NextResponse.next();
   }
-  
+
   for (const rule of redirectRules) {
     if (rule.test(pathname)) {
-      return NextResponse.redirect(rule.buildTarget(request, pathname), 308);
+      return NextResponse.redirect(rule.buildTarget(req, pathname), 308);
     }
   }
+
   return NextResponse.next();
-}
+});
 
 export const config = {
-  matcher: ['/project/:path*', '/projects/:path*']
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)']
 };

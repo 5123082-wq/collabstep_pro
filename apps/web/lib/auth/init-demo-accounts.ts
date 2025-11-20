@@ -7,7 +7,7 @@ let initialized = false;
 /**
  * Инициализирует демо-аккаунты с хэшированными паролями при первом использовании
  */
-export function ensureDemoAccountsInitialized(): void {
+export async function ensureDemoAccountsInitialized(): Promise<void> {
   if (initialized) {
     return;
   }
@@ -17,13 +17,13 @@ export function ensureDemoAccountsInitialized(): void {
   const userAccount = getDemoAccount('user');
 
   // Инициализируем админ-аккаунт
-  const adminUser = usersRepository.findByEmail(adminAccount.email);
+  const adminUser = await usersRepository.findByEmail(adminAccount.email);
   if (adminUser && !adminUser.passwordHash) {
     // Обновляем существующего пользователя, добавляя пароль
-    usersRepository.updatePassword(adminAccount.email, hashPassword(adminAccount.password));
+    await usersRepository.updatePassword(adminAccount.email, hashPassword(adminAccount.password));
   } else if (!adminUser) {
     // Создаём нового пользователя с паролем (используем предсказуемый UUID для тестового администратора)
-    usersRepository.create({
+    await usersRepository.create({
       id: TEST_ADMIN_USER_ID,
       name: 'Алина Админ',
       email: adminAccount.email,
@@ -35,13 +35,13 @@ export function ensureDemoAccountsInitialized(): void {
   }
 
   // Инициализируем пользовательский аккаунт
-  const regularUser = usersRepository.findByEmail(userAccount.email);
+  const regularUser = await usersRepository.findByEmail(userAccount.email);
   if (regularUser && !regularUser.passwordHash) {
     // Обновляем существующего пользователя, добавляя пароль
-    usersRepository.updatePassword(userAccount.email, hashPassword(userAccount.password));
+    await usersRepository.updatePassword(userAccount.email, hashPassword(userAccount.password));
   } else if (!regularUser) {
     // Создаём нового пользователя с паролем (используем предсказуемый UUID для тестового пользователя)
-    usersRepository.create({
+    await usersRepository.create({
       id: TEST_USER_ID,
       name: 'Игорь Участник',
       email: userAccount.email,

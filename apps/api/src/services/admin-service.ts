@@ -347,12 +347,12 @@ export class AdminService {
     return this.getUser(userId)!;
   }
 
-  deleteUser(userId: string): boolean {
+  async deleteUser(userId: string): Promise<boolean> {
     // Удаляем из ADMIN_USER_CONTROLS
     const controlDeleted = adminUserControlsRepository.delete(userId);
     
     // Удаляем из WORKSPACE_USERS (может не существовать для сиротских записей)
-    const userDeleted = usersRepository.delete(userId);
+    const userDeleted = await usersRepository.delete(userId);
     
     // Если была удалена запись из ADMIN_USER_CONTROLS, синхронизируем модули
     // чтобы удалить назначения тестеров из модулей

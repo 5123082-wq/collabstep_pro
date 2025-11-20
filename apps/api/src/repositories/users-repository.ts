@@ -1,16 +1,18 @@
 import { memory, DEFAULT_ACCOUNT_ID, DEFAULT_WORKSPACE_ID } from '../data/memory';
 import type { WorkspaceUser } from '../types';
+import type { UsersRepository } from './users-repository.interface';
+import { UsersDbRepository } from './users-db-repository';
 
 function cloneUser(user: WorkspaceUser): WorkspaceUser {
   return { ...user };
 }
 
-export class UsersRepository {
-  list(): WorkspaceUser[] {
+export class UsersMemoryRepository implements UsersRepository {
+  async list(): Promise<WorkspaceUser[]> {
     return memory.WORKSPACE_USERS.map(cloneUser);
   }
 
-  findById(id: string): WorkspaceUser | null {
+  async findById(id: string): Promise<WorkspaceUser | null> {
     if (!id) {
       return null;
     }
@@ -25,7 +27,7 @@ export class UsersRepository {
     return match ? cloneUser(match) : null;
   }
 
-  findMany(ids: string[]): WorkspaceUser[] {
+  async findMany(ids: string[]): Promise<WorkspaceUser[]> {
     if (!Array.isArray(ids) || ids.length === 0) {
       return [];
     }
@@ -36,7 +38,7 @@ export class UsersRepository {
     return memory.WORKSPACE_USERS.filter((user) => lookup.has(user.id)).map(cloneUser);
   }
 
-  findByEmail(email: string): WorkspaceUser | null {
+  async findByEmail(email: string): Promise<WorkspaceUser | null> {
     if (!email) {
       return null;
     }
@@ -48,7 +50,7 @@ export class UsersRepository {
     return match ? cloneUser(match) : null;
   }
 
-  updatePassword(email: string, passwordHash: string): boolean {
+  async updatePassword(email: string, passwordHash: string): Promise<boolean> {
     if (!email || !passwordHash) {
       return false;
     }
@@ -70,7 +72,7 @@ export class UsersRepository {
     return true;
   }
 
-  create(user: Omit<WorkspaceUser, 'id'> & { id?: string; passwordHash?: string }): WorkspaceUser {
+  async create(user: Omit<WorkspaceUser, 'id'> & { id?: string; passwordHash?: string }): Promise<WorkspaceUser> {
     const email = user.email.trim().toLowerCase();
     const existing = memory.WORKSPACE_USERS.find((u) => u.email.toLowerCase() === email);
     if (existing) {
@@ -120,7 +122,7 @@ export class UsersRepository {
     return cloneUser(newUser);
   }
 
-  delete(userId: string): boolean {
+  async delete(userId: string): Promise<boolean> {
     if (!userId) {
       return false;
     }
@@ -128,11 +130,11 @@ export class UsersRepository {
     if (!trimmed) {
       return false;
     }
-    
+
     const userIndex = memory.WORKSPACE_USERS.findIndex(
       (user) => user.id === trimmed || user.email.toLowerCase() === trimmed.toLowerCase()
     );
-    
+
     if (userIndex < 0) {
       return false;
     }
@@ -159,4 +161,7 @@ export class UsersRepository {
   }
 }
 
-export const usersRepository = new UsersRepository();
+// Factory logic
+const isDbStorage = process.env.AUTH_STORAGE === 'db';
+export const usersRepository: UsersRepository = isDbStorage ? new UsersDbRepository() : new UsersMemoryRepository();
+export type { UsersRepository };

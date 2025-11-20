@@ -1,15 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { withoutSessionCookie } from '@/lib/auth/session-cookie';
+import { NextResponse } from 'next/server';
+import { DEMO_SESSION_COOKIE } from '@/lib/auth/demo-session';
+import { signOut } from '@/lib/auth/config';
 
-export async function POST(request: NextRequest): Promise<NextResponse> {
-  const redirectUrl = new URL('/login', request.url);
-  const acceptsJson = (request.headers.get('accept') ?? '').includes('application/json');
-
-  if (acceptsJson) {
-    const response = NextResponse.json({ redirect: redirectUrl.pathname });
-    return withoutSessionCookie(response);
-  }
-
-  const response = NextResponse.redirect(redirectUrl, { status: 303 });
-  return withoutSessionCookie(response);
+export async function POST() {
+  await signOut({ redirect: false });
+  const response = NextResponse.json({ success: true });
+  response.cookies.delete(DEMO_SESSION_COOKIE);
+  return response;
 }
