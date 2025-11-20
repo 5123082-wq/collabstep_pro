@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { flags } from '@/lib/flags';
 import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
-import { 
-  projectsRepository, 
+import {
+  projectsRepository,
   tasksRepository,
   usersRepository,
-  DEFAULT_WORKSPACE_ID 
+  DEFAULT_WORKSPACE_ID
 } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { transformProject as transformProjectFromAggregator, buildTaskMetrics } from '@/lib/pm/stage2-aggregator';
@@ -30,21 +30,21 @@ export async function GET(
   if (allProjects.length > 0) {
     console.log(`[Project API GET] Available project IDs: [${allProjects.map(p => p.id).join(', ')}]`);
   }
-  
+
   // Try to find project by ID first
   let apiProject = projectsRepository.findById(params.id);
-  
+
   // If not found by ID, try to find by key (assuming default workspace)
   if (!apiProject) {
     console.log(`[Project API GET] Project not found by ID, trying findByKey: workspaceId=${DEFAULT_WORKSPACE_ID}, key=${params.id}`);
     apiProject = projectsRepository.findByKey(DEFAULT_WORKSPACE_ID, params.id);
   }
-  
+
   if (!apiProject) {
     console.error(`[Project API GET] Project not found: id=${params.id}, userId=${auth.userId}, totalProjects=${allProjects.length}`);
     return jsonError('NOT_FOUND', { status: 404 });
   }
-  
+
   console.log(`[Project API GET] Project found: id=${apiProject.id}, workspaceId=${apiProject.workspaceId}, ownerId=${apiProject.ownerId}`);
 
   // Check if user has access to the project
@@ -66,15 +66,15 @@ export async function GET(
     activity7d: 0,
     progressPct: 0
   };
-  
-  const owner = usersRepository.findById(apiProject.ownerId);
+
+  const owner = await usersRepository.findById(apiProject.ownerId);
 
   // Используем функцию трансформации из aggregator
   // listing получается внутри transformProject, поэтому не передаем его отдельно
   const project = transformProjectFromAggregator(
-    apiProject, 
-    members, 
-    resolvedMetrics, 
+    apiProject,
+    members,
+    resolvedMetrics,
     owner ? {
       id: owner.id,
       name: owner.name,
@@ -100,12 +100,12 @@ export async function PATCH(
 
   // Try to find project by ID first
   let apiProject = projectsRepository.findById(params.id);
-  
+
   // If not found by ID, try to find by key (assuming default workspace)
   if (!apiProject) {
     apiProject = projectsRepository.findByKey(DEFAULT_WORKSPACE_ID, params.id);
   }
-  
+
   if (!apiProject) {
     return jsonError('NOT_FOUND', { status: 404 });
   }
@@ -139,12 +139,12 @@ export async function DELETE(
 
   // Try to find project by ID first
   let apiProject = projectsRepository.findById(params.id);
-  
+
   // If not found by ID, try to find by key (assuming default workspace)
   if (!apiProject) {
     apiProject = projectsRepository.findByKey(DEFAULT_WORKSPACE_ID, params.id);
   }
-  
+
   if (!apiProject) {
     return jsonError('NOT_FOUND', { status: 404 });
   }

@@ -32,7 +32,7 @@ export async function POST(request: Request) {
       console.error('[Bulk Update] Failed to parse request body:', parseError);
       return jsonError('INVALID_JSON', { status: 400 });
     }
-    
+
     const { taskIds, updates } = body;
 
     console.log('[Bulk Update] Request body:', JSON.stringify({ taskIds, updates }, null, 2));
@@ -137,9 +137,9 @@ export async function POST(request: Request) {
         // Уведомление при изменении исполнителя
         if ('assigneeId' in updates && updates.assigneeId && updates.assigneeId !== taskBefore.assigneeId && updates.assigneeId !== auth.userId) {
           await notifyTaskAssigned(updated.id, updates.assigneeId, updated.projectId);
-          
+
           // Если назначен AI-агент, обработать назначение
-          const agent = aiAgentsRepository.findById(updates.assigneeId);
+          const agent = await aiAgentsRepository.findById(updates.assigneeId);
           if (agent) {
             handleAgentTaskAssignment(updated.id, updates.assigneeId).catch((error) => {
               console.error('Error handling agent task assignment:', error);

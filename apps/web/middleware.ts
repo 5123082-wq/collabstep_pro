@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { auth } from '@/lib/auth/config';
+import { auth } from '@/lib/auth/base-config';
 
 type RedirectRule = {
   test: (pathname: string) => boolean;

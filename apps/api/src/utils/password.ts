@@ -1,3 +1,4 @@
+import 'server-only';
 import { pbkdf2Sync, randomBytes, timingSafeEqual } from 'node:crypto';
 
 const SALT_LENGTH = 32;
@@ -11,7 +12,7 @@ const DIGEST = 'sha512';
 export function hashPassword(password: string): string {
   const salt = randomBytes(SALT_LENGTH);
   const hash = pbkdf2Sync(password, salt, ITERATIONS, KEY_LENGTH, DIGEST);
-  
+
   // Формат: salt:hash (оба в hex)
   return `${salt.toString('hex')}:${hash.toString('hex')}`;
 }

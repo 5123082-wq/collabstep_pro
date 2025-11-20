@@ -30,24 +30,24 @@ export async function GET(
 
     // Получение участников проекта
     const members = projectsRepository.listMembers(projectId);
-    
+
     // Получение информации о пользователях
-    const users = members.map((member) => {
-      const user = usersRepository.findById(member.userId);
+    const users = await Promise.all(members.map(async (member) => {
+      const user = await usersRepository.findById(member.userId);
       return {
         id: member.userId,
         name: user?.name || member.userId.split('@')[0],
         email: member.userId,
         role: member.role
       };
-    });
+    }));
 
     // Добавляем владельца проекта, если его нет в списке участников
     const project = projectsRepository.findById(projectId);
     if (project) {
       const ownerExists = members.some((m) => m.userId === project.ownerId);
       if (!ownerExists) {
-        const owner = usersRepository.findById(project.ownerId);
+        const owner = await usersRepository.findById(project.ownerId);
         users.unshift({
           id: project.ownerId,
           name: owner?.name || project.ownerId.split('@')[0],

@@ -183,7 +183,7 @@ export async function GET(request: Request) {
 
   // Получаем задачи в зависимости от фильтров
   let baseTasks: ReturnType<typeof tasksRepository.list> = [];
-  
+
   if (filters.projectId) {
     // Конкретный проект выбран - проверяем доступ и scope
     const project = accessibleProjects.find((p) => p.id === filters.projectId);
@@ -192,7 +192,7 @@ export async function GET(request: Request) {
       const isOwner = project.ownerId === auth.userId;
       const isMember = members.some((member) => member.userId === auth.userId);
       const projectScope: ProjectScope = isOwner ? 'owned' : isMember ? 'member' : 'all';
-      
+
       // Проверяем, подходит ли проект по scope
       if (filters.scope === 'all' || projectScope === filters.scope) {
         baseTasks = tasksByProject.get(filters.projectId) ?? [];
@@ -280,9 +280,9 @@ export async function POST(request: Request) {
     // Генерируем уведомление при назначении задачи
     if (rest.assigneeId && rest.assigneeId !== auth.userId) {
       await notifyTaskAssigned(task.id, rest.assigneeId, projectId);
-      
+
       // Если назначен AI-агент, обработать назначение
-      const agent = aiAgentsRepository.findById(rest.assigneeId);
+      const agent = await aiAgentsRepository.findById(rest.assigneeId);
       if (agent) {
         handleAgentTaskAssignment(task.id, rest.assigneeId).catch((error) => {
           console.error('Error handling agent task assignment:', error);

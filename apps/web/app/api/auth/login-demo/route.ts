@@ -46,7 +46,7 @@ export async function POST(request: NextRequest): Promise<DemoLoginResponse> {
   const account = getDemoAccount(role);
 
   // Получаем userId из репозитория пользователей
-  const user = usersRepository.findByEmail(account.email);
+  const user = await usersRepository.findByEmail(account.email);
   const userId = user?.id || account.email; // Fallback на email для обратной совместимости
 
   const sessionToken = encodeDemoSession({ email: account.email, userId, role, issuedAt: Date.now() });

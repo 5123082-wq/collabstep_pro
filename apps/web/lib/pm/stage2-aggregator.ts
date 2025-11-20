@@ -2,7 +2,6 @@ import {
   marketplaceListingsRepository,
   projectsRepository,
   tasksRepository,
-  usersRepository,
   memory,
   isAdminUserId,
   type Project as ApiProject,
@@ -438,7 +437,8 @@ export function collectStage2Projects(
       }
     }
 
-    const ownerProfile = usersRepository.findById(project.ownerId);
+    // Direct memory access for sync operation (same approach as project-catalog-service)
+    const ownerProfile = memory.WORKSPACE_USERS.find(u => u.id === project.ownerId);
     if (ownerProfile) {
       ownersMap.set(project.ownerId, {
         id: ownerProfile.id,

@@ -4,7 +4,6 @@ import Credentials from "next-auth/providers/credentials"
 import { DrizzleAdapter } from "@auth/drizzle-adapter"
 import { db } from "@collabverse/api/db/config"
 import { usersRepository } from "@collabverse/api"
-import { verifyPassword } from "@collabverse/api/utils/password"
 import { eq } from "drizzle-orm"
 import { userControls } from "@collabverse/api/db/schema"
 import { getDemoAccount, isDemoAuthEnabled, type DemoRole } from "./demo-session"
@@ -51,6 +50,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
                 if (!user || !user.passwordHash) return null
 
+                // Dynamic import to avoid bundling in Edge runtime
+                const { verifyPassword } = await import("@collabverse/api/utils/password")
                 const isValid = verifyPassword(password, user.passwordHash)
 
                 if (!isValid) return null

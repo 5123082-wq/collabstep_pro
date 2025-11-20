@@ -14,15 +14,16 @@ export interface AgentMention {
  * Извлекает упоминания AI-агентов из текста сообщения
  * Формат: @ai-assistant, @ai-reviewer, @ai-reminder, @ai-summarizer
  */
-export function extractAgentMentions(text: string): AgentMention[] {
+export async function extractAgentMentions(text: string): Promise<AgentMention[]> {
   const mentions: AgentMention[] = [];
   const regex = /@ai-(\w+)/gi;
   let match;
 
+  const agents = await aiAgentsRepository.list();
   while ((match = regex.exec(text)) !== null) {
     if (!match[1]) continue;
     const agentType = match[1].toLowerCase();
-    const agent = aiAgentsRepository.list().find((a) => a.agentType === agentType);
+    const agent = agents.find((a) => a.agentType === agentType);
     if (agent) {
       mentions.push({ agentId: agent.id, agentType });
     }
@@ -88,10 +89,10 @@ export async function handleAgentMentionInChat(
   messageBody: string,
   authorId: string
 ): Promise<void> {
-  const agentMentions = extractAgentMentions(messageBody);
+  const agentMentions = await extractAgentMentions(messageBody);
 
   for (const mention of agentMentions) {
-    const agent = aiAgentsRepository.findById(mention.agentId);
+    const agent = await aiAgentsRepository.findById(mention.agentId);
     if (!agent || !agent.behavior?.autoRespond) {
       continue;
     }
@@ -113,10 +114,10 @@ export async function handleAgentMentionInComment(
   messageBody: string,
   authorId: string
 ): Promise<void> {
-  const agentMentions = extractAgentMentions(messageBody);
+  const agentMentions = await extractAgentMentions(messageBody);
 
   for (const mention of agentMentions) {
-    const agent = aiAgentsRepository.findById(mention.agentId);
+    const agent = await aiAgentsRepository.findById(mention.agentId);
     if (!agent || !agent.behavior?.autoRespond) {
       continue;
     }

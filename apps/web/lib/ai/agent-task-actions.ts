@@ -12,7 +12,7 @@ export async function handleAgentTaskAssignment(
   taskId: string,
   agentId: string
 ): Promise<void> {
-  const agent = aiAgentsRepository.findById(agentId);
+  const agent = await aiAgentsRepository.findById(agentId);
   if (!agent) {
     return;
   }
@@ -57,7 +57,7 @@ export async function handleAgentTaskStatusChange(
   agentId: string,
   newStatus: string
 ): Promise<void> {
-  const agent = aiAgentsRepository.findById(agentId);
+  const agent = await aiAgentsRepository.findById(agentId);
   if (!agent) {
     return;
   }
@@ -104,7 +104,7 @@ export async function sendDeadlineReminder(
   taskId: string,
   daysUntilDeadline: number
 ): Promise<void> {
-  const reminderAgent = aiAgentsRepository.findByType('reminder');
+  const reminderAgent = await aiAgentsRepository.findByType('reminder');
   if (!reminderAgent) {
     return;
   }

@@ -46,20 +46,20 @@ export async function GET(
     const result = projectChatRepository.listByProject(projectId, { page, pageSize });
 
     // Получение информации об авторах
-    const messagesWithAuthors = result.messages.map((message) => {
-      const author = usersRepository.findById(message.authorId);
+    const messagesWithAuthors = await Promise.all(result.messages.map(async (message) => {
+      const author = await usersRepository.findById(message.authorId);
       return {
         ...message,
         author: author
           ? {
-              id: author.id,
-              name: author.name,
-              email: author.email,
-              avatarUrl: author.avatarUrl
-            }
+            id: author.id,
+            name: author.name,
+            email: author.email,
+            avatarUrl: author.avatarUrl
+          }
           : null
       };
-    });
+    }));
 
     return jsonOk({
       messages: messagesWithAuthors,
@@ -122,17 +122,17 @@ export async function POST(
     await notifyChatMessageAdded(message.id, projectId, auth.userId);
 
     // Получение информации об авторе
-    const author = usersRepository.findById(message.authorId);
+    const author = await usersRepository.findById(message.authorId);
 
     const messageWithAuthor = {
       ...message,
       author: author
         ? {
-            id: author.id,
-            name: author.name,
-            email: author.email,
-            avatarUrl: author.avatarUrl
-          }
+          id: author.id,
+          name: author.name,
+          email: author.email,
+          avatarUrl: author.avatarUrl
+        }
         : null
     };
 

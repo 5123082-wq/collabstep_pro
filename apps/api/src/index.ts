@@ -68,7 +68,8 @@ export {
 } from './stores/expense-store-factory';
 export { amountToCents, centsToAmount } from './utils/money';
 export { formatTaskKey, parseTaskKey } from './utils/task-key';
-export { hashPassword, verifyPassword } from './utils/password';
+// Password utilities are server-only and should be imported directly from './utils/password'
+// export { hashPassword, verifyPassword } from './utils/password';
 export {
   adminModulesRepository,
   AdminModulesRepository
