@@ -350,19 +350,7 @@ export default function ProjectsOverviewPageClient({ initialFilters, initialData
       .sort(([a], [b]) => a.localeCompare(b))
       .forEach(([key, value]) => sortedParams.set(key, value));
     return sortedParams.toString();
-  }, [
-    filters.status,
-    filters.ownerId,
-    filters.memberId,
-    filters.q,
-    filters.page,
-    filters.pageSize,
-    filters.sortBy,
-    filters.sortOrder,
-    filters.scope,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    filters
-  ]);
+  }, [filters]);
 
   useEffect(() => {
     // Проверяем, изменился ли queryKey - если нет, не перезагружаем данные

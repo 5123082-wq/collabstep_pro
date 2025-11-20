@@ -71,23 +71,7 @@ export default function PMTasksPage() {
       .sort(([a], [b]) => a.localeCompare(b))
       .forEach(([key, value]) => sortedParams.set(key, value));
     return sortedParams.toString();
-  }, [
-    urlFilters.projectId,
-    urlFilters.status,
-    urlFilters.assigneeId,
-    urlFilters.priority,
-    urlFilters.labels?.join(','),
-    urlFilters.dateFrom,
-    urlFilters.dateTo,
-    urlFilters.q,
-    urlFilters.page,
-    urlFilters.pageSize,
-    urlFilters.sortBy,
-    urlFilters.sortOrder,
-    urlFilters.groupBy,
-    urlFilters.swimlane,
-    urlFilters.scope
-  ]);
+  }, [urlFilters]);
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projectOptions, setProjectOptions] = useState<TaskProjectOption[]>([]);
