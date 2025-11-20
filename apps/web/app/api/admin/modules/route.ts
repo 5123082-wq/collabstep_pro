@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { adminService } from '@collabverse/api';
 import { getDemoSessionFromCookies } from '@/lib/auth/demo-session.server';
 
+export const dynamic = 'force-dynamic';
+
 const ALLOWED_STATUSES = ['enabled', 'disabled'] as const;
 const ALLOWED_AUDIENCES = ['everyone', 'admins', 'beta'] as const;
 

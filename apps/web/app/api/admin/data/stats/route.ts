@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { projectsRepository, tasksRepository, memory } from '@collabverse/api';
 import { getDemoSessionFromCookies } from '@/lib/auth/demo-session.server';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/admin/data/stats
  * Returns statistics about projects and tasks by user

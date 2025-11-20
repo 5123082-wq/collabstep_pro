@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { adminService } from '@collabverse/api';
 import { getDemoSessionFromCookies } from '@/lib/auth/demo-session.server';
 
+export const dynamic = 'force-dynamic';
+
 const ModuleUpdateSchema = z
   .object({
     status: z.enum(['enabled', 'disabled']).optional(),
