@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "prebuild": "node scripts/clean-next.mjs",
+    "prebuild": "node scripts/clean-next.mjs && node scripts/validate-env.mjs",
     "dev": "next dev",
     "dev:3001": "next dev -p 3001",
     "dev:3002": "next dev -p 3002",

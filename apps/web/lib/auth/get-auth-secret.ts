@@ -7,17 +7,19 @@
 export function getAuthSecret(): string {
   const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
   
-  // Check if we're in production runtime (not build time)
-  // During build, Next.js sets NODE_ENV=production, but we can distinguish
-  // runtime by checking for VERCEL_ENV or other runtime indicators
-  const isProductionRuntime = 
-    (process.env.VERCEL_ENV === 'production' ||
-     process.env.VERCEL_ENV === 'preview' ||
-     process.env.VERCEL) &&
-    process.env.NODE_ENV === 'production';
+  // Next.js sets NEXT_PHASE during build process
+  // This is the most reliable way to detect build-time vs runtime
+  const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build';
   
-  // For build time or local production builds, allow fallback
-  // Only require secret in actual production runtime (Vercel deployment)
+  // Check if we're in actual production runtime (not build time)
+  // VERCEL_ENV is only reliably set at runtime, not during build
+  const isProductionRuntime = 
+    !isBuildTime &&
+    process.env.NODE_ENV === 'production' &&
+    (process.env.VERCEL_ENV === 'production' || 
+     process.env.VERCEL_ENV === 'preview');
+  
+  // Only require secret in actual production runtime (not during build)
   if (isProductionRuntime && !secret) {
     throw new Error(
       'AUTH_SECRET is required in production runtime. ' +
@@ -28,7 +30,6 @@ export function getAuthSecret(): string {
   
   // In dev mode or build time, use fallback (not secure, but acceptable)
   if (!secret) {
-    const isBuildTime = process.env.NODE_ENV === 'production' && !process.env.VERCEL;
     if (isBuildTime) {
       console.warn(
         '⚠️  AUTH_SECRET is not set during build. Using fallback secret. ' +
