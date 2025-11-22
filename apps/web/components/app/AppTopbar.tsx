@@ -1,7 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 // TODO: Подключить к реальному API специалистов и вакансий
@@ -71,6 +71,7 @@ function IconButton({ icon, label }: { icon: keyof typeof iconPaths; label: stri
 export type DemoProfile = {
   email: string;
   role: 'admin' | 'user';
+  avatarUrl?: string;
 };
 
 type AppTopbarProps = {
@@ -81,9 +82,11 @@ type AppTopbarProps = {
   onLogout: () => void;
   isLoggingOut: boolean;
   createButtonRef?: React.RefObject<HTMLButtonElement>;
+  centerModules?: React.ReactNode[];
+  onAvatarChange?: (avatarUrl: string | null) => void;
 };
 
-export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings, profile, onLogout, isLoggingOut, createButtonRef }: AppTopbarProps) {
+export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings, profile, onLogout, isLoggingOut, createButtonRef, centerModules, onAvatarChange }: AppTopbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [searchValue, setSearchValue] = useState('');
@@ -239,7 +242,7 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
   const isAdminSection = pathname?.startsWith('/admin') ?? false;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-neutral-900/60 bg-neutral-950/80 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-neutral-900/40 bg-white/10 dark:bg-neutral-950/40 backdrop-blur-md">
       <div className="flex items-center justify-between gap-[21.6px] px-[21.6px] py-[14.4px] min-w-0">
         <div className="flex flex-1 items-center gap-[10.8px] min-w-0">
           <form
@@ -332,6 +335,14 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
             Создать
           </button>
         </div>
+        {/* Центральные модули (KPI и другие) */}
+        {centerModules && centerModules.length > 0 && (
+          <div className="hidden items-center gap-[10.8px] lg:flex">
+            {centerModules.map((module, index) => (
+              <React.Fragment key={index}>{module}</React.Fragment>
+            ))}
+          </div>
+        )}
         <div className="hidden items-center gap-[7.2px] md:flex">
           <button
             type="button"
@@ -360,6 +371,7 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
             onLogout={onLogout} 
             isLoggingOut={isLoggingOut}
             {...(onOpenSettings && { onOpenSettings })}
+            {...(onAvatarChange && { onAvatarChange })}
           />
         </div>
         <div className="flex flex-wrap items-center gap-[7.2px]">

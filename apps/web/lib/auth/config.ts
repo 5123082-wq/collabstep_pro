@@ -7,8 +7,10 @@ import { usersRepository } from "@collabverse/api"
 import { eq } from "drizzle-orm"
 import { userControls } from "@collabverse/api/db/schema"
 import { getDemoAccount, isDemoAuthEnabled, type DemoRole } from "./demo-session"
+import { getAuthSecret } from "./get-auth-secret"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+    secret: getAuthSecret(),
     adapter: DrizzleAdapter(db),
     providers: [
         Google({

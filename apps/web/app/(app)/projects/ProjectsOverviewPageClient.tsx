@@ -37,7 +37,7 @@ type ProjectsOverviewResult = {
 
 type ProjectsOverviewPageClientProps = {
   initialFilters: ProjectListFilters;
-  initialData: ProjectsOverviewResult;
+  initialData?: ProjectsOverviewResult;
   currentUserId: string;
 };
 
@@ -257,6 +257,17 @@ function ProjectsOverviewCard({
 }
 
 export default function ProjectsOverviewPageClient({ initialFilters, initialData, currentUserId }: ProjectsOverviewPageClientProps) {
+  // Ensure initialData is always defined with safe defaults
+  const safeInitialData: ProjectsOverviewResult = initialData ?? {
+    items: [],
+    pagination: {
+      page: 1,
+      pageSize: 12,
+      total: 0,
+      totalPages: 1
+    },
+    owners: []
+  };
   const router = useRouter();
   const pathname = usePathname();
   const liveSearchParams = useSearchParams();
@@ -269,9 +280,14 @@ export default function ProjectsOverviewPageClient({ initialFilters, initialData
     ...initialFilters,
     scope: resolveScope(initialFilters.scope)
   });
-  const [data, setData] = useState<Project[]>(initialData.items);
-  const [owners, setOwners] = useState<ProjectsOverviewOwner[]>(initialData.owners);
-  const [pagination, setPagination] = useState(initialData.pagination);
+  const [data, setData] = useState<Project[]>(Array.isArray(safeInitialData.items) ? safeInitialData.items : []);
+  const [owners, setOwners] = useState<ProjectsOverviewOwner[]>(Array.isArray(safeInitialData.owners) ? safeInitialData.owners : []);
+  const [pagination, setPagination] = useState(safeInitialData.pagination ?? {
+    page: 1,
+    pageSize: 12,
+    total: 0,
+    totalPages: 1
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -287,11 +303,11 @@ export default function ProjectsOverviewPageClient({ initialFilters, initialData
       trackEvent('projects_overview_viewed', {
         userId: currentUserId,
         scope: filters.scope ?? DEFAULT_SCOPE,
-        total: initialData.pagination.total
+        total: safeInitialData.pagination.total
       });
       initialViewLogged.current = true;
     }
-  }, [currentUserId, filters.scope, initialData.pagination.total]);
+  }, [currentUserId, filters.scope, safeInitialData.pagination.total]);
 
   useEffect(() => {
     if (isInitialHydrated.current) {
@@ -365,9 +381,14 @@ export default function ProjectsOverviewPageClient({ initialFilters, initialData
     const cached = cacheRef.current.get(queryKey);
     if (cached) {
       // Показываем кэшированные данные сразу
-      setData(cached.items);
-      setOwners(cached.owners ?? []);
-      setPagination(cached.pagination);
+      setData(Array.isArray(cached.items) ? cached.items : []);
+      setOwners(Array.isArray(cached.owners) ? cached.owners : []);
+      setPagination(cached.pagination ?? {
+        page: filtersRef.current.page ?? 1,
+        pageSize: filtersRef.current.pageSize ?? 12,
+        total: 0,
+        totalPages: 1
+      });
       setLoading(false);
       // Обновляем в фоне
     } else {
@@ -390,12 +411,24 @@ export default function ProjectsOverviewPageClient({ initialFilters, initialData
         }
         const payload = (await response.json()) as ProjectsOverviewResult;
         if (!controller.signal.aborted) {
+          // Убеждаемся, что payload имеет правильную структуру
+          const safePayload: ProjectsOverviewResult = {
+            items: Array.isArray(payload?.items) ? payload.items : [],
+            pagination: payload?.pagination ?? {
+              page: filtersRef.current.page ?? 1,
+              pageSize: filtersRef.current.pageSize ?? 12,
+              total: 0,
+              totalPages: 1
+            },
+            owners: Array.isArray(payload?.owners) ? payload.owners : []
+          };
+          
           // Сохраняем в кэш
-          cacheRef.current.set(queryKey, payload);
+          cacheRef.current.set(queryKey, safePayload);
 
-          setData(payload.items);
-          setOwners(payload.owners ?? []);
-          setPagination(payload.pagination);
+          setData(safePayload.items);
+          setOwners(safePayload.owners);
+          setPagination(safePayload.pagination);
         }
       } catch (err) {
         if (!controller.signal.aborted) {
@@ -757,7 +790,7 @@ export default function ProjectsOverviewPageClient({ initialFilters, initialData
                   className="w-full rounded-xl border border-neutral-900 bg-neutral-950 px-4 py-2 text-sm text-white focus:border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
                 >
                   <option value="">Все владельцы</option>
-                  {owners.map((owner) => (
+                  {Array.isArray(owners) && owners.map((owner) => (
                     <option key={owner.id} value={owner.id}>
                       {owner.name}
                     </option>
@@ -815,7 +848,7 @@ export default function ProjectsOverviewPageClient({ initialFilters, initialData
                 className="w-full rounded-xl border border-neutral-900 bg-neutral-950 px-4 py-2 text-sm text-white focus:border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 disabled:cursor-not-allowed disabled:text-neutral-600"
               >
                 <option value="">{hasPresets ? 'Выберите пресет' : 'Нет сохранённых пресетов'}</option>
-                {presets.map((preset) => (
+                {Array.isArray(presets) && presets.map((preset) => (
                   <option key={preset.id} value={preset.id}>
                     {preset.name}
                   </option>
@@ -909,7 +942,7 @@ export default function ProjectsOverviewPageClient({ initialFilters, initialData
       ) : (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {data.map((project) => (
+            {Array.isArray(data) && data.map((project) => (
               <ProjectsOverviewCard
                 key={project.id}
                 project={project}

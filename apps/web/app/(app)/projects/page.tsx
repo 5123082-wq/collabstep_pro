@@ -67,12 +67,30 @@ export default async function ProjectsOverviewPage({ searchParams }: ProjectsOve
     sortOrder: parsedFilters.sortOrder ?? 'desc'
   };
 
-  const overview = await getProjectsOverview(session.userId, mergedFilters);
+  let overview;
+  try {
+    overview = await getProjectsOverview(session.userId, mergedFilters);
+  } catch (error) {
+    console.error('Failed to load projects overview:', error);
+    overview = null;
+  }
+
+  // Ensure we always pass valid data structure
+  const safeOverview = {
+    items: Array.isArray(overview?.items) ? overview.items : [],
+    pagination: overview?.pagination ?? {
+      page: mergedFilters.page ?? 1,
+      pageSize: mergedFilters.pageSize ?? 12,
+      total: 0,
+      totalPages: 1
+    },
+    owners: Array.isArray(overview?.owners) ? overview.owners : []
+  };
 
   return (
     <ProjectsOverviewPageClient
       initialFilters={mergedFilters}
-      initialData={overview}
+      initialData={safeOverview}
       currentUserId={session.userId}
     />
   );

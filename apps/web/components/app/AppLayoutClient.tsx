@@ -29,6 +29,20 @@ type AppLayoutClientProps = {
   children: ReactNode;
 };
 
+const AVATAR_STORAGE_KEY = 'cv-user-avatar';
+
+function getStoredAvatar(email: string): string | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  try {
+    const stored = localStorage.getItem(`${AVATAR_STORAGE_KEY}-${email}`);
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function AppLayoutClient({ session, children }: AppLayoutClientProps) {
   const router = useRouter();
   const [isCreateOpen, setCreateOpen] = useState(false);
@@ -36,10 +50,27 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
   const [isSettingsOpen, setSettingsOpen] = useState(false);
   const [isLoggingOut, setLoggingOut] = useState(false);
   const [activeModal, setActiveModal] = useState<string | null>(null);
+  // Инициализируем как null, чтобы избежать проблем с гидратацией
+  // Загружаем avatar только после монтирования компонента
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
   const createButtonRef = useRef<HTMLButtonElement>(null);
   const roles = useMemo(() => getRolesForDemoAccount(session.email, session.role), [session.email, session.role]);
   useQueryToast(TOAST_MESSAGES);
   useUnreadNotifications(session.userId);
+
+  // Загружаем avatar только после монтирования, чтобы избежать проблем с гидратацией
+  useEffect(() => {
+    setIsMounted(true);
+    const stored = getStoredAvatar(session.email);
+    if (stored) {
+      setAvatarUrl(stored);
+    }
+  }, [session.email]);
+
+  const handleAvatarChange = useCallback((newAvatarUrl: string | null) => {
+    setAvatarUrl(newAvatarUrl);
+  }, []);
 
   const openCreateMenu = useCallback(() => {
     setCreateOpen(true);
@@ -143,13 +174,14 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
         <Sidebar roles={roles} />
         <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
           <AppTopbar
-            profile={{ email: session.email, role: session.role }}
+            profile={{ email: session.email, role: session.role, ...(avatarUrl && { avatarUrl }) }}
             onOpenCreate={openCreateMenu}
             onOpenPalette={openCommandPalette}
             onOpenSettings={openSettings}
             onLogout={handleLogout}
             isLoggingOut={isLoggingOut}
             createButtonRef={createButtonRef}
+            onAvatarChange={handleAvatarChange}
           />
           <div className="flex flex-1 min-h-0 min-w-0 overflow-hidden bg-[color:var(--surface-base)]">
             <ContentContainer>

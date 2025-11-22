@@ -90,14 +90,16 @@ export default function AiAgentsPage() {
       const agentsResponse = await fetch('/api/pm/ai-agents');
       if (agentsResponse.ok) {
         const agentsData = await agentsResponse.json();
-        setAgents(agentsData.data?.agents || []);
+        const agentsList = Array.isArray(agentsData.data?.agents) ? agentsData.data.agents : [];
+        setAgents(agentsList);
       }
 
       // Загрузить проекты
       const projectsResponse = await fetch('/api/pm/projects?pageSize=100');
       if (projectsResponse.ok) {
         const projectsData = await projectsResponse.json();
-        const projectsList = (projectsData.items || []).map((p: any) => ({
+        const items = Array.isArray(projectsData.items) ? projectsData.items : [];
+        const projectsList = items.map((p: any) => ({
           id: p.id,
           name: p.name || p.title,
           key: p.key
@@ -113,12 +115,14 @@ export default function AiAgentsPage() {
             const response = await fetch(`/api/pm/projects/${project.id}/ai-agents`);
             if (response.ok) {
               const data = await response.json();
-              const projectAgents = data.data?.agents || [];
+              const projectAgents = Array.isArray(data.data?.agents) ? data.data.agents : [];
               for (const agent of projectAgents) {
-                if (!agentProjectsMap[agent.id]) {
-                  agentProjectsMap[agent.id] = [];
+                if (agent && agent.id) {
+                  if (!agentProjectsMap[agent.id]) {
+                    agentProjectsMap[agent.id] = [];
+                  }
+                  agentProjectsMap[agent.id]!.push(project);
                 }
-                agentProjectsMap[agent.id]!.push(project);
               }
             }
           } catch (err) {
@@ -130,6 +134,10 @@ export default function AiAgentsPage() {
     } catch (error) {
       console.error('Error loading data:', error);
       toast('Не удалось загрузить данные', 'warning');
+      // Убеждаемся, что состояние всегда валидно даже при ошибке
+      setAgents([]);
+      setProjects([]);
+      setAgentProjects({});
     } finally {
       setLoading(false);
     }
@@ -248,8 +256,11 @@ export default function AiAgentsPage() {
               Нет доступных AI-агентов
             </div>
           ) : (
-            agents.map((agent) => {
-              const agentProjectsList = agentProjects[agent.id] || [];
+            Array.isArray(agents) && agents.length > 0 && agents.map((agent) => {
+              if (!agent || !agent.id) {
+                return null;
+              }
+              const agentProjectsList: ProjectInfo[] = Array.isArray(agentProjects[agent.id]) ? agentProjects[agent.id]! : [];
               return (
                 <ContentBlock
                   key={agent.id}

@@ -172,6 +172,11 @@ export default function Sidebar({ roles }: SidebarProps) {
                     'flex flex-1 items-center gap-2 text-sm font-semibold text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
                     active && 'text-[color:var(--text-primary)]'
                   )}
+                  onClick={(e) => {
+                    // Ensure navigation works - don't prevent default
+                    // If section has children and is not expanded, allow navigation to proceed
+                    // The button handler will handle expand/collapse separately
+                  }}
                 >
                   <MenuIcon name={(section.icon ?? 'dashboard') as IconName} />
                   {section.label}

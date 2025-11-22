@@ -4,10 +4,12 @@ import { DrizzleAdapter } from "@auth/drizzle-adapter"
 import { db } from "@collabverse/api/db/config"
 import { eq } from "drizzle-orm"
 import { userControls } from "@collabverse/api/db/schema"
+import { getAuthSecret } from "./get-auth-secret"
 
 // Base auth configuration for middleware (Edge runtime compatible)
 // Does NOT include Credentials provider to avoid Node.js crypto dependency
 export const { handlers: baseHandlers, auth, signIn: baseSignIn, signOut } = NextAuth({
+    secret: getAuthSecret(),
     adapter: DrizzleAdapter(db),
     providers: [
         Google({

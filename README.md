@@ -32,65 +32,65 @@
 - **[Архитектура](docs/architecture/system-analysis.md)** — системный обзор
 
 ## Переменные окружения
- 
- - `NAV_V1` — флаг навигации (off/on)
- - `APP_LOCALE` — локаль приложения (по умолчанию ru)
- - `FEATURE_PROJECTS_V1` — включает CRM «Проекты v1» (0/1)
- - `AUTH_DEV` — включает dev-авторизацию (on/off)
- - `AUTH_STORAGE` — хранилище пользователей (`memory` или `db`). Для работы с БД установите `db`.
- - `DATABASE_URL` — строка подключения к PostgreSQL (Vercel Postgres).
- - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` — ключи для Google OAuth.
- - `AUTH_SECRET` — секретный ключ для NextAuth (сгенерировать: `openssl rand -base64 32`).
- - `NEXTAUTH_URL` — URL приложения (например, `http://localhost:3000`).
- - `DEMO_ADMIN_EMAIL`, `DEMO_ADMIN_PASSWORD` — реквизиты демо-админа
- - `DEMO_USER_EMAIL`, `DEMO_USER_PASSWORD` — реквизиты демо-пользователя
- - `FIN_EXPENSES_STORAGE` — выбирает драйвер хранилища расходов (`memory` или `db`).
- - `NEXT_PUBLIC_FEATURE_*` — флаги второго поколения для UI.
- - `NEXT_PUBLIC_WS_URL` — URL WebSocket сервера.
- - `NEXT_PUBLIC_WS_ENABLED` — явное включение/отключение WebSocket.
- 
- Пример `.env`:
- 
- ```env
- NAV_V1=on
- APP_LOCALE=ru
- FEATURE_PROJECTS_V1=1
- AUTH_DEV=on
- 
- # Auth & Database
- AUTH_STORAGE=db
- DATABASE_URL=postgresql://...
- GOOGLE_CLIENT_ID=...
- GOOGLE_CLIENT_SECRET=...
- AUTH_SECRET=...
- NEXTAUTH_URL=http://localhost:3000
- 
- FIN_EXPENSES_STORAGE=memory
- DEMO_ADMIN_EMAIL=admin.demo@collabverse.test
- DEMO_ADMIN_PASSWORD=demo-admin
- DEMO_USER_EMAIL=user.demo@collabverse.test
- DEMO_USER_PASSWORD=demo-user
- ```
- 
- ### Database & Migrations
- 
- Для работы с базой данных используются следующие команды:
- 
- - `pnpm --filter @collabverse/api db:generate` — генерация SQL миграций на основе схемы.
- - `pnpm --filter @collabverse/api db:push` — применение миграций к базе данных (локально или Vercel Postgres).
- 
- ## Авторизация
- 
- Проект поддерживает гибридную систему авторизации:
- 
- 1. **Google OAuth** — основной способ входа для пользователей (требует настройки `GOOGLE_CLIENT_ID`/`SECRET`).
- 2. **Email/Password** — вход по логину и паролю (хранятся в БД).
- 3. **Демо-аккаунты** — для разработки и тестирования (работают через `AUTH_DEV=on`).
- 
- - Быстрый вход доступен на `/login` кнопками «Войти демо-пользователем» и «Войти демо-админом».
- - Кнопка "Войти через Google" инициирует OAuth flow.
- - Защищённые маршруты `/app/*` и `/admin/*` требуют авторизации (NextAuth сессия или демо-сессия).
- - Раздел `/admin` доступен только пользователям с ролью `admin`.
+
+- `NAV_V1` — флаг навигации (off/on)
+- `APP_LOCALE` — локаль приложения (по умолчанию ru)
+- `FEATURE_PROJECTS_V1` — включает CRM «Проекты v1» (0/1)
+- `AUTH_DEV` — включает dev-авторизацию (on/off)
+- `AUTH_STORAGE` — хранилище пользователей (`memory` или `db`). Для работы с БД установите `db`.
+- `DATABASE_URL` — строка подключения к PostgreSQL (Vercel Postgres).
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` — ключи для Google OAuth.
+- `AUTH_SECRET` — секретный ключ для NextAuth (сгенерировать: `openssl rand -base64 32`).
+- `NEXTAUTH_URL` — URL приложения (например, `http://localhost:3000`).
+- `DEMO_ADMIN_EMAIL`, `DEMO_ADMIN_PASSWORD` — реквизиты демо-админа
+- `DEMO_USER_EMAIL`, `DEMO_USER_PASSWORD` — реквизиты демо-пользователя
+- `FIN_EXPENSES_STORAGE` — выбирает драйвер хранилища расходов (`memory` или `db`).
+- `NEXT_PUBLIC_FEATURE_*` — флаги второго поколения для UI.
+- `NEXT_PUBLIC_WS_URL` — URL WebSocket сервера.
+- `NEXT_PUBLIC_WS_ENABLED` — явное включение/отключение WebSocket.
+
+Пример `.env`:
+
+```env
+NAV_V1=on
+APP_LOCALE=ru
+FEATURE_PROJECTS_V1=1
+AUTH_DEV=on
+
+# Auth & Database
+AUTH_STORAGE=db
+DATABASE_URL=postgresql://...
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+AUTH_SECRET=...
+NEXTAUTH_URL=http://localhost:3000
+
+FIN_EXPENSES_STORAGE=memory
+DEMO_ADMIN_EMAIL=admin.demo@collabverse.test
+DEMO_ADMIN_PASSWORD=demo-admin
+DEMO_USER_EMAIL=user.demo@collabverse.test
+DEMO_USER_PASSWORD=demo-user
+```
+
+### Database & Migrations
+
+Для работы с базой данных используются следующие команды:
+
+- `pnpm --filter @collabverse/api db:generate` — генерация SQL миграций на основе схемы.
+- `pnpm --filter @collabverse/api db:push` — применение миграций к базе данных (локально или Vercel Postgres).
+
+## Авторизация
+
+Проект поддерживает гибридную систему авторизации:
+
+1.  **Google OAuth** — основной способ входа для пользователей (требует настройки `GOOGLE_CLIENT_ID`/`SECRET`).
+2.  **Email/Password** — вход по логину и паролю (хранятся в БД).
+3.  **Демо-аккаунты** — для разработки и тестирования (работают через `AUTH_DEV=on`).
+
+- Быстрый вход доступен на `/login` кнопками «Войти демо-пользователем» и «Войти демо-админом».
+- Кнопка "Войти через Google" инициирует OAuth flow.
+- Защищённые маршруты `/app/*` и `/admin/*` требуют авторизации (NextAuth сессия или демо-сессия).
+- Раздел `/admin` доступен только пользователям с ролью `admin`.
 
 ## Этапы разработки
 
@@ -121,29 +121,34 @@
    - **Output Directory:** `.next` (по умолчанию)
 
 3. **Установите переменные окружения:**
-   
+
    **Обязательные:**
+
    ```
    NAV_V1=on
    APP_LOCALE=ru
    AUTH_DEV=on
    FIN_EXPENSES_STORAGE=memory
+   AUTH_SECRET=<generate with: openssl rand -base64 32>
    ```
-   
+
    **Демо-аккаунты:**
+
    ```
    DEMO_ADMIN_EMAIL=admin.demo@collabverse.test
    DEMO_ADMIN_PASSWORD=demo-admin
    DEMO_USER_EMAIL=user.demo@collabverse.test
    DEMO_USER_PASSWORD=demo-user
    ```
-   
+
    **Для production/staging:**
+
    ```
    FIN_EXPENSES_STORAGE=db
    ```
-   
+
    **Опциональные (WebSocket):**
+
    ```
    NEXT_PUBLIC_WS_URL=wss://your-websocket-server.com
    NEXT_PUBLIC_WS_ENABLED=true
@@ -167,6 +172,7 @@
 ### Проверка развертывания
 
 После развертывания проверьте:
+
 - Главная страница загружается
 - Авторизация работает (`/login`)
 - Демо-аккаунты работают
@@ -234,6 +240,7 @@ git branch -d feature/название-функции
 ### Конвенция коммитов
 
 Используйте префиксы для коммитов:
+
 - `feat:` — новая функция
 - `fix:` — исправление бага
 - `docs:` — изменения в документации

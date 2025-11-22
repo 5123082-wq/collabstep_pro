@@ -29,7 +29,7 @@ declare module 'lucide-react' {
   export const Flag: LucideIcon;
   export const File: LucideIcon;
   export const FileText: LucideIcon;
-  export const HelpCircle: LucideIcon;
+  export const CircleHelp: LucideIcon;
   export const TrendingUp: LucideIcon;
   export const Search: LucideIcon;
   export const Filter: LucideIcon;

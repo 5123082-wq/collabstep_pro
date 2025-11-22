@@ -183,24 +183,46 @@ export async function GET(request: NextRequest) {
     userId: auth.userId
   });
 
-  const overview = await getProjectsOverview(auth.userId, {
-    ...parsedFilters,
-    scope,
-    page: parsedFilters.page,
-    pageSize: parsedFilters.pageSize,
-    ...(parsedFilters.sortBy ? { sortBy: parsedFilters.sortBy } : {}),
-    ...(parsedFilters.sortOrder ? { sortOrder: parsedFilters.sortOrder } : {})
-  });
+  let overview;
+  try {
+    overview = await getProjectsOverview(auth.userId, {
+      ...parsedFilters,
+      scope,
+      page: parsedFilters.page,
+      pageSize: parsedFilters.pageSize,
+      ...(parsedFilters.sortBy ? { sortBy: parsedFilters.sortBy } : {}),
+      ...(parsedFilters.sortOrder ? { sortOrder: parsedFilters.sortOrder } : {})
+    });
+  } catch (error) {
+    console.error('[Projects API] Error getting projects overview:', error);
+    // Возвращаем безопасную структуру данных в случае ошибки
+    overview = {
+      items: [],
+      pagination: {
+        page: parsedFilters.page ?? 1,
+        pageSize: parsedFilters.pageSize ?? 12,
+        total: 0,
+        totalPages: 1
+      },
+      owners: []
+    };
+  }
 
   // Логирование для отладки
   const allProjects = projectsRepository.list();
   console.log(`[Projects API] User: ${auth.userId}, Total projects in memory: ${allProjects.length}, Accessible: ${overview.items.length}, Status filter: ${parsedFilters.status}`);
 
+  // Убеждаемся, что всегда возвращаем правильную структуру
   return NextResponse.json(
     {
-      items: overview.items,
-      pagination: overview.pagination,
-      owners: overview.owners
+      items: Array.isArray(overview.items) ? overview.items : [],
+      pagination: overview.pagination ?? {
+        page: parsedFilters.page ?? 1,
+        pageSize: parsedFilters.pageSize ?? 12,
+        total: 0,
+        totalPages: 1
+      },
+      owners: Array.isArray(overview.owners) ? overview.owners : []
     },
     {
       headers: {
