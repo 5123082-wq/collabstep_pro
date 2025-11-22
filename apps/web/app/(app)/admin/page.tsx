@@ -11,7 +11,7 @@ import {
   Flag,
   File,
   Calendar,
-  HelpCircle,
+  CircleHelp,
   TrendingUp,
   FileText
 } from 'lucide-react';
@@ -72,7 +72,7 @@ const overviewCards = [
     id: 'support',
     title: 'Support Tools',
     description: 'Имперсонация, сессии, демо-данные',
-    icon: HelpCircle,
+    icon: CircleHelp,
     href: '/admin/support',
     color: 'bg-indigo-500/10 border-indigo-500/30 text-indigo-100'
   },

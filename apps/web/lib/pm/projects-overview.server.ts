@@ -36,41 +36,67 @@ export async function getProjectsOverview(
   currentUserId: string,
   filters: Partial<ProjectListFilters>
 ): Promise<ProjectsOverviewResult> {
-  const { normalizedFilters, entries, ownersMap } = collectStage2Projects(currentUserId, filters);
+  try {
+    const { normalizedFilters, entries, ownersMap } = collectStage2Projects(currentUserId, filters);
 
-  const sorted = sortProjects([...entries], normalizedFilters);
+    // Защита: убеждаемся, что entries - это массив
+    const safeEntries = Array.isArray(entries) ? entries : [];
+    const sorted = Array.isArray(safeEntries) ? sortProjects([...safeEntries], normalizedFilters) : [];
 
-  const total = sorted.length;
-  const pageSize = normalizedFilters.pageSize;
-  const totalPages = Math.max(1, Math.ceil(Math.max(total, 1) / pageSize));
-  const page = Math.min(Math.max(1, normalizedFilters.page), totalPages);
-  const start = (page - 1) * pageSize;
-  const end = start + pageSize;
+    // Защита: убеждаемся, что sorted - это массив
+    const safeSorted = Array.isArray(sorted) ? sorted : [];
+    const total = safeSorted.length;
+    const pageSize = normalizedFilters.pageSize ?? 12;
+    const totalPages = Math.max(1, Math.ceil(Math.max(total, 1) / pageSize));
+    const page = Math.min(Math.max(1, normalizedFilters.page ?? 1), totalPages);
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize;
 
-  const items: ProjectWithPermissions[] = sorted.slice(start, end).map(({ project, members, metrics }) => {
-    const ownerInfo = ownersMap.get(project.ownerId) ?? null;
-    const transformed = transformProject(project, members, metrics, ownerInfo);
-    const permissions = resolvePermissions(project, currentUserId, members);
-    const withPermissions = applyPermissions(transformed, permissions);
+    const items: ProjectWithPermissions[] = safeSorted.slice(start, end).map((entry) => {
+      // Защита: убеждаемся, что entry имеет правильную структуру
+      if (!entry || !entry.project) {
+        return null;
+      }
+      const { project, members = [], metrics } = entry;
+      const ownerInfo = ownersMap?.get(project.ownerId) ?? null;
+      const transformed = transformProject(project, members, metrics, ownerInfo);
+      const permissions = resolvePermissions(project, currentUserId, members);
+      const withPermissions = applyPermissions(transformed, permissions);
+      return {
+        ...withPermissions,
+        permissions,
+        ...(ownerInfo ? { owner: ownerInfo } : {})
+      };
+    }).filter((item): item is ProjectWithPermissions => item !== null);
+
+    const owners = ownersMap && ownersMap instanceof Map
+      ? Array.from(ownersMap.values()).sort((a, b) =>
+          a.name.localeCompare(b.name, 'ru')
+        )
+      : [];
+
     return {
-      ...withPermissions,
-      permissions,
-      ...(ownerInfo ? { owner: ownerInfo } : {})
+      items,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages
+      },
+      owners
     };
-  });
-
-  const owners = Array.from(ownersMap.values()).sort((a, b) =>
-    a.name.localeCompare(b.name, 'ru')
-  );
-
-  return {
-    items,
-    pagination: {
-      page,
-      pageSize,
-      total,
-      totalPages
-    },
-    owners
-  };
+  } catch (error) {
+    console.error('[getProjectsOverview] Error:', error);
+    // Возвращаем безопасную структуру в случае ошибки
+    return {
+      items: [],
+      pagination: {
+        page: filters.page ?? 1,
+        pageSize: filters.pageSize ?? 12,
+        total: 0,
+        totalPages: 1
+      },
+      owners: []
+    };
+  }
 }

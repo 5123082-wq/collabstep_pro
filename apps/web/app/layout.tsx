@@ -3,10 +3,20 @@ import '@/styles/layout.css';
 import { Inter } from 'next/font/google';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { SpeedInsights } from '@vercel/speed-insights/next';
 import ConsoleFilter from '@/components/util/ConsoleFilter';
 import ThemeScript from '@/components/theme/ThemeScript';
 import { ThemeProvider } from '@/components/theme/ThemeContext';
+
+// SpeedInsights только в production - условный импорт
+let SpeedInsights: React.ComponentType | null = null;
+if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    SpeedInsights = require('@vercel/speed-insights/next').SpeedInsights;
+  } catch {
+    // Игнорируем ошибку, если модуль недоступен
+  }
+}
 
 const inter = Inter({
   subsets: ['latin', 'cyrillic'],
@@ -33,7 +43,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <ThemeProvider>
           <ConsoleFilter />
           {children}
-          <SpeedInsights />
+          {SpeedInsights && <SpeedInsights />}
         </ThemeProvider>
       </body>
     </html>

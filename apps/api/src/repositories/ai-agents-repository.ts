@@ -14,6 +14,7 @@ export class AIAgentsRepository {
       return;
     }
 
+    // Создаём только одного нового агента с поддержкой OpenAI API
     const defaultAgents: Array<{
       name: string;
       email: string;
@@ -23,66 +24,20 @@ export class AIAgentsRepository {
       behavior: { autoRespond: boolean; responseStyle: 'short' | 'detailed' };
     }> = [
       {
-        name: 'AI Помощник',
+        name: 'AI Ассистент',
         email: 'ai.assistant@collabverse.ai',
-        title: 'AI-ассистент проекта',
+        title: 'AI-ассистент с OpenAI',
         agentType: 'assistant',
         responseTemplates: [
           'Принял к сведению. Продолжаю работу.',
           'Понял задачу. Начинаю выполнение.',
           'Задача в работе. Ожидаю обновления.',
-          'Работаю над задачей. Скоро будет готово.'
+          'Работаю над задачей. Скоро будет готово.',
+          'Использую OpenAI для анализа и помощи.'
         ],
         behavior: {
           autoRespond: true,
           responseStyle: 'short'
-        }
-      },
-      {
-        name: 'AI Ревьюер',
-        email: 'ai.reviewer@collabverse.ai',
-        title: 'AI-ревьюер задач',
-        agentType: 'reviewer',
-        responseTemplates: [
-          'Проверил задачу. Всё соответствует требованиям.',
-          'Обнаружены замечания. Требуется доработка.',
-          'Задача готова к следующему этапу.',
-          'Проверка завершена. Можно продолжать.'
-        ],
-        behavior: {
-          autoRespond: false,
-          responseStyle: 'short'
-        }
-      },
-      {
-        name: 'AI Напоминатель',
-        email: 'ai.reminder@collabverse.ai',
-        title: 'AI-напоминатель о дедлайнах',
-        agentType: 'reminder',
-        responseTemplates: [
-          'Напоминаю: дедлайн задачи приближается.',
-          'Осталось 2 дня до дедлайна.',
-          'Дедлайн сегодня! Не забудьте завершить задачу.',
-          'Внимание: дедлайн через несколько часов.'
-        ],
-        behavior: {
-          autoRespond: true,
-          responseStyle: 'short'
-        }
-      },
-      {
-        name: 'AI Суммаризатор',
-        email: 'ai.summarizer@collabverse.ai',
-        title: 'AI-суммаризатор обсуждений',
-        agentType: 'summarizer',
-        responseTemplates: [
-          'Вот краткая сводка обсуждения...',
-          'Основные моменты из комментариев...',
-          'Резюме проделанной работы...'
-        ],
-        behavior: {
-          autoRespond: false,
-          responseStyle: 'detailed'
         }
       }
     ];
@@ -187,6 +142,46 @@ export class AIAgentsRepository {
     }
 
     return this.findById(agentId);
+  }
+
+  /**
+   * Удаляет AI-агента из системы
+   */
+  async delete(agentId: string): Promise<boolean> {
+    await this.ensureInitialized();
+    const userInMemory = memory.WORKSPACE_USERS.find((u) => u.id === agentId);
+    if (!userInMemory || !(userInMemory as any).isAI) {
+      return false;
+    }
+
+    // Удаляем агента через usersRepository
+    return await usersRepository.delete(agentId);
+  }
+
+  /**
+   * Удаляет всех старых тестовых агентов
+   */
+  async deleteOldTestAgents(): Promise<number> {
+    await this.ensureInitialized();
+    const oldAgentEmails = [
+      'ai.assistant@collabverse.ai',
+      'ai.reviewer@collabverse.ai',
+      'ai.reminder@collabverse.ai',
+      'ai.summarizer@collabverse.ai'
+    ];
+
+    let deletedCount = 0;
+    for (const email of oldAgentEmails) {
+      const agent = await this.findById(email);
+      if (agent) {
+        const deleted = await this.delete(email);
+        if (deleted) {
+          deletedCount++;
+        }
+      }
+    }
+
+    return deletedCount;
   }
 }
 

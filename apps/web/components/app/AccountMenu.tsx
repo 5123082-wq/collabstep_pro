@@ -7,6 +7,7 @@ import { getUserType, setUserType, type UserType } from '@/lib/auth/roles';
 import { useMenuPreferencesStore, MENU_PRESETS } from '@/stores/menuPreferences';
 import { leftMenuConfig } from './LeftMenu.config';
 import type { DemoProfile } from './AppTopbar';
+import { toast } from '@/lib/ui/toast';
 
 const themeOptions = [
   {
@@ -29,18 +30,64 @@ type AccountMenuProps = {
   onLogout: () => void;
   isLoggingOut: boolean;
   onOpenSettings?: () => void;
+  onAvatarChange?: (avatarUrl: string | null) => void;
 };
 
-export default function AccountMenu({ profile, onLogout, isLoggingOut, onOpenSettings }: AccountMenuProps) {
+const AVATAR_STORAGE_KEY = 'cv-user-avatar';
+
+function getStoredAvatar(email: string): string | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  try {
+    const stored = localStorage.getItem(`${AVATAR_STORAGE_KEY}-${email}`);
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setStoredAvatar(email: string, avatarUrl: string | null): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  try {
+    if (avatarUrl) {
+      localStorage.setItem(`${AVATAR_STORAGE_KEY}-${email}`, JSON.stringify(avatarUrl));
+    } else {
+      localStorage.removeItem(`${AVATAR_STORAGE_KEY}-${email}`);
+    }
+  } catch (error) {
+    console.error('Failed to store avatar', error);
+  }
+}
+
+export default function AccountMenu({ profile, onLogout, isLoggingOut, onOpenSettings, onAvatarChange }: AccountMenuProps) {
   const { mode, resolvedTheme, setMode } = useTheme();
   const [isOpen, setOpen] = useState(false);
   const [isMenuCustomizationOpen, setMenuCustomizationOpen] = useState(false);
   const [userType, setUserTypeState] = useState<UserType>(() => getUserType());
+  // Инициализируем только из profile.avatarUrl, чтобы избежать проблем с гидратацией
+  // localStorage будет загружен только после монтирования
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(profile.avatarUrl || null);
+  const [isMounted, setIsMounted] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const menuCustomizationPanelId = useId();
   
   const { visibleMenuIds, toggleMenuVisibility, reset: resetMenuPreferences, isMenuVisible, applyPreset } = useMenuPreferencesStore();
+
+  // Загружаем avatar из localStorage только после монтирования, чтобы избежать проблем с гидратацией
+  useEffect(() => {
+    setIsMounted(true);
+    const stored = getStoredAvatar(profile.email);
+    const current = profile.avatarUrl || stored;
+    if (current !== avatarUrl) {
+      setAvatarUrl(current);
+    }
+  }, [profile.avatarUrl, profile.email]);
 
   // Применяем предустановку при первой загрузке, если тип пользователя установлен
   // и настройки меню еще не кастомизированы (для совместимости со старыми настройками)
@@ -83,6 +130,61 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut, onOpenSet
     return first.toUpperCase();
   }, [profile.email]);
 
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    // Проверяем тип файла
+    if (!file.type.startsWith('image/')) {
+      toast('Пожалуйста, выберите изображение', 'warning');
+      return;
+    }
+
+    // Проверяем размер файла (максимум 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast('Размер файла не должен превышать 5MB', 'warning');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+
+    try {
+      // Читаем файл как Data URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setAvatarUrl(result);
+        setStoredAvatar(profile.email, result);
+        onAvatarChange?.(result);
+        toast('Фото профиля обновлено', 'success');
+        setIsUploadingAvatar(false);
+      };
+      reader.onerror = () => {
+        toast('Ошибка при загрузке фото', 'warning');
+        setIsUploadingAvatar(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Failed to upload avatar', error);
+      toast('Ошибка при загрузке фото', 'warning');
+      setIsUploadingAvatar(false);
+    }
+
+    // Сбрасываем input для возможности повторной загрузки того же файла
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveAvatar = () => {
+    setAvatarUrl(null);
+    setStoredAvatar(profile.email, null);
+    onAvatarChange?.(null);
+    toast('Фото профиля удалено', 'success');
+  };
+
   useEffect(() => {
     if (!isOpen) {
       return;
@@ -117,7 +219,7 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut, onOpenSet
         type="button"
         onClick={() => setOpen((value) => !value)}
         className={clsx(
-          'flex h-9 w-9 items-center justify-center rounded-full border text-[12.6px] font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
+          'flex h-9 w-9 items-center justify-center rounded-full border text-[12.6px] font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 overflow-hidden',
           'border-[color:var(--theme-control-border)] bg-[color:var(--theme-control-bg)] text-[color:var(--theme-control-foreground)]',
           'hover:border-[color:var(--theme-control-border-hover)] hover:text-[color:var(--theme-control-foreground-hover)]'
         )}
@@ -125,8 +227,25 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut, onOpenSet
         aria-expanded={isOpen ? 'true' : 'false'}
         aria-label="Меню аккаунта"
       >
-        {initials}
+        {avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={avatarUrl}
+            alt={profile.email}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          initials
+        )}
       </button>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleAvatarUpload}
+        className="hidden"
+        aria-label="Загрузить фото профиля"
+      />
       {isOpen ? (
         <div
           ref={menuRef}
@@ -136,9 +255,70 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut, onOpenSet
         >
           <div className="border-b border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] px-4 py-3">
             <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-[color:var(--text-primary)]">{profile.email}</p>
-                <p className="text-xs text-[color:var(--text-secondary)]">{profile.role === 'admin' ? 'Администратор' : 'Пользователь'}</p>
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="relative group">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] text-sm font-semibold overflow-hidden shrink-0">
+                    {avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={avatarUrl}
+                        alt={profile.email}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      initials
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingAvatar}
+                    className="absolute inset-0 flex items-center justify-center rounded-full bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                    aria-label="Изменить фото профиля"
+                  >
+                    {isUploadingAvatar ? (
+                      <svg
+                        className="h-5 w-5 animate-spin text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        className="h-5 w-5 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-[color:var(--text-primary)] truncate">{profile.email}</p>
+                  <p className="text-xs text-[color:var(--text-secondary)]">{profile.role === 'admin' ? 'Администратор' : 'Пользователь'}</p>
+                </div>
               </div>
               <button
                 type="button"
@@ -159,6 +339,86 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut, onOpenSet
             </div>
           </div>
           <div className="space-y-4 px-4 py-3">
+            <section>
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-xs font-semibold uppercase tracking-[0.24em] text-[color:var(--text-tertiary)]">
+                  Фото профиля
+                </h3>
+              </div>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingAvatar}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] px-3 py-2 text-sm font-medium text-[color:var(--text-secondary)] transition hover:border-[color:var(--accent-border)] hover:text-[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isUploadingAvatar ? (
+                    <>
+                      <svg
+                        className="h-4 w-4 animate-spin"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      Загрузка...
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                      </svg>
+                      {avatarUrl ? 'Изменить фото' : 'Загрузить фото'}
+                    </>
+                  )}
+                </button>
+                {avatarUrl && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveAvatar}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] px-3 py-2 text-sm font-medium text-[color:var(--text-secondary)] transition hover:border-[color:var(--button-danger-border)] hover:text-[color:var(--button-danger-foreground)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      viewBox="0 0 24 24"
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    </svg>
+                    Удалить фото
+                  </button>
+                )}
+              </div>
+            </section>
             <section>
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-xs font-semibold uppercase tracking-[0.24em] text-[color:var(--text-tertiary)]">

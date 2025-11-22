@@ -27,7 +27,7 @@ export function buildLeftMenu(roles: UserRole[], visibleMenuIds?: string[]): Bui
       return section.roles.some((role) => roles.includes(role));
     })
     .map((section) => {
-      const children = section.children ? filterRoles(section.children, roles) : [];
-      return { ...section, children };
+      const children = section.children && Array.isArray(section.children) ? filterRoles(section.children, roles) : [];
+      return { ...section, children: Array.isArray(children) ? children : [] };
     });
 }

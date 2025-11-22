@@ -35,6 +35,7 @@
     "docs:links": "find . -name '*.md' -not -path './node_modules/*' -not -path './apps/*/node_modules/*' -print0 | xargs -0 -n1 markdown-link-check -c .mlc.config.json",
     "seed:finance": "tsx scripts/seed-finance.ts",
     "seed:test-project": "tsx scripts/seed-test-project.ts",
+    "reset:ai-agents": "tsx scripts/reset-ai-agents.ts",
     "prepare": "husky install",
     "vercel-build": "pnpm -C apps/web build"
   },
