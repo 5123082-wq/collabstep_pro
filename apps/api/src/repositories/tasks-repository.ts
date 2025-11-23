@@ -28,6 +28,8 @@ export type CreateTaskInput = {
   estimatedTime?: number | null;
   storyPoints?: number | null;
   loggedTime?: number | null;
+  price?: string | null;
+  currency?: string | null;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -139,7 +141,9 @@ export class TasksRepository {
       ...(Array.isArray(input.labels) ? { labels: [...input.labels] } : {}),
       ...(input.estimatedTime !== undefined ? { estimatedTime: input.estimatedTime } : {}),
       ...(input.storyPoints !== undefined ? { storyPoints: input.storyPoints } : {}),
-      ...(input.loggedTime !== undefined ? { loggedTime: input.loggedTime } : {})
+      ...(input.loggedTime !== undefined ? { loggedTime: input.loggedTime } : {}),
+      ...(input.price !== undefined ? { price: input.price } : {}),
+      ...(input.currency !== undefined ? { currency: input.currency } : {}),
     };
 
     memory.TASKS.push(task);
@@ -147,7 +151,7 @@ export class TasksRepository {
     return enrichTask(task);
   }
 
-  update(id: string, patch: Partial<Pick<Task, 'title' | 'description' | 'status' | 'assigneeId' | 'priority' | 'startAt' | 'startDate' | 'dueAt' | 'labels' | 'estimatedTime' | 'storyPoints' | 'loggedTime' | 'iterationId' | 'parentId'>>): Task | null {
+  update(id: string, patch: Partial<Pick<Task, 'title' | 'description' | 'status' | 'assigneeId' | 'priority' | 'startAt' | 'startDate' | 'dueAt' | 'labels' | 'estimatedTime' | 'storyPoints' | 'loggedTime' | 'iterationId' | 'parentId' | 'price' | 'currency'>>): Task | null {
     const idx = memory.TASKS.findIndex((task) => task.id === id);
     if (idx === -1) {
       return null;
@@ -228,6 +232,14 @@ export class TasksRepository {
 
     if ('parentId' in patch) {
       updated.parentId = patch.parentId ?? null;
+    }
+
+    if ('price' in patch) {
+      updated.price = patch.price ?? null;
+    }
+
+    if ('currency' in patch) {
+      updated.currency = patch.currency ?? null;
     }
 
     memory.TASKS[idx] = updated;

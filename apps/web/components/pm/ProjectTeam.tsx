@@ -7,6 +7,7 @@ import { type Project, type ProjectMember } from '@/types/pm';
 import { trackEvent } from '@/lib/telemetry';
 import { toast } from '@/lib/ui/toast';
 import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
+import { isAdminUserId } from '@collabverse/api';
 
 type ProjectTeamProps = {
   project: Project;
@@ -153,27 +154,44 @@ export default function ProjectTeam({ project, currentUserId }: ProjectTeamProps
 
       {/* Список участников */}
       <div className="space-y-2">
-        {project.members.map((member) => (
-          <div
-            key={member.userId}
-            className="flex items-center justify-between rounded-lg border border-neutral-800/50 bg-neutral-900/30 px-4 py-3"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-500/20 text-sm font-medium text-indigo-300">
-                {member.userId.charAt(0).toUpperCase()}
+        {project.members.map((member) => {
+          // Определяем отображаемое имя
+          const displayName = isAdminUserId(member.userId)
+            ? 'Админ'
+            : member.name || member.userId;
+          
+          // Определяем первую букву для аватара
+          const avatarLetter = isAdminUserId(member.userId)
+            ? 'А'
+            : (member.name || member.userId).charAt(0).toUpperCase();
+
+          return (
+            <div
+              key={member.userId}
+              className="flex items-center justify-between rounded-lg border border-neutral-800/50 bg-neutral-900/30 px-4 py-3"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-500/20 text-sm font-medium text-indigo-300">
+                  {avatarLetter}
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-white">
+                    {displayName}
+                    {isAdminUserId(member.userId) && member.name && (
+                      <span className="ml-2 text-xs text-neutral-400">({member.name})</span>
+                    )}
+                  </div>
+                  <div className="text-xs text-neutral-400">{ROLE_LABELS[member.role]}</div>
+                </div>
               </div>
-              <div>
-                <div className="text-sm font-medium text-white">{member.userId}</div>
-                <div className="text-xs text-neutral-400">{ROLE_LABELS[member.role]}</div>
-              </div>
+              {member.userId === project.ownerId && (
+                <span className="rounded-full bg-indigo-500/20 px-2 py-1 text-xs font-medium uppercase tracking-wider text-indigo-300">
+                  Владелец
+                </span>
+              )}
             </div>
-            {member.userId === project.ownerId && (
-              <span className="rounded-full bg-indigo-500/20 px-2 py-1 text-xs font-medium uppercase tracking-wider text-indigo-300">
-                Владелец
-              </span>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </ContentBlock>
   );

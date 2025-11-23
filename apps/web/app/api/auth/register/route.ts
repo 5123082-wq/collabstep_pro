@@ -67,8 +67,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   // Проверяем, что это не попытка зарегистрировать demo-аккаунт
   const demoAdminEmail = getDemoAccount('admin').email.toLowerCase();
-  const demoUserEmail = getDemoAccount('user').email.toLowerCase();
-  if (emailLower === demoAdminEmail || emailLower === demoUserEmail) {
+  const blockedDemoEmails = [
+    'user.demo@collabverse.test',
+    'designer.demo@collabverse.test',
+    'finance.pm@collabverse.test'
+  ];
+  if (emailLower === demoAdminEmail || blockedDemoEmails.includes(emailLower)) {
     return NextResponse.json({ error: 'Этот email зарезервирован для демо-аккаунта' }, { status: 400 });
   }
 

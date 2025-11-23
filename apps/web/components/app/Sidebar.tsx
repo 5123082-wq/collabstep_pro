@@ -47,6 +47,8 @@ type SidebarProps = {
   roles: UserRole[];
 };
 
+import { OrganizationSwitcher } from '@/components/organizations/OrganizationSwitcher';
+
 export default function Sidebar({ roles }: SidebarProps) {
   const pathname = usePathname();
   const [normalizedPath = ''] = (pathname ?? '').split('?');
@@ -154,7 +156,7 @@ export default function Sidebar({ roles }: SidebarProps) {
   const renderExpandedMenu = () => (
     <nav 
       aria-label="Навигация приложения" 
-      className="sidebar-nav mt-6 flex flex-1 flex-col gap-2 overflow-y-auto pr-0.5"
+      className="sidebar-nav mt-2 flex flex-1 flex-col gap-2 overflow-y-auto pr-0.5"
       style={{ scrollbarGutter: 'stable' }}
     >
       {menu.map((section) => {
@@ -402,6 +404,11 @@ export default function Sidebar({ roles }: SidebarProps) {
           </button>
         </div>
       </div>
+      
+      <div className="mt-4">
+        <OrganizationSwitcher collapsed={sidebarCollapsed} />
+      </div>
+
       {isMounted ? (sidebarCollapsed ? renderCollapsedMenu() : renderExpandedMenu()) : renderExpandedMenu()}
     </aside>
   );

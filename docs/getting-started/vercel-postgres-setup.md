@@ -74,16 +74,21 @@ DEMO_USER_PASSWORD=demo-user
 
 1. Перейдите в [Google Cloud Console](https://console.cloud.google.com/)
 2. Создайте новый проект или выберите существующий
-3. Включите **Google+ API**
-4. Перейдите в **Credentials** → **Create Credentials** → **OAuth client ID**
+3. Настройте **OAuth consent screen**: выберите тип (External/Internal), заполните название приложения и email поддержки, добавьте тестовых пользователей, если не публикуете сразу
+4. Перейдите в **APIs & Services** → **Credentials** → **Create Credentials** → **OAuth client ID**
 5. Выберите тип приложения: **Web application**
 6. Настройте **Authorized redirect URIs**:
    ```
    https://your-domain.vercel.app/api/auth/callback/google
    http://localhost:3000/api/auth/callback/google (для локальной разработки)
    ```
-7. Скопируйте **Client ID** и **Client Secret**
-8. Добавьте их в переменные окружения Vercel
+7. При появлении поля **Authorized JavaScript origins** укажите:
+   ```
+   https://your-domain.vercel.app
+   http://localhost:3000
+   ```
+8. Скопируйте **Client ID** и **Client Secret**
+9. Добавьте их в переменные окружения Vercel
 
 ## Шаг 4: Применение миграций
 

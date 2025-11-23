@@ -162,6 +162,8 @@ export class UsersMemoryRepository implements UsersRepository {
 }
 
 // Factory logic
-const isDbStorage = process.env.AUTH_STORAGE === 'db';
+// @vercel/postgres requires POSTGRES_URL to be set. DATABASE_URL is not enough for it.
+const hasDbConnection = !!process.env.POSTGRES_URL;
+const isDbStorage = process.env.AUTH_STORAGE === 'db' && hasDbConnection;
 export const usersRepository: UsersRepository = isDbStorage ? new UsersDbRepository() : new UsersMemoryRepository();
 export type { UsersRepository };

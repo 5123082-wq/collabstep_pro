@@ -59,30 +59,6 @@ export const WORKSPACE_USERS: WorkspaceUser[] = [
     title: 'Руководитель продукта',
     department: 'Продукт',
     location: 'Москва'
-  },
-  {
-    id: TEST_USER_ID,
-    name: 'Игорь Участник',
-    email: 'user.demo@collabverse.test',
-    title: 'Менеджер проектов',
-    department: 'Операции',
-    location: 'Санкт-Петербург'
-  },
-  {
-    id: TEST_FINANCE_USER_ID,
-    name: 'Мария Финансы',
-    email: 'finance.pm@collabverse.test',
-    title: 'Финансовый контролёр',
-    department: 'Финансы',
-    location: 'Москва'
-  },
-  {
-    id: TEST_DESIGNER_USER_ID,
-    name: 'Диана Дизайн',
-    email: 'designer.demo@collabverse.test',
-    title: 'Ведущий дизайнер',
-    department: 'Дизайн',
-    location: 'Екатеринбург'
   }
 ];
 

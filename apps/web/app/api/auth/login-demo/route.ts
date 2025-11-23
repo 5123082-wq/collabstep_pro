@@ -47,7 +47,25 @@ export async function POST(request: NextRequest): Promise<DemoLoginResponse> {
 
   // Получаем userId из репозитория пользователей
   const user = await usersRepository.findByEmail(account.email);
-  const userId = user?.id || account.email; // Fallback на email для обратной совместимости
+  
+  // Если пользователя нет в БД, блокируем вход (пользователь был удален)
+  if (!user) {
+    return NextResponse.json(
+      { error: 'Демо-аккаунт недоступен. Пользователь был удален.' },
+      { status: 403 }
+    );
+  }
+
+  // Блокируем удаленные демо-аккаунты
+  const blockedEmails = ['user.demo@collabverse.test'];
+  if (blockedEmails.includes(account.email.toLowerCase())) {
+    return NextResponse.json(
+      { error: 'Этот демо-аккаунт больше не доступен.' },
+      { status: 403 }
+    );
+  }
+
+  const userId = user.id;
 
   const sessionToken = encodeDemoSession({ email: account.email, userId, role, issuedAt: Date.now() });
   const response = NextResponse.redirect(new URL('/dashboard', request.url), { status: 303 });

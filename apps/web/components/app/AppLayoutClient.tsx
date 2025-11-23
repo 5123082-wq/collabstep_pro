@@ -13,6 +13,7 @@ import ToastHub from '@/components/app/ToastHub';
 import HoverRail from '@/components/right-rail/HoverRail';
 import PlatformSettingsModal from '@/components/settings/PlatformSettingsModal';
 import CreateTaskWithProjectModal from '@/components/pm/CreateTaskWithProjectModal';
+import { CreateAIAgentModal } from '@/components/ai-hub';
 import type { DemoSession } from '@/lib/auth/demo-session';
 import { getRolesForDemoAccount, setUserRoles } from '@/lib/auth/roles';
 import { toast } from '@/lib/ui/toast';
@@ -196,6 +197,15 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
           <CreateTaskWithProjectModal
             isOpen={activeModal === 'createTask'}
             onClose={() => setActiveModal(null)}
+          />
+        )}
+        {activeModal === 'createAIAgent' && (
+          <CreateAIAgentModal
+            open={activeModal === 'createAIAgent'}
+            onClose={() => setActiveModal(null)}
+            onSuccess={() => {
+              toast('AI Agent created', 'success');
+            }}
           />
         )}
         <ToastHub />

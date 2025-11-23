@@ -6,4 +6,6 @@ dist
 playwright-report
 test-results
 \.env
+.env.local
+/apps/web/.env.local
 *.tsbuildinfo

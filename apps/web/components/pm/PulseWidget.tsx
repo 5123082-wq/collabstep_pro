@@ -47,11 +47,12 @@ export default function PulseWidget({ data }: PulseWidgetProps) {
     } else if (type === 'drafts') {
       router.push('/pm/projects?status=DRAFT');
     } else if (type === 'tasks') {
-      router.push('/pm/tasks');
+      // Показываем все доступные задачи, а не только из проектов пользователя
+      router.push('/pm/tasks?scope=all');
     } else if (type === 'overdue') {
-      router.push('/pm/tasks?status=in_progress');
+      router.push('/pm/tasks?scope=all&status=in_progress');
     } else if (type === 'deadline' && params?.taskId) {
-      router.push(`/pm/tasks?taskId=${params.taskId}`);
+      router.push(`/pm/tasks?scope=all&taskId=${params.taskId}`);
     }
   };
 

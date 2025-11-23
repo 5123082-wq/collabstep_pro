@@ -23,9 +23,7 @@ const requiredVars = new Map([
   ['NEXT_PUBLIC_FEATURE_TASKS_WORKSPACE', '1'],
   ['AUTH_DEV', 'on'],
   ['DEMO_ADMIN_EMAIL', 'admin.demo@collabverse.test'],
-  ['DEMO_ADMIN_PASSWORD', 'demo-admin'],
-  ['DEMO_USER_EMAIL', 'user.demo@collabverse.test'],
-  ['DEMO_USER_PASSWORD', 'demo-user']
+  ['DEMO_ADMIN_PASSWORD', 'admin.demo'],
 ]);
 
 const raw = fs.readFileSync(envPath, 'utf8');
@@ -58,4 +56,8 @@ const normalized = updated
   .replace(/\n{3,}/g, '\n\n')
   .replace(/\s+$/, '');
 
-fs.writeFileSync(envPath, normalized.endsWith('\n') ? normalized : `${normalized}\n`, 'utf8');
+fs.writeFileSync(
+  envPath,
+  normalized.endsWith('\n') ? normalized : `${normalized}\n`,
+  'utf8'
+);

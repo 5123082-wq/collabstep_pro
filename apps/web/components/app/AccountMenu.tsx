@@ -87,7 +87,7 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut, onOpenSet
     if (current !== avatarUrl) {
       setAvatarUrl(current);
     }
-  }, [profile.avatarUrl, profile.email]);
+  }, [profile.avatarUrl, profile.email, avatarUrl]);
 
   // Применяем предустановку при первой загрузке, если тип пользователя установлен
   // и настройки меню еще не кастомизированы (для совместимости со старыми настройками)

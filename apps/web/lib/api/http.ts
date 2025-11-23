@@ -10,7 +10,17 @@ export function jsonOk<T>(data: T, init?: ResponseInit): NextResponse<ApiRespons
   return NextResponse.json({ ok: true, data }, init);
 }
 
-export function jsonError(message: string, init?: ResponseInit): NextResponse<ApiResponse<never>> {
+export interface ApiErrorResponse {
+  ok: false;
+  error: string;
+  details?: string;
+}
+
+export function jsonError(message: string, init?: ResponseInit & { details?: string }): NextResponse<ApiErrorResponse> {
   const status = init?.status ?? 400;
-  return NextResponse.json({ ok: false, error: message }, { ...init, status });
+  const { details, ...responseInit } = init || {};
+  return NextResponse.json(
+    { ok: false, error: message, ...(details ? { details } : {}) },
+    { ...responseInit, status }
+  );
 }

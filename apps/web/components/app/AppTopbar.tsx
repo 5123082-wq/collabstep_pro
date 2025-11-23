@@ -8,6 +8,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { toast } from '@/lib/ui/toast';
 import ThemeToggle from '@/components/app/ThemeToggle';
 import AccountMenu from '@/components/app/AccountMenu';
+import { getUserType, type UserType } from '@/lib/auth/roles';
 import { marketingNavigation } from '@/components/marketing/app/MarketingLayoutShell';
 import { MARKETING_HUB_PATH, PM_HUB_PATH } from '@/components/app/LeftMenu.config';
 import { pmNavigation } from '@/components/pm/pmNavigation';
@@ -97,6 +98,11 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
   const buttonRef = createButtonRef || internalCreateButtonRef;
   const listboxId = useId();
   const hintId = `${listboxId}-hint`;
+  const [userType, setUserTypeState] = useState<UserType>(null);
+
+  useEffect(() => {
+    setUserTypeState(getUserType());
+  }, []);
 
   const suggestions: QuickSuggestion[] = useMemo(() => {
     // TODO: Подключить к реальному API специалистов и вакансий
@@ -375,6 +381,13 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
           />
         </div>
         <div className="flex flex-wrap items-center gap-[7.2px]">
+          {userType === 'performer' && (
+            <span
+              className="rounded-full bg-purple-500/20 text-purple-100 ring-1 ring-inset ring-purple-500/50 px-[10.8px] py-[3.6px] text-[10.8px] font-semibold uppercase tracking-wide"
+            >
+              Исполнитель
+            </span>
+          )}
           <span
             data-testid="role-badge"
             className={clsx(

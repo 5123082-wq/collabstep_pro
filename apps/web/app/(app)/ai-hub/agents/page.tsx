@@ -8,12 +8,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { ContentBlock } from '@/components/ui/content-block';
 import { isDemoAdminEmail } from '@/lib/auth/demo-session';
 
+type AIAgentScope = 'personal' | 'team' | 'public';
+
 type AIAgent = {
   id: string;
   name: string;
   email: string;
   title: string;
   agentType: 'assistant' | 'reviewer' | 'reminder' | 'summarizer';
+  scope?: AIAgentScope;
+  isGlobal?: boolean;
   responseTemplates?: string[];
   behavior?: {
     autoRespond?: boolean;
@@ -50,6 +54,10 @@ export default function AiAgentsPage() {
   const [editingAgent, setEditingAgent] = useState<AIAgent | null>(null);
   const [viewingAgent, setViewingAgent] = useState<AIAgent | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'all' | AIAgentScope>('all');
+
   const [editForm, setEditForm] = useState<{
     name: string;
     title: string;
@@ -234,6 +242,15 @@ export default function AiAgentsPage() {
     }
   };
 
+  // Filter agents based on active tab
+  const filteredAgents = agents.filter(agent => {
+    if (activeTab === 'all') return true;
+    if (activeTab === 'personal') return agent.scope === 'personal';
+    if (activeTab === 'team') return agent.scope === 'team';
+    if (activeTab === 'public') return agent.scope === 'public' || agent.isGlobal;
+    return true;
+  });
+
   return (
     <section className="space-y-6">
       <header className="space-y-3">
@@ -245,18 +262,42 @@ export default function AiAgentsPage() {
         </div>
       </header>
 
+      {/* Tabs */}
+      <div className="flex items-center gap-2 border-b border-neutral-800 pb-px">
+        {[
+          { id: 'all', label: 'Все' },
+          { id: 'personal', label: 'Личные' },
+          { id: 'team', label: 'Команда' },
+          { id: 'public', label: 'Общедоступные' }
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              activeTab === tab.id
+                ? 'border-indigo-500 text-indigo-400'
+                : 'border-transparent text-neutral-400 hover:text-neutral-200'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {loading ? (
         <div className="rounded-xl border border-neutral-800 bg-neutral-950/40 p-6 text-center text-sm text-neutral-400">
           Загрузка агентов...
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {agents.length === 0 ? (
+          {filteredAgents.length === 0 ? (
             <div className="col-span-full rounded-xl border border-neutral-800 bg-neutral-950/40 p-6 text-center text-sm text-neutral-400">
-              Нет доступных AI-агентов
+              {activeTab === 'all' 
+                ? 'Нет доступных AI-агентов' 
+                : 'В этой категории пока нет агентов'}
             </div>
           ) : (
-            Array.isArray(agents) && agents.length > 0 && agents.map((agent) => {
+            filteredAgents.map((agent) => {
               if (!agent || !agent.id) {
                 return null;
               }
@@ -270,13 +311,27 @@ export default function AiAgentsPage() {
                   onClick={() => setViewingAgent(agent)}
                 >
                   <header className="mb-3">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-lg font-semibold text-neutral-50">{agent.name}</h3>
-                      <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-indigo-200 shrink-0">
-                        AI
-                      </span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-indigo-200 shrink-0">
+                          AI
+                        </span>
+                        {/* Scope badge */}
+                        {agent.scope === 'personal' && (
+                           <span className="text-[10px] text-neutral-500 border border-neutral-800 rounded px-1.5 py-0.5">Личный</span>
+                        )}
+                        {agent.scope === 'team' && (
+                           <span className="text-[10px] text-blue-400 border border-blue-900/30 bg-blue-500/10 rounded px-1.5 py-0.5">Команда</span>
+                        )}
+                         {(agent.scope === 'public' || agent.isGlobal) && (
+                           <span className="text-[10px] text-emerald-400 border border-emerald-900/30 bg-emerald-500/10 rounded px-1.5 py-0.5">Общий</span>
+                        )}
+                      </div>
                     </div>
-                    <p className="mt-1 text-xs uppercase tracking-wide text-indigo-300">
+                    
+                    <h3 className="text-lg font-semibold text-neutral-50 mb-1">{agent.name}</h3>
+                    
+                    <p className="text-xs uppercase tracking-wide text-indigo-300">
                       {AGENT_TYPE_LABELS[agent.agentType]}
                     </p>
                     <p className="mt-1.5 text-sm text-neutral-400 line-clamp-2">
@@ -387,6 +442,17 @@ export default function AiAgentsPage() {
                 <div>
                   <h4 className="mb-3 text-sm font-semibold text-neutral-200">Описание</h4>
                   <p className="text-sm text-neutral-400">{AGENT_TYPE_DESCRIPTIONS[viewingAgent.agentType]}</p>
+                </div>
+                
+                {/* Scope info */}
+                <div>
+                  <h4 className="mb-3 text-sm font-semibold text-neutral-200">Доступ</h4>
+                  <div className="text-sm text-neutral-400">
+                     {viewingAgent.scope === 'personal' && 'Личный агент (видите только вы)'}
+                     {viewingAgent.scope === 'team' && 'Доступен команде'}
+                     {(viewingAgent.scope === 'public' || viewingAgent.isGlobal) && 'Общедоступный агент'}
+                     {!viewingAgent.scope && !viewingAgent.isGlobal && 'Общедоступный (legacy)'}
+                  </div>
                 </div>
 
                 {/* Поведение */}
