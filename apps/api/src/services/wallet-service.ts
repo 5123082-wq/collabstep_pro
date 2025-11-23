@@ -7,11 +7,14 @@ export class WalletService {
         let wallet = await walletRepository.findByEntity(entityId, entityType);
         if (!wallet) {
             wallet = await walletRepository.createWallet(entityId, entityType);
+            if (!wallet) {
+                throw new Error('Failed to create wallet');
+            }
         }
         return {
-             cents: wallet.balance,
-             amount: centsToAmount(BigInt(wallet.balance)),
-             currency: wallet.currency
+            cents: wallet.balance,
+            amount: centsToAmount(BigInt(wallet.balance)),
+            currency: wallet.currency
         };
     }
 
@@ -26,9 +29,12 @@ export class WalletService {
         return db.transaction(async (tx) => {
             let wallet = await walletRepository.findByEntity(entityId, entityType, tx);
             if (!wallet) {
-                 wallet = await walletRepository.createWallet(entityId, entityType, 'RUB', tx);
+                wallet = await walletRepository.createWallet(entityId, entityType, 'RUB', tx);
+                if (!wallet) {
+                    throw new Error('Failed to create wallet');
+                }
             }
-            
+
             // Create Transaction
             const transaction = await walletRepository.createTransaction({
                 walletId: wallet.id,
@@ -41,6 +47,9 @@ export class WalletService {
 
             // Update Balance
             const updatedWallet = await walletRepository.updateBalance(wallet.id, cents, tx);
+            if (!updatedWallet) {
+                throw new Error('Failed to update wallet balance');
+            }
 
             return {
                 transaction,
@@ -50,17 +59,17 @@ export class WalletService {
     }
 
     async holdFunds(
-        entityId: string, 
-        entityType: WalletType, 
-        amount: string | number, 
-        referenceId: string, 
+        entityId: string,
+        entityType: WalletType,
+        amount: string | number,
+        referenceId: string,
         referenceType: 'project' | 'task' | 'contract' | 'stripe_charge'
     ) {
         const normalizedAmount = normalizeAmount(amount);
         const cents = Number(amountToCents(normalizedAmount));
 
         if (cents <= 0) {
-             throw new Error("Amount must be positive");
+            throw new Error("Amount must be positive");
         }
 
         return db.transaction(async (tx) => {
@@ -75,6 +84,9 @@ export class WalletService {
 
             // Deduct funds (Create negative balance change)
             const updatedWallet = await walletRepository.updateBalance(wallet.id, -cents, tx);
+            if (!updatedWallet) {
+                throw new Error('Failed to update wallet balance');
+            }
 
             // Create Transaction Record (Pending Payment)
             const transaction = await walletRepository.createTransaction({
@@ -95,8 +107,8 @@ export class WalletService {
     }
 
     async releaseFunds(
-        holdTransactionId: string, 
-        receiverId: string, 
+        holdTransactionId: string,
+        receiverId: string,
         receiverType: WalletType
     ) {
         return db.transaction(async (tx) => {
@@ -115,24 +127,30 @@ export class WalletService {
             let receiverWallet = await walletRepository.findByEntity(receiverId, receiverType, tx);
             if (!receiverWallet) {
                 receiverWallet = await walletRepository.createWallet(receiverId, receiverType, 'RUB', tx);
+                if (!receiverWallet) {
+                    throw new Error('Failed to create receiver wallet');
+                }
             }
 
             const amount = Math.abs(holdTx.amount); // Should be positive for credit
 
             const creditTx = await walletRepository.createTransaction({
                 walletId: receiverWallet.id,
-                type: 'deposit', 
+                type: 'deposit',
                 amount: amount,
                 status: 'completed',
                 referenceId: holdTx.referenceId,
                 referenceType: holdTx.referenceType,
-                metadata: { 
+                metadata: {
                     source_transaction_id: holdTx.id,
                     action: 'release_funds'
                 }
             }, tx);
 
             const updatedReceiver = await walletRepository.updateBalance(receiverWallet.id, amount, tx);
+            if (!updatedReceiver) {
+                throw new Error('Failed to update receiver wallet balance');
+            }
 
             return {
                 transaction: creditTx,

@@ -17,7 +17,7 @@ export function CreateOrganizationModal({ open, onOpenChange, onSuccess }: Creat
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState<'open' | 'closed'>('closed');
@@ -45,12 +45,12 @@ export function CreateOrganizationModal({ open, onOpenChange, onSuccess }: Creat
       }
 
       const data = await res.json();
-      
+
       onOpenChange(false);
       setName('');
       setDescription('');
       setType('closed');
-      
+
       router.refresh();
       if (onSuccess) {
         onSuccess();
@@ -76,7 +76,7 @@ export function CreateOrganizationModal({ open, onOpenChange, onSuccess }: Creat
                 {error}
               </div>
             )}
-            
+
             <div className="space-y-4">
               <div className="space-y-2">
                 <label htmlFor="org-name" className="text-sm font-medium text-[color:var(--text-secondary)]">
@@ -134,7 +134,7 @@ export function CreateOrganizationModal({ open, onOpenChange, onSuccess }: Creat
             </div>
           </ModalBody>
           <ModalFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+            <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={isLoading}>
               Отмена
             </Button>
             <Button type="submit" disabled={isLoading}>

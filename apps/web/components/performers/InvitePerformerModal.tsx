@@ -28,9 +28,9 @@ export function InvitePerformerModal({ open, onOpenChange, performer }: InvitePe
       void fetch('/api/organizations')
         .then(res => res.json())
         .then(data => {
-            const orgs = data.organizations || [];
-            setOrganizations(orgs);
-            if (orgs.length > 0) setSelectedOrgId(orgs[0].id);
+          const orgs = data.organizations || [];
+          setOrganizations(orgs);
+          if (orgs.length > 0) setSelectedOrgId(orgs[0].id);
         })
         .finally(() => setIsLoading(false));
     }
@@ -71,41 +71,41 @@ export function InvitePerformerModal({ open, onOpenChange, performer }: InvitePe
           <ModalClose />
         </ModalHeader>
         <ModalBody>
-            {message && (
-                <div className={`p-3 rounded text-sm mb-4 ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                    {message.text}
-                </div>
-            )}
-            
-            {isLoading ? (
-                <div>Загрузка организаций...</div>
-            ) : organizations.length === 0 ? (
-                <div>У вас нет организаций, чтобы пригласить исполнителя. Создайте организацию в меню.</div>
-            ) : (
-                <div className="space-y-4">
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-[color:var(--text-secondary)]">Выберите организацию</label>
-                        <select
-                            className="w-full rounded-md border border-[color:var(--surface-border-strong)] bg-[color:var(--surface-base)] px-3 py-2 text-sm"
-                            value={selectedOrgId}
-                            onChange={(e) => setSelectedOrgId(e.target.value)}
-                        >
-                            {organizations.map(org => (
-                                <option key={org.id} value={org.id}>{org.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <p className="text-sm text-[color:var(--text-secondary)]">
-                        Исполнитель получит уведомление и сможет присоединиться к вашей организации.
-                    </p>
-                </div>
-            )}
+          {message && (
+            <div className={`p-3 rounded text-sm mb-4 ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+              {message.text}
+            </div>
+          )}
+
+          {isLoading ? (
+            <div>Загрузка организаций...</div>
+          ) : organizations.length === 0 ? (
+            <div>У вас нет организаций, чтобы пригласить исполнителя. Создайте организацию в меню.</div>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-[color:var(--text-secondary)]">Выберите организацию</label>
+                <select
+                  className="w-full rounded-md border border-[color:var(--surface-border-strong)] bg-[color:var(--surface-base)] px-3 py-2 text-sm"
+                  value={selectedOrgId}
+                  onChange={(e) => setSelectedOrgId(e.target.value)}
+                >
+                  {organizations.map(org => (
+                    <option key={org.id} value={org.id}>{org.name}</option>
+                  ))}
+                </select>
+              </div>
+              <p className="text-sm text-[color:var(--text-secondary)]">
+                Исполнитель получит уведомление и сможет присоединиться к вашей организации.
+              </p>
+            </div>
+          )}
         </ModalBody>
         <ModalFooter>
-           <Button variant="outline" onClick={() => onOpenChange(false)}>Отмена</Button>
-           <Button onClick={handleInvite} disabled={isSending || organizations.length === 0 || !selectedOrgId}>
-             {isSending ? 'Отправка...' : 'Отправить приглашение'}
-           </Button>
+          <Button variant="secondary" onClick={() => onOpenChange(false)}>Отмена</Button>
+          <Button onClick={handleInvite} disabled={isSending || organizations.length === 0 || !selectedOrgId}>
+            {isSending ? 'Отправка...' : 'Отправить приглашение'}
+          </Button>
         </ModalFooter>
       </ModalContent>
     </Modal>

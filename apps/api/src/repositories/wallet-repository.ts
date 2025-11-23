@@ -7,7 +7,7 @@ export type Currency = 'USD' | 'RUB';
 export type TransactionType = 'deposit' | 'withdrawal' | 'payment' | 'refund' | 'payout';
 
 export class WalletRepository {
-    async createWallet(entityId: string, entityType: WalletType, currency: Currency = 'RUB', tx = db) {
+    async createWallet(entityId: string, entityType: WalletType, currency: Currency = 'RUB', tx: any = db) {
         const [wallet] = await tx.insert(wallets).values({
             entityId,
             entityType,
@@ -18,29 +18,29 @@ export class WalletRepository {
         return wallet;
     }
 
-    async findByEntity(entityId: string, entityType: WalletType, tx = db) {
+    async findByEntity(entityId: string, entityType: WalletType, tx: any = db) {
         const [wallet] = await tx.select().from(wallets).where(
             and(eq(wallets.entityId, entityId), eq(wallets.entityType, entityType))
         );
         return wallet || null;
     }
 
-    async getById(id: string, tx = db) {
+    async getById(id: string, tx: any = db) {
         const [wallet] = await tx.select().from(wallets).where(eq(wallets.id, id));
         return wallet || null;
     }
 
-    async createTransaction(data: typeof transactions.$inferInsert, tx = db) {
+    async createTransaction(data: typeof transactions.$inferInsert, tx: any = db) {
         const [transaction] = await tx.insert(transactions).values(data).returning();
         return transaction;
     }
 
-    async findTransactionById(id: string, tx = db) {
+    async findTransactionById(id: string, tx: any = db) {
         const [transaction] = await tx.select().from(transactions).where(eq(transactions.id, id));
         return transaction || null;
     }
 
-    async findTransactionByReference(referenceId: string, referenceType: string, type: TransactionType, status: typeof transactions.$inferSelect.status, tx = db) {
+    async findTransactionByReference(referenceId: string, referenceType: string, type: TransactionType, status: typeof transactions.$inferSelect.status, tx: any = db) {
         const [transaction] = await tx.select().from(transactions).where(
             and(
                 eq(transactions.referenceId, referenceId),
@@ -52,7 +52,7 @@ export class WalletRepository {
         return transaction || null;
     }
 
-    async updateTransactionStatus(id: string, status: typeof transactions.$inferSelect.status, tx = db) {
+    async updateTransactionStatus(id: string, status: typeof transactions.$inferSelect.status, tx: any = db) {
         const [updated] = await tx.update(transactions)
             .set({ status, updatedAt: new Date() })
             .where(eq(transactions.id, id))
@@ -60,9 +60,9 @@ export class WalletRepository {
         return updated;
     }
 
-    async updateBalance(walletId: string, deltaCents: number, tx = db) {
+    async updateBalance(walletId: string, deltaCents: number, tx: any = db) {
         const [updated] = await tx.update(wallets)
-            .set({ 
+            .set({
                 balance: sql`${wallets.balance} + ${deltaCents}`,
                 updatedAt: new Date()
             })

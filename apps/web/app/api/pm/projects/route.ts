@@ -251,7 +251,7 @@ export async function POST(request: Request) {
       visibility,
       type: body.type,
       deadline: body.deadline
-    });
+    } as any);
 
     // Проверяем, что проект действительно создан
     const verifyProject = projectsRepository.findById(project.id);

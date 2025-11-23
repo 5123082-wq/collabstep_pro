@@ -1,8 +1,8 @@
 import { eq, and, desc, or } from 'drizzle-orm';
 import { db } from '../db/config';
-import { 
-    organizations, 
-    organizationMembers, 
+import {
+    organizations,
+    organizationMembers,
     users
 } from '../db/schema';
 import { usersRepository } from './users-repository';
@@ -14,7 +14,7 @@ export type OrganizationMember = typeof organizationMembers.$inferSelect;
 export type NewOrganizationMember = typeof organizationMembers.$inferInsert;
 
 export class OrganizationsRepository {
-    
+
     // --- Organizations ---
 
     async create(org: NewOrganization): Promise<Organization> {
@@ -50,7 +50,7 @@ export class OrganizationsRepository {
         // Handle case where userId might be an email (for backward compatibility with old sessions)
         // Try to resolve to actual user ID if userId looks like an email
         const possibleUserIds = [userId];
-        
+
         // If userId contains @, it might be an email - try to find the user
         if (userId.includes('@')) {
             const user = await usersRepository.findByEmail(userId);
@@ -71,7 +71,7 @@ export class OrganizationsRepository {
             .select({ org: organizations })
             .from(organizations)
             .innerJoin(
-                organizationMembers, 
+                organizationMembers,
                 eq(organizations.id, organizationMembers.organizationId)
             )
             .where(and(
@@ -87,11 +87,11 @@ export class OrganizationsRepository {
 
         // Combine and deduplicate by organization ID
         const orgMap = new Map<string, Organization>();
-        
+
         for (const { org } of memberOrgs) {
             orgMap.set(org.id, org);
         }
-        
+
         for (const org of ownerOrgs) {
             orgMap.set(org.id, org);
         }
@@ -120,6 +120,9 @@ export class OrganizationsRepository {
             .insert(organizationMembers)
             .values(member)
             .returning();
+        if (!created) {
+            throw new Error('Failed to create organization member');
+        }
         return created;
     }
 

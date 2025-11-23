@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
 
     try {
         const performers = await performerProfilesRepository.listPublic({
-            specialization,
+            ...(specialization ? { specialization } : {}),
             limit,
             offset
         });
