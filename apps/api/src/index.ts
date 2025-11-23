@@ -105,12 +105,19 @@ export {
   type UpdateChatMessageInput,
   type ListChatMessagesOptions
 } from './repositories/project-chat-repository';
-export {
-  AIAgentsRepository,
-  aiAgentsRepository
-} from './repositories/ai-agents-repository';
+export { AIAgentsRepository, aiAgentsRepository } from './repositories/ai-agents-repository';
 export type { AIAgent, AIAgentType } from './types';
+export { invitationsRepository, type OrganizationInvite, type ProjectInvite } from './repositories/invitations-repository';
+export { organizationsRepository, type Organization, type OrganizationMember } from './repositories/organizations-repository';
+export { performerProfilesRepository, type PerformerProfile } from './repositories/performer-profiles-repository';
+export { dbProjectsRepository, type DbProject } from './repositories/db-projects-repository';
 // WebSocket server exports are intentionally excluded from the main index
 // to prevent them from being bundled in client code.
 // Import them directly from './websocket' or './websocket/server' if needed server-side.
 export type { WebSocketEvent, WebSocketEventType } from './websocket/types';
+
+export { walletRepository, type WalletType, type Currency, type TransactionType } from './repositories/wallet-repository';
+export { walletService, WalletService } from './services/wallet-service';
+export { contractService, ContractService } from './services/contract-service';
+export { contractsRepository, ContractsRepository, type ContractStatus } from './repositories/contracts-repository';
+

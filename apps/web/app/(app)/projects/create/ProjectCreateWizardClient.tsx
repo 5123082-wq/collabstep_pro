@@ -17,6 +17,8 @@ type ProjectCreateWizardClientProps = {
 export default function ProjectCreateWizardClient({ currentUserId }: ProjectCreateWizardClientProps) {
   const router = useRouter();
   const [step, setStep] = useState<WizardStep>('details');
+  const [organizations, setOrganizations] = useState<{ id: string; name: string }[]>([]);
+  const [organizationId, setOrganizationId] = useState('');
   const [name, setName] = useState('');
   const [key, setKey] = useState('');
   const [description, setDescription] = useState('');
@@ -26,6 +28,19 @@ export default function ProjectCreateWizardClient({ currentUserId }: ProjectCrea
   const [touched, setTouched] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<ProjectTemplate | null>(null);
+
+  useEffect(() => {
+    fetch('/api/organizations')
+      .then((res) => res.json())
+      .then((data) => {
+        const orgs = data.organizations || [];
+        setOrganizations(orgs);
+        if (orgs.length > 0) {
+          setOrganizationId(orgs[0].id);
+        }
+      })
+      .catch(console.error);
+  }, []);
 
   const canContinue = name.trim().length >= 3;
 
@@ -87,6 +102,7 @@ export default function ProjectCreateWizardClient({ currentUserId }: ProjectCrea
           name: name.trim(),
           description: description.trim(),
           key: key.trim() || undefined,
+          organizationId: organizationId || undefined,
           visibility,
           status
         })
@@ -180,6 +196,24 @@ export default function ProjectCreateWizardClient({ currentUserId }: ProjectCrea
                   <div className="mt-1 text-xs text-neutral-400">{selectedTemplate.summary}</div>
                 </div>
               </div>
+            )}
+
+            {organizations.length > 0 && (
+              <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                Организация
+                <select
+                  value={organizationId}
+                  onChange={(event) => setOrganizationId(event.target.value)}
+                  className="w-full rounded-xl border border-neutral-900 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 appearance-none"
+                >
+                  <option value="">Личный проект</option>
+                  {organizations.map((org) => (
+                    <option key={org.id} value={org.id}>
+                      {org.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
             )}
 
             <div>

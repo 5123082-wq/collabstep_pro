@@ -15,6 +15,7 @@ export type ProjectsOverviewOwner = {
   id: string;
   name: string;
   email?: string;
+  avatarUrl?: string;
 };
 
 export type TaskMetrics = {
@@ -150,10 +151,19 @@ export function mapMembers(apiMembers: ApiProjectMember[], ownerId: string): Pro
     ? apiMembers
     : [...apiMembers, { userId: ownerId, role: 'owner' }];
 
-  return withOwner.map((member) => ({
-    userId: member.userId,
-    role: (member.role in MEMBER_ROLE_MAP ? MEMBER_ROLE_MAP[member.role as keyof typeof MEMBER_ROLE_MAP] : undefined) ?? 'MEMBER'
-  }));
+  return withOwner.map((member) => {
+    // Получаем имя пользователя из memory
+    const user = memory.WORKSPACE_USERS.find(u => u.id === member.userId);
+    const userName = user?.name || undefined;
+    const avatarUrl = user?.avatarUrl || undefined;
+
+    return {
+      userId: member.userId,
+      role: (member.role in MEMBER_ROLE_MAP ? MEMBER_ROLE_MAP[member.role as keyof typeof MEMBER_ROLE_MAP] : undefined) ?? 'MEMBER',
+      ...(userName ? { name: userName } : {}),
+      ...(avatarUrl ? { avatarUrl } : {})
+    };
+  });
 }
 
 export type ProjectPermissions = {
@@ -443,7 +453,8 @@ export function collectStage2Projects(
       ownersMap.set(project.ownerId, {
         id: ownerProfile.id,
         name: ownerProfile.name,
-        email: ownerProfile.email
+        email: ownerProfile.email,
+        ...(ownerProfile.avatarUrl !== undefined && { avatarUrl: ownerProfile.avatarUrl })
       });
     } else if (!ownersMap.has(project.ownerId)) {
       ownersMap.set(project.ownerId, {

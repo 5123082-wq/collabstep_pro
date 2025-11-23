@@ -6,11 +6,14 @@ import { eq } from "drizzle-orm"
 import { userControls } from "@collabverse/api/db/schema"
 import { getAuthSecret } from "./get-auth-secret"
 
+const hasDbConnection = !!process.env.POSTGRES_URL || !!process.env.DATABASE_URL;
+const isDbStorage = process.env.AUTH_STORAGE === 'db' && hasDbConnection;
+
 // Base auth configuration for middleware (Edge runtime compatible)
 // Does NOT include Credentials provider to avoid Node.js crypto dependency
 export const { handlers: baseHandlers, auth, signIn: baseSignIn, signOut } = NextAuth({
     secret: getAuthSecret(),
-    adapter: DrizzleAdapter(db),
+    ...(isDbStorage ? { adapter: DrizzleAdapter(db) } : {}),
     providers: [
         Google({
             clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -30,18 +33,27 @@ export const { handlers: baseHandlers, auth, signIn: baseSignIn, signOut } = Nex
 
                 // If role is not set (DB user), fetch from userControls
                 if (!token.role) {
-                    // Fetch roles from userControls
-                    const [controls] = await db.select().from(userControls).where(eq(userControls.userId, user.id!))
-                    if (controls) {
-                        token.roles = controls.roles ?? []
-                        // Simple admin check logic
-                        if (controls.roles?.includes('productAdmin') || controls.roles?.includes('featureAdmin')) {
-                            token.role = 'admin'
+                    try {
+                        // Fetch roles from userControls
+                        const [controls] = isDbStorage
+                            ? await db.select().from(userControls).where(eq(userControls.userId, user.id!))
+                            : [undefined];
+
+                        if (controls) {
+                            token.roles = controls.roles ?? []
+                            // Simple admin check logic
+                            if (controls.roles?.includes('productAdmin') || controls.roles?.includes('featureAdmin')) {
+                                token.role = 'admin'
+                            } else {
+                                token.role = 'user'
+                            }
                         } else {
                             token.role = 'user'
                         }
-                    } else {
+                    } catch (error) {
+                        // Если нет подключения к БД или таблица не существует, используем роль по умолчанию
                         token.role = 'user'
+                        token.roles = []
                     }
                 }
             }

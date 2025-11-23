@@ -123,12 +123,9 @@ async function createTestProject(ownerId: string, projectTitle: string, projectD
 
 async function ensureTestProject(userId: string) {
   const allProjects = projectsRepository.list();
-  const DEMO_USER_EMAIL = 'user.demo@collabverse.test';
 
   // Проверяем, есть ли проект от администратора
   const hasAdminProject = allProjects.some(p => p.ownerId === DEFAULT_WORKSPACE_USER_ID || isAdminUserId(p.ownerId));
-  // Проверяем, есть ли проект от демо пользователя
-  const hasDemoUserProject = allProjects.some(p => p.ownerId === DEMO_USER_EMAIL);
 
   // Если проектов нет и пользователь - администратор, создаем тестовый проект для админа
   if (!hasAdminProject && (isAdminUserId(userId) || isDemoAdminEmail(userId))) {
@@ -140,17 +137,6 @@ async function ensureTestProject(userId: string) {
       'Проект для тестирования функционала задач и финансов (администратор)'
     );
     console.log('[Auto-seed] Admin test project created:', adminProject.id);
-  }
-
-  // Создаем проект для демо пользователя, если его нет
-  if (!hasDemoUserProject && (isAdminUserId(userId) || isDemoAdminEmail(userId))) {
-    console.log('[Auto-seed] Creating test project for demo user:', DEMO_USER_EMAIL);
-    const demoProject = await createTestProject(
-      DEMO_USER_EMAIL,
-      'Проект демо пользователя',
-      'Тестовый проект созданный демо пользователем с задачами и тратами'
-    );
-    console.log('[Auto-seed] Demo user test project created:', demoProject.id);
   }
 }
 
@@ -251,7 +237,8 @@ export async function POST(request: Request) {
     const visibility = body.visibility === 'public' ? 'public' : 'private';
     const status = typeof body.status === 'string' ? body.status.toLowerCase() : 'draft';
     const workspaceId = body.workspaceId || DEFAULT_WORKSPACE_ID;
-    console.log(`[Projects API POST] Creating project: title=${title}, ownerId=${auth.userId}, workspaceId=${workspaceId}, status=${status}, visibility=${visibility}`);
+    const organizationId = body.organizationId;
+    console.log(`[Projects API POST] Creating project: title=${title}, ownerId=${auth.userId}, workspaceId=${workspaceId}, organizationId=${organizationId}, status=${status}, visibility=${visibility}`);
 
     const project = projectsRepository.create({
       title,
@@ -259,6 +246,7 @@ export async function POST(request: Request) {
       key: body.key,
       ownerId: auth.userId,
       workspaceId,
+      organizationId, // Added organizationId
       status: status as any,
       visibility,
       type: body.type,

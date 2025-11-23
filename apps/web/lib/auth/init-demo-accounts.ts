@@ -1,11 +1,12 @@
-import { usersRepository, TEST_ADMIN_USER_ID, TEST_USER_ID } from '@collabverse/api';
+import { usersRepository, TEST_ADMIN_USER_ID } from '@collabverse/api';
 import { hashPassword } from '@collabverse/api/utils/password';
 import { getDemoAccount } from './demo-session';
 
 let initialized = false;
 
 /**
- * Инициализирует демо-аккаунты с хэшированными паролями при первом использовании
+ * Инициализирует демо-аккаунт администратора с хэшированным паролем при первом использовании
+ * Создает только admin.demo@collabverse.test
  */
 export async function ensureDemoAccountsInitialized(): Promise<void> {
   if (initialized) {
@@ -14,9 +15,8 @@ export async function ensureDemoAccountsInitialized(): Promise<void> {
   initialized = true;
 
   const adminAccount = getDemoAccount('admin');
-  const userAccount = getDemoAccount('user');
 
-  // Инициализируем админ-аккаунт
+  // Инициализируем только админ-аккаунт
   const adminUser = await usersRepository.findByEmail(adminAccount.email);
   if (adminUser && !adminUser.passwordHash) {
     // Обновляем существующего пользователя, добавляя пароль
@@ -31,24 +31,6 @@ export async function ensureDemoAccountsInitialized(): Promise<void> {
       department: 'Продукт',
       location: 'Москва',
       passwordHash: hashPassword(adminAccount.password)
-    });
-  }
-
-  // Инициализируем пользовательский аккаунт
-  const regularUser = await usersRepository.findByEmail(userAccount.email);
-  if (regularUser && !regularUser.passwordHash) {
-    // Обновляем существующего пользователя, добавляя пароль
-    await usersRepository.updatePassword(userAccount.email, hashPassword(userAccount.password));
-  } else if (!regularUser) {
-    // Создаём нового пользователя с паролем (используем предсказуемый UUID для тестового пользователя)
-    await usersRepository.create({
-      id: TEST_USER_ID,
-      name: 'Игорь Участник',
-      email: userAccount.email,
-      title: 'Менеджер проектов',
-      department: 'Операции',
-      location: 'Санкт-Петербург',
-      passwordHash: hashPassword(userAccount.password)
     });
   }
 }

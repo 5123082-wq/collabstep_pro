@@ -19,11 +19,23 @@ type DemoAccount = {
   password: string;
 };
 
-function collectAccounts(): DemoAccount[] {
-  return (['admin', 'user'] as DemoRole[]).map((role) => ({
-    role,
-    ...getDemoAccount(role)
-  }));
+async function collectAccounts(): Promise<DemoAccount[]> {
+  // Проверяем, какие демо-аккаунты существуют в БД
+  const accounts: DemoAccount[] = [];
+  
+  // Всегда проверяем администратора
+  const adminAccount = getDemoAccount('admin');
+  const adminUser = await usersRepository.findByEmail(adminAccount.email);
+  if (adminUser) {
+    accounts.push({
+      role: 'admin',
+      ...adminAccount
+    });
+  }
+  
+  // Роль 'user' больше не поддерживается - пользователь был удален
+  
+  return accounts;
 }
 
 function resolveReturnPath(value: unknown): string {
@@ -75,14 +87,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: INVALID_MESSAGE }, { status: 401 });
   }
 
-  // Сначала проверяем демо-аккаунты
-  const demoAccounts = collectAccounts();
+  // Сначала проверяем демо-аккаунты, но только если пользователь существует в БД
+  const demoAccounts = await collectAccounts();
   const demoAccount = findMatchingAccount(demoAccounts, email, password);
 
   if (demoAccount) {
     // Получаем пользователя из БД для получения userId
     const user = await usersRepository.findByEmail(demoAccount.email);
-    const userId = user?.id || demoAccount.email; // Fallback на email для обратной совместимости
+    // Если пользователя нет в БД, не пропускаем вход (пользователь был удален)
+    if (!user) {
+      return NextResponse.json({ error: INVALID_MESSAGE }, { status: 401 });
+    }
+    const userId = user.id;
     const sessionToken = encodeDemoSession({ 
       email: demoAccount.email, 
       userId,
@@ -96,22 +112,30 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   // Затем проверяем пользователей из БД
   const user = await usersRepository.findByEmail(email);
-  if (user && user.passwordHash) {
-    const isValidPassword = verifyPassword(password, user.passwordHash);
-    if (isValidPassword) {
-      // Определяем роль: если это админ по email, то admin, иначе user
-      const role: DemoRole = email.toLowerCase() === getDemoAccount('admin').email.toLowerCase() ? 'admin' : 'user';
-      const sessionToken = encodeDemoSession({ 
-        email: user.email, 
-        userId: user.id,
-        role, 
-        issuedAt: Date.now() 
-      });
-      const redirectPath = resolveReturnPath(payload.returnTo);
-      const response = NextResponse.json({ redirect: redirectPath });
-      return withSessionCookie(response, sessionToken);
-    }
+  if (!user) {
+    return NextResponse.json({ error: INVALID_MESSAGE }, { status: 401 });
   }
 
-  return NextResponse.json({ error: INVALID_MESSAGE }, { status: 401 });
+  // Если у пользователя нет пароля, это ошибка - все пользователи должны иметь пароль
+  if (!user.passwordHash) {
+    return NextResponse.json({ error: INVALID_MESSAGE }, { status: 401 });
+  }
+
+  // Проверяем пароль для пользователя с установленным паролем
+  const isValidPassword = verifyPassword(password, user.passwordHash);
+  if (!isValidPassword) {
+    return NextResponse.json({ error: INVALID_MESSAGE }, { status: 401 });
+  }
+
+  // Определяем роль: если это админ по email, то admin, иначе user
+  const role: DemoRole = email.toLowerCase() === getDemoAccount('admin').email.toLowerCase() ? 'admin' : 'user';
+  const sessionToken = encodeDemoSession({ 
+    email: user.email, 
+    userId: user.id,
+    role, 
+    issuedAt: Date.now() 
+  });
+  const redirectPath = resolveReturnPath(payload.returnTo);
+  const response = NextResponse.json({ redirect: redirectPath });
+  return withSessionCookie(response, sessionToken);
 }

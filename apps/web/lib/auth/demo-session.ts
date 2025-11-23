@@ -52,11 +52,13 @@ export function parseDemoRole(value: unknown): DemoRole | null {
 }
 
 export function getDemoAccount(role: DemoRole): { email: string; password: string } {
-  const prefix = role === 'admin' ? 'DEMO_ADMIN' : 'DEMO_USER';
-  const fallbackEmail = role === 'admin' ? DEMO_ADMIN_EMAIL : 'user.demo@collabverse.test';
-  const fallbackPassword = role === 'admin' ? 'demo-admin' : 'demo-user';
-  const email = process.env[`${prefix}_EMAIL`] ?? fallbackEmail;
-  const password = process.env[`${prefix}_PASSWORD`] ?? fallbackPassword;
+  // Роль 'user' больше не поддерживается - удаленный пользователь
+  if (role === 'user') {
+    throw new Error('Демо-пользователь больше не доступен. Используйте роль "admin".');
+  }
+
+  const email = process.env.DEMO_ADMIN_EMAIL ?? DEMO_ADMIN_EMAIL;
+  const password = process.env.DEMO_ADMIN_PASSWORD ?? 'admin.demo';
 
   return { email, password };
 }

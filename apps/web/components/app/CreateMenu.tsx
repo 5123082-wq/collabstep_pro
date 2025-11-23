@@ -92,6 +92,13 @@ const CONTEXT_ACTIONS: Record<CreateContext, CreateAction[]> = {
       description: 'Создайте промпт-шаблон',
       intent: 'modal',
       modalComponent: 'createPrompt'
+    },
+    {
+      id: 'ai-agent',
+      label: 'AI Agent',
+      description: 'Create a new AI agent',
+      intent: 'modal',
+      modalComponent: 'createAIAgent'
     }
   ],
   default: []
@@ -122,6 +129,7 @@ export default function CreateMenu({ open, onClose, triggerRef }: CreateMenuProp
 
   const visibleActions = useMemo(() => {
     const context = resolveContext(pathname);
+    console.log('CreateMenu Context:', context, pathname); // Debug log
     const actions = CONTEXT_ACTIONS[context] ?? [];
     return actions.filter((action) => {
       if (!action.roles) {
@@ -153,13 +161,13 @@ export default function CreateMenu({ open, onClose, triggerRef }: CreateMenuProp
       const menuWidth = 280; // min-w-[280px]
       const menuHeight = visibleActions.length * 60 + 16; // примерная высота меню
       const spacing = 8; // отступ снизу
-      
+
       // Проверяем, не выходит ли меню за правую границу экрана
       let left = rect.left;
       if (left + menuWidth > window.innerWidth) {
         left = window.innerWidth - menuWidth - 16; // 16px отступ от края
       }
-      
+
       // Проверяем, не выходит ли меню за левую границу экрана
       if (left < 16) {
         left = 16;
@@ -310,11 +318,10 @@ export default function CreateMenu({ open, onClose, triggerRef }: CreateMenuProp
                 aria-current={activeIndex === index ? 'true' : undefined}
                 onClick={() => handleAction(action)}
                 onMouseEnter={() => setActiveIndex(index)}
-                className={`flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 ${
-                  activeIndex === index
-                    ? 'bg-[color:var(--surface-muted)]'
-                    : 'hover:bg-[color:var(--surface-muted)]'
-                }`}
+                className={`flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 ${activeIndex === index
+                  ? 'bg-[color:var(--surface-muted)]'
+                  : 'hover:bg-[color:var(--surface-muted)]'
+                  }`}
               >
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-[color:var(--text-primary)]">

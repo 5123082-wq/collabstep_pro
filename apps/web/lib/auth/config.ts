@@ -6,12 +6,16 @@ import { db } from "@collabverse/api/db/config"
 import { usersRepository } from "@collabverse/api"
 import { eq } from "drizzle-orm"
 import { userControls } from "@collabverse/api/db/schema"
-import { getDemoAccount, isDemoAuthEnabled, type DemoRole } from "./demo-session"
+import { getDemoAccount, isDemoAuthEnabled } from "./demo-session"
 import { getAuthSecret } from "./get-auth-secret"
+import { ensureDemoAccountsInitialized } from "./init-demo-accounts"
+
+const hasDbConnection = !!process.env.POSTGRES_URL || !!process.env.DATABASE_URL;
+const isDbStorage = process.env.AUTH_STORAGE === 'db' && hasDbConnection;
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
     secret: getAuthSecret(),
-    adapter: DrizzleAdapter(db),
+    ...(isDbStorage ? { adapter: DrizzleAdapter(db) } : {}),
     providers: [
         Google({
             clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -30,27 +34,57 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 const email = credentials.email as string
                 const password = credentials.password as string
 
-                // Check demo accounts first
+                // Инициализируем демо-аккаунты перед проверкой
                 if (isDemoAuthEnabled()) {
-                    const roles: DemoRole[] = ['admin', 'user'];
-                    for (const role of roles) {
-                        const account = getDemoAccount(role);
-                        if (account.email === email && account.password === password) {
+                    await ensureDemoAccountsInitialized();
+                }
+
+                // Check demo accounts first, but only if they exist in DB
+                if (isDemoAuthEnabled()) {
+                    // Проверяем только администратора
+                    const adminAccount = getDemoAccount('admin');
+                    if (adminAccount.email === email && adminAccount.password === password) {
+                        // Проверяем, что администратор существует в БД
+                        const adminUser = await usersRepository.findByEmail(adminAccount.email);
+                        if (adminUser) {
                             return {
-                                id: email,
-                                email: email,
-                                name: role === 'admin' ? 'Demo Admin' : 'Demo User',
-                                image: null,
-                                role: role,
+                                id: adminUser.id,
+                                email: adminUser.email,
+                                name: adminUser.name || 'Demo Admin',
+                                image: adminUser.avatarUrl ?? null,
+                                role: 'admin',
                                 roles: []
                             }
                         }
+                    }
+                    // Явно блокируем удаленные демо-аккаунты
+                    const blockedDemoEmails = [
+                        'user.demo@collabverse.test',
+                        'designer.demo@collabverse.test',
+                        'finance.pm@collabverse.test'
+                    ];
+                    if (blockedDemoEmails.includes(email.toLowerCase())) {
+                        return null; // Блокируем вход для удаленных пользователей
                     }
                 }
 
                 const user = await usersRepository.findByEmail(email)
 
-                if (!user || !user.passwordHash) return null
+                if (!user) return null
+
+                // Блокируем удаленные демо-аккаунты
+                const blockedEmails = [
+                    'user.demo@collabverse.test',
+                    'designer.demo@collabverse.test',
+                    'finance.pm@collabverse.test'
+                ];
+                
+                if (blockedEmails.includes(email.toLowerCase())) {
+                    return null; // Блокируем вход для удаленных пользователей
+                }
+
+                // Для остальных пользователей проверяем существующий пароль
+                if (!user.passwordHash) return null
 
                 // Dynamic import to avoid bundling in Edge runtime
                 const { verifyPassword } = await import("@collabverse/api/utils/password")
@@ -80,17 +114,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 // If role is not set (DB user), fetch from userControls
                 if (!token.role) {
                     // Fetch roles from userControls
-                    const [controls] = await db.select().from(userControls).where(eq(userControls.userId, user.id!))
-                    if (controls) {
-                        token.roles = controls.roles ?? []
-                        // Simple admin check logic
-                        if (controls.roles?.includes('productAdmin') || controls.roles?.includes('featureAdmin')) {
-                            token.role = 'admin'
+                    try {
+                        const [controls] = isDbStorage
+                            ? await db.select().from(userControls).where(eq(userControls.userId, user.id!))
+                            : [undefined];
+
+                        if (controls) {
+                            token.roles = controls.roles ?? []
+                            // Simple admin check logic
+                            if (controls.roles?.includes('productAdmin') || controls.roles?.includes('featureAdmin')) {
+                                token.role = 'admin'
+                            } else {
+                                token.role = 'user'
+                            }
                         } else {
                             token.role = 'user'
                         }
-                    } else {
+                    } catch (error) {
+                        // Если нет подключения к БД или таблица не существует, используем роль по умолчанию
                         token.role = 'user'
+                        token.roles = []
                     }
                 }
             }

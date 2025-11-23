@@ -2,15 +2,45 @@ import { notFound } from 'next/navigation';
 import AppSection from '@/components/app/AppSection';
 import SpecialistsCatalog from '@/components/marketplace/SpecialistsCatalog';
 import VacanciesCatalog from '@/components/marketplace/VacanciesCatalog';
+import { performerProfilesRepository } from '@collabverse/api';
 
 export const dynamic = 'force-dynamic';
 
+async function getSpecialists() {
+  try {
+    const profiles = await performerProfilesRepository.listPublic({ limit: 50 });
+    return profiles.map(p => ({
+        id: p.userId,
+        handle: p.userId,
+        name: p.user.name || 'Unknown',
+        role: p.specialization,
+        description: p.bio || '',
+        skills: Array.isArray(p.skills) ? p.skills : [],
+        rate: { min: p.rate || 0, max: p.rate || 0, currency: 'USD', period: 'hour' },
+        rating: 0,
+        reviews: 0,
+        languages: ['ru'],
+        workFormats: ['remote'], // Default
+        experienceYears: 0,
+        timezone: p.timezone || 'UTC',
+        availability: [],
+        engagement: [],
+        updatedAt: p.updatedAt ? new Date(p.updatedAt).toISOString() : new Date().toISOString()
+    }));
+  } catch (error) {
+    console.error('Failed to fetch specialists', error);
+    return [];
+  }
+}
+
 const SECTION_CONFIG = {
   specialists: {
-    render: () => {
-      // TODO: Подключить к реальному API специалистов
-      const items: any[] = [];
+    render: async () => {
+      const items = await getSpecialists();
       const error: string | null = null;
+      
+      // Force cast to match strict Zod schema types in SpecialistsCatalog if needed, 
+      // or ensure getSpecialists returns compatible type
       return (
         <div className="space-y-6">
           <header className="space-y-2">
@@ -19,13 +49,13 @@ const SECTION_CONFIG = {
               Каталог экспертов с фильтрами и карточками компетенций.
             </p>
           </header>
-          <SpecialistsCatalog data={items} error={error} />
+          <SpecialistsCatalog data={items as any} error={error} />
         </div>
       );
     }
   },
   teams: {
-    render: () => (
+    render: async () => (
       <AppSection
         title="Команды и подрядчики"
         description="Проверенные команды для комплексных проектов и аутсорса."
@@ -37,7 +67,7 @@ const SECTION_CONFIG = {
     )
   },
   vacancies: {
-    render: () => {
+    render: async () => {
       // TODO: Подключить к реальному API вакансий
       const items: any[] = [];
       const error: string | null = null;
@@ -55,7 +85,7 @@ const SECTION_CONFIG = {
     }
   },
   'my-vacancies': {
-    render: () => (
+    render: async () => (
       <AppSection
         title="Мои вакансии"
         description="Управляйте опубликованными вакансиями и отслеживайте статус откликов."
@@ -67,7 +97,7 @@ const SECTION_CONFIG = {
     )
   },
   responses: {
-    render: () => (
+    render: async () => (
       <AppSection
         title="Отклики и приглашения"
         description="Здесь отображаются отклики специалистов и отправленные приглашения."
@@ -86,7 +116,7 @@ type PerformersSectionPageProps = {
   params: { section: string };
 };
 
-export default function PerformersSectionPage({ params }: PerformersSectionPageProps) {
+export default async function PerformersSectionPage({ params }: PerformersSectionPageProps) {
   const key = params.section as keyof typeof SECTION_CONFIG;
 
   if (!SECTION_KEYS.includes(key)) {

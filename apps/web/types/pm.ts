@@ -3,6 +3,8 @@ export type ProjectStatus = 'DRAFT' | 'ACTIVE' | 'ON_HOLD' | 'COMPLETED' | 'ARCH
 export interface ProjectMember {
   userId: string;
   role: 'OWNER' | 'ADMIN' | 'MEMBER' | 'CONTRACTOR' | 'GUEST';
+  name?: string; // Имя пользователя для отображения
+  avatarUrl?: string;
 }
 
 export interface Project {
@@ -32,6 +34,7 @@ export interface Project {
     id: string;
     name: string;
     email?: string;
+    avatarUrl?: string;
   };
   permissions?: {
     canView: boolean;

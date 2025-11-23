@@ -1,7 +1,7 @@
 import { usersRepository } from './users-repository';
 import { projectsRepository } from './projects-repository';
 import { memory } from '../data/memory';
-import type { AIAgent, AIAgentType } from '../types';
+import type { AIAgent, AIAgentType, AIAgentScope } from '../types';
 
 export class AIAgentsRepository {
   private initialized = false;
@@ -22,25 +22,29 @@ export class AIAgentsRepository {
       agentType: AIAgentType;
       responseTemplates: string[];
       behavior: { autoRespond: boolean; responseStyle: 'short' | 'detailed' };
+      scope: AIAgentScope;
+      createdBy: string;
     }> = [
-      {
-        name: 'AI Ассистент',
-        email: 'ai.assistant@collabverse.ai',
-        title: 'AI-ассистент с OpenAI',
-        agentType: 'assistant',
-        responseTemplates: [
-          'Принял к сведению. Продолжаю работу.',
-          'Понял задачу. Начинаю выполнение.',
-          'Задача в работе. Ожидаю обновления.',
-          'Работаю над задачей. Скоро будет готово.',
-          'Использую OpenAI для анализа и помощи.'
-        ],
-        behavior: {
-          autoRespond: true,
-          responseStyle: 'short'
+        {
+          name: 'AI Ассистент',
+          email: 'ai.assistant@collabverse.ai',
+          title: 'AI-ассистент с OpenAI',
+          agentType: 'assistant',
+          responseTemplates: [
+            'Принял к сведению. Продолжаю работу.',
+            'Понял задачу. Начинаю выполнение.',
+            'Задача в работе. Ожидаю обновления.',
+            'Работаю над задачей. Скоро будет готово.',
+            'Использую OpenAI для анализа и помощи.'
+          ],
+          behavior: {
+            autoRespond: true,
+            responseStyle: 'short'
+          },
+          scope: 'public',
+          createdBy: 'system'
         }
-      }
-    ];
+      ];
 
     for (const agentData of defaultAgents) {
       const existing = await usersRepository.findById(agentData.email);
@@ -52,7 +56,7 @@ export class AIAgentsRepository {
           email: agentData.email,
           title: agentData.title
         });
-        
+
         // Добавляем AI-специфичные поля напрямую в память
         const userInMemory = memory.WORKSPACE_USERS.find((u) => u.id === user.id);
         if (userInMemory) {
@@ -60,11 +64,74 @@ export class AIAgentsRepository {
           (userInMemory as any).agentType = agentData.agentType;
           (userInMemory as any).responseTemplates = agentData.responseTemplates;
           (userInMemory as any).behavior = agentData.behavior;
+          (userInMemory as any).scope = agentData.scope;
+          (userInMemory as any).createdBy = agentData.createdBy;
         }
       }
     }
 
     this.initialized = true;
+  }
+
+  async create(agentData: {
+    name: string;
+    email?: string;
+    title?: string;
+    agentType: AIAgentType;
+    scope: AIAgentScope;
+    createdBy: string;
+    apiKey?: string;
+    modelProvider?: 'subscription' | 'openai_api_key';
+    isGlobal?: boolean;
+    responseTemplates?: string[];
+    behavior?: {
+      autoRespond?: boolean;
+      responseStyle?: 'short' | 'detailed';
+    };
+  }): Promise<AIAgent> {
+    await this.ensureInitialized();
+
+    // Generate email if not provided
+    const email = agentData.email || `agent.${Date.now()}@collabverse.ai`;
+
+    const existing = await usersRepository.findById(email);
+    if (existing) {
+      throw new Error('Agent with this email already exists');
+    }
+
+    // Create user via usersRepository
+    const user = await usersRepository.create({
+      id: email,
+      name: agentData.name,
+      email: email,
+      title: agentData.title || 'AI Agent'
+    });
+
+    // Add AI-specific fields to memory
+    const userInMemory = memory.WORKSPACE_USERS.find((u) => u.id === user.id);
+    if (userInMemory) {
+      (userInMemory as any).isAI = true;
+      (userInMemory as any).agentType = agentData.agentType;
+      (userInMemory as any).responseTemplates = agentData.responseTemplates || [];
+      (userInMemory as any).behavior = agentData.behavior || { autoRespond: true, responseStyle: 'short' };
+      (userInMemory as any).modelProvider = agentData.modelProvider || 'subscription';
+      (userInMemory as any).scope = agentData.scope;
+      (userInMemory as any).createdBy = agentData.createdBy;
+      
+      if (agentData.isGlobal) {
+        (userInMemory as any).isGlobal = true;
+      }
+      if (agentData.apiKey) {
+        (userInMemory as any).userApiKey = agentData.apiKey;
+      }
+    }
+
+    const createdAgent = await this.findById(user.id);
+    if (!createdAgent) {
+      throw new Error('Failed to create agent');
+    }
+
+    return createdAgent;
   }
 
   async findById(id: string): Promise<AIAgent | null> {

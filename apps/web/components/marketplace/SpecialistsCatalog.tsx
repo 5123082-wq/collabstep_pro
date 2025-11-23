@@ -13,6 +13,7 @@ import {
 import { useDebouncedValue } from '@/lib/ui/useDebouncedValue';
 import { toast } from '@/lib/ui/toast';
 import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
+import { InvitePerformerModal } from '@/components/performers/InvitePerformerModal';
 
 const ITEMS_PER_PAGE = 9;
 
@@ -108,7 +109,7 @@ function Pagination({ currentPage, totalPages, onChange }: PaginationProps) {
   );
 }
 
-function SpecialistCard({ specialist }: { specialist: Specialist }) {
+function SpecialistCard({ specialist, onInvite }: { specialist: Specialist; onInvite: (s: Specialist) => void }) {
   return (
     <ContentBlock
       as="article"
@@ -131,7 +132,10 @@ function SpecialistCard({ specialist }: { specialist: Specialist }) {
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            onClick={() => toast(`Приглашение отправлено ${specialist.name}`)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onInvite(specialist);
+            }}
             className="rounded-xl border border-indigo-500/50 bg-indigo-500/15 px-4 py-2 text-sm font-medium text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
           >
             Пригласить
@@ -211,6 +215,8 @@ export default function SpecialistsCatalog({ data, error }: SpecialistsCatalogPr
   const debouncedRateMin = useDebouncedValue(rateMinDraft, 400);
   const debouncedRateMax = useDebouncedValue(rateMaxDraft, 400);
   const listRef = useRef<HTMLDivElement>(null);
+
+  const [invitePerformer, setInvitePerformer] = useState<Specialist | null>(null);
 
   useEffect(() => {
     setFilters(urlFilters);
@@ -494,12 +500,18 @@ export default function SpecialistsCatalog({ data, error }: SpecialistsCatalogPr
       ) : (
         <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
           {pageItems.map((specialist) => (
-            <SpecialistCard key={specialist.id} specialist={specialist} />
+            <SpecialistCard key={specialist.id} specialist={specialist} onInvite={setInvitePerformer} />
           ))}
         </div>
       )}
 
       <Pagination currentPage={currentPage} totalPages={totalPages} onChange={(page) => updateFilters({ page }, { resetPage: false })} />
+      
+      <InvitePerformerModal 
+        open={!!invitePerformer} 
+        onOpenChange={(open) => !open && setInvitePerformer(null)}
+        performer={invitePerformer} 
+      />
     </section>
   );
 }

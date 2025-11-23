@@ -151,6 +151,8 @@ export interface Task {
   estimatedTime?: number | null; // In hours
   storyPoints?: number | null; // Story points estimation
   loggedTime?: number | null; // In minutes
+  price?: string | null; // Task budget/price
+  currency?: string | null; // Currency (e.g., 'RUB')
   createdAt: string;
   updatedAt: string;
 }
@@ -255,8 +257,15 @@ export interface WorkspaceUser {
 
 export type AIAgentType = 'assistant' | 'reviewer' | 'reminder' | 'summarizer';
 
+export type AIAgentScope = 'personal' | 'team' | 'public';
+
 export interface AIAgent extends WorkspaceUser {
   isAI: true;
+  isGlobal?: boolean;
+  scope: AIAgentScope;
+  createdBy: ID;
+  modelProvider?: 'subscription' | 'openai_api_key';
+  userApiKey?: string;
   agentType: AIAgentType;
   responseTemplates?: string[]; // Стандартные ответы
   behavior?: {

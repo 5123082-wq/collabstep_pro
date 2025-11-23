@@ -43,18 +43,26 @@ export default function LoginForm() {
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
-      const result = await signIn('credentials', {
-        email: state.email.trim(),
-        password: state.password,
-        redirect: false,
+      // Используем кастомный API роут для credentials логина
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: state.email.trim(),
+          password: state.password,
+          returnTo: searchParams.get('returnTo') ?? '/app/dashboard'
+        })
       });
 
-      if (result?.error) {
-        setState((prev) => ({ ...prev, error: 'Неверная почта или пароль', loading: false }));
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        setState((prev) => ({ ...prev, error: data.error || 'Неверная почта или пароль', loading: false }));
         return;
       }
 
-      const target = searchParams.get('returnTo') ?? '/app/dashboard';
+      // Редиректим на целевую страницу
+      const target = data.redirect || searchParams.get('returnTo') || '/app/dashboard';
       router.push(target);
       router.refresh();
     } catch (error) {

@@ -8,6 +8,20 @@
       "when": 1763666117802,
       "tag": "0000_lying_mauler",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1763918380297,
+      "tag": "0001_chemical_lake",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1763922330377,
+      "tag": "0002_spicy_domino",
+      "breakpoints": true
     }
   ]
 }
