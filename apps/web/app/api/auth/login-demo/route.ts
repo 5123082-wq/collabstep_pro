@@ -32,42 +32,57 @@ async function extractRole(request: NextRequest): Promise<DemoRole | null> {
   }
 }
 
+export async function GET(request: NextRequest): Promise<DemoLoginResponse> {
+  return NextResponse.json(
+    { error: 'This endpoint only accepts POST requests. Please use the login form.' },
+    { status: 405, headers: { 'Allow': 'POST' } }
+  );
+}
+
 export async function POST(request: NextRequest): Promise<DemoLoginResponse> {
-  if (!isDemoAuthEnabled()) {
-    return disabledResponse(request);
-  }
+  try {
+    if (!isDemoAuthEnabled()) {
+      return disabledResponse(request);
+    }
 
-  const role = await extractRole(request);
+    const role = await extractRole(request);
 
-  if (!role) {
-    return NextResponse.json({ error: 'Invalid role supplied.' }, { status: 400 });
-  }
+    if (!role) {
+      return NextResponse.json({ error: 'Invalid role supplied.' }, { status: 400 });
+    }
 
-  const account = getDemoAccount(role);
+    const account = getDemoAccount(role);
 
-  // Получаем userId из репозитория пользователей
-  const user = await usersRepository.findByEmail(account.email);
-  
-  // Если пользователя нет в БД, блокируем вход (пользователь был удален)
-  if (!user) {
+    // Получаем userId из репозитория пользователей
+    const user = await usersRepository.findByEmail(account.email);
+    
+    // Если пользователя нет в БД, блокируем вход (пользователь был удален)
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Демо-аккаунт недоступен. Пользователь был удален.' },
+        { status: 403 }
+      );
+    }
+
+    // Блокируем удаленные демо-аккаунты
+    const blockedEmails = ['user.demo@collabverse.test'];
+    if (blockedEmails.includes(account.email.toLowerCase())) {
+      return NextResponse.json(
+        { error: 'Этот демо-аккаунт больше не доступен.' },
+        { status: 403 }
+      );
+    }
+
+    const userId = user.id;
+
+    const sessionToken = encodeDemoSession({ email: account.email, userId, role, issuedAt: Date.now() });
+    const response = NextResponse.redirect(new URL('/app/dashboard', request.url), { status: 303 });
+    return withSessionCookie(response, sessionToken);
+  } catch (error) {
+    console.error('Login demo error:', error);
     return NextResponse.json(
-      { error: 'Демо-аккаунт недоступен. Пользователь был удален.' },
-      { status: 403 }
+      { error: 'Внутренняя ошибка сервера при входе.' },
+      { status: 500 }
     );
   }
-
-  // Блокируем удаленные демо-аккаунты
-  const blockedEmails = ['user.demo@collabverse.test'];
-  if (blockedEmails.includes(account.email.toLowerCase())) {
-    return NextResponse.json(
-      { error: 'Этот демо-аккаунт больше не доступен.' },
-      { status: 403 }
-    );
-  }
-
-  const userId = user.id;
-
-  const sessionToken = encodeDemoSession({ email: account.email, userId, role, issuedAt: Date.now() });
-  const response = NextResponse.redirect(new URL('/dashboard', request.url), { status: 303 });
-  return withSessionCookie(response, sessionToken);
 }

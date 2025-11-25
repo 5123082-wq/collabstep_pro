@@ -2,6 +2,8 @@ import { memory } from '../data/memory';
 import { adminModulesRepository } from '../repositories/admin-modules-repository';
 import { adminUserControlsRepository } from '../repositories/admin-user-controls-repository';
 import { usersRepository } from '../repositories/users-repository';
+import { db } from '../db/config';
+import { userControls } from '../db/schema';
 import type {
   PlatformAudience,
   PlatformModule,
@@ -11,6 +13,10 @@ import type {
   PlatformUserStatus,
   WorkspaceUser
 } from '../types';
+
+// Factory logic - проверяем, используется ли DB хранилище
+const hasDbConnection = !!process.env.POSTGRES_URL;
+const isDbStorage = process.env.AUTH_STORAGE === 'db' && hasDbConnection;
 
 export interface AdminModuleTester {
   userId: string;
@@ -64,12 +70,33 @@ export interface AdminUserView {
 }
 
 export class AdminService {
-  private getWorkspaceUserMap(): Map<string, WorkspaceUser> {
-    const users = memory.WORKSPACE_USERS || [];
+  private async getWorkspaceUserMap(): Promise<Map<string, WorkspaceUser>> {
+    // Используем usersRepository вместо memory, чтобы поддерживать как DB, так и memory хранилище
+    const users = await usersRepository.list();
     return new Map(users.map((user) => [user.id, user]));
   }
 
-  private getUserControlsMap(): Map<string, PlatformUserControl> {
+  private async getUserControlsMap(): Promise<Map<string, PlatformUserControl>> {
+    // Если используется DB хранилище, читаем из БД
+    if (isDbStorage) {
+      const dbControls = await db.select().from(userControls);
+      const controls: PlatformUserControl[] = dbControls.map((dbControl) => {
+        const control: PlatformUserControl = {
+          userId: dbControl.userId,
+          status: (dbControl.status || 'active') as PlatformUserStatus,
+          roles: (dbControl.roles || []) as PlatformRole[],
+          testerAccess: dbControl.testerAccess || [],
+          updatedAt: dbControl.updatedAt?.toISOString() || new Date().toISOString(),
+          updatedBy: dbControl.updatedBy || 'system'
+        };
+        if (dbControl.notes) {
+          control.notes = dbControl.notes;
+        }
+        return control;
+      });
+      return new Map(controls.map((control) => [control.userId, control]));
+    }
+    // Иначе читаем из памяти
     return new Map(adminUserControlsRepository.list().map((control) => [control.userId, control]));
   }
 
@@ -94,9 +121,9 @@ export class AdminService {
     return result;
   }
 
-  private buildModuleViewTree(): AdminModuleNodeView[] {
-    const usersMap = this.getWorkspaceUserMap();
-    const controlsMap = this.getUserControlsMap();
+  private async buildModuleViewTree(): Promise<AdminModuleNodeView[]> {
+    const usersMap = await this.getWorkspaceUserMap();
+    const controlsMap = await this.getUserControlsMap();
     const tree = adminModulesRepository.buildTree();
 
     const hydrate = (
@@ -156,23 +183,23 @@ export class AdminService {
     return map;
   }
 
-  getModuleTree(): AdminModuleNodeView[] {
-    return this.buildModuleViewTree();
+  async getModuleTree(): Promise<AdminModuleNodeView[]> {
+    return await this.buildModuleViewTree();
   }
 
-  getModuleById(moduleId: string): AdminModuleNodeView | null {
-    const tree = this.buildModuleViewTree();
+  async getModuleById(moduleId: string): Promise<AdminModuleNodeView | null> {
+    const tree = await this.buildModuleViewTree();
     const map = this.flattenModuleViews(tree);
     return map.get(moduleId) ?? null;
   }
 
-  updateModule(
+  async updateModule(
     moduleId: string,
     patch: Partial<Pick<PlatformModule, 'status' | 'defaultAudience' | 'label' | 'summary' | 'path' | 'tags'>> & {
       testers?: string[];
     },
     actorId: string
-  ): AdminModuleNodeView | null {
+  ): Promise<AdminModuleNodeView | null> {
     const normalizedTesters = Array.isArray(patch.testers)
       ? Array.from(
           new Set(
@@ -219,14 +246,14 @@ export class AdminService {
       this.syncUserControlsForModule(moduleId, normalizedTesters, actorId);
     }
 
-    return this.getModuleById(moduleId);
+    return await this.getModuleById(moduleId);
   }
 
-  listUsers(): AdminUserView[] {
-    const modules = this.buildModuleViewTree();
+  async listUsers(): Promise<AdminUserView[]> {
+    const modules = await this.buildModuleViewTree();
     const moduleMap = this.flattenModuleViews(modules);
-    const usersMap = this.getWorkspaceUserMap();
-    const controlsMap = this.getUserControlsMap();
+    const usersMap = await this.getWorkspaceUserMap();
+    const controlsMap = await this.getUserControlsMap();
 
     const userIds = new Set<string>([
       ...Array.from(usersMap.keys()),
@@ -310,16 +337,16 @@ export class AdminService {
     return views.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
   }
 
-  getUser(userId: string): AdminUserView | null {
-    const users = this.listUsers();
+  async getUser(userId: string): Promise<AdminUserView | null> {
+    const users = await this.listUsers();
     return users.find((item) => item.userId === userId) ?? null;
   }
 
-  updateUser(
+  async updateUser(
     userId: string,
     patch: Partial<Pick<PlatformUserControl, 'status' | 'roles' | 'testerAccess' | 'notes'>>,
     actorId: string
-  ): AdminUserView {
+  ): Promise<AdminUserView> {
     // Filter out undefined values for exactOptionalPropertyTypes
     const cleanPatch: Partial<Pick<PlatformUserControl, 'status' | 'roles' | 'testerAccess' | 'notes'>> = {};
     if (patch.status !== undefined) {
@@ -344,7 +371,7 @@ export class AdminService {
       this.syncModulesFromUserControls(actorId);
     }
 
-    return this.getUser(userId)!;
+    return (await this.getUser(userId))!;
   }
 
   async deleteUser(userId: string): Promise<boolean> {

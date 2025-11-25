@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 // @ts-ignore
 import { FileText, Trash2, RefreshCw, AlertTriangle } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
-import { canAccessAdmin, getUserRoles } from '@/lib/auth/roles';
+import { canAccessAdmin, getRolesForDemoAccount } from '@/lib/auth/roles';
 import { ContentBlock } from '@/components/ui/content-block';
+import { useSessionContext } from '@/components/app/SessionContext';
 
 interface UserData {
   userId: string;
@@ -35,6 +36,7 @@ interface DataStats {
 
 export default function AdminDataPage() {
   const router = useRouter();
+  const session = useSessionContext();
   const [stats, setStats] = useState<DataStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
@@ -57,7 +59,7 @@ export default function AdminDataPage() {
   }, []);
 
   useEffect(() => {
-    const roles = getUserRoles();
+    const roles = getRolesForDemoAccount(session.email, session.role);
     if (!canAccessAdmin(roles)) {
       router.push('/dashboard?toast=forbidden');
       toast('Недостаточно прав для доступа к админ-панели', 'warning');
@@ -65,7 +67,7 @@ export default function AdminDataPage() {
     }
 
     void loadStats();
-  }, [loadStats, router]);
+  }, [session, loadStats, router]);
 
   const handleClearAll = useCallback(async () => {
     if (!confirm('Вы уверены, что хотите удалить ВСЕ проекты и задачи из памяти? Это действие необратимо!')) {
@@ -116,6 +118,15 @@ export default function AdminDataPage() {
       toast('Ошибка при удалении данных пользователя', 'warning');
     }
   }, [loadStats]);
+
+  // Показываем загрузку, пока session не загрузится
+  if (!session) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-neutral-400">Загрузка...</div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

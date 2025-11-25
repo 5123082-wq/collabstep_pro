@@ -29,7 +29,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  const userData = adminService.getUser(params.id);
+  const userData = await adminService.getUser(params.id);
   if (!userData) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
@@ -67,7 +67,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     cleanData.notes = parsed.data.notes;
   }
 
-  const updated = adminService.updateUser(params.id, cleanData, session.userId);
+  const updated = await adminService.updateUser(params.id, cleanData, session.userId);
   return NextResponse.json({ item: updated });
 }
 
@@ -85,7 +85,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     return NextResponse.json({ error: 'cannot_delete_self' }, { status: 400 });
   }
 
-  const deleted = adminService.deleteUser(params.id);
+  const deleted = await adminService.deleteUser(params.id);
   if (!deleted) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }

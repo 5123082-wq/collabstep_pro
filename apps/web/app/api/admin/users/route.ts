@@ -14,7 +14,7 @@ export async function GET() {
       return NextResponse.json({ error: 'forbidden' }, { status: 403 });
     }
 
-    const items = adminService.listUsers();
+    const items = await adminService.listUsers();
     return NextResponse.json({ items });
   } catch (error) {
     console.error('[API /admin/users] Ошибка:', error);

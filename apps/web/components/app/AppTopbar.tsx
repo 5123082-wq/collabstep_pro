@@ -79,6 +79,7 @@ type AppTopbarProps = {
   onOpenCreate: () => void;
   onOpenPalette: () => void;
   onOpenSettings?: () => void;
+  onOpenProfileSettings?: () => void;
   profile: DemoProfile;
   onLogout: () => void;
   isLoggingOut: boolean;
@@ -87,7 +88,7 @@ type AppTopbarProps = {
   onAvatarChange?: (avatarUrl: string | null) => void;
 };
 
-export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings, profile, onLogout, isLoggingOut, createButtonRef, centerModules, onAvatarChange }: AppTopbarProps) {
+export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings, onOpenProfileSettings, profile, onLogout, isLoggingOut, createButtonRef, centerModules, onAvatarChange }: AppTopbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [searchValue, setSearchValue] = useState('');
@@ -377,6 +378,7 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
             onLogout={onLogout} 
             isLoggingOut={isLoggingOut}
             {...(onOpenSettings && { onOpenSettings })}
+            {...(onOpenProfileSettings && { onOpenProfileSettings })}
             {...(onAvatarChange && { onAvatarChange })}
           />
         </div>

@@ -7,9 +7,10 @@ import ConsoleFilter from '@/components/util/ConsoleFilter';
 import ThemeScript from '@/components/theme/ThemeScript';
 import { ThemeProvider } from '@/components/theme/ThemeContext';
 
-// SpeedInsights только в production - условный импорт
+// SpeedInsights только в production на Vercel - условный импорт
 let SpeedInsights: React.ComponentType | null = null;
-if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+// Проверяем, что мы действительно на Vercel в production
+if (process.env.NODE_ENV === 'production' && process.env.VERCEL === '1') {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     SpeedInsights = require('@vercel/speed-insights/next').SpeedInsights;
