@@ -88,6 +88,7 @@ export class UsersMemoryRepository implements UsersRepository {
       ...(user.avatarUrl && { avatarUrl: user.avatarUrl }),
       ...(user.department && { department: user.department }),
       ...(user.location && { location: user.location }),
+      ...(user.timezone && { timezone: user.timezone }),
       ...(user.passwordHash && { passwordHash: user.passwordHash })
     };
 
@@ -120,6 +121,30 @@ export class UsersMemoryRepository implements UsersRepository {
     }
 
     return cloneUser(newUser);
+  }
+
+  async update(id: string, data: Partial<WorkspaceUser>): Promise<WorkspaceUser | null> {
+    if (!id) return null;
+    const trimmed = id.trim();
+    const userIndex = memory.WORKSPACE_USERS.findIndex((u) => u.id === trimmed);
+
+    if (userIndex < 0) return null;
+
+    const existingUser = memory.WORKSPACE_USERS[userIndex];
+    if (!existingUser) return null;
+
+    const updatedUser: WorkspaceUser = {
+      ...existingUser,
+      ...data,
+      // Prevent updating id or email if not intended, though Partial allows it. 
+      // Usually ID shouldn't change. Email might need verification logic, but here we just update.
+      id: existingUser.id,
+      name: data.name !== undefined ? data.name : existingUser.name,
+      email: data.email !== undefined ? data.email : existingUser.email
+    };
+
+    memory.WORKSPACE_USERS[userIndex] = updatedUser;
+    return cloneUser(updatedUser);
   }
 
   async delete(userId: string): Promise<boolean> {

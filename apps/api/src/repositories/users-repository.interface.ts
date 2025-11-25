@@ -7,5 +7,6 @@ export interface UsersRepository {
     findByEmail(email: string): Promise<WorkspaceUser | null> | WorkspaceUser | null;
     updatePassword(email: string, passwordHash: string): Promise<boolean> | boolean;
     create(user: Omit<WorkspaceUser, 'id'> & { id?: string; passwordHash?: string }): Promise<WorkspaceUser> | WorkspaceUser;
+    update(id: string, data: Partial<WorkspaceUser>): Promise<WorkspaceUser | null> | WorkspaceUser | null;
     delete(userId: string): Promise<boolean> | boolean;
 }
