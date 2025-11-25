@@ -251,6 +251,7 @@ export interface WorkspaceUser {
   avatarUrl?: string;
   department?: string;
   location?: string;
+  timezone?: string;
   isAI?: boolean; // Флаг для виртуальных AI-агентов
   passwordHash?: string; // Хэш пароля для авторизации
 }
@@ -281,7 +282,7 @@ export interface ProjectCardTaskStats {
   completed: number;
 }
 
-export interface ProjectCardOwner extends WorkspaceUser {}
+export interface ProjectCardOwner extends WorkspaceUser { }
 
 export interface ProjectCardMember extends WorkspaceUser {
   role: ProjectMember['role'];

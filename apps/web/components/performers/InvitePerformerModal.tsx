@@ -9,6 +9,11 @@ interface Organization {
   name: string;
 }
 
+interface Project {
+  id: string;
+  name: string;
+}
+
 interface InvitePerformerModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -17,8 +22,12 @@ interface InvitePerformerModalProps {
 
 export function InvitePerformerModal({ open, onOpenChange, performer }: InvitePerformerModalProps) {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');
+  const [addToProject, setAddToProject] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
@@ -36,6 +45,20 @@ export function InvitePerformerModal({ open, onOpenChange, performer }: InvitePe
     }
   }, [open]);
 
+  useEffect(() => {
+    if (addToProject && selectedOrgId) {
+      setIsLoadingProjects(true);
+      void fetch('/api/pm/projects')
+        .then(res => res.json())
+        .then(data => {
+          const projectsList = data.data?.projects || [];
+          setProjects(projectsList);
+          if (projectsList.length > 0) setSelectedProjectId(projectsList[0].id);
+        })
+        .finally(() => setIsLoadingProjects(false));
+    }
+  }, [addToProject, selectedOrgId]);
+
   const handleInvite = async () => {
     if (!performer || !selectedOrgId) return;
 
@@ -43,10 +66,18 @@ export function InvitePerformerModal({ open, onOpenChange, performer }: InvitePe
     setMessage(null);
 
     try {
+      const requestBody: any = {
+        organizationId: selectedOrgId
+      };
+
+      if (addToProject && selectedProjectId) {
+        requestBody.projectId = selectedProjectId;
+      }
+
       const res = await fetch(`/api/performers/${performer.id}/invite-to-organization`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ organizationId: selectedOrgId })
+        body: JSON.stringify(requestBody)
       });
 
       if (!res.ok) {
@@ -95,8 +126,44 @@ export function InvitePerformerModal({ open, onOpenChange, performer }: InvitePe
                   ))}
                 </select>
               </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="addToProject"
+                    checked={addToProject}
+                    onChange={(e) => setAddToProject(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <label htmlFor="addToProject" className="text-sm font-medium text-[color:var(--text-secondary)]">
+                    Добавить в проект
+                  </label>
+                </div>
+
+                {addToProject && (
+                  <div className="ml-6 space-y-2">
+                    {isLoadingProjects ? (
+                      <div className="text-sm text-[color:var(--text-tertiary)]">Загрузка проектов...</div>
+                    ) : projects.length === 0 ? (
+                      <div className="text-sm text-[color:var(--text-tertiary)]">Нет доступных проектов</div>
+                    ) : (
+                      <select
+                        className="w-full rounded-md border border-[color:var(--surface-border-strong)] bg-[color:var(--surface-base)] px-3 py-2 text-sm"
+                        value={selectedProjectId}
+                        onChange={(e) => setSelectedProjectId(e.target.value)}
+                      >
+                        {projects.map(project => (
+                          <option key={project.id} value={project.id}>{project.name}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <p className="text-sm text-[color:var(--text-secondary)]">
-                Исполнитель получит уведомление и сможет присоединиться к вашей организации.
+                Исполнитель получит уведомление и сможет присоединиться к вашей организации{addToProject && selectedProjectId ? ' и проекту' : ''}.
               </p>
             </div>
           )}

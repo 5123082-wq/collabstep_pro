@@ -32,7 +32,7 @@ export async function POST(
         // 1. Create Organization Invite if not member
         const existingMember = await organizationsRepository.findMember(organizationId, inviteeUserId);
         if (!existingMember) {
-             await invitationsRepository.createOrganizationInvite({
+            await invitationsRepository.createOrganizationInvite({
                 organizationId,
                 inviterId: currentUser.id,
                 inviteeUserId,

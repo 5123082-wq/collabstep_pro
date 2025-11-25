@@ -49,6 +49,7 @@ export class UsersDbRepository implements UsersRepository {
             title: user.title,
             department: user.department,
             location: user.location,
+            timezone: user.timezone,
             passwordHash: user.passwordHash,
             emailVerified: null,
             createdAt: new Date(),
@@ -81,6 +82,34 @@ export class UsersDbRepository implements UsersRepository {
         return this.mapToWorkspaceUser(createdUser);
     }
 
+    async update(id: string, data: Partial<WorkspaceUser>): Promise<WorkspaceUser | null> {
+        if (!id) return null;
+
+        const updateData: any = {
+            updatedAt: new Date(),
+        };
+
+        if (data.name !== undefined) updateData.name = data.name;
+        if (data.avatarUrl !== undefined) updateData.image = data.avatarUrl;
+        if (data.title !== undefined) updateData.title = data.title;
+        if (data.department !== undefined) updateData.department = data.department;
+        if (data.location !== undefined) updateData.location = data.location;
+        if (data.timezone !== undefined) updateData.timezone = data.timezone;
+        // Add other fields as needed
+
+        if (Object.keys(updateData).length <= 1) { // Only updatedAt
+            return this.findById(id);
+        }
+
+        const [updatedUser] = await db
+            .update(users)
+            .set(updateData)
+            .where(eq(users.id, id))
+            .returning();
+
+        return updatedUser ? this.mapToWorkspaceUser(updatedUser) : null;
+    }
+
     async delete(userId: string): Promise<boolean> {
         if (!userId) return false;
         const result = await db.delete(users).where(eq(users.id, userId)).returning();
@@ -104,6 +133,9 @@ export class UsersDbRepository implements UsersRepository {
         }
         if (dbUser.location) {
             result.location = dbUser.location;
+        }
+        if (dbUser.timezone) {
+            result.timezone = dbUser.timezone;
         }
         if (dbUser.passwordHash) {
             result.passwordHash = dbUser.passwordHash;

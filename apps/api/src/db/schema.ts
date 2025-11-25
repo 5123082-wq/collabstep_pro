@@ -52,6 +52,7 @@ export const users = pgTable("user", {
     title: text("title"),
     department: text("department"),
     location: text("location"),
+    timezone: text("timezone"),
     createdAt: timestamp("createdAt", { mode: "date" }).defaultNow(),
     updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow(),
 });
@@ -349,11 +350,11 @@ export const contracts = pgTable(
             .$defaultFn(() => crypto.randomUUID()),
         taskId: text("task_id").notNull(), // Link to Task (logical link if Task is not in DB)
         performerId: text("performer_id")
-             .notNull()
-             .references(() => users.id), // The user performing the task
+            .notNull()
+            .references(() => users.id), // The user performing the task
         organizationId: text("organization_id")
-             .notNull()
-             .references(() => organizations.id), // The organization paying
+            .notNull()
+            .references(() => organizations.id), // The organization paying
         amount: bigint("amount", { mode: "number" }).notNull(),
         currency: currencyEnum("currency").default("RUB").notNull(),
         status: contractStatusEnum("status").default("offer").notNull(),
