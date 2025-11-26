@@ -27,18 +27,18 @@ type LeftMenuBaseRoles = (
 
 export type LeftMenuChild =
   | {
-      id: string;
-      label: string;
-      href: string;
-      description?: string;
-      roles?: LeftMenuBaseRoles;
-      type?: 'link';
-    }
+    id: string;
+    label: string;
+    href: string;
+    description?: string;
+    roles?: LeftMenuBaseRoles;
+    type?: 'link';
+  }
   | {
-      id: string;
-      type: 'divider';
-      roles?: LeftMenuBaseRoles;
-    };
+    id: string;
+    type: 'divider';
+    roles?: LeftMenuBaseRoles;
+  };
 
 export type LeftMenuSection = {
   id: string;
@@ -179,9 +179,9 @@ const baseLeftMenuConfig: LeftMenuSection[] = [
     icon: 'org',
     href: '/org/team',
     children: [
-      { id: 'org-team', label: 'Команда', href: '/org/team' },
-      { id: 'org-billing', label: 'Биллинг', href: '/org/billing' },
-      { id: 'org-templates', label: 'Процесс-шаблоны', href: '/org/process-templates' }
+      // { id: 'org-team', label: 'Команда', href: '/org/team' },
+      // { id: 'org-billing', label: 'Биллинг', href: '/org/billing' },
+      // { id: 'org-templates', label: 'Процесс-шаблоны', href: '/org/process-templates' }
     ]
   },
   {

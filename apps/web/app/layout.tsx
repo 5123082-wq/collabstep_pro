@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import ConsoleFilter from '@/components/util/ConsoleFilter';
 import ThemeScript from '@/components/theme/ThemeScript';
 import { ThemeProvider } from '@/components/theme/ThemeContext';
+import { Toaster } from 'sonner';
 
 // SpeedInsights только в production на Vercel - условный импорт
 let SpeedInsights: React.ComponentType | null = null;
@@ -32,8 +33,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html 
-      lang="ru" 
+    <html
+      lang="ru"
       className={inter.variable}
       suppressHydrationWarning
     >
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <ConsoleFilter />
           {children}
           {SpeedInsights && <SpeedInsights />}
+          <Toaster richColors position="top-right" />
         </ThemeProvider>
       </body>
     </html>

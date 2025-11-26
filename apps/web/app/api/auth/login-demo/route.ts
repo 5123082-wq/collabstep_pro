@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { encodeDemoSession, getDemoAccount, isDemoAuthEnabled, parseDemoRole, type DemoRole } from '@/lib/auth/demo-session';
 import { withSessionCookie } from '@/lib/auth/session-cookie';
 import { usersRepository } from '@collabverse/api';
+import { ensureDemoAccountsInitialized } from '@/lib/auth/init-demo-accounts';
 
 type DemoLoginResponse = NextResponse<unknown>;
 
@@ -53,9 +54,12 @@ export async function POST(request: NextRequest): Promise<DemoLoginResponse> {
 
     const account = getDemoAccount(role);
 
+    // Инициализируем демо-аккаунты (создаем админа если его нет)
+    await ensureDemoAccountsInitialized();
+
     // Получаем userId из репозитория пользователей
     const user = await usersRepository.findByEmail(account.email);
-    
+
     // Если пользователя нет в БД, блокируем вход (пользователь был удален)
     if (!user) {
       return NextResponse.json(

@@ -19,7 +19,7 @@ import { aiHubNavigation } from '@/components/ai-hub/aiHubNavigation';
 import { communityNavigation } from '@/components/community/communityNavigation';
 import { financeNavigation } from '@/components/finance/financeNavigation';
 import { docsNavigation } from '@/components/docs/docsNavigation';
-import { orgNavigation } from '@/components/org/orgNavigation';
+import { getOrgNavigation, extractOrgIdFromPath } from '@/components/org/orgNavigation';
 import { supportNavigation } from '@/components/support/supportNavigation';
 import { adminNavigation } from '@/components/admin/adminNavigation';
 
@@ -245,6 +245,8 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
   const isFinanceSection = pathname?.startsWith('/finance') ?? false;
   const isDocsSection = pathname?.startsWith('/docs') ?? false;
   const isOrgSection = pathname?.startsWith('/org') ?? false;
+  const orgId = isOrgSection ? extractOrgIdFromPath(pathname) : null;
+  const orgNavigation = isOrgSection ? getOrgNavigation(orgId) : [];
   const isSupportSection = pathname?.startsWith('/support') ?? false;
   const isAdminSection = pathname?.startsWith('/admin') ?? false;
 
@@ -455,7 +457,7 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
           ariaLabel="Навигация по разделам документов"
         />
       )}
-      {isOrgSection && (
+      {isOrgSection && orgNavigation.length > 0 && (
         <SectionNavigationBar
           items={orgNavigation}
           ariaLabel="Навигация по разделам организации"

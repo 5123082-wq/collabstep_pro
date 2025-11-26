@@ -38,8 +38,10 @@ export function OrganizationSwitcher({ collapsed }: { collapsed?: boolean }) {
     try {
       const res = await fetch('/api/organizations');
       if (res.ok) {
-        const data = await res.json();
-        setOrganizations(data.organizations || []);
+        const response = await res.json();
+        if (response.ok && response.data) {
+          setOrganizations(response.data.organizations || []);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch organizations', error);
