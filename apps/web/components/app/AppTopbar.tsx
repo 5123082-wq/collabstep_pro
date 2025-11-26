@@ -19,7 +19,7 @@ import { aiHubNavigation } from '@/components/ai-hub/aiHubNavigation';
 import { communityNavigation } from '@/components/community/communityNavigation';
 import { financeNavigation } from '@/components/finance/financeNavigation';
 import { docsNavigation } from '@/components/docs/docsNavigation';
-import { orgNavigation } from '@/components/org/orgNavigation';
+import { getOrgNavigation, extractOrgIdFromPath } from '@/components/org/orgNavigation';
 import { supportNavigation } from '@/components/support/supportNavigation';
 import { adminNavigation } from '@/components/admin/adminNavigation';
 
@@ -79,6 +79,7 @@ type AppTopbarProps = {
   onOpenCreate: () => void;
   onOpenPalette: () => void;
   onOpenSettings?: () => void;
+  onOpenProfileSettings?: () => void;
   profile: DemoProfile;
   onLogout: () => void;
   isLoggingOut: boolean;
@@ -87,7 +88,7 @@ type AppTopbarProps = {
   onAvatarChange?: (avatarUrl: string | null) => void;
 };
 
-export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings, profile, onLogout, isLoggingOut, createButtonRef, centerModules, onAvatarChange }: AppTopbarProps) {
+export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings, onOpenProfileSettings, profile, onLogout, isLoggingOut, createButtonRef, centerModules, onAvatarChange }: AppTopbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [searchValue, setSearchValue] = useState('');
@@ -244,6 +245,8 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
   const isFinanceSection = pathname?.startsWith('/finance') ?? false;
   const isDocsSection = pathname?.startsWith('/docs') ?? false;
   const isOrgSection = pathname?.startsWith('/org') ?? false;
+  const orgId = isOrgSection ? extractOrgIdFromPath(pathname) : null;
+  const orgNavigation = isOrgSection ? getOrgNavigation(orgId) : [];
   const isSupportSection = pathname?.startsWith('/support') ?? false;
   const isAdminSection = pathname?.startsWith('/admin') ?? false;
 
@@ -377,6 +380,7 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
             onLogout={onLogout} 
             isLoggingOut={isLoggingOut}
             {...(onOpenSettings && { onOpenSettings })}
+            {...(onOpenProfileSettings && { onOpenProfileSettings })}
             {...(onAvatarChange && { onAvatarChange })}
           />
         </div>
@@ -453,7 +457,7 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
           ariaLabel="Навигация по разделам документов"
         />
       )}
-      {isOrgSection && (
+      {isOrgSection && orgNavigation.length > 0 && (
         <SectionNavigationBar
           items={orgNavigation}
           ariaLabel="Навигация по разделам организации"

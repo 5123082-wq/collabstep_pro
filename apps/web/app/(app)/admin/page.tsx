@@ -16,8 +16,9 @@ import {
   FileText
 } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
-import { canAccessAdmin, getUserRoles } from '@/lib/auth/roles';
+import { canAccessAdmin, getRolesForDemoAccount } from '@/lib/auth/roles';
 import { ContentBlock } from '@/components/ui/content-block';
+import { useSessionContext } from '@/components/app/SessionContext';
 
 const overviewCards = [
   {
@@ -95,15 +96,16 @@ const quickStats = [
 
 export default function AdminOverviewPage() {
   const router = useRouter();
-  const roles = getUserRoles();
+  const session = useSessionContext();
   const [stats, setStats] = useState(quickStats);
 
   useEffect(() => {
+    const roles = getRolesForDemoAccount(session.email, session.role);
     if (!canAccessAdmin(roles)) {
       router.push('/dashboard?toast=forbidden');
       toast('Недостаточно прав для доступа к админ-панели', 'warning');
     }
-  }, [roles, router]);
+  }, [session, router]);
 
   return (
     <div className="space-y-6">

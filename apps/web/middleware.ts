@@ -98,7 +98,22 @@ export default auth((req) => {
   // CRITICAL: Пропускаем /projects и /projects/create ПЕРЕД любыми другими проверками
   // Это предотвращает редиректы и бесконечные циклы
   // Также исключаем эти пути из правил редиректов
+  // Также пропускаем RSC prefetch запросы (они имеют заголовок RSC)
+  // Next.js uses various headers for prefetch: RSC, Next-Router-Prefetch, x-middleware-prefetch
+  const isRscPrefetch = 
+    req.headers.get('RSC') === '1' || 
+    req.headers.get('Next-Router-Prefetch') === '1' ||
+    req.headers.get('x-middleware-prefetch') === '1' ||
+    req.headers.get('purpose') === 'prefetch' ||
+    req.headers.get('x-nextjs-data') === '1';
+  
   if (pathname === '/projects' || pathname === '/projects/create') {
+    // Для RSC prefetch запросов просто пропускаем без проверок
+    // Это предотвращает redirect loops во время prefetch
+    if (isRscPrefetch) {
+      return NextResponse.next();
+    }
+    
     const loggedIn = isLoggedIn(req);
     
     // Проверяем авторизацию для /projects
@@ -135,8 +150,10 @@ export default auth((req) => {
     for (const rule of redirectRules) {
       if (rule.test(pathname)) {
         const target = rule.buildTarget(req, pathname);
+        const targetUrl = new URL(target);
         // Дополнительная проверка: не редиректим на тот же путь
-        if (target !== req.url.toString()) {
+        // Сравниваем только pathname, игнорируя query параметры
+        if (targetUrl.pathname !== pathname) {
           return NextResponse.redirect(target, 308);
         }
       }
@@ -147,5 +164,15 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)']
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - _vercel (Vercel internal routes)
+     */
+    '/((?!api|_next/static|_next/image|_vercel|favicon.ico).*)'
+  ]
 };

@@ -30,6 +30,7 @@ type AccountMenuProps = {
   onLogout: () => void;
   isLoggingOut: boolean;
   onOpenSettings?: () => void;
+  onOpenProfileSettings?: () => void;
   onAvatarChange?: (avatarUrl: string | null) => void;
 };
 
@@ -62,7 +63,7 @@ function setStoredAvatar(email: string, avatarUrl: string | null): void {
   }
 }
 
-export default function AccountMenu({ profile, onLogout, isLoggingOut, onOpenSettings, onAvatarChange }: AccountMenuProps) {
+export default function AccountMenu({ profile, onLogout, isLoggingOut, onOpenSettings, onOpenProfileSettings, onAvatarChange }: AccountMenuProps) {
   const { mode, resolvedTheme, setMode } = useTheme();
   const [isOpen, setOpen] = useState(false);
   const [isMenuCustomizationOpen, setMenuCustomizationOpen] = useState(false);
@@ -418,6 +419,36 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut, onOpenSet
                   </button>
                 )}
               </div>
+            </section>
+            <section>
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  if (onOpenProfileSettings) {
+                    onOpenProfileSettings();
+                  }
+                }}
+                disabled={!onOpenProfileSettings}
+                className="flex w-full items-center justify-between rounded-xl border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] px-3 py-2 text-left text-sm font-semibold text-[color:var(--text-primary)] transition hover:border-[color:var(--accent-border)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className="text-xs font-semibold uppercase tracking-[0.24em] text-[color:var(--text-tertiary)]">
+                  Настройки профиля
+                </span>
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4 text-[color:var(--text-tertiary)]"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              </button>
             </section>
             <section>
               <div className="mb-3 flex items-center justify-between">

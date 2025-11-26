@@ -28,7 +28,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  const moduleData = adminService.getModuleById(params.id);
+  const moduleData = await adminService.getModuleById(params.id);
   if (!moduleData) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
@@ -74,7 +74,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     cleanData.testers = parsed.data.testers;
   }
 
-  const updated = adminService.updateModule(params.id, cleanData, session.userId);
+  const updated = await adminService.updateModule(params.id, cleanData, session.userId);
   if (!updated) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }

@@ -52,7 +52,10 @@ export async function PATCH(request: NextRequest) {
         // Explicitly type updateData as Partial<WorkspaceUser> to match repository expectation
         const updateData: any = {};
         if (validatedData.name !== undefined) updateData.name = validatedData.name;
-        if (validatedData.image !== undefined) updateData.avatarUrl = validatedData.image;
+        // Обрабатываем пустую строку как null для avatarUrl
+        if (validatedData.image !== undefined) {
+          updateData.avatarUrl = validatedData.image === '' ? null : validatedData.image;
+        }
         if (validatedData.title !== undefined) updateData.title = validatedData.title;
         if (validatedData.department !== undefined) updateData.department = validatedData.department;
         if (validatedData.location !== undefined) updateData.location = validatedData.location;

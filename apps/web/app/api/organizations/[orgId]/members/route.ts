@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { getCurrentUser } from '@/lib/auth/session';
-import { organizationsRepository } from '@collabverse/api';
+import { organizationsRepository, usersRepository } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
 
 export async function GET(
@@ -22,7 +22,24 @@ export async function GET(
         }
 
         const members = await organizationsRepository.listMembers(orgId);
-        return jsonOk({ members });
+        
+        // Enrich members with user data
+        const membersWithUsers = await Promise.all(
+            members.map(async (member) => {
+                const userData = await usersRepository.findById(member.userId);
+                return {
+                    ...member,
+                    user: userData ? {
+                        id: userData.id,
+                        name: userData.name,
+                        email: userData.email,
+                        image: userData.avatarUrl,
+                    } : null,
+                };
+            })
+        );
+
+        return jsonOk({ members: membersWithUsers });
 
     } catch (error) {
         console.error('[Organization Members] Error listing:', error);

@@ -16,7 +16,7 @@ export async function GET() {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  const items = adminService.getModuleTree();
+  const items = await adminService.getModuleTree();
   return NextResponse.json({
     items,
     meta: {

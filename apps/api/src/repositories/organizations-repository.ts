@@ -137,11 +137,43 @@ export class OrganizationsRepository {
         return member || null;
     }
 
+    async findMemberById(organizationId: string, memberId: string): Promise<OrganizationMember | null> {
+        const [member] = await db
+            .select()
+            .from(organizationMembers)
+            .where(and(
+                eq(organizationMembers.organizationId, organizationId),
+                eq(organizationMembers.id, memberId)
+            ));
+        return member || null;
+    }
+
     async listMembers(organizationId: string): Promise<OrganizationMember[]> {
         return await db
             .select()
             .from(organizationMembers)
             .where(eq(organizationMembers.organizationId, organizationId));
+    }
+
+    async updateMemberRole(organizationId: string, memberId: string, role: string): Promise<OrganizationMember | null> {
+        const [updated] = await db
+            .update(organizationMembers)
+            .set({ role: role as any, updatedAt: new Date() })
+            .where(and(
+                eq(organizationMembers.id, memberId),
+                eq(organizationMembers.organizationId, organizationId)
+            ))
+            .returning();
+        return updated || null;
+    }
+
+    async removeMember(organizationId: string, memberId: string): Promise<void> {
+        await db
+            .delete(organizationMembers)
+            .where(and(
+                eq(organizationMembers.id, memberId),
+                eq(organizationMembers.organizationId, organizationId)
+            ));
     }
 }
 

@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppShellProvider } from '@/components/app/AppShellContext';
+import { SessionProvider } from '@/components/app/SessionContext';
 import AppTopbar from '@/components/app/AppTopbar';
 import CommandPalette from '@/components/app/CommandPalette';
 import ContentContainer from '@/components/app/ContentContainer';
@@ -12,6 +13,7 @@ import Sidebar from '@/components/app/Sidebar';
 import ToastHub from '@/components/app/ToastHub';
 import HoverRail from '@/components/right-rail/HoverRail';
 import PlatformSettingsModal from '@/components/settings/PlatformSettingsModal';
+import UserProfileSettingsModal from '@/components/settings/UserProfileSettingsModal';
 import CreateTaskWithProjectModal from '@/components/pm/CreateTaskWithProjectModal';
 import { CreateAIAgentModal } from '@/components/ai-hub';
 import type { DemoSession } from '@/lib/auth/demo-session';
@@ -49,6 +51,7 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
   const [isCreateOpen, setCreateOpen] = useState(false);
   const [isPaletteOpen, setPaletteOpen] = useState(false);
   const [isSettingsOpen, setSettingsOpen] = useState(false);
+  const [isProfileSettingsOpen, setProfileSettingsOpen] = useState(false);
   const [isLoggingOut, setLoggingOut] = useState(false);
   const [activeModal, setActiveModal] = useState<string | null>(null);
   // Инициализируем как null, чтобы избежать проблем с гидратацией
@@ -83,6 +86,10 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
 
   const openSettings = useCallback(() => {
     setSettingsOpen(true);
+  }, []);
+
+  const openProfileSettings = useCallback(() => {
+    setProfileSettingsOpen(true);
   }, []);
 
   useEffect(() => {
@@ -170,47 +177,58 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
   };
 
   return (
-    <AppShellProvider openCreateMenu={openCreateMenu} openCommandPalette={openCommandPalette}>
-      <div className="flex h-screen min-h-0 max-h-screen overflow-hidden bg-transparent text-[color:var(--text-primary)]">
-        <Sidebar roles={roles} />
-        <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
-          <AppTopbar
-            profile={{ email: session.email, role: session.role, ...(avatarUrl && { avatarUrl }) }}
-            onOpenCreate={openCreateMenu}
-            onOpenPalette={openCommandPalette}
-            onOpenSettings={openSettings}
-            onLogout={handleLogout}
-            isLoggingOut={isLoggingOut}
-            createButtonRef={createButtonRef}
-            onAvatarChange={handleAvatarChange}
-          />
-          <div className="flex flex-1 min-h-0 min-w-0 overflow-hidden bg-[color:var(--surface-base)]">
-            <ContentContainer>
-              {children}
-            </ContentContainer>
+    <SessionProvider session={session}>
+      <AppShellProvider openCreateMenu={openCreateMenu} openCommandPalette={openCommandPalette}>
+        <div className="flex h-screen min-h-0 max-h-screen overflow-hidden bg-transparent text-[color:var(--text-primary)]">
+          <Sidebar roles={roles} />
+          <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
+            <AppTopbar
+              profile={{ email: session.email, role: session.role, ...(avatarUrl && { avatarUrl }) }}
+              onOpenCreate={openCreateMenu}
+              onOpenPalette={openCommandPalette}
+              onOpenSettings={openSettings}
+              onOpenProfileSettings={openProfileSettings}
+              onLogout={handleLogout}
+              isLoggingOut={isLoggingOut}
+              createButtonRef={createButtonRef}
+              onAvatarChange={handleAvatarChange}
+            />
+            <div className="flex flex-1 min-h-0 min-w-0 overflow-hidden bg-[color:var(--surface-base)]">
+              <ContentContainer>
+                {children}
+              </ContentContainer>
+            </div>
           </div>
-        </div>
-        <CreateMenu open={isCreateOpen} onClose={() => setCreateOpen(false)} triggerRef={createButtonRef} />
-        <CommandPalette open={isPaletteOpen} onClose={() => setPaletteOpen(false)} />
-        <PlatformSettingsModal open={isSettingsOpen} onClose={() => setSettingsOpen(false)} />
-        {activeModal === 'createTask' && (
-          <CreateTaskWithProjectModal
-            isOpen={activeModal === 'createTask'}
-            onClose={() => setActiveModal(null)}
-          />
-        )}
-        {activeModal === 'createAIAgent' && (
-          <CreateAIAgentModal
-            open={activeModal === 'createAIAgent'}
-            onClose={() => setActiveModal(null)}
-            onSuccess={() => {
-              toast('AI Agent created', 'success');
+          <CreateMenu open={isCreateOpen} onClose={() => setCreateOpen(false)} triggerRef={createButtonRef} />
+          <CommandPalette open={isPaletteOpen} onClose={() => setPaletteOpen(false)} />
+          <PlatformSettingsModal open={isSettingsOpen} onClose={() => setSettingsOpen(false)} />
+          <UserProfileSettingsModal 
+            open={isProfileSettingsOpen} 
+            onClose={() => setProfileSettingsOpen(false)}
+            onSaved={() => {
+              // Обновляем страницу после сохранения профиля
+              router.refresh();
             }}
           />
-        )}
-        <ToastHub />
-        {isHoverRailEnabled ? <HoverRail permissions={roles} /> : null}
-      </div>
-    </AppShellProvider>
+          {activeModal === 'createTask' && (
+            <CreateTaskWithProjectModal
+              isOpen={activeModal === 'createTask'}
+              onClose={() => setActiveModal(null)}
+            />
+          )}
+          {activeModal === 'createAIAgent' && (
+            <CreateAIAgentModal
+              open={activeModal === 'createAIAgent'}
+              onClose={() => setActiveModal(null)}
+              onSuccess={() => {
+                toast('AI Agent created', 'success');
+              }}
+            />
+          )}
+          <ToastHub />
+          {isHoverRailEnabled ? <HoverRail permissions={roles} /> : null}
+        </div>
+      </AppShellProvider>
+    </SessionProvider>
   );
 }

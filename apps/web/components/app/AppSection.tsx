@@ -10,16 +10,19 @@ type Access = 'finance' | 'admin' | null;
 
 type SectionAction = {
   label: string;
-  message: string;
+  message?: string;
+  onClick?: () => void;
 };
 
 type AppSectionProps = {
   title: string;
   description: string;
-  actions: SectionAction[];
+  actions?: SectionAction[];
   access?: Access;
   emptyMessage?: string;
   errorMessage?: string;
+  children?: React.ReactNode;
+  hideStateToggles?: boolean;
 };
 
 const states = [
@@ -32,13 +35,16 @@ const states = [
 export default function AppSection({
   title,
   description,
-  actions,
+  actions = [],
   access = null,
   emptyMessage = 'Здесь пока ничего нет. Начните с действия справа.',
-  errorMessage = 'Что-то пошло не так. Повторите попытку.'
+  errorMessage = 'Что-то пошло не так. Повторите попытку.',
+  children,
+  hideStateToggles = false
 }: AppSectionProps) {
   const [state, setState] = useState<(typeof states)[number]['id']>('default');
   const roles = getUserRoles();
+  const hasCustomContent = !!children;
 
   if (access === 'admin' && !canAccessAdmin(roles)) {
     return (
@@ -66,37 +72,47 @@ export default function AppSection({
             <h1 className="text-xl font-semibold text-neutral-50">{title}</h1>
             <p className="text-sm text-neutral-400">{description}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {actions.map((action) => (
+          {actions.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              {actions.map((action) => (
+                <button
+                  key={action.label}
+                  type="button"
+                  onClick={() => {
+                    if (action.onClick) {
+                      action.onClick();
+                    } else if (action.message) {
+                      toast(action.message);
+                    }
+                  }}
+                  className="rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-4 py-2 text-sm font-medium text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                >
+                  {action.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        {!hideStateToggles && !hasCustomContent && (
+          <div className="flex flex-wrap gap-2 text-xs">
+            {states.map((item) => (
               <button
-                key={action.label}
+                key={item.id}
                 type="button"
-                onClick={() => toast(action.message)}
-                className="rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-4 py-2 text-sm font-medium text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                onClick={() => setState(item.id)}
+                className={clsx(
+                  'rounded-full border px-3 py-1 uppercase tracking-wide transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                  state === item.id
+                    ? 'border-indigo-500/60 bg-indigo-500/20 text-indigo-100'
+                    : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:border-indigo-500/40 hover:text-white'
+                )}
+                aria-pressed={state === item.id}
               >
-                {action.label}
+                {item.label}
               </button>
             ))}
           </div>
-        </div>
-        <div className="flex flex-wrap gap-2 text-xs">
-          {states.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setState(item.id)}
-              className={clsx(
-                'rounded-full border px-3 py-1 uppercase tracking-wide transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
-                state === item.id
-                  ? 'border-indigo-500/60 bg-indigo-500/20 text-indigo-100'
-                  : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:border-indigo-500/40 hover:text-white'
-              )}
-              aria-pressed={state === item.id}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
+        )}
       </header>
 
       {state === 'loading' && (
@@ -130,23 +146,29 @@ export default function AppSection({
       )}
 
       {state === 'default' && (
-        <div className="space-y-4">
-          <ContentBlock>
-            <p className="text-sm text-[color:var(--text-secondary)]">
-              Данные и виджеты будут подключаться на следующих этапах. Сейчас — демо-макет.
-            </p>
-          </ContentBlock>
-          <div className="grid gap-3 md:grid-cols-2">
-            {[0, 1, 2, 3].map((index) => (
-              <div key={index} className="content-block-sm">
-                <p className="text-sm font-semibold text-[color:var(--text-primary)]">Карточка #{index + 1}</p>
-                <p className="mt-2 text-xs text-[color:var(--text-secondary)]">
-                  Данные обновятся автоматически после подключения реальных источников.
+        <>
+          {hasCustomContent ? (
+            children
+          ) : (
+            <div className="space-y-4">
+              <ContentBlock>
+                <p className="text-sm text-[color:var(--text-secondary)]">
+                  Данные и виджеты будут подключаться на следующих этапах. Сейчас — демо-макет.
                 </p>
+              </ContentBlock>
+              <div className="grid gap-3 md:grid-cols-2">
+                {[0, 1, 2, 3].map((index) => (
+                  <div key={index} className="content-block-sm">
+                    <p className="text-sm font-semibold text-[color:var(--text-primary)]">Карточка #{index + 1}</p>
+                    <p className="mt-2 text-xs text-[color:var(--text-secondary)]">
+                      Данные обновятся автоматически после подключения реальных источников.
+                    </p>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          )}
+        </>
       )}
     </section>
   );
