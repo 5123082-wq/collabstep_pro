@@ -5,7 +5,10 @@ import { jsonError, jsonOk } from '@/lib/api/http';
 import { z } from 'zod';
 
 const updateProfileSchema = z.object({
-    name: z.string().min(2).optional(),
+    name: z.union([
+        z.string().min(2, 'Имя должно содержать минимум 2 символа'),
+        z.literal('')
+    ]).optional(),
     title: z.string().optional(),
     department: z.string().optional(),
     location: z.string().optional(),
@@ -28,13 +31,13 @@ export async function GET() {
     return jsonOk({
         profile: {
             id: dbUser.id,
-            name: dbUser.name,
-            email: dbUser.email,
-            image: dbUser.avatarUrl,
-            title: dbUser.title,
-            department: dbUser.department,
-            location: dbUser.location,
-            timezone: dbUser.timezone,
+            name: dbUser.name ?? null,
+            email: dbUser.email ?? '',
+            image: dbUser.avatarUrl ?? null,
+            title: dbUser.title ?? null,
+            department: dbUser.department ?? null,
+            location: dbUser.location ?? null,
+            timezone: dbUser.timezone ?? null,
         }
     });
 }
@@ -51,7 +54,18 @@ export async function PATCH(request: NextRequest) {
 
         // Explicitly type updateData as Partial<WorkspaceUser> to match repository expectation
         const updateData: any = {};
-        if (validatedData.name !== undefined) updateData.name = validatedData.name;
+        if (validatedData.name !== undefined) {
+            // Обрабатываем пустую строку как null для name, иначе обрезаем пробелы
+            const trimmedName = validatedData.name === '' ? null : validatedData.name.trim();
+            if (trimmedName === null || trimmedName.length >= 2) {
+                updateData.name = trimmedName;
+            } else {
+                return jsonError('VALIDATION_ERROR', { 
+                    status: 400, 
+                    details: 'Имя должно содержать минимум 2 символа или быть пустым' 
+                });
+            }
+        }
         // Обрабатываем пустую строку как null для avatarUrl
         if (validatedData.image !== undefined) {
           updateData.avatarUrl = validatedData.image === '' ? null : validatedData.image;

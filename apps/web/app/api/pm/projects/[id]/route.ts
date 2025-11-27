@@ -8,7 +8,7 @@ import {
   DEFAULT_WORKSPACE_ID
 } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
-import { transformProject as transformProjectFromAggregator, buildTaskMetrics } from '@/lib/pm/stage2-aggregator';
+import { transformProjectAsync as transformProjectFromAggregator, buildTaskMetrics } from '@/lib/pm/stage2-aggregator';
 // Project type removed as it was unused
 
 export async function GET(
@@ -69,9 +69,9 @@ export async function GET(
 
   const owner = await usersRepository.findById(apiProject.ownerId);
 
-  // Используем функцию трансформации из aggregator
-  // listing получается внутри transformProject, поэтому не передаем его отдельно
-  const project = transformProjectFromAggregator(
+  // Используем асинхронную функцию трансформации из aggregator
+  // которая загружает имена пользователей через usersRepository
+  const project = await transformProjectFromAggregator(
     apiProject,
     members,
     resolvedMetrics,
@@ -81,6 +81,13 @@ export async function GET(
       email: owner.email
     } : null
   );
+
+  // Логирование для отладки
+  console.log('[Project API] Project members:', project.members.map(m => ({
+    userId: m.userId,
+    name: m.name,
+    role: m.role
+  })));
 
   return jsonOk({ project });
 }

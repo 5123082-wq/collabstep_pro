@@ -80,12 +80,23 @@ export default function UserProfileSettingsModal({ open, onClose, onSaved }: Use
         if (data?.profile) {
           setProfile(data.profile);
           setFormData({
-            name: data.profile.name || '',
-            title: data.profile.title || '',
-            department: data.profile.department || '',
-            location: data.profile.location || '',
-            timezone: data.profile.timezone || 'Europe/Moscow',
-            image: data.profile.image || '',
+            name: data.profile.name ?? '',
+            title: data.profile.title ?? '',
+            department: data.profile.department ?? '',
+            location: data.profile.location ?? '',
+            timezone: data.profile.timezone ?? 'Europe/Moscow',
+            image: data.profile.image ?? '',
+          });
+        } else {
+          // Если профиль не найден, но пользователь авторизован, показываем пустую форму
+          // Это нормально для новых пользователей
+          setFormData({
+            name: '',
+            title: '',
+            department: '',
+            location: '',
+            timezone: 'Europe/Moscow',
+            image: '',
           });
         }
         setIsLoading(false);
@@ -119,6 +130,15 @@ export default function UserProfileSettingsModal({ open, onClose, onSaved }: Use
       const result = await res.json();
       if (result.profile) {
         setProfile(result.profile);
+        // Обновляем formData с сохраненными данными
+        setFormData({
+          name: result.profile.name ?? '',
+          title: result.profile.title ?? '',
+          department: result.profile.department ?? '',
+          location: result.profile.location ?? '',
+          timezone: result.profile.timezone ?? 'Europe/Moscow',
+          image: result.profile.image ?? '',
+        });
       }
 
       toast('Профиль успешно обновлен', 'success');

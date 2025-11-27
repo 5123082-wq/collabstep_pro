@@ -4,6 +4,7 @@ import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
 import {
   commentsRepository,
   tasksRepository,
+  usersRepository,
 } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { broadcastToProject } from '@/lib/websocket/event-broadcaster';
@@ -105,15 +106,29 @@ export async function PATCH(
       return jsonError('COMMENT_NOT_FOUND', { status: 404 });
     }
 
+    // Получаем информацию об авторе
+    const author = await usersRepository.findById(updated.authorId);
+    const updatedWithAuthor = {
+      ...updated,
+      author: author
+        ? {
+            id: author.id,
+            name: author.name,
+            email: author.email,
+            avatarUrl: author.avatarUrl
+          }
+        : null
+    };
+
     // Рассылаем событие через WebSocket
     await broadcastToProject(task.projectId, 'comment.updated', {
-      comment: updated,
+      comment: updatedWithAuthor,
       taskId,
       projectId: task.projectId
     });
 
     // Возврат результата
-    return jsonOk({ comment: updated });
+    return jsonOk({ comment: updatedWithAuthor });
   } catch (error) {
     console.error('Error updating comment:', error);
     if (error instanceof SyntaxError) {

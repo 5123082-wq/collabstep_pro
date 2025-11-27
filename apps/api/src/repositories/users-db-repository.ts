@@ -89,6 +89,7 @@ export class UsersDbRepository implements UsersRepository {
             updatedAt: new Date(),
         };
 
+        // Explicitly check for undefined, allow null values to be set
         if (data.name !== undefined) updateData.name = data.name;
         if (data.avatarUrl !== undefined) updateData.image = data.avatarUrl;
         if (data.title !== undefined) updateData.title = data.title;
@@ -107,7 +108,12 @@ export class UsersDbRepository implements UsersRepository {
             .where(eq(users.id, id))
             .returning();
 
-        return updatedUser ? this.mapToWorkspaceUser(updatedUser) : null;
+        if (!updatedUser) {
+            console.error('[UsersDbRepository] Failed to update user:', id, updateData);
+            return null;
+        }
+
+        return this.mapToWorkspaceUser(updatedUser);
     }
 
     async delete(userId: string): Promise<boolean> {

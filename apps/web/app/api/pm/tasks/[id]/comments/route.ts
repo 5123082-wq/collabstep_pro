@@ -4,6 +4,7 @@ import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
 import {
   commentsRepository,
   tasksRepository,
+  usersRepository,
 } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { notifyCommentAdded } from '@/lib/notifications/event-generator';
@@ -48,8 +49,36 @@ export async function GET(
     // Получение комментариев через commentsRepository.listByTask
     const comments = commentsRepository.listByTask(task.projectId, taskId);
 
+    // Функция для добавления информации об авторах в дерево комментариев
+    const addAuthorsToComments = async (commentNodes: typeof comments): Promise<any[]> => {
+      return Promise.all(commentNodes.map(async (comment) => {
+        const author = await usersRepository.findById(comment.authorId);
+        const commentWithAuthor = {
+          ...comment,
+          author: author
+            ? {
+                id: author.id,
+                name: author.name,
+                email: author.email,
+                avatarUrl: author.avatarUrl
+              }
+            : null
+        };
+        
+        // Рекурсивно обрабатываем дочерние комментарии
+        if (comment.children && comment.children.length > 0) {
+          commentWithAuthor.children = await addAuthorsToComments(comment.children);
+        }
+        
+        return commentWithAuthor;
+      }));
+    };
+
+    // Добавляем информацию об авторах
+    const commentsWithAuthors = await addAuthorsToComments(comments);
+
     // Возврат результата
-    return jsonOk({ comments });
+    return jsonOk({ comments: commentsWithAuthors });
   } catch (error) {
     console.error('Error fetching task comments:', error);
     return jsonError('INTERNAL_ERROR', { status: 500 });
@@ -108,18 +137,32 @@ export async function POST(
       attachments: Array.isArray(attachments) ? attachments : []
     });
 
+    // Получаем информацию об авторе
+    const author = await usersRepository.findById(auth.userId);
+    const commentWithAuthor = {
+      ...comment,
+      author: author
+        ? {
+            id: author.id,
+            name: author.name,
+            email: author.email,
+            avatarUrl: author.avatarUrl
+          }
+        : null
+    };
+
     // Генерируем уведомления о комментарии
     await notifyCommentAdded(comment.id, taskId, task.projectId, auth.userId);
 
     // Рассылаем событие через WebSocket
     await broadcastToProject(task.projectId, 'comment.added', {
-      comment,
+      comment: commentWithAuthor,
       taskId,
       projectId: task.projectId
     });
 
     // Возврат результата
-    return jsonOk({ comment });
+    return jsonOk({ comment: commentWithAuthor });
   } catch (error) {
     console.error('Error creating comment:', error);
     if (error instanceof SyntaxError) {
