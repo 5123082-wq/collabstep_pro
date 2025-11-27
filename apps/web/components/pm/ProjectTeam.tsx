@@ -156,14 +156,25 @@ export default function ProjectTeam({ project, currentUserId }: ProjectTeamProps
       <div className="space-y-2">
         {project.members.map((member) => {
           // Определяем отображаемое имя
-          const displayName = isAdminUserId(member.userId)
-            ? 'Админ'
-            : member.name || member.userId;
+          let displayName: string;
+          if (isAdminUserId(member.userId)) {
+            displayName = 'Админ';
+          } else if (member.name) {
+            displayName = member.name;
+          } else if (member.userId && member.userId.includes('@')) {
+            // Если это email, берем часть до @
+            displayName = member.userId.split('@')[0] || member.userId;
+          } else if (member.userId) {
+            // Если это UUID, показываем только первые 8 символов
+            displayName = member.userId.substring(0, 8) + '...';
+          } else {
+            displayName = 'Неизвестный пользователь';
+          }
           
           // Определяем первую букву для аватара
           const avatarLetter = isAdminUserId(member.userId)
             ? 'А'
-            : (member.name || member.userId).charAt(0).toUpperCase();
+            : displayName.charAt(0).toUpperCase();
 
           return (
             <div

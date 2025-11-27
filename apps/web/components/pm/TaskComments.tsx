@@ -8,6 +8,16 @@ import { Button } from '@/components/ui/button';
 import { useProjectEvents } from '@/lib/websocket/hooks';
 import { ContentBlock } from '@/components/ui/content-block';
 
+type CommentWithAuthor = TaskCommentNode & {
+  author?: {
+    id: string;
+    name: string;
+    email: string;
+    avatarUrl?: string;
+  } | null;
+  children?: CommentWithAuthor[];
+};
+
 type TaskCommentsProps = {
   taskId: string;
   projectId: string;
@@ -15,7 +25,7 @@ type TaskCommentsProps = {
 };
 
 export default function TaskComments({ taskId, projectId, currentUserId }: TaskCommentsProps) {
-  const [comments, setComments] = useState<TaskCommentNode[]>([]);
+  const [comments, setComments] = useState<CommentWithAuthor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,7 +68,7 @@ export default function TaskComments({ taskId, projectId, currentUserId }: TaskC
       const updatedComment = event.data?.comment;
       if (updatedComment) {
         setComments((prev) => {
-          const updateCommentInTree = (comments: TaskCommentNode[]): TaskCommentNode[] => {
+          const updateCommentInTree = (comments: CommentWithAuthor[]): CommentWithAuthor[] => {
             return comments.map((comment) => {
               if (comment.id === updatedComment.id) {
                 return updatedComment;

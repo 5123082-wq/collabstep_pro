@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
@@ -13,7 +13,8 @@ import {
   Calendar,
   CircleHelp,
   TrendingUp,
-  FileText
+  FileText,
+  RefreshCw
 } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import { canAccessAdmin, getRolesForDemoAccount } from '@/lib/auth/roles';
@@ -87,25 +88,93 @@ const overviewCards = [
   }
 ];
 
-const quickStats = [
-  { label: 'Активных пользователей', value: '1,234', trend: '+12%' },
-  { label: 'Разделов включено', value: '8', trend: '+2' },
-  { label: 'Сегментов', value: '5', trend: '' },
-  { label: 'Записей аудита', value: '542', trend: '' }
-];
+interface AdminStats {
+  activeUsers: number;
+  enabledSections: number;
+  segments: number;
+  auditEntries: number;
+}
+
+interface QuickStat {
+  label: string;
+  value: string;
+  trend?: string;
+}
+
+function formatNumber(num: number): string {
+  return num.toLocaleString('ru-RU');
+}
 
 export default function AdminOverviewPage() {
   const router = useRouter();
   const session = useSessionContext();
-  const [stats, setStats] = useState(quickStats);
+  const [stats, setStats] = useState<QuickStat[]>([
+    { label: 'Активных пользователей', value: '...' },
+    { label: 'Разделов включено', value: '...' },
+    { label: 'Сегментов', value: '...' },
+    { label: 'Записей аудита', value: '...' }
+  ]);
+  const [loading, setLoading] = useState(true);
+
+  const loadStats = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/admin/stats', {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[AdminStats] API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText
+        });
+        throw new Error(`Ошибка ${response.status}: ${response.statusText}`);
+      }
+
+      const data = (await response.json()) as AdminStats;
+      console.log('[AdminStats] Loaded data:', data);
+      
+      setStats([
+        { label: 'Активных пользователей', value: formatNumber(data.activeUsers) },
+        { label: 'Разделов включено', value: formatNumber(data.enabledSections) },
+        { label: 'Сегментов', value: formatNumber(data.segments) },
+        { label: 'Записей аудита', value: formatNumber(data.auditEntries) }
+      ]);
+    } catch (error) {
+      console.error('[AdminStats] Error loading stats:', error);
+      toast(
+        error instanceof Error 
+          ? `Ошибка при загрузке статистики: ${error.message}`
+          : 'Ошибка при загрузке статистики',
+        'warning'
+      );
+      // Устанавливаем значения по умолчанию при ошибке
+      setStats([
+        { label: 'Активных пользователей', value: '—' },
+        { label: 'Разделов включено', value: '—' },
+        { label: 'Сегментов', value: '—' },
+        { label: 'Записей аудита', value: '—' }
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const roles = getRolesForDemoAccount(session.email, session.role);
     if (!canAccessAdmin(roles)) {
       router.push('/dashboard?toast=forbidden');
       toast('Недостаточно прав для доступа к админ-панели', 'warning');
+      return;
     }
-  }, [session, router]);
+    
+    void loadStats();
+  }, [session, router, loadStats]);
 
   return (
     <div className="space-y-6">
@@ -119,9 +188,14 @@ export default function AdminOverviewPage() {
             </p>
           </div>
           <button
-            onClick={() => toast('TODO: Обновить данные', 'info')}
-            className="rounded-xl border border-neutral-800 bg-neutral-900/60 px-4 py-2 text-sm font-medium text-neutral-300 transition hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-indigo-100"
+            onClick={() => {
+              void loadStats();
+              toast('Статистика обновлена', 'success');
+            }}
+            disabled={loading}
+            className="flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900/60 px-4 py-2 text-sm font-medium text-neutral-300 transition hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed"
           >
+            <RefreshCw className={clsx('h-4 w-4', loading && 'animate-spin')} />
             Обновить
           </button>
         </div>
@@ -130,20 +204,29 @@ export default function AdminOverviewPage() {
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <ContentBlock key={stat.label} size="sm" className="flex flex-col">
-            <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-              {stat.label}
-            </p>
-            <div className="mt-2 flex items-baseline justify-between flex-1">
-              <p className="text-2xl font-bold text-neutral-50">{stat.value}</p>
-              {stat.trend ? (
-                <span className="flex items-center gap-1 text-xs font-medium text-green-500">
-                  <TrendingUp className="h-3 w-3" />
-                  {stat.trend}
-                </span>
-              ) : (
-                <span className="w-0" aria-hidden="true" />
-              )}
+          <ContentBlock key={stat.label} size="sm">
+            <div className="flex flex-col min-h-[80px]">
+              <p className="text-xs font-medium uppercase tracking-wide text-neutral-500 leading-tight">
+                {stat.label}
+              </p>
+              <div className="mt-1.5 flex items-baseline justify-between">
+                <p className="text-2xl font-bold text-neutral-50">
+                  {loading && stat.value === '...' ? (
+                    <span className="inline-flex items-center gap-2">
+                      <RefreshCw className="h-4 w-4 animate-spin text-neutral-400" />
+                      <span className="text-neutral-400">Загрузка...</span>
+                    </span>
+                  ) : (
+                    stat.value
+                  )}
+                </p>
+                {stat.trend && (
+                  <span className="flex items-center gap-1 text-xs font-medium text-green-500">
+                    <TrendingUp className="h-3 w-3" />
+                    {stat.trend}
+                  </span>
+                )}
+              </div>
             </div>
           </ContentBlock>
         ))}

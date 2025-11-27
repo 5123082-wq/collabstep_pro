@@ -6,8 +6,18 @@ import TaskCommentForm from './TaskCommentForm';
 import type { TaskCommentNode } from '@collabverse/api';
 import { ContentBlock } from '@/components/ui/content-block';
 
+type CommentWithAuthor = TaskCommentNode & {
+  author?: {
+    id: string;
+    name: string;
+    email: string;
+    avatarUrl?: string;
+  } | null;
+  children?: CommentWithAuthor[];
+};
+
 type TaskCommentItemProps = {
-  comment: TaskCommentNode;
+  comment: CommentWithAuthor;
   taskId: string;
   projectId: string;
   currentUserId: string;
@@ -134,11 +144,13 @@ export default function TaskCommentItem({
         <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-500/20 text-xs font-medium text-indigo-300">
-              {comment.authorId.charAt(0).toUpperCase()}
+              {comment.author?.name 
+                ? comment.author.name.charAt(0).toUpperCase()
+                : comment.authorId.charAt(0).toUpperCase()}
             </div>
             <div>
               <div className="text-sm font-medium text-white">
-                {comment.authorId.split('@')[0]}
+                {comment.author?.name || comment.authorId.split('@')[0]}
               </div>
               <div className="text-xs text-neutral-400">
                 {formatDate(comment.createdAt)}

@@ -2,6 +2,7 @@ import {
   marketplaceListingsRepository,
   projectsRepository,
   tasksRepository,
+  usersRepository,
   memory,
   isAdminUserId,
   type Project as ApiProject,
@@ -152,7 +153,7 @@ export function mapMembers(apiMembers: ApiProjectMember[], ownerId: string): Pro
     : [...apiMembers, { userId: ownerId, role: 'owner' }];
 
   return withOwner.map((member) => {
-    // Получаем имя пользователя из memory
+    // Получаем имя пользователя из memory (fallback для синхронных вызовов)
     const user = memory.WORKSPACE_USERS.find(u => u.id === member.userId);
     const userName = user?.name || undefined;
     const avatarUrl = user?.avatarUrl || undefined;
@@ -164,6 +165,40 @@ export function mapMembers(apiMembers: ApiProjectMember[], ownerId: string): Pro
       ...(avatarUrl ? { avatarUrl } : {})
     };
   });
+}
+
+export async function mapMembersAsync(apiMembers: ApiProjectMember[], ownerId: string): Promise<Project['members']> {
+  const withOwner = apiMembers.some((member) => member.userId === ownerId)
+    ? apiMembers
+    : [...apiMembers, { userId: ownerId, role: 'owner' }];
+
+  return Promise.all(withOwner.map(async (member) => {
+    // Получаем имя пользователя через usersRepository (использует новое хранилище)
+    let user = await usersRepository.findById(member.userId);
+    
+    // Fallback: если пользователь не найден в новом хранилище, проверяем старое
+    if (!user) {
+      const userInMemory = memory.WORKSPACE_USERS.find(u => u.id === member.userId);
+      if (userInMemory) {
+        user = userInMemory;
+        console.log(`[mapMembersAsync] Found user in memory (fallback): ${member.userId} -> name: ${user.name}`);
+      } else {
+        console.log(`[mapMembersAsync] User not found anywhere for userId: ${member.userId}`);
+      }
+    } else {
+      console.log(`[mapMembersAsync] Found user in repository: ${member.userId} -> name: ${user.name}`);
+    }
+    
+    const userName = user?.name || undefined;
+    const avatarUrl = user?.avatarUrl || undefined;
+
+    return {
+      userId: member.userId,
+      role: (member.role in MEMBER_ROLE_MAP ? MEMBER_ROLE_MAP[member.role as keyof typeof MEMBER_ROLE_MAP] : undefined) ?? 'MEMBER',
+      ...(userName ? { name: userName } : {}),
+      ...(avatarUrl ? { avatarUrl } : {})
+    };
+  }));
 }
 
 export type ProjectPermissions = {
@@ -216,6 +251,62 @@ export function transformProject(
     status: toFrontStatus(project.status),
     ownerId: project.ownerId,
     members: mapMembers(members, project.ownerId),
+    workspaceId: project.workspaceId,
+    startDate: project.createdAt,
+    ...(project.deadline ? { dueDate: project.deadline } : {}),
+    metrics: {
+      total: resolvedMetrics.total,
+      inProgress: resolvedMetrics.inProgress,
+      overdue: resolvedMetrics.overdue,
+      progressPct: resolvedMetrics.progressPct,
+      activity7d: resolvedMetrics.activity7d,
+      ...(project.budgetSpent !== null ? { budgetUsed: Number(project.budgetSpent) } : {}),
+      ...(project.budgetPlanned !== null ? { budgetLimit: Number(project.budgetPlanned) } : {})
+    },
+    ...(listing
+      ? {
+        marketplace: {
+          listingId: listing.id,
+          state:
+            listing.state === 'draft' || listing.state === 'published' || listing.state === 'rejected'
+              ? listing.state
+              : 'draft'
+        }
+      }
+      : {
+        marketplace: {
+          state: 'none' as const
+        }
+      }),
+    ...(owner ? { owner } : {})
+  } as Project;
+}
+
+export async function transformProjectAsync(
+  project: ApiProject,
+  members: ApiProjectMember[],
+  metrics: TaskMetrics,
+  owner: ProjectsOverviewOwner | null
+): Promise<Project> {
+  const resolvedMetrics = metrics ?? {
+    total: 0,
+    inProgress: 0,
+    overdue: 0,
+    completed: 0,
+    activity7d: 0,
+    progressPct: 0
+  };
+
+  const listing = marketplaceListingsRepository.findByProjectId(project.id);
+  const enrichedMembers = await mapMembersAsync(members, project.ownerId);
+
+  return {
+    id: project.id,
+    name: project.title,
+    key: project.key,
+    status: toFrontStatus(project.status),
+    ownerId: project.ownerId,
+    members: enrichedMembers,
     workspaceId: project.workspaceId,
     startDate: project.createdAt,
     ...(project.deadline ? { dueDate: project.deadline } : {}),
