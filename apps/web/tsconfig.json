@@ -1,16 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
-    "types": [
-      "jest",
-      "node"
-    ],
     "baseUrl": ".",
     "paths": {
       "@/*": [
@@ -23,21 +13,6 @@
         "../api/src/*"
       ]
     },
-    "jsx": "preserve",
-    "esModuleInterop": true,
-    "moduleResolution": "Bundler",
-    "resolveJsonModule": true,
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "forceConsistentCasingInFileNames": true,
-    "exactOptionalPropertyTypes": true,
-    "noImplicitOverride": true,
-    "allowJs": true,
-    "skipLibCheck": true,
-    "noEmit": true,
-    "incremental": true,
-    "module": "esnext",
-    "isolatedModules": true,
     "plugins": [
       {
         "name": "next"

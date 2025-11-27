@@ -40,7 +40,7 @@ async function getServerBroadcast() {
 export async function broadcastToProject(
   projectId: string,
   eventType: WebSocketEventType,
-  data: any
+  data: WebSocketEvent['data']
 ): Promise<void> {
   const event: WebSocketEvent = {
     type: eventType,
@@ -66,7 +66,7 @@ export async function broadcastToProject(
 export async function broadcastToUser(
   userId: string,
   eventType: WebSocketEventType,
-  data: any,
+  data: WebSocketEvent['data'],
   projectId?: string
 ): Promise<void> {
   const event: WebSocketEvent = {
@@ -89,4 +89,3 @@ export async function broadcastToUser(
     console.log('[WebSocket] Broadcast event to user (fallback):', event);
   }
 }
-

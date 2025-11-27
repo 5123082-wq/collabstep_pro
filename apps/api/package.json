@@ -10,7 +10,8 @@
   "scripts": {
     "dev:ws": "tsx src/websocket/server-runner.ts",
     "db:generate": "drizzle-kit generate",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@vercel/postgres": "^0.10.0",
@@ -20,6 +21,7 @@
   },
   "devDependencies": {
     "@auth/core": "^0.34.3",
+    "@types/node": "^20.12.12",
     "dotenv": "^17.2.3",
     "drizzle-kit": "^0.31.7",
     "tsx": "^4.16.5"

@@ -8,10 +8,10 @@
  * - Assignment recommendations
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 // Helper to setup test project
-async function setupTestProject(page: any) {
+async function setupTestProject(page: Page) {
   // Login
   await page.goto('/login');
   await page.fill('[name="email"]', 'test@example.com');
@@ -147,7 +147,7 @@ test.describe('AI Advanced Features', () => {
   });
 
   test.skip('should analyze team workload', async ({ page }) => {
-    const projectId = await setupTestProject(page);
+    await setupTestProject(page);
 
     // Create some tasks first
     await page.click('text=Создать задачу');
@@ -176,7 +176,7 @@ test.describe('AI Advanced Features', () => {
   });
 
   test.skip('should execute bulk operations with AI commands', async ({ page }) => {
-    const projectId = await setupTestProject(page);
+    await setupTestProject(page);
 
     // Create some tasks
     for (let i = 1; i <= 3; i++) {
@@ -199,8 +199,6 @@ test.describe('AI Advanced Features', () => {
     });
 
     await page.route('**/api/ai/**', (route) => {
-      const url = route.request().url();
-
       // Mock for parseBulkCommand (called by BulkOperationsPanel)
       void route.fulfill({
         status: 200,

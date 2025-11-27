@@ -138,7 +138,7 @@ export function recordRequest(userId: string, endpoint: string): void {
   const now = Date.now();
   const userKey = `user:${userId}`;
   
-  let userEntries = rateLimitStore.get(userKey) || [];
+  const userEntries = rateLimitStore.get(userKey) || [];
   
   userEntries.push({
     userId,
@@ -205,4 +205,3 @@ export function getUserUsageStats(userId: string): {
 if (typeof setInterval !== 'undefined') {
   setInterval(cleanupOldEntries, 10 * 60 * 1000);
 }
-

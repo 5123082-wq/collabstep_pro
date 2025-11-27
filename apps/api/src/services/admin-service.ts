@@ -1,4 +1,4 @@
-import { memory } from '../data/memory';
+
 import { adminModulesRepository } from '../repositories/admin-modules-repository';
 import { adminUserControlsRepository } from '../repositories/admin-user-controls-repository';
 import { usersRepository } from '../repositories/users-repository';
@@ -109,15 +109,15 @@ export class AdminService {
       status: control?.status ?? 'active',
       roles: control?.roles ?? [],
     };
-    
+
     if (user?.email) {
       result.email = user.email;
     }
-    
+
     if (control?.notes) {
       result.notes = control.notes;
     }
-    
+
     return result;
   }
 
@@ -152,15 +152,15 @@ export class AdminService {
         updatedBy: node.updatedBy,
         children: (node.children ?? []).map((child) => hydrate(child, effectiveStatus))
       };
-      
+
       if (node.summary) {
         result.summary = node.summary;
       }
-      
+
       if (node.path) {
         result.path = node.path;
       }
-      
+
       return result;
     };
 
@@ -202,13 +202,13 @@ export class AdminService {
   ): Promise<AdminModuleNodeView | null> {
     const normalizedTesters = Array.isArray(patch.testers)
       ? Array.from(
-          new Set(
-            patch.testers
-              .filter((item): item is string => typeof item === 'string')
-              .map((item) => item.trim())
-              .filter((item) => item.length > 0)
-          )
+        new Set(
+          patch.testers
+            .filter((item): item is string => typeof item === 'string')
+            .map((item) => item.trim())
+            .filter((item) => item.length > 0)
         )
+      )
       : undefined;
 
     // Filter out undefined values for exactOptionalPropertyTypes
@@ -305,32 +305,32 @@ export class AdminService {
         updatedAt: control.updatedAt,
         updatedBy: control.updatedBy
       };
-      
+
       if (user?.email) {
         view.email = user.email;
       }
-      
+
       if (user?.title) {
         view.title = user.title;
       }
-      
+
       if (user?.department) {
         view.department = user.department;
       }
-      
+
       if (user?.location) {
         view.location = user.location;
       }
-      
+
       if (control.notes) {
         view.notes = control.notes;
       }
-      
+
       // Добавляем флаг isAI, если пользователь является AI-агентом
       if (user?.isAI) {
         view.isAI = true;
       }
-      
+
       views.push(view);
     }
 
@@ -377,16 +377,16 @@ export class AdminService {
   async deleteUser(userId: string): Promise<boolean> {
     // Удаляем из ADMIN_USER_CONTROLS
     const controlDeleted = adminUserControlsRepository.delete(userId);
-    
+
     // Удаляем из WORKSPACE_USERS (может не существовать для сиротских записей)
     const userDeleted = await usersRepository.delete(userId);
-    
+
     // Если была удалена запись из ADMIN_USER_CONTROLS, синхронизируем модули
     // чтобы удалить назначения тестеров из модулей
     if (controlDeleted) {
       this.syncModulesFromUserControls('system');
     }
-    
+
     // Возвращаем true, если была удалена хотя бы одна запись
     return controlDeleted || userDeleted;
   }

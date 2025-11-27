@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/lib/ui/toast';
 import { useProjectEvents } from '@/lib/websocket/hooks';
 import { handleAgentMentionInChat } from '@/lib/ai/agent-responses';
+import type { ProjectChatMessage } from '@collabverse/api';
 
 type ChatMessage = {
   id: string;
@@ -99,16 +100,30 @@ export default function ProjectChat({ projectId, currentUserId }: ProjectChatPro
 
   // Подписка на WebSocket события для чата
   useProjectEvents(projectId, currentUserId, 'chat.message', (event) => {
-    if (event.data?.message && event.data?.projectId === projectId) {
-      const newMessage = event.data.message;
+    if (!event.data || typeof event.data !== 'object') {
+      return;
+    }
+    const payload = event.data as { message?: ProjectChatMessage; projectId?: string };
+    if (payload.message && payload.projectId === projectId) {
+      const newMessage = payload.message;
+      const enrichedMessage: ChatMessage = {
+        ...newMessage,
+        attachments: newMessage.attachments ?? [],
+        attachmentsFiles: (newMessage as ChatMessage).attachmentsFiles ?? [],
+        author: (newMessage as ChatMessage).author ?? {
+          id: newMessage.authorId,
+          name: 'AI',
+          email: ''
+        }
+      };
       // Проверяем, нет ли уже такого сообщения
       setMessages((prev) => {
-        const exists = prev.some((msg) => msg.id === newMessage.id);
+        const exists = prev.some((msg) => msg.id === enrichedMessage.id);
         if (exists) {
           return prev;
         }
         // Добавляем новое сообщение в начало списка (новые сообщения идут первыми)
-        return [newMessage, ...prev];
+        return [enrichedMessage, ...prev];
       });
       // Автопрокрутка к новому сообщению
       setTimeout(() => {
@@ -385,4 +400,3 @@ export default function ProjectChat({ projectId, currentUserId }: ProjectChatPro
     </div>
   );
 }
-

@@ -1,6 +1,7 @@
 import '@/styles/globals.css';
 import '@/styles/layout.css';
 import { Inter } from 'next/font/google';
+import dynamic from 'next/dynamic';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import ConsoleFilter from '@/components/util/ConsoleFilter';
@@ -9,16 +10,12 @@ import { ThemeProvider } from '@/components/theme/ThemeContext';
 import { Toaster } from 'sonner';
 
 // SpeedInsights только в production на Vercel - условный импорт
-let SpeedInsights: React.ComponentType | null = null;
-// Проверяем, что мы действительно на Vercel в production
-if (process.env.NODE_ENV === 'production' && process.env.VERCEL === '1') {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    SpeedInsights = require('@vercel/speed-insights/next').SpeedInsights;
-  } catch {
-    // Игнорируем ошибку, если модуль недоступен
-  }
-}
+const SpeedInsights =
+  process.env.NODE_ENV === 'production' && process.env.VERCEL === '1'
+    ? dynamic(() => import('@vercel/speed-insights/next').then((mod) => mod.SpeedInsights), {
+        ssr: false
+      })
+    : null;
 
 const inter = Inter({
   subsets: ['latin', 'cyrillic'],

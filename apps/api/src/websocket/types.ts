@@ -12,7 +12,6 @@ export type WebSocketEventType =
 export interface WebSocketEvent {
   type: WebSocketEventType;
   projectId: string;
-  data: any;
+  data: unknown;
   timestamp: string;
 }
-

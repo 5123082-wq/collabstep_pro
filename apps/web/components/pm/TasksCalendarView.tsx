@@ -7,11 +7,7 @@ import { ru } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { type Task } from '@/types/pm';
 import { type TaskListFilters } from '@/lib/pm/task-filters';
-import { useRouter, usePathname } from 'next/navigation';
-import { buildTaskFilterParams } from '@/lib/pm/task-filters';
-import { useTransition } from 'react';
 import { cn } from '@/lib/utils';
-import { trackEvent } from '@/lib/telemetry';
 import { ContentBlock } from '@/components/ui/content-block';
 
 const locales = {
@@ -36,10 +32,7 @@ type CalendarEvent = Event & {
   task: Task;
 };
 
-export default function TasksCalendarView({ tasks, loading, filters }: TasksCalendarViewProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const [isPending, startTransition] = useTransition();
+export default function TasksCalendarView({ tasks, loading }: TasksCalendarViewProps) {
   const [view, setView] = useState<View>('month');
   const [date, setDate] = useState(new Date());
   const [showOnlyMine, setShowOnlyMine] = useState(false);
@@ -74,48 +67,6 @@ export default function TasksCalendarView({ tasks, loading, filters }: TasksCale
         };
       });
   }, [filteredTasks]);
-
-  const handleEventDrop = useCallback(
-    async (event: CalendarEvent, start: Date, end: Date) => {
-      const updates = {
-        startDate: start.toISOString().split('T')[0],
-        dueAt: end.toISOString().split('T')[0]
-      };
-
-      try {
-        trackEvent('pm_task_due_changed', { taskId: event.task.id, startDate: updates.startDate, dueAt: updates.dueAt });
-        const response = await fetch('/api/pm/tasks/bulk', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            taskIds: [event.task.id],
-            updates
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to update task');
-        }
-
-        trackEvent('pm_task_updated', { taskId: event.task.id });
-
-        // Отправляем событие для обновления списка задач на других страницах
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('task-updated', { 
-            detail: { taskId: event.task.id, projectId: event.task.projectId } 
-          }));
-        }
-
-        const params = buildTaskFilterParams(filters);
-        startTransition(() => {
-          router.replace(params.toString() ? `${pathname}?${params.toString()}` : pathname, { scroll: false });
-        });
-      } catch (error) {
-        console.error('Error updating task:', error);
-      }
-    },
-    [filters, router, pathname, startTransition]
-  );
 
   const eventStyleGetter = useCallback((event: CalendarEvent) => {
     const priority = event.task.priority;

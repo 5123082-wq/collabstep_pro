@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-// @ts-ignore
+// @ts-expect-error lucide-react icon types
 import { ArrowUpRight, DollarSign, Plus, KanbanSquare } from 'lucide-react';
 import { type Project } from '@/types/pm';
 import { buildProjectFilterParams, parseProjectFilters, type ProjectListFilters, type ProjectScope } from '@/lib/pm/filters';
@@ -103,6 +103,7 @@ function buildPresetFingerprint(filters: ProjectFilterSnapshot | ProjectListFilt
 
 function toPresetSnapshot(filters: ProjectListFilters): ProjectFilterSnapshot {
   const { page: _page, ...rest } = filters;
+  void _page;
   return rest as ProjectFilterSnapshot;
 }
 
@@ -1013,5 +1014,4 @@ export default function ProjectsOverviewPageClient({ initialFilters, initialData
     </div>
   );
 }
-
 

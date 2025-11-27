@@ -4,7 +4,7 @@ import { invitationsRepository } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
 
 export async function POST(
-    request: NextRequest,
+    _request: NextRequest,
     { params }: { params: { token: string } }
 ) {
     const user = await getCurrentUser();

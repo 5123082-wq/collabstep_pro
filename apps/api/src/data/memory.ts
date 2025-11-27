@@ -62,14 +62,34 @@ export const WORKSPACE_USERS: WorkspaceUser[] = [
   }
 ];
 
+type GlobalMemory = {
+  PROJECTS: Project[];
+  TASKS: Task[];
+  TASK_DEPENDENCIES: TaskDependency[];
+  PROJECT_MEMBERS: Record<string, ProjectMember[]>;
+  EXPENSES: Expense[];
+  EXPENSE_ATTACHMENTS: ExpenseAttachment[];
+  PROJECT_BUDGETS: (ProjectBudget | ProjectBudgetSnapshot)[];
+  AUDIT_LOG: AuditLogEntry[];
+  EVENTS: DomainEvent[];
+  MARKETPLACE_LISTINGS: Array<{
+    id: string;
+    projectId: string;
+    workspaceId: string;
+    title: string;
+    description?: string;
+    state: 'draft' | 'published' | 'rejected';
+    createdAt: string;
+    updatedAt: string;
+  }>;
+  NOTIFICATIONS: Notification[];
+  PROJECT_CHAT_MESSAGES: ProjectChatMessage[];
+  WORKSPACE_USERS: WorkspaceUser[];
+};
+
 type GlobalMemoryScope = typeof globalThis & {
   __collabverseFinanceIdempotencyKeys__?: Map<string, string>;
-  __collabverseMemory__?: {
-    PROJECTS: Project[];
-    TASKS: Task[];
-    WORKSPACE_USERS: WorkspaceUser[];
-    [key: string]: any;
-  };
+  __collabverseMemory__?: GlobalMemory;
 };
 
 const globalMemoryScope = globalThis as GlobalMemoryScope;
@@ -80,7 +100,7 @@ globalMemoryScope.__collabverseFinanceIdempotencyKeys__ = globalIdempotencyKeys;
 
 // Используем глобальную память для разделения между процессами Next.js
 // Это гарантирует, что проекты сохраняются между запросами
-const getOrCreateGlobalMemory = () => {
+const getOrCreateGlobalMemory = (): GlobalMemory => {
   if (globalMemoryScope.__collabverseMemory__) {
     // Если глобальная память уже существует, убеждаемся, что WORKSPACE_USERS инициализирован
     if (!globalMemoryScope.__collabverseMemory__.WORKSPACE_USERS) {
@@ -89,7 +109,7 @@ const getOrCreateGlobalMemory = () => {
     return globalMemoryScope.__collabverseMemory__;
   }
   
-  const mem = {
+  const mem: GlobalMemory = {
     PROJECTS: [] as Project[],
     TASKS: [] as Task[],
     TASK_DEPENDENCIES: [] as TaskDependency[],

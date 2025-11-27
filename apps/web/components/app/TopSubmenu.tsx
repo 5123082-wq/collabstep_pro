@@ -61,7 +61,7 @@ export default function TopSubmenu({ items, ariaLabel = 'Дополнитель�
   return (
     <ContentBlock as="nav" size="sm" aria-label={ariaLabel} className="flex flex-wrap items-center gap-2 p-2">
       {items.map((item) => {
-        const { id, label, badge, disabled } = item;
+        const { id, label, disabled } = item;
         const className = resolveItemClassName(item.active, disabled);
 
         if ('href' in item && item.href) {

@@ -35,7 +35,8 @@ export async function extractAgentMentions(text: string): Promise<AgentMention[]
 /**
  * Выбирает шаблон ответа для агента на основе контекста
  */
-export function selectAgentResponse(agent: AIAgent, context?: string): string {
+export function selectAgentResponse(agent: AIAgent, _context?: string): string {
+  void _context;
   if (!agent.responseTemplates || agent.responseTemplates.length === 0) {
     return 'Принял к сведению.';
   }
@@ -87,8 +88,9 @@ export async function sendAgentTaskComment(
 export async function handleAgentMentionInChat(
   projectId: string,
   messageBody: string,
-  authorId: string
+  _authorId: string
 ): Promise<void> {
+  void _authorId;
   const agentMentions = await extractAgentMentions(messageBody);
 
   for (const mention of agentMentions) {
@@ -112,8 +114,9 @@ export async function handleAgentMentionInComment(
   projectId: string,
   taskId: string,
   messageBody: string,
-  authorId: string
+  _authorId: string
 ): Promise<void> {
+  void _authorId;
   const agentMentions = await extractAgentMentions(messageBody);
 
   for (const mention of agentMentions) {
@@ -129,4 +132,3 @@ export async function handleAgentMentionInComment(
     await sendAgentTaskComment(projectId, taskId, agent.id, response);
   }
 }
-

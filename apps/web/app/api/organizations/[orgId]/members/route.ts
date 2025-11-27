@@ -4,7 +4,7 @@ import { organizationsRepository, usersRepository } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
 
 export async function GET(
-    request: NextRequest,
+    _request: NextRequest,
     { params }: { params: { orgId: string } }
 ) {
     const user = await getCurrentUser();
@@ -22,7 +22,7 @@ export async function GET(
         }
 
         const members = await organizationsRepository.listMembers(orgId);
-        
+
         // Enrich members with user data
         const membersWithUsers = await Promise.all(
             members.map(async (member) => {

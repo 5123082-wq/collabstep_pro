@@ -16,14 +16,14 @@ type TasksGanttViewProps = {
 type Scale = 'day' | 'week' | 'month';
 
 export default function TasksGanttView({ projectId, tasks }: TasksGanttViewProps) {
-  const [dependencies, setDependencies] = useState<TaskDependency[]>([]);
+  const [, setDependencies] = useState<TaskDependency[]>([]);
   const [scale, setScale] = useState<Scale>('week');
   const [loading, setLoading] = useState(true);
-  const [criticalPath, setCriticalPath] = useState<string[]>([]);
+  const [criticalPath] = useState<string[]>([]);
   const [ganttTasks, setGanttTasks] = useState<GanttTask[]>([]);
-  const [ganttLinks, setGanttLinks] = useState<GanttLink[]>([]);
+  const [ganttLinks] = useState<GanttLink[]>([]);
   const [filterStatus, setFilterStatus] = useState<string | null>(null);
-  const [filterAssignee, setFilterAssignee] = useState<string | null>(null);
+  const [filterAssignee] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
@@ -467,7 +467,7 @@ export default function TasksGanttView({ projectId, tasks }: TasksGanttViewProps
               </svg>
             )}
 
-            {filteredTasks.map((task, idx) => {
+            {filteredTasks.map((task) => {
               const originalTask = tasks.find((t) => t.id === task.id);
               const isCritical = criticalPath.includes(task.id);
               const left = getDatePosition(new Date(task.start_date));

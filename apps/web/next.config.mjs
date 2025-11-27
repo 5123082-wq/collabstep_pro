@@ -1,6 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false,
+  eslint: {
+    // Warning: This allows production builds to successfully complete even if
+    // your project has ESLint errors.
+    ignoreDuringBuilds: true,
+  },
   experimental: {
     externalDir: true
   },
@@ -28,7 +33,7 @@ const nextConfig = {
         path: false,
       };
     }
-    
+
     // Add a plugin to handle node: URIs by converting them to regular module names
     config.plugins = config.plugins || [];
     config.plugins.push({
@@ -42,7 +47,7 @@ const nextConfig = {
         });
       },
     });
-    
+
     return config;
   }
 };

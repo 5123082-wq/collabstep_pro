@@ -1,0 +1,338 @@
+
+> collabverse-monorepo@0.1.0 test /workspace/collabstep-new
+> jest -u
+
+ts-jest[ts-jest-transformer] (WARN) Define `ts-jest` config under `globals` is deprecated. Please do
+transform: {
+    <transform_regex>: ['ts-jest', { /* ts-jest config goes here in Jest */ }],
+},
+See more at https://kulshekhar.github.io/ts-jest/docs/getting-started/presets#advanced
+ts-jest[ts-jest-transformer] (WARN) Define `ts-jest` config under `globals` is deprecated. Please do
+transform: {
+    <transform_regex>: ['ts-jest', { /* ts-jest config goes here in Jest */ }],
+},
+See more at https://kulshekhar.github.io/ts-jest/docs/getting-started/presets#advanced
+FAIL apps/web/tests/unit/menuBuilder.spec.ts
+  ● menu-builder › отображает админку для роли ADMIN
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      13 |     const menu = buildLeftMenu(['ADMIN']);
+      14 |     const hasAdmin = menu.some((section) => section.id === 'admin');
+    > 15 |     expect(hasAdmin).toBe(true);
+         |                      ^
+      16 |   });
+      17 |
+      18 |   it('скрывает финансы для наблюдателя', () => {
+
+      at Object.<anonymous> (apps/web/tests/unit/menuBuilder.spec.ts:15:22)
+
+  ● menu-builder › скрывает финансы для наблюдателя
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: false
+    Received: true
+
+      19 |     const menu = buildLeftMenu(['OBSERVER']);
+      20 |     const hasFinance = menu.some((section) => section.id === 'finance');
+    > 21 |     expect(hasFinance).toBe(false);
+         |                        ^
+      22 |   });
+      23 |
+      24 |   it('показывает финансы руководителю проекта', () => {
+
+      at Object.<anonymous> (apps/web/tests/unit/menuBuilder.spec.ts:21:24)
+
+FAIL apps/web/tests/unit/stageCopy.spec.ts
+  ● stage copy audit › в репозитории нет упоминаний запрещённого этапа
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 3
+
+    - Array []
+    + Array [
+    +   "/workspace/collabstep-new/docs/CLEANUP_REPORT.md",
+    + ]
+
+      62 |     const offenders = files.filter((file) => forbiddenPattern.test(readFileSync(file, 'utf8')));
+      63 |
+    > 64 |     expect(offenders).toEqual([]);
+         |                       ^
+      65 |   });
+      66 | });
+      67 |
+
+      at Object.<anonymous> (apps/web/tests/unit/stageCopy.spec.ts:64:23)
+
+PASS apps/web/tests/unit/marketplaceVacancies.spec.ts
+PASS apps/web/tests/unit/financeService.spec.ts
+  ● Console
+
+    console.info
+      [ExpenseStoreFactory] selecting expense store { driver: 'memory', nodeEnv: 'test' }
+
+      at getExpenseStore (apps/api/src/stores/expense-store-factory.ts:62:10)
+
+    console.info
+      [MemoryExpenseStore] create {
+        expenseId: '63a89ae0-2ce7-420f-abcd-24e0fbc6bf3d',
+        actorId: 'admin.demo@collabverse.test'
+      }
+
+      at MemoryExpenseStore.create (apps/api/src/repositories/expense-store.ts:167:13)
+
+    console.info
+      [MemoryExpenseStore] create {
+        expenseId: '114520db-7d85-4b13-8225-824f2f273964',
+        actorId: 'admin.demo@collabverse.test'
+      }
+
+      at MemoryExpenseStore.create (apps/api/src/repositories/expense-store.ts:167:13)
+
+    console.info
+      [MemoryExpenseStore] changeStatus {
+        expenseId: '114520db-7d85-4b13-8225-824f2f273964',
+        actorId: 'admin.demo@collabverse.test',
+        status: 'pending'
+      }
+
+      at MemoryExpenseStore.changeStatus (apps/api/src/repositories/expense-store.ts:256:13)
+
+    console.info
+      [MemoryExpenseStore] changeStatus {
+        expenseId: '114520db-7d85-4b13-8225-824f2f273964',
+        actorId: 'admin.demo@collabverse.test',
+        status: 'approved'
+      }
+
+      at MemoryExpenseStore.changeStatus (apps/api/src/repositories/expense-store.ts:256:13)
+
+    console.info
+      [MemoryExpenseStore] create {
+        expenseId: '2c2143d6-cd7e-438b-8d16-7db63f1876f6',
+        actorId: 'admin.demo@collabverse.test'
+      }
+
+      at MemoryExpenseStore.create (apps/api/src/repositories/expense-store.ts:167:13)
+
+    console.info
+      [DbExpenseStore] create {
+        expenseId: 'd2f67b1d-66e4-457e-a538-c2639b0e1e81',
+        actorId: 'admin.demo@collabverse.test'
+      }
+
+      at DbExpenseStore.create (apps/api/src/repositories/expense-store.ts:323:13)
+
+PASS apps/web/tests/unit/marketplaceSpecialists.spec.ts
+PASS apps/web/tests/unit/financeApiRoutes.spec.ts
+  ● Console
+
+    console.info
+      [ExpenseStoreFactory] selecting expense store { driver: 'memory', nodeEnv: 'test' }
+
+      at getExpenseStore (apps/api/src/stores/expense-store-factory.ts:62:10)
+
+    console.info
+      [MemoryExpenseStore] create {
+        expenseId: 'c7ce10c6-2633-441a-a50d-73e6ff282d8d',
+        actorId: 'admin.demo@collabverse.test'
+      }
+
+      at MemoryExpenseStore.create (apps/api/src/repositories/expense-store.ts:167:13)
+
+    console.info
+      [MemoryExpenseStore] changeStatus {
+        expenseId: 'c7ce10c6-2633-441a-a50d-73e6ff282d8d',
+        actorId: 'admin.demo@collabverse.test',
+        status: 'pending'
+      }
+
+      at MemoryExpenseStore.changeStatus (apps/api/src/repositories/expense-store.ts:256:13)
+
+    console.info
+      [MemoryExpenseStore] changeStatus {
+        expenseId: 'c7ce10c6-2633-441a-a50d-73e6ff282d8d',
+        actorId: 'admin.demo@collabverse.test',
+        status: 'approved'
+      }
+
+      at MemoryExpenseStore.changeStatus (apps/api/src/repositories/expense-store.ts:256:13)
+
+PASS apps/web/tests/unit/projectMenuRoles.spec.ts
+PASS apps/web/tests/unit/uiStore.spec.ts
+  ● Console
+
+    console.error
+      Warning: `ReactDOMTestUtils.act` is deprecated in favor of `React.act`. Import `act` from `react` instead of `react-dom/test-utils`. See https://react.dev/warnings/react-dom-test-utils for more info.
+
+      41 |
+      42 |   it('переключает фон и сохраняет состояние', () => {
+    > 43 |     act(() => {
+         |        ^
+      44 |       useUiStore.getState().setBgPreset('grid');
+      45 |     });
+      46 |
+
+      at printWarning (node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-test-utils.development.js:71:30)
+      at error (node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-test-utils.development.js:45:7)
+      at actWithWarning (node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-test-utils.development.js:1736:7)
+      at Object.<anonymous> (apps/web/tests/unit/uiStore.spec.ts:43:8)
+
+PASS apps/web/tests/unit/financePermissions.spec.ts
+PASS apps/web/tests/unit/csvImport.spec.ts
+PASS apps/web/tests/unit/expenseFilters.spec.ts
+PASS apps/web/tests/unit/financeBootstrap.spec.ts
+  ● Console
+
+    console.info
+      [ExpenseStoreFactory] selecting expense store { driver: 'db', nodeEnv: 'test' }
+
+      at Object.getExpenseStore (apps/api/src/stores/expense-store-factory.ts:62:10)
+
+    console.info
+      [DbExpenseStore] create { expenseId: 'exp-db-test', actorId: 'tester' }
+
+      at DbExpenseStore.create (apps/api/src/repositories/expense-store.ts:323:13)
+
+    console.info
+      [ExpenseStoreFactory] selecting expense store { driver: 'db', nodeEnv: 'production' }
+
+      at getExpenseStore (apps/api/src/stores/expense-store-factory.ts:62:10)
+
+PASS apps/web/tests/unit/projectsDrawer.spec.ts
+PASS apps/web/tests/unit/deepSearch.spec.ts
+PASS apps/web/tests/unit/projectsLayoutComponents.spec.ts
+PASS apps/web/tests/unit/expenseStore.spec.ts
+  ● Console
+
+    console.info
+      [ExpenseStoreFactory] selecting expense store { driver: 'memory', nodeEnv: 'test' }
+
+      at getExpenseStore (apps/api/src/stores/expense-store-factory.ts:62:10)
+
+    console.info
+      [MemoryExpenseStore] create { expenseId: 'expense-1', actorId: 'tester' }
+
+      at MemoryExpenseStore.create (apps/api/src/repositories/expense-store.ts:167:13)
+
+    console.info
+      [MemoryExpenseStore] changeStatus { expenseId: 'expense-1', actorId: 'tester', status: 'pending' }
+
+      at MemoryExpenseStore.changeStatus (apps/api/src/repositories/expense-store.ts:256:13)
+
+    console.info
+      [DbExpenseStore] create { expenseId: 'expense-1', actorId: 'tester' }
+
+      at DbExpenseStore.create (apps/api/src/repositories/expense-store.ts:323:13)
+
+    console.info
+      [DbExpenseStore] changeStatus { expenseId: 'expense-1', actorId: 'tester', status: 'approved' }
+
+      at DbExpenseStore.changeStatus (apps/api/src/repositories/expense-store.ts:349:15)
+
+PASS apps/web/tests/unit/expenseStoreFactory.spec.ts
+  ● Console
+
+    console.info
+      [ExpenseStoreFactory] selecting expense store { driver: 'memory', nodeEnv: 'test' }
+
+      at getExpenseStore (apps/api/src/stores/expense-store-factory.ts:62:10)
+
+    console.info
+      [ExpenseStoreFactory] selecting expense store { driver: 'memory', nodeEnv: 'test' }
+
+      at getExpenseStore (apps/api/src/stores/expense-store-factory.ts:62:10)
+
+    console.info
+      [ExpenseStoreFactory] selecting expense store { driver: 'db', nodeEnv: 'test' }
+
+      at getExpenseStore (apps/api/src/stores/expense-store-factory.ts:62:10)
+
+    console.info
+      [ExpenseStoreFactory] selecting expense store { driver: 'db', nodeEnv: 'production' }
+
+      at getExpenseStore (apps/api/src/stores/expense-store-factory.ts:62:10)
+
+    console.info
+      [ExpenseStoreFactory] selecting expense store { driver: 'memory', nodeEnv: 'development' }
+
+      at getExpenseStore (apps/api/src/stores/expense-store-factory.ts:62:10)
+
+PASS apps/web/tests/unit/projectsLayoutResponsive.spec.ts
+PASS apps/web/tests/unit/marketingMenu.spec.ts
+PASS apps/web/tests/unit/formatMoney.spec.ts
+PASS apps/web/tests/unit/projectsTopbar.spec.ts
+PASS apps/web/tests/unit/projectStorage.spec.ts
+
+Summary of all failing tests
+FAIL apps/web/tests/unit/menuBuilder.spec.ts
+  ● menu-builder › отображает админку для роли ADMIN
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      13 |     const menu = buildLeftMenu(['ADMIN']);
+      14 |     const hasAdmin = menu.some((section) => section.id === 'admin');
+    > 15 |     expect(hasAdmin).toBe(true);
+         |                      ^
+      16 |   });
+      17 |
+      18 |   it('скрывает финансы для наблюдателя', () => {
+
+      at Object.<anonymous> (apps/web/tests/unit/menuBuilder.spec.ts:15:22)
+
+  ● menu-builder › скрывает финансы для наблюдателя
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: false
+    Received: true
+
+      19 |     const menu = buildLeftMenu(['OBSERVER']);
+      20 |     const hasFinance = menu.some((section) => section.id === 'finance');
+    > 21 |     expect(hasFinance).toBe(false);
+         |                        ^
+      22 |   });
+      23 |
+      24 |   it('показывает финансы руководителю проекта', () => {
+
+      at Object.<anonymous> (apps/web/tests/unit/menuBuilder.spec.ts:21:24)
+
+FAIL apps/web/tests/unit/stageCopy.spec.ts
+  ● stage copy audit › в репозитории нет упоминаний запрещённого этапа
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 3
+
+    - Array []
+    + Array [
+    +   "/workspace/collabstep-new/docs/CLEANUP_REPORT.md",
+    + ]
+
+      62 |     const offenders = files.filter((file) => forbiddenPattern.test(readFileSync(file, 'utf8')));
+      63 |
+    > 64 |     expect(offenders).toEqual([]);
+         |                       ^
+      65 |   });
+      66 | });
+      67 |
+
+      at Object.<anonymous> (apps/web/tests/unit/stageCopy.spec.ts:64:23)
+
+
+Test Suites: 2 failed, 20 passed, 22 total
+Tests:       3 failed, 77 passed, 80 total
+Snapshots:   0 total
+Time:        3.695 s, estimated 4 s
+Ran all test suites.
+ ELIFECYCLE  Test failed. See above for more details.

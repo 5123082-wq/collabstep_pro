@@ -1,25 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 
-interface Invite {
-  id: string;
-  email?: string; // If invited by email
-  token: string;
-  status: 'pending' | 'accepted' | 'expired';
-  createdAt: string;
-}
-
 export function InvitesTab({ orgId }: { orgId: string }) {
-  const [invites, setInvites] = useState<Invite[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
   useEffect(() => {
     // Fetch invites
     // fetch(`/api/organizations/${orgId}/invites`).then...
     // For now mocking or assuming empty as API might need implementation details
-    setIsLoading(false);
   }, [orgId]);
 
   return (

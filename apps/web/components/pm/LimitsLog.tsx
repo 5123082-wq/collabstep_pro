@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { type Project } from '@/types/pm';
-// @ts-ignore
+// @ts-expect-error lucide-react icon types
 import { Clock, Download, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
@@ -19,6 +19,25 @@ type LimitEvent = {
 
 type LimitsLogProps = {
   project: Project;
+};
+
+const parseBudgetData = (
+  value: unknown
+): { projectId?: string; amount?: string | number } => {
+  if (!value || typeof value !== 'object') {
+    return {};
+  }
+  const candidate = value as { projectId?: unknown; amount?: unknown };
+  const result: { projectId?: string; amount?: string | number } = {};
+
+  if (typeof candidate.projectId === 'string') {
+    result.projectId = candidate.projectId;
+  }
+  if (typeof candidate.amount === 'string' || typeof candidate.amount === 'number') {
+    result.amount = candidate.amount;
+  }
+
+  return result;
 };
 
 export default function LimitsLog({ project }: LimitsLogProps) {
@@ -42,7 +61,7 @@ export default function LimitsLog({ project }: LimitsLogProps) {
           const limitEvents = (data.items || []).filter((event: LimitEvent) => {
             // Проверяем, связано ли событие с превышением лимита
             if (event.action === 'expense.created' && event.after) {
-              const after = event.after as { projectId?: string };
+              const after = parseBudgetData(event.after);
               return after.projectId === project.id;
             }
             return event.action === 'project_budget.updated' || event.action === 'expense.created';
@@ -220,36 +239,38 @@ export default function LimitsLog({ project }: LimitsLogProps) {
         {filteredEvents.length === 0 ? (
           <p className="text-xs text-neutral-500">Нет событий, соответствующих фильтрам</p>
         ) : (
-          filteredEvents.map((event) => (
-            <div
-              key={event.id}
-              className="flex items-start gap-3 rounded-lg border border-neutral-800/50 bg-neutral-900/30 p-3"
-            >
-              <Clock className="h-4 w-4 text-neutral-400 mt-0.5 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-neutral-300">
-                  {event.action === 'expense.created' ? 'Создана трата' : 'Обновлён бюджет'}
-                </p>
-                <p className="text-xs text-neutral-500 mt-1">
-                  {new Date(event.createdAt).toLocaleString('ru-RU', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </p>
-                {event.after && typeof event.after === 'object' && (event.after as any).amount && (
-                  <p className="text-xs text-neutral-400 mt-1">
-                    Сумма: {(event.after as any).amount}
+          filteredEvents.map((event) => {
+            const { amount } = parseBudgetData(event.after);
+            return (
+              <div
+                key={event.id}
+                className="flex items-start gap-3 rounded-lg border border-neutral-800/50 bg-neutral-900/30 p-3"
+              >
+                <Clock className="h-4 w-4 text-neutral-400 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-neutral-300">
+                    {event.action === 'expense.created' ? 'Создана трата' : 'Обновлён бюджет'}
                   </p>
-                )}
+                  <p className="text-xs text-neutral-500 mt-1">
+                    {new Date(event.createdAt).toLocaleString('ru-RU', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                  {amount && (
+                    <p className="text-xs text-neutral-400 mt-1">
+                      Сумма: {amount}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </ContentBlock>
   );
 }
-

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-// @ts-ignore
+// @ts-expect-error lucide-react icon types
 import { Check, FileText, Globe, Megaphone, Palette, Sparkles } from 'lucide-react';
 import {
   Modal,

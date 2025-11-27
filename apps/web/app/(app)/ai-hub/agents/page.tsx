@@ -107,11 +107,33 @@ export default function AiAgentsPage() {
       if (projectsResponse.ok) {
         const projectsData = await projectsResponse.json();
         const items = Array.isArray(projectsData.items) ? projectsData.items : [];
-        const projectsList = items.map((p: any) => ({
-          id: p.id,
-          name: p.name || p.title,
-          key: p.key
-        }));
+        const projectsList: ProjectInfo[] = items
+          .map((project: unknown) => {
+            const typedProject = project as {
+              id?: unknown;
+              name?: unknown;
+              title?: unknown;
+              key?: unknown;
+            };
+
+            if (typeof typedProject.id !== 'string' || typeof typedProject.key !== 'string') {
+              return null;
+            }
+
+            const projectName =
+              typeof typedProject.name === 'string' && typedProject.name.trim()
+                ? typedProject.name
+                : typeof typedProject.title === 'string'
+                  ? typedProject.title
+                  : '';
+
+            return {
+              id: typedProject.id,
+              name: projectName,
+              key: typedProject.key
+            };
+          })
+          .filter((project: ProjectInfo | null): project is ProjectInfo => project !== null);
         setProjects(projectsList);
 
         // Загрузить информацию о том, в каких проектах используется каждый агент
@@ -250,6 +272,12 @@ export default function AiAgentsPage() {
     if (activeTab === 'public') return agent.scope === 'public' || agent.isGlobal;
     return true;
   });
+  const tabs: Array<{ id: 'all' | AIAgentScope; label: string }> = [
+    { id: 'all', label: 'Все' },
+    { id: 'personal', label: 'Личные' },
+    { id: 'team', label: 'Команда' },
+    { id: 'public', label: 'Общедоступные' }
+  ];
 
   return (
     <section className="space-y-6">
@@ -264,15 +292,10 @@ export default function AiAgentsPage() {
 
       {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-neutral-800 pb-px">
-        {[
-          { id: 'all', label: 'Все' },
-          { id: 'personal', label: 'Личные' },
-          { id: 'team', label: 'Команда' },
-          { id: 'public', label: 'Общедоступные' }
-        ].map((tab) => (
+        {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
+            onClick={() => setActiveTab(tab.id)}
             className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
               activeTab === tab.id
                 ? 'border-indigo-500 text-indigo-400'
@@ -356,7 +379,7 @@ export default function AiAgentsPage() {
                       <>
                         <p className="mb-1.5 text-xs font-medium text-neutral-400">В проектах:</p>
                         <div className="flex flex-wrap gap-1.5">
-                          {agentProjectsList.slice(0, 2).map((project) => (
+                          {agentProjectsList.slice(0, 2).map((project: ProjectInfo) => (
                             <span
                               key={project.id}
                               className="inline-flex items-center gap-1 rounded-lg border border-neutral-800 bg-neutral-900/60 px-2 py-0.5 text-xs text-neutral-300"
@@ -396,7 +419,7 @@ export default function AiAgentsPage() {
                       <option value="">Добавить в проект...</option>
                       {projects
                         .filter((p) => !agentProjectsList.some((ap) => ap.id === p.id))
-                        .map((project) => (
+                        .map((project: ProjectInfo) => (
                           <option key={project.id} value={project.id}>
                             {project.key}: {project.name}
                           </option>
@@ -483,7 +506,7 @@ export default function AiAgentsPage() {
                       Используется в проектах ({agentProjects[viewingAgent.id]!.length})
                     </h4>
                     <div className="flex flex-wrap gap-2">
-                      {agentProjects[viewingAgent.id]!.map((project) => (
+                      {agentProjects[viewingAgent.id]!.map((project: ProjectInfo) => (
                         <div
                           key={project.id}
                           className="flex items-center gap-2 rounded-lg border border-neutral-800 bg-neutral-900/60 px-3 py-1.5 text-sm"
@@ -521,7 +544,7 @@ export default function AiAgentsPage() {
                       <option value="">Выберите проект...</option>
                       {projects
                         .filter((p) => !(agentProjects[viewingAgent.id] || []).some((ap) => ap.id === p.id))
-                        .map((project) => (
+                        .map((project: ProjectInfo) => (
                           <option key={project.id} value={project.id}>
                             {project.key}: {project.name}
                           </option>

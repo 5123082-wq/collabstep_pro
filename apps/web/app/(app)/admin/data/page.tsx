@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-// @ts-ignore
+// @ts-expect-error lucide-react icon types
 import { FileText, Trash2, RefreshCw, AlertTriangle } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import { canAccessAdmin, getRolesForDemoAccount } from '@/lib/auth/roles';
@@ -301,4 +301,3 @@ export default function AdminDataPage() {
     </div>
   );
 }
-

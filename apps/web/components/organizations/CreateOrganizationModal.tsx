@@ -44,7 +44,7 @@ export function CreateOrganizationModal({ open, onOpenChange, onSuccess }: Creat
         throw new Error(errorData.details || errorData.message || 'Failed to create organization');
       }
 
-      const data = await res.json();
+      await res.json(); // Consume response
 
       onOpenChange(false);
       setName('');

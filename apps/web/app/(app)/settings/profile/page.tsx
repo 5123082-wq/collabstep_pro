@@ -94,9 +94,10 @@ export default function ProfileSettingsPage() {
 
             toast('Профиль успешно обновлен', 'success');
             router.refresh(); // Refresh server components to show new name/avatar
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            toast(err.message || 'Ошибка при сохранении', 'warning');
+            const message = err instanceof Error ? err.message : 'Ошибка при сохранении';
+            toast(message, 'warning');
         } finally {
             setIsSaving(false);
         }

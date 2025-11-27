@@ -2,11 +2,6 @@
  * Unit тесты для AI Service
  */
 
-// Mock AI клиента
-const mockAIClient = {
-  generateText: jest.fn()
-};
-
 describe('AI Service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -87,7 +82,6 @@ describe('AI Prompts', () => {
 describe('AI Rate Limiting', () => {
   describe('checkRateLimit', () => {
     it('should allow requests within limit', () => {
-      const userId = 'user1';
       const requestCount = 5;
       const limit = 20;
 

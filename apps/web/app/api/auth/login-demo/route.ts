@@ -33,7 +33,8 @@ async function extractRole(request: NextRequest): Promise<DemoRole | null> {
   }
 }
 
-export async function GET(request: NextRequest): Promise<DemoLoginResponse> {
+export async function GET(_request: NextRequest): Promise<DemoLoginResponse> {
+  void _request;
   return NextResponse.json(
     { error: 'This endpoint only accepts POST requests. Please use the login form.' },
     { status: 405, headers: { 'Allow': 'POST' } }

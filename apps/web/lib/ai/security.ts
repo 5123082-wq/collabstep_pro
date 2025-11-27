@@ -120,7 +120,8 @@ export function validateAIInput(input: string): {
  * @param projectId - ID проекта (опционально)
  * @returns true если доступ разрешён
  */
-export function checkAIAccess(userId: string, projectId?: string): boolean {
+export function checkAIAccess(userId: string, _projectId?: string): boolean {
+  void _projectId;
   // Базовая проверка - пользователь должен быть авторизован
   if (!userId) {
     return false;
@@ -205,7 +206,7 @@ export function estimateRequestCost(
  * @param estimatedCost - Ожидаемая стоимость запроса
  * @returns true если лимит не превышен
  */
-export function checkCostLimit(userId: string, estimatedCost: number): boolean {
+export function checkCostLimit(_userId: string, estimatedCost: number): boolean {
   // Максимальная стоимость одного запроса
   const MAX_REQUEST_COST = parseFloat(process.env.AI_MAX_REQUEST_COST || '0.5');
   
@@ -232,8 +233,6 @@ export async function safeAIRequest<T>(
   data?: T;
   error?: string;
 }> {
-  const startTime = Date.now();
-
   try {
     // Валидация входных данных
     const inputValidation = validateAIInput(input);
@@ -298,4 +297,3 @@ export async function safeAIRequest<T>(
     };
   }
 }
-

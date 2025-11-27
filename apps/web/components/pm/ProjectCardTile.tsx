@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { type Project } from '@/types/pm';
 import { cn } from '@/lib/utils';
 import { ContentBlock } from '@/components/ui/content-block';
@@ -34,9 +35,12 @@ function UserAvatar({
 }) {
   if (user?.avatarUrl) {
     return (
-      <img
+      <Image
         src={user.avatarUrl}
         alt={user.name || 'User'}
+        width={40}
+        height={40}
+        sizes="40px"
         className={cn('rounded-full object-cover bg-neutral-800', className)}
       />
     );

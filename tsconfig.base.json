@@ -1,1 +1,42 @@
-{}
+{
+    "compilerOptions": {
+        "target": "ES2022",
+        "lib": [
+            "ES2022",
+            "DOM",
+            "DOM.Iterable"
+        ],
+        "module": "esnext",
+        "moduleResolution": "bundler",
+        "resolveJsonModule": true,
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "exactOptionalPropertyTypes": true,
+        "noImplicitOverride": true,
+        "noUncheckedIndexedAccess": true,
+        "forceConsistentCasingInFileNames": true,
+        "allowJs": true,
+        "skipLibCheck": true,
+        "noEmit": true,
+        "incremental": true,
+        "isolatedModules": true,
+        "esModuleInterop": true,
+        "jsx": "preserve",
+        "baseUrl": ".",
+        "paths": {
+            "@collabverse/api": [
+                "apps/api/src/index.ts"
+            ],
+            "@collabverse/api/*": [
+                "apps/api/src/*"
+            ]
+        }
+    },
+    "exclude": [
+        "node_modules",
+        "dist",
+        ".next",
+        "out"
+    ]
+}

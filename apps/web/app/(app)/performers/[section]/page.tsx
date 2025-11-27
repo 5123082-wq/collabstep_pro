@@ -3,19 +3,21 @@ import AppSection from '@/components/app/AppSection';
 import SpecialistsCatalog from '@/components/marketplace/SpecialistsCatalog';
 import VacanciesCatalog from '@/components/marketplace/VacanciesCatalog';
 import { performerProfilesRepository } from '@collabverse/api';
+import type { Specialist } from '@/lib/schemas/marketplace-specialist';
+import type { Vacancy } from '@/lib/schemas/marketplace-vacancy';
 
 export const dynamic = 'force-dynamic';
 
-async function getSpecialists() {
+async function getSpecialists(): Promise<Specialist[]> {
   try {
     const profiles = await performerProfilesRepository.listPublic({ limit: 50 });
-    return profiles.map(p => ({
+    return profiles.map<Specialist>((p) => ({
         id: p.userId,
         handle: p.userId,
-        name: p.user.name || 'Unknown',
-        role: p.specialization,
+        name: p.user.name ?? 'Unknown',
+        role: p.specialization || 'Специализация не указана',
         description: p.bio || '',
-        skills: Array.isArray(p.skills) ? p.skills : [],
+        skills: Array.isArray(p.skills) && p.skills.length ? p.skills : ['Навыки не указаны'],
         rate: { min: p.rate || 0, max: p.rate || 0, currency: 'USD', period: 'hour' },
         rating: 0,
         reviews: 0,
@@ -23,8 +25,8 @@ async function getSpecialists() {
         workFormats: ['remote'], // Default
         experienceYears: 0,
         timezone: p.timezone || 'UTC',
-        availability: [],
-        engagement: [],
+        availability: ['Доступен к сотрудничеству'],
+        engagement: ['Проектная работа'],
         updatedAt: p.updatedAt ? new Date(p.updatedAt).toISOString() : new Date().toISOString()
     }));
   } catch (error) {
@@ -49,7 +51,7 @@ const SECTION_CONFIG = {
               Каталог экспертов с фильтрами и карточками компетенций.
             </p>
           </header>
-          <SpecialistsCatalog data={items as any} error={error} />
+          <SpecialistsCatalog data={items} error={error} />
         </div>
       );
     }
@@ -69,7 +71,7 @@ const SECTION_CONFIG = {
   vacancies: {
     render: async () => {
       // TODO: Подключить к реальному API вакансий
-      const items: any[] = [];
+      const items: Vacancy[] = [];
       const error: string | null = null;
       return (
         <div className="space-y-6">

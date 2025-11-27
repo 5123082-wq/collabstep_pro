@@ -11,7 +11,7 @@ import {
     DropdownMenuTrigger,
     DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-// @ts-ignore
+// @ts-expect-error lucide-react icon types
 import { MoreVertical, Mail, Shield, UserX } from 'lucide-react';
 
 export interface TeamMember {

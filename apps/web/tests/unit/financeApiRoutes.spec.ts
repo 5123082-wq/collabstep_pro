@@ -2,8 +2,7 @@ import { encodeDemoSession } from '@/lib/auth/demo-session';
 import {
   financeService,
   projectsRepository,
-  resetFinanceMemory,
-  TEST_PROJECT_DEMO_ID
+  resetFinanceMemory
 } from '@collabverse/api';
 import { POST as createExpense, GET as listExpenses } from '@/app/api/expenses/route';
 import { PATCH as updateExpense } from '@/app/api/expenses/[id]/route';

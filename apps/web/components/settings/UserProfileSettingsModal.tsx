@@ -144,9 +144,10 @@ export default function UserProfileSettingsModal({ open, onClose, onSaved }: Use
       toast('Профиль успешно обновлен', 'success');
       onSaved?.();
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      toast(err.message || 'Ошибка при сохранении', 'warning');
+      const message = err instanceof Error ? err.message : 'Ошибка при сохранении';
+      toast(message, 'warning');
     } finally {
       setIsSaving(false);
     }
@@ -328,4 +329,3 @@ export default function UserProfileSettingsModal({ open, onClose, onSaved }: Use
     </Modal>
   );
 }
-

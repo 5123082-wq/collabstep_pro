@@ -2,7 +2,7 @@ import { DEFAULT_WORKSPACE_USER_ID, memory } from '../data/memory';
 import { projectsRepository } from '../repositories/projects-repository';
 import { tasksRepository } from '../repositories/tasks-repository';
 import { templatesRepository } from '../repositories/templates-repository';
-import { usersRepository } from '../repositories/users-repository';
+
 import { workspacesRepository } from '../repositories/workspaces-repository';
 import type {
   CatalogProject,

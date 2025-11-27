@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-// @ts-ignore
+// @ts-expect-error lucide-react icon types
 import { Building2, User } from 'lucide-react';
 import { ContentBlock } from '@/components/ui/content-block';
 

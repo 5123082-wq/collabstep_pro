@@ -5,7 +5,6 @@ import {
     primaryKey,
     integer,
     boolean,
-    uuid,
     index,
     pgEnum,
     jsonb,

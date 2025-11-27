@@ -18,6 +18,7 @@ test.describe('AI Assistant', () => {
   });
 
   skipIfNoAPIKey('should generate task description', async ({ page }) => {
+    void page;
     // Открыть модальное окно создания задачи
     // TODO: Реализовать после интеграции в UI
     
@@ -37,10 +38,12 @@ test.describe('AI Assistant', () => {
   });
 
   skipIfNoAPIKey('should summarize comments', async ({ page }) => {
+    void page;
     // TODO: Реализовать после интеграции в UI
   });
 
   test.skip('should show AI actions in task form', async ({ page }) => {
+    void page;
     // TODO: Реализовать после интеграции в UI
   });
 });
@@ -51,44 +54,36 @@ test.describe('AI Agents', () => {
   });
 
   test.skip('should show available AI agents', async ({ page }) => {
+    void page;
     // TODO: Реализовать после создания страницы управления агентами
   });
 
   test.skip('should add AI agent to project', async ({ page }) => {
+    void page;
     // TODO: Реализовать после интеграции в UI
   });
 
   test.skip('should respond to agent mention in chat', async ({ page }) => {
+    void page;
     // TODO: Реализовать после интеграции в UI
   });
 });
 
 test.describe('AI Rate Limiting', () => {
   skipIfNoAPIKey('should enforce rate limits', async ({ page }) => {
+    void page;
     // TODO: Реализовать тест превышения лимита
   });
 });
 
 test.describe('AI Security', () => {
   test.skip('should reject malicious input', async ({ page }) => {
+    void page;
     // TODO: Реализовать тест безопасности
   });
 
   skipIfNoAPIKey('should sanitize AI output', async ({ page }) => {
+    void page;
     // TODO: Реализовать тест санитизации
   });
 });
-
-// Утилиты для тестов
-async function loginAsTestUser(page: any) {
-  // TODO: Реализовать функцию авторизации
-}
-
-async function createTestProject(page: any) {
-  // TODO: Реализовать создание тестового проекта
-}
-
-async function createTestTask(page: any, projectId: string) {
-  // TODO: Реализовать создание тестовой задачи
-}
-

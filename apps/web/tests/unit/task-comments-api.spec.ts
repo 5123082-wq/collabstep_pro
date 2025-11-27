@@ -66,7 +66,7 @@ describe('Task Comments API', () => {
 
     it('should return comments for a task', async () => {
       // Создаем комментарий напрямую через repository
-      const comment = commentsRepository.create({
+      commentsRepository.create({
         projectId,
         taskId,
         authorId: 'admin.demo@collabverse.test',

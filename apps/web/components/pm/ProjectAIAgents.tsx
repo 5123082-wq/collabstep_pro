@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/lib/ui/toast';
-// @ts-ignore
+// @ts-expect-error lucide-react icon types
 import { Bot, Plus, Sparkles, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

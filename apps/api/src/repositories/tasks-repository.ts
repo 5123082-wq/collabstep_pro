@@ -116,10 +116,10 @@ export class TasksRepository {
     const now = new Date().toISOString();
     const createdAt = input.createdAt ?? now;
     const updatedAt = input.updatedAt ?? createdAt;
-    
+
     // Auto-generate number if not provided
     const number = input.number ?? this.getNextTaskNumber(input.projectId);
-    
+
     // Use startDate if provided, otherwise use startAt
     const startAt = input.startDate ?? input.startAt;
 
@@ -147,7 +147,7 @@ export class TasksRepository {
     };
 
     memory.TASKS.push(task);
-    
+
     return enrichTask(task);
   }
 
@@ -243,7 +243,7 @@ export class TasksRepository {
     }
 
     memory.TASKS[idx] = updated;
-    
+
     return enrichTask(updated);
   }
 
@@ -252,13 +252,13 @@ export class TasksRepository {
     if (idx === -1) {
       return false;
     }
-    const task = memory.TASKS[idx];
+
     memory.TASKS.splice(idx, 1);
     // Also remove dependencies for this task
     memory.TASK_DEPENDENCIES = memory.TASK_DEPENDENCIES.filter(
       (dep) => dep.dependentTaskId !== id && dep.blockerTaskId !== id
     );
-    
+
     return true;
   }
 }

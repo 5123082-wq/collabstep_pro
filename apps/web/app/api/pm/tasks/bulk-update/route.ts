@@ -11,6 +11,9 @@ import { getAuthFromRequest } from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { tasksRepository, projectsRepository, domainEventsRepository } from '@collabverse/api';
 import type { BulkOperation } from '@/lib/ai/bulk-operations';
+type TaskUpdatePatch = Parameters<typeof tasksRepository.update>[1];
+type TaskStatus = NonNullable<TaskUpdatePatch['status']>;
+type TaskPriority = NonNullable<TaskUpdatePatch['priority']>;
 
 export async function POST(req: NextRequest) {
   try {
@@ -104,15 +107,20 @@ export async function POST(req: NextRequest) {
 
     // Выполнение обновлений
     let updatedCount = 0;
+    const allowedStatuses: TaskStatus[] = ['new', 'in_progress', 'review', 'done', 'blocked'];
+    const allowedPriorities: TaskPriority[] = ['low', 'med', 'high', 'urgent'];
 
     for (const task of tasksToUpdate) {
-      const updates: any = {};
+      const updates: TaskUpdatePatch = {};
 
       // Применение обновлений согласно типу операции
       switch (operation.type) {
         case 'update_status':
           if (operation.updates.status) {
-            updates.status = operation.updates.status;
+            const statusUpdate = operation.updates.status;
+            if (allowedStatuses.includes(statusUpdate as TaskStatus)) {
+              updates.status = statusUpdate as TaskStatus;
+            }
           }
           break;
 
@@ -124,7 +132,10 @@ export async function POST(req: NextRequest) {
 
         case 'update_priority':
           if (operation.updates.priority) {
-            updates.priority = operation.updates.priority;
+            const priorityUpdate = operation.updates.priority;
+            if (allowedPriorities.includes(priorityUpdate as TaskPriority)) {
+              updates.priority = priorityUpdate as TaskPriority;
+            }
           }
           break;
 
@@ -166,10 +177,7 @@ export async function POST(req: NextRequest) {
       // Обновление задачи
       if (Object.keys(updates).length > 0) {
         const before = { ...task };
-        const updated = tasksRepository.update(task.id, {
-          ...updates,
-          updatedAt: new Date().toISOString()
-        });
+        const updated = tasksRepository.update(task.id, updates);
 
         if (updated) {
           updatedCount++;
@@ -221,4 +229,3 @@ export async function POST(req: NextRequest) {
     });
   }
 }
-

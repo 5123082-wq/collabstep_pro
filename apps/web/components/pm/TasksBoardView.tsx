@@ -60,7 +60,7 @@ function TaskCard({ task, isDragging, onOpenDetail }: TaskCardProps & { onOpenDe
   const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Обработчик клика на drag handle - открываем детали, если это был клик, а не drag
-  const handleDragHandleClick = (e: React.MouseEvent) => {
+  const handleDragHandleClick = () => {
     // Если drag уже начался, не обрабатываем клик
     if (dragStarted.current || isDragging || isDraggingState) {
       dragStarted.current = false;
@@ -91,11 +91,8 @@ function TaskCard({ task, isDragging, onOpenDetail }: TaskCardProps & { onOpenDe
     onPointerDown: (e: React.PointerEvent) => {
       dragStarted.current = false;
       // Вызываем оригинальный обработчик
-      if (listeners && typeof listeners === 'object' && 'onPointerDown' in listeners) {
-        const originalHandler = (listeners as any).onPointerDown;
-        if (typeof originalHandler === 'function') {
-          originalHandler(e);
-        }
+      if (typeof listeners?.onPointerDown === 'function') {
+        listeners.onPointerDown(e);
       }
     },
   };
@@ -228,7 +225,7 @@ type TasksBoardViewProps = {
 export default function TasksBoardView({ tasks, loading, filters, onTaskClick }: TasksBoardViewProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -362,4 +359,3 @@ export default function TasksBoardView({ tasks, loading, filters, onTaskClick }:
     </DndContext>
   );
 }
-

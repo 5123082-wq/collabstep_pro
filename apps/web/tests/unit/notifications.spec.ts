@@ -11,7 +11,6 @@ import { POST as markAllRead } from '@/app/api/notifications/mark-all-read/route
 import { NextRequest } from 'next/server';
 
 describe('Notifications API', () => {
-  let taskId: string;
   const userId = 'admin.demo@collabverse.test';
   const session = encodeDemoSession({
     email: userId,
@@ -30,12 +29,11 @@ describe('Notifications API', () => {
     memory.NOTIFICATIONS = [];
 
     // Создаем задачу для тестов
-    const task = tasksRepository.create({
+    tasksRepository.create({
       projectId: 'project-1',
       title: 'Test Task',
       status: 'new'
     });
-    taskId = task.id;
   });
 
   describe('GET /api/notifications', () => {

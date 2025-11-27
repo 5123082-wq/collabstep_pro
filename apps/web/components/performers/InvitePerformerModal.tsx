@@ -19,6 +19,10 @@ interface InvitePerformerModalProps {
   onOpenChange: (open: boolean) => void;
   performer: { id: string; name: string } | null;
 }
+type InviteRequestBody = {
+  organizationId: string;
+  projectId?: string;
+};
 
 export function InvitePerformerModal({ open, onOpenChange, performer }: InvitePerformerModalProps) {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -66,7 +70,7 @@ export function InvitePerformerModal({ open, onOpenChange, performer }: InvitePe
     setMessage(null);
 
     try {
-      const requestBody: any = {
+      const requestBody: InviteRequestBody = {
         organizationId: selectedOrgId
       };
 
@@ -87,8 +91,9 @@ export function InvitePerformerModal({ open, onOpenChange, performer }: InvitePe
 
       setMessage({ type: 'success', text: 'Приглашение отправлено' });
       setTimeout(() => onOpenChange(false), 1500);
-    } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'Error sending invite' });
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Error sending invite';
+      setMessage({ type: 'error', text: errorMessage });
     } finally {
       setIsSending(false);
     }
@@ -178,4 +183,3 @@ export function InvitePerformerModal({ open, onOpenChange, performer }: InvitePe
     </Modal>
   );
 }
-

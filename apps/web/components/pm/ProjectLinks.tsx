@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-// @ts-ignore
+// @ts-expect-error lucide-react icon types
 import { DollarSign, ExternalLink, Megaphone, Store } from 'lucide-react';
 import { type Project } from '@/types/pm';
 import { cn } from '@/lib/utils';

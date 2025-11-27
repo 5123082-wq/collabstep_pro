@@ -57,7 +57,6 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
   // Инициализируем как null, чтобы избежать проблем с гидратацией
   // Загружаем avatar только после монтирования компонента
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [isMounted, setIsMounted] = useState(false);
   const createButtonRef = useRef<HTMLButtonElement>(null);
   const roles = useMemo(() => getRolesForDemoAccount(session.email, session.role), [session.email, session.role]);
   useQueryToast(TOAST_MESSAGES);
@@ -65,7 +64,6 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
 
   // Загружаем avatar только после монтирования, чтобы избежать проблем с гидратацией
   useEffect(() => {
-    setIsMounted(true);
     const stored = getStoredAvatar(session.email);
     if (stored) {
       setAvatarUrl(stored);

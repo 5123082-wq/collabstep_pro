@@ -109,6 +109,9 @@ importers:
       '@auth/core':
         specifier: ^0.34.3
         version: 0.34.3
+      '@types/node':
+        specifier: ^20.12.12
+        version: 20.19.21
       dotenv:
         specifier: ^17.2.3
         version: 17.2.3

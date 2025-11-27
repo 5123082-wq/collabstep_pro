@@ -71,7 +71,6 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut, onOpenSet
   // Инициализируем только из profile.avatarUrl, чтобы избежать проблем с гидратацией
   // localStorage будет загружен только после монтирования
   const [avatarUrl, setAvatarUrl] = useState<string | null>(profile.avatarUrl || null);
-  const [isMounted, setIsMounted] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -82,7 +81,6 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut, onOpenSet
 
   // Загружаем avatar из localStorage только после монтирования, чтобы избежать проблем с гидратацией
   useEffect(() => {
-    setIsMounted(true);
     const stored = getStoredAvatar(profile.email);
     const current = profile.avatarUrl || stored;
     if (current !== avatarUrl) {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import type { Notification, NotificationStatus } from '@collabverse/api';
 
 function formatTime(createdAt: string): string {
@@ -42,7 +42,6 @@ function getTypeLabel(type: Notification['type']): string {
 
 export default function NotificationsPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0, totalPages: 1 });

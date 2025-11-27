@@ -53,7 +53,7 @@ describe('Project Chat API', () => {
 
     it('should return messages for a project', async () => {
       // Создаем сообщение напрямую через repository
-      const message = projectChatRepository.create({
+      projectChatRepository.create({
         projectId,
         authorId: userId,
         body: 'Test message'
