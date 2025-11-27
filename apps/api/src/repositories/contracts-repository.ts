@@ -1,6 +1,6 @@
 import { db } from '../db/config';
 import { contracts } from '../db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 export type ContractStatus = 'offer' | 'accepted' | 'funded' | 'completed' | 'paid' | 'disputed';
 

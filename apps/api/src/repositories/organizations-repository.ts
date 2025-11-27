@@ -1,9 +1,8 @@
-import { eq, and, desc, or } from 'drizzle-orm';
+import { eq, and, or } from 'drizzle-orm';
 import { db } from '../db/config';
 import {
     organizations,
-    organizationMembers,
-    users
+    organizationMembers
 } from '../db/schema';
 import { usersRepository } from './users-repository';
 
@@ -155,10 +154,14 @@ export class OrganizationsRepository {
             .where(eq(organizationMembers.organizationId, organizationId));
     }
 
-    async updateMemberRole(organizationId: string, memberId: string, role: string): Promise<OrganizationMember | null> {
+    async updateMemberRole(
+        organizationId: string,
+        memberId: string,
+        role: OrganizationMember['role']
+    ): Promise<OrganizationMember | null> {
         const [updated] = await db
             .update(organizationMembers)
-            .set({ role: role as any, updatedAt: new Date() })
+            .set({ role, updatedAt: new Date() })
             .where(and(
                 eq(organizationMembers.id, memberId),
                 eq(organizationMembers.organizationId, organizationId)
@@ -178,4 +181,3 @@ export class OrganizationsRepository {
 }
 
 export const organizationsRepository = new OrganizationsRepository();
-

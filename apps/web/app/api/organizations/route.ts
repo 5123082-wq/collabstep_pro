@@ -3,6 +3,7 @@ import { getCurrentSession } from '@/lib/auth/session';
 import { decodeDemoSession, DEMO_SESSION_COOKIE } from '@/lib/auth/demo-session';
 import { organizationsRepository } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
+type NewOrganizationInput = Parameters<typeof organizationsRepository.create>[0];
 
 async function getUserId(request: NextRequest): Promise<string | null> {
     // 1. Try NextAuth session (DB/OAuth)
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
             return jsonError('INVALID_REQUEST', { status: 400, details: 'Name is required' });
         }
 
-        const orgData = {
+        const orgData: NewOrganizationInput = {
             ownerId: userId,
             name: body.name,
             description: body.description,
@@ -63,12 +64,12 @@ export async function POST(request: NextRequest) {
         };
 
         // Note: Repository create method is transactional (creates org + owner member)
-        const organization = await organizationsRepository.create(orgData as any);
+        const organization = await organizationsRepository.create(orgData);
         return jsonOk({ organization });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[Organizations] Error creating:', error);
-        return jsonError('INTERNAL_ERROR', { status: 500, details: error.message || String(error) });
+        const message = error instanceof Error ? error.message : String(error);
+        return jsonError('INTERNAL_ERROR', { status: 500, details: message });
     }
 }
-

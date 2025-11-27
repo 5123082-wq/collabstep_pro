@@ -56,8 +56,6 @@ export default function AIProjectPlanner({
   const [structure, setStructure] = useState<ProjectStructure | null>(null);
   const [loading, setLoading] = useState(false);
   const [applying, setApplying] = useState(false);
-  const [editingPhaseIndex, setEditingPhaseIndex] = useState<number | null>(null);
-  const [editingTaskIndex, setEditingTaskIndex] = useState<number | null>(null);
   
   // Advanced options
   const [teamSize, setTeamSize] = useState<number | undefined>(undefined);
@@ -120,10 +118,8 @@ export default function AIProjectPlanner({
           throw new Error('projectId is required to apply structure');
         }
 
-        let taskNumber = 0;
         for (const phase of structure.phases) {
           for (const task of phase.tasks) {
-            taskNumber++;
             await fetch('/api/pm/tasks', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -148,21 +144,6 @@ export default function AIProjectPlanner({
     } finally {
       setApplying(false);
     }
-  };
-
-  const handleUpdateTask = (phaseIndex: number, taskIndex: number, updates: Partial<ProjectPhase['tasks'][0]>) => {
-    if (!structure) return;
-
-    const newStructure = { ...structure };
-    const phase = newStructure.phases[phaseIndex];
-    const task = phase?.tasks[taskIndex];
-    if (!phase || !task) return;
-
-    phase.tasks[taskIndex] = {
-      ...task,
-      ...updates
-    };
-    setStructure(newStructure);
   };
 
   const handleRemoveTask = (phaseIndex: number, taskIndex: number) => {
@@ -423,4 +404,3 @@ export default function AIProjectPlanner({
     </div>
   );
 }
-

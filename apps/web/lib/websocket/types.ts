@@ -12,7 +12,7 @@ export type WebSocketEventType =
 export interface WebSocketEvent {
   type: WebSocketEventType;
   projectId: string;
-  data: any;
+  data: unknown;
   timestamp: string;
 }
 
@@ -24,4 +24,3 @@ export interface WebSocketClientEvent {
   disconnect: () => void;
   error: (error: Error) => void;
 }
-

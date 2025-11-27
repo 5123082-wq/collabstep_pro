@@ -1,12 +1,23 @@
 import { memory } from '../data/memory';
 import { amountToCents } from '../utils/money';
 import type { Expense, ExpenseAttachment, ExpenseStatus } from '../types';
+import { cloneExpense, cloneAttachment, matchesFilters, normalizeSearch } from './expense-store-utils';
 
 type GlobalIdempotencyScope = typeof globalThis & {
   __collabverseFinanceIdempotencyKeys__?: Map<string, string>;
 };
 
 const globalIdempotencyScope = globalThis as GlobalIdempotencyScope;
+const logExpenseInfo = (...args: Parameters<typeof console.info>): void => {
+  const isTestEnv =
+    process.env.NODE_ENV === 'test' ||
+    process.env.JEST_WORKER_ID !== undefined ||
+    typeof (globalThis as Record<string, unknown>).jest !== 'undefined';
+  if (isTestEnv) {
+    return;
+  }
+  console.info(...args);
+};
 
 export interface ExpenseFilters {
   workspaceId?: string;
@@ -85,47 +96,6 @@ export interface DbExpenseStoreDependencies {
   cacheTtlMs?: number;
 }
 
-function cloneExpense(expense: Expense): Expense {
-  return { ...expense };
-}
-
-function cloneAttachment(attachment: ExpenseAttachment): ExpenseAttachment {
-  return { ...attachment };
-}
-
-function matchesFilters(expense: Expense, filters: ExpenseFilters, statuses?: Set<ExpenseStatus>): boolean {
-  const { workspaceId, projectId, status, category, dateFrom, dateTo, search } = filters;
-  if (workspaceId && expense.workspaceId !== workspaceId) {
-    return false;
-  }
-  if (projectId && expense.projectId !== projectId) {
-    return false;
-  }
-  if (statuses) {
-    if (!statuses.has(expense.status)) {
-      return false;
-    }
-  } else if (status && expense.status !== status) {
-    return false;
-  }
-  if (category && expense.category !== category) {
-    return false;
-  }
-  if (dateFrom && expense.date < dateFrom) {
-    return false;
-  }
-  if (dateTo && expense.date > dateTo) {
-    return false;
-  }
-  if (search) {
-    const haystack = `${expense.vendor ?? ''} ${expense.description ?? ''}`.toLowerCase();
-    if (!haystack.includes(search.trim().toLowerCase())) {
-      return false;
-    }
-  }
-  return true;
-}
-
 export class MemoryExpenseStore implements ExpenseStore {
   private idempotencyKeys: Map<string, string>;
 
@@ -164,8 +134,8 @@ export class MemoryExpenseStore implements ExpenseStore {
       }
     }
 
-    console.info('[MemoryExpenseStore] create', { expenseId: stored.id, actorId: input.actorId });
-    
+    logExpenseInfo('[MemoryExpenseStore] create', { expenseId: stored.id, actorId: input.actorId });
+
     return cloneExpense(stored);
   }
 
@@ -175,10 +145,10 @@ export class MemoryExpenseStore implements ExpenseStore {
   }
 
   async list(filters: ExpenseFilters = {}): Promise<Expense[]> {
-    const normalizedSearch = filters.search?.trim().toLowerCase();
+    const normalized = normalizeSearch(filters.search);
     const normalizedFilters: ExpenseFilters = {
       ...filters,
-      ...(normalizedSearch !== undefined ? { search: normalizedSearch } : {})
+      ...(normalized !== undefined ? { search: normalized } : {})
     };
     return memory.EXPENSES.filter((expense) => matchesFilters(expense, normalizedFilters)).map(cloneExpense);
   }
@@ -226,7 +196,7 @@ export class MemoryExpenseStore implements ExpenseStore {
         memory.EXPENSE_ATTACHMENTS.push(cloneAttachment(attachment));
       }
     }
-    
+
     return cloneExpense(next);
   }
 
@@ -254,17 +224,17 @@ export class MemoryExpenseStore implements ExpenseStore {
     };
 
     memory.EXPENSES[index] = next;
-    console.info('[MemoryExpenseStore] changeStatus', { expenseId: id, actorId: context.actorId, status });
-    
+    logExpenseInfo('[MemoryExpenseStore] changeStatus', { expenseId: id, actorId: context.actorId, status });
+
     return cloneExpense(next);
   }
 
   async aggregateByCategory(filters: ExpenseAggregationFilters): Promise<Map<string, bigint>> {
     const statuses = filters.statuses && filters.statuses.length ? new Set(filters.statuses) : undefined;
-    const normalizedSearch = filters.search?.trim().toLowerCase();
+    const normalized = normalizeSearch(filters.search);
     const normalizedFilters: ExpenseFilters = {
       ...filters,
-      ...(normalizedSearch !== undefined ? { search: normalizedSearch } : {})
+      ...(normalized !== undefined ? { search: normalized } : {})
     };
     const result = new Map<string, bigint>();
 
@@ -322,7 +292,7 @@ export class DbExpenseStore implements ExpenseStore {
       data: input.expense,
       ...(input.attachments !== undefined ? { attachments: input.attachments } : {})
     });
-    console.info('[DbExpenseStore] create', { expenseId: created.id, actorId: input.actorId });
+    logExpenseInfo('[DbExpenseStore] create', { expenseId: created.id, actorId: input.actorId });
     return created;
   }
 
@@ -348,7 +318,7 @@ export class DbExpenseStore implements ExpenseStore {
   ): Promise<Expense | null> {
     const updated = this.expenses.updateStatus(id, status);
     if (updated) {
-      console.info('[DbExpenseStore] changeStatus', { expenseId: id, actorId: context.actorId, status });
+      logExpenseInfo('[DbExpenseStore] changeStatus', { expenseId: id, actorId: context.actorId, status });
     }
     return updated;
   }

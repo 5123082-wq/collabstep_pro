@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { auth } from '@/lib/auth/base-config';
 import { decodeDemoSession, DEMO_SESSION_COOKIE, isDemoAdminEmail } from '@/lib/auth/demo-session';
+type AuthenticatedRequest = NextRequest & { auth?: { user?: { role?: string } } | null };
 
 type RedirectRule = {
   test: (pathname: string) => boolean;
@@ -65,7 +66,7 @@ function getDemoSessionFromRequest(request: NextRequest) {
 }
 
 // Helper function to check if user is admin (checks both NextAuth and demo session)
-function isAdminUser(req: NextRequest & { auth?: any }): boolean {
+function isAdminUser(req: AuthenticatedRequest): boolean {
   // Check NextAuth session
   if (req.auth?.user?.role === 'admin') {
     return true;
@@ -81,7 +82,7 @@ function isAdminUser(req: NextRequest & { auth?: any }): boolean {
 }
 
 // Helper function to check if user is logged in (checks both NextAuth and demo session)
-function isLoggedIn(req: NextRequest & { auth?: any }): boolean {
+function isLoggedIn(req: AuthenticatedRequest): boolean {
   // Check NextAuth session
   if (req.auth) {
     return true;

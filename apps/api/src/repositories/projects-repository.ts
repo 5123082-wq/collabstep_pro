@@ -90,12 +90,12 @@ export class ProjectsRepository {
     if (!project) {
       return false;
     }
-    
+
     // Administrators have access to all projects
     if (isAdminUserId(userId)) {
       return true;
     }
-    
+
     // Public projects are accessible to everyone
     if (project.visibility === 'public') {
       return true;
@@ -216,7 +216,7 @@ export class ProjectsRepository {
     }
     memory.PROJECTS.push(project);
     console.log(`[ProjectsRepository] Created project: id=${project.id}, workspaceId=${project.workspaceId}, ownerId=${project.ownerId}, title=${project.title}, totalProjects=${memory.PROJECTS.length}`);
-    
+
     return cloneProject(project);
   }
 
@@ -323,7 +323,7 @@ export class ProjectsRepository {
     }
 
     memory.PROJECTS[idx] = next;
-    
+
     return cloneProject(next);
   }
 
@@ -332,13 +332,13 @@ export class ProjectsRepository {
     if (idx === -1) {
       return false;
     }
-    const project = memory.PROJECTS[idx];
+
     memory.PROJECTS.splice(idx, 1);
     memory.TASKS = memory.TASKS.filter((task) => task.projectId !== id);
     memory.ITERATIONS = memory.ITERATIONS.filter((iteration) => iteration.projectId !== id);
     delete memory.WORKFLOWS[id];
     delete memory.PROJECT_MEMBERS[id];
-    
+
     return true;
   }
 

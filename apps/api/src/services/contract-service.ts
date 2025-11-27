@@ -1,9 +1,7 @@
-import { contractsRepository, type ContractStatus } from '../repositories/contracts-repository';
+import { contractsRepository } from '../repositories/contracts-repository';
 import { walletService } from './wallet-service';
 import { walletRepository } from '../repositories/wallet-repository';
 import { tasksRepository } from '../repositories/tasks-repository';
-import { projectsRepository } from '../repositories/projects-repository';
-import { organizationsRepository } from '../repositories/organizations-repository';
 import { centsToAmount } from '../utils/money';
 
 export class ContractService {
@@ -41,12 +39,13 @@ export class ContractService {
         return contractsRepository.updateStatus(contractId, 'accepted');
     }
 
-    async fundContract(contractId: string, actorId: string) {
+    async fundContract(contractId: string, _actorId: string) {
+        void _actorId;
         const contract = await contractsRepository.findById(contractId);
         if (!contract) throw new Error('Contract not found');
 
         // Verify actor is organization owner/admin (assuming checked by route)
-        
+
         if (contract.status !== 'accepted') throw new Error('Contract must be accepted before funding');
 
         // Hold funds
@@ -65,33 +64,34 @@ export class ContractService {
         return contractsRepository.updateStatus(contractId, 'funded');
     }
 
-    async completeContract(contractId: string, actorId: string) {
-         const contract = await contractsRepository.findById(contractId);
-         if (!contract) throw new Error('Contract not found');
-         
-         if (contract.status !== 'funded') throw new Error('Contract not funded');
+    async completeContract(contractId: string, _actorId: string) {
+        void _actorId;
+        const contract = await contractsRepository.findById(contractId);
+        if (!contract) throw new Error('Contract not found');
 
-         // Find the hold transaction
-         const holdTx = await walletRepository.findTransactionByReference(
-             contract.id,
-             'contract',
-             'payment',
-             'pending'
-         );
+        if (contract.status !== 'funded') throw new Error('Contract not funded');
 
-         if (!holdTx) {
-             throw new Error('Hold transaction not found');
-         }
+        // Find the hold transaction
+        const holdTx = await walletRepository.findTransactionByReference(
+            contract.id,
+            'contract',
+            'payment',
+            'pending'
+        );
 
-         // Release funds to performer
-         await walletService.releaseFunds(
-             holdTx.id,
-             contract.performerId,
-             'user'
-         );
+        if (!holdTx) {
+            throw new Error('Hold transaction not found');
+        }
 
-         // Update status
-         return contractsRepository.updateStatus(contractId, 'paid');
+        // Release funds to performer
+        await walletService.releaseFunds(
+            holdTx.id,
+            contract.performerId,
+            'user'
+        );
+
+        // Update status
+        return contractsRepository.updateStatus(contractId, 'paid');
     }
 }
 

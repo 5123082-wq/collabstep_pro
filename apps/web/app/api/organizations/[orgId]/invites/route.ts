@@ -37,7 +37,7 @@ export async function POST(
                 token: nanoid(32), // Generate token for email link as well
                 status: 'pending'
             });
-            
+
             // TODO: Send email here (mock for now)
             console.log(`[Email Mock] Sending invite to ${body.email} for org ${orgId} with token ${invite.token}`);
 
@@ -51,7 +51,7 @@ export async function POST(
                 token: nanoid(32),
                 status: 'pending'
             });
-            
+
             return jsonOk({ invite, link: `/invite/org/${invite.token}` }); // client constructs full URL
         }
 
@@ -64,7 +64,7 @@ export async function POST(
 }
 
 export async function GET(
-    request: NextRequest,
+    _request: NextRequest,
     { params }: { params: { orgId: string } }
 ) {
     const user = await getCurrentUser();

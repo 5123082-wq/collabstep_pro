@@ -23,7 +23,6 @@ export async function POST(
 
   try {
     const body = await req.json();
-    const { email, role: memberRole } = body;
 
     // TODO: Реализовать создание инвайт-ссылки с TTL/uses
     const inviteLink = {

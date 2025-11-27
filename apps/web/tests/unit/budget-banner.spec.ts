@@ -15,6 +15,7 @@ describe('BudgetBanner', () => {
         ...mockProject,
         metrics: {
           budgetUsed: 5000,
+          budgetLimit: undefined,
           total: 10,
           inProgress: 5,
           completed: 3,
@@ -24,7 +25,7 @@ describe('BudgetBanner', () => {
         }
       };
 
-      expect((project.metrics as any).budgetLimit).toBeUndefined();
+      expect(project.metrics?.budgetLimit).toBeUndefined();
     });
 
     it('should not render when budget is below 80% of limit', () => {
@@ -96,7 +97,6 @@ describe('BudgetBanner', () => {
     });
 
     it('should handle zero budget limit gracefully', () => {
-      const budgetUsed = 5000;
       const budgetLimit = 0;
 
       // Должно обрабатываться как отсутствие лимита

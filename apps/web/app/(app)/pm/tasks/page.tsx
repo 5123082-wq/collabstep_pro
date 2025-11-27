@@ -77,7 +77,6 @@ export default function PMTasksPage() {
   const [projectOptions, setProjectOptions] = useState<TaskProjectOption[]>([]);
   const [scopeCounts, setScopeCounts] = useState<Record<ProjectScope, number>>(DEFAULT_SCOPE_COUNTS);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string>('');
@@ -119,7 +118,6 @@ export default function PMTasksPage() {
       setProjectOptions(cached.projects);
       setScopeCounts(cached.scopeCounts);
       setInitialLoading(false);
-      setRefreshing(true); // Обновляем в фоне
     } else {
       setInitialLoading(true);
     }
@@ -161,7 +159,6 @@ export default function PMTasksPage() {
       } finally {
         if (!cancelled) {
           setInitialLoading(false);
-          setRefreshing(false);
         }
       }
     }
@@ -224,7 +221,8 @@ export default function PMTasksPage() {
         return;
       }
       trackEvent('pm_filter_applied', { filter: 'scope', scope });
-      const { projectId, ...restFilters } = urlFilters;
+      const { projectId: _currentProjectId, ...restFilters } = urlFilters;
+      void _currentProjectId;
       const nextFilters: TaskListFilters = {
         ...restFilters,
         scope,

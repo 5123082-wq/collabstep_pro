@@ -65,8 +65,12 @@ export default function NotificationsPanel({ onMarkAllRead }: NotificationsPanel
   // wsClient уже подключен глобально в useUnreadNotifications
   useEffect(() => {
     const unsubscribe = wsClient.onEventType('notification.new', (event) => {
-      if (event.data?.notification) {
-        const newNotification = event.data.notification as Notification;
+      if (!event.data || typeof event.data !== 'object') {
+        return;
+      }
+      const payload = event.data as { notification?: Notification };
+      if (payload.notification) {
+        const newNotification = payload.notification;
         // Добавляем новое уведомление в начало списка
         setNotifications((prev) => {
           const exists = prev.some((n) => n.id === newNotification.id);
@@ -195,4 +199,3 @@ export default function NotificationsPanel({ onMarkAllRead }: NotificationsPanel
     </div>
   );
 }
-

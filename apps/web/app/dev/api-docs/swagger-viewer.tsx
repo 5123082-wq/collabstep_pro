@@ -31,6 +31,14 @@ function loadStylesheet(href: string): void {
 
 export function SwaggerViewer() {
   const ref = useRef<HTMLDivElement>(null);
+  type SwaggerBundle = {
+    (config: unknown): unknown;
+    presets: { apis: unknown };
+  };
+  type SwaggerWindow = Window & {
+    SwaggerUIBundle?: SwaggerBundle;
+    SwaggerUIStandalonePreset?: unknown;
+  };
 
   useEffect(() => {
     loadStylesheet('https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css');
@@ -44,8 +52,9 @@ export function SwaggerViewer() {
         if (cancelled) {
           return;
         }
-        const SwaggerUIBundle = (window as any).SwaggerUIBundle;
-        const SwaggerUIStandalonePreset = (window as any).SwaggerUIStandalonePreset;
+        const swaggerWindow = window as SwaggerWindow;
+        const SwaggerUIBundle = swaggerWindow.SwaggerUIBundle;
+        const SwaggerUIStandalonePreset = swaggerWindow.SwaggerUIStandalonePreset;
         if (SwaggerUIBundle) {
           SwaggerUIBundle({
             url: '/dev/api-docs/spec',
@@ -66,5 +75,4 @@ export function SwaggerViewer() {
 
   return <div id="swagger-ui" ref={ref} className="min-h-[70vh]" />;
 }
-
 

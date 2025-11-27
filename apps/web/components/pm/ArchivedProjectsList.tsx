@@ -9,8 +9,6 @@ import { useDebouncedValue } from '@/lib/ui/useDebouncedValue';
 import { type Project } from '@/types/pm';
 import { cn } from '@/lib/utils';
 
-const ITEMS_PER_PAGE = 12;
-
 type ArchivedProjectsListProps = {
   projects: Project[];
   loading?: boolean;
@@ -80,7 +78,7 @@ export default function ArchivedProjectsList({ projects, loading, error }: Archi
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const urlFilters = useMemo(() => parseProjectFilters(searchParams), [searchParams]);
   const [filters, setFilters] = useState<ProjectListFilters>(urlFilters);
   const filtersRef = useRef(filters);
@@ -152,6 +150,12 @@ export default function ArchivedProjectsList({ projects, loading, error }: Archi
     updateFilters(value ? { q: value } : {});
   }, [debouncedQuery, filters.q, updateFilters]);
 
+  type ProjectWithMeta = Project & {
+    updatedAt?: string;
+    createdAt?: string;
+    title?: string;
+  };
+
   // Фильтрация архивных проектов
   const filteredProjects = useMemo(() => {
     // Фильтруем только архивные проекты (поддерживаем оба формата статуса)
@@ -163,28 +167,31 @@ export default function ArchivedProjectsList({ projects, loading, error }: Archi
     if (filters.q) {
       const query = filters.q.toLowerCase();
       result = result.filter((p) => {
-        const name = (p as any).name || (p as any).title || '';
+        const project = p as ProjectWithMeta;
+        const name = project.name || project.title || '';
         return name.toLowerCase().includes(query) || p.key.toLowerCase().includes(query);
       });
     }
 
     // Сортировка
     result.sort((a, b) => {
+      const projectA = a as ProjectWithMeta;
+      const projectB = b as ProjectWithMeta;
       let aValue: number | string = '';
       let bValue: number | string = '';
 
       switch (filters.sortBy) {
         case 'updated':
-          aValue = (a as any).updatedAt || (a as any).createdAt || '';
-          bValue = (b as any).updatedAt || (b as any).createdAt || '';
+          aValue = projectA.updatedAt || projectA.createdAt || '';
+          bValue = projectB.updatedAt || projectB.createdAt || '';
           break;
         case 'dueDate':
-          aValue = (a as any).dueDate || '';
-          bValue = (b as any).dueDate || '';
+          aValue = projectA.dueDate || '';
+          bValue = projectB.dueDate || '';
           break;
         case 'progress':
-          aValue = (a as any).metrics?.progressPct || 0;
-          bValue = (b as any).metrics?.progressPct || 0;
+          aValue = projectA.metrics?.progressPct || 0;
+          bValue = projectB.metrics?.progressPct || 0;
           break;
         default:
           return 0;
@@ -345,4 +352,3 @@ export default function ArchivedProjectsList({ projects, loading, error }: Archi
     </>
   );
 }
-

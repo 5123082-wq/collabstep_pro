@@ -106,7 +106,6 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
 
   // Calculate progress data (burnup and burndown)
   // Group tasks by date (last 30 days)
-  const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
   const burnupData: Array<{ date: string; total: number; completed: number }> = [];
   const burndownData: Array<{ date: string; remaining: number }> = [];
 

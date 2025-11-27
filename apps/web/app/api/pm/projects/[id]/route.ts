@@ -165,9 +165,9 @@ export async function DELETE(
     projectsRepository.delete(apiProject.id);
     console.log(`[Project API DELETE] Project deleted: id=${apiProject.id}, userId=${auth.userId}`);
     return jsonOk({ deleted: true });
-  } catch (error: any) {
-    console.error(`[Project API DELETE] Error deleting project: ${error.message}`);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`[Project API DELETE] Error deleting project: ${message}`);
     return jsonError('INTERNAL_ERROR', { status: 500 });
   }
 }
-

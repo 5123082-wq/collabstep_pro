@@ -38,12 +38,10 @@ export default function CsvImportModal({
 }: CsvImportModalProps) {
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState<ImportReport | null>(null);
-  const [fileName, setFileName] = useState<string>('');
 
   useEffect(() => {
     if (!isOpen) {
       setReport(null);
-      setFileName('');
     }
   }, [isOpen]);
 
@@ -87,7 +85,6 @@ export default function CsvImportModal({
     }
     setLoading(true);
     setReport(null);
-    setFileName(file.name);
     try {
       const text = await file.text();
       const { records, errors: validationErrors, processed } = parseExpensesCsv(text);

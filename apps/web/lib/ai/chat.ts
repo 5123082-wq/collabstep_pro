@@ -83,7 +83,7 @@ export async function generateProjectChatAIResponse(
 
   // Создаём адаптер для AI клиента
   const aiClient = {
-    generateText: async (prompt: string, options?: any) => {
+    generateText: async (prompt: string, options?: Parameters<typeof generateText>[1]) => {
       return await generateText(prompt, options);
     }
   };
@@ -118,8 +118,9 @@ export async function generateProjectChatAIResponse(
 export async function handleAIChatCommand(
   projectId: string,
   message: string,
-  authorId: string
+  _authorId: string
 ): Promise<string | null> {
+  void _authorId;
   if (!isAICommand(message)) {
     return null;
   }
@@ -179,7 +180,8 @@ export function getAICommandSuggestions(input: string): typeof AI_QUICK_COMMANDS
 /**
  * Проверка доступности AI для проекта
  */
-export function isAIAvailableForProject(projectId: string): boolean {
+export function isAIAvailableForProject(_projectId: string): boolean {
+  void _projectId;
   // Проверяем наличие API ключа
   if (typeof process !== 'undefined' && process.env) {
     return !!process.env.OPENAI_API_KEY;
@@ -194,4 +196,3 @@ export function formatAIResponse(response: string): string {
   // Добавляем префикс AI для визуального отличия
   return response;
 }
-

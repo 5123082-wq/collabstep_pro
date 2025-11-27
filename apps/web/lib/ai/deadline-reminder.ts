@@ -76,8 +76,6 @@ export async function sendDeadlineReminders(useAI = true): Promise<number> {
 
   for (const task of upcomingTasks) {
     try {
-      let reminderMessage: string;
-
       if (useAI) {
         // Генерация персонализированного напоминания через AI
         const assignee = task.assigneeId
@@ -85,28 +83,17 @@ export async function sendDeadlineReminders(useAI = true): Promise<number> {
           : null;
 
         const aiClient = {
-          generateText: async (prompt: string, options?: any) => {
+          generateText: async (prompt: string, options?: Parameters<typeof generateText>[1]) => {
             return await generateText(prompt, options);
           }
         };
 
-        reminderMessage = await generateDeadlineReminder(aiClient, {
+        await generateDeadlineReminder(aiClient, {
           title: task.title,
           dueAt: new Date(task.dueAt).toLocaleDateString('ru-RU'),
           ...(assignee?.name ? { assignee: assignee.name } : {}),
           ...(task.priority ? { priority: task.priority } : {})
         });
-      } else {
-        // Простое напоминание без AI
-        if (task.daysUntilDeadline === 0) {
-          reminderMessage = `Дедлайн задачи "${task.title}" сегодня!`;
-        } else if (task.daysUntilDeadline === 1) {
-          reminderMessage = `Дедлайн задачи "${task.title}" завтра!`;
-        } else if (task.daysUntilDeadline < 0) {
-          reminderMessage = `Дедлайн задачи "${task.title}" просрочен!`;
-        } else {
-          reminderMessage = `Дедлайн задачи "${task.title}" через ${task.daysUntilDeadline} дн.`;
-        }
       }
 
       // Отправка уведомления о приближающемся дедлайне
@@ -182,4 +169,3 @@ export async function runDeadlineCheck(): Promise<{
     throw error;
   }
 }
-

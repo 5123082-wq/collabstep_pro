@@ -1,14 +1,4 @@
 describe('LimitsLog', () => {
-  const mockProject = {
-    id: 'test-1',
-    name: 'Test Project',
-    title: 'Test Project',
-    workspaceId: 'workspace-1',
-    state: 'active' as const,
-    createdAt: '2025-01-01T00:00:00Z',
-    updatedAt: '2025-01-01T00:00:00Z'
-  };
-
   const mockEvents = [
     {
       id: 'event-1',

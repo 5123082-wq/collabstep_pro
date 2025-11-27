@@ -187,8 +187,6 @@ test.describe('Project Chat and Files', () => {
             
             // Создаем временный файл для загрузки
             const fileContent = 'Test file content for E2E test';
-            const blob = new Blob([fileContent], { type: 'text/plain' });
-            const file = new File([blob], 'test-e2e.txt', { type: 'text/plain' });
 
             // Загружаем файл через input
             await fileInput.setInputFiles({
@@ -215,4 +213,3 @@ test.describe('Project Chat and Files', () => {
     });
   });
 });
-

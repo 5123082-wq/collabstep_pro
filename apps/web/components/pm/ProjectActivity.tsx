@@ -1,6 +1,6 @@
 'use client';
 
-// @ts-ignore
+// @ts-expect-error lucide-react icon types
 import { CheckCircle, Clock, DollarSign, MessageSquare } from 'lucide-react';
 import { type Project } from '@/types/pm';
 import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';

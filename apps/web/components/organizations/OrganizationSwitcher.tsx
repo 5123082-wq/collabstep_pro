@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { CreateOrganizationModal } from './CreateOrganizationModal';
 import { cn } from '@/lib/utils';
 
@@ -17,7 +16,6 @@ export function OrganizationSwitcher({ collapsed }: { collapsed?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
 
   useEffect(() => {
     void fetchOrganizations();

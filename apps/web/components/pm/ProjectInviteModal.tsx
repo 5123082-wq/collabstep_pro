@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-// @ts-ignore
+// @ts-expect-error lucide-react icon types
 import { X, Copy, Check, Mail } from 'lucide-react';
 import { ContentBlock } from '@/components/ui/content-block';
 import { toast } from '@/lib/ui/toast';

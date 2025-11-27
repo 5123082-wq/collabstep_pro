@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server';
 import { getAuthFromRequest } from '@/lib/api/finance-access';
 import { aiAgentsRepository } from '@collabverse/api';
-import { isDemoAdminEmail } from '@/lib/auth/demo-session';
 import { jsonOk, jsonError } from '@/lib/api/http';
 import type { AIAgentType } from '@collabverse/api';
 
@@ -29,8 +28,6 @@ export async function POST(req: NextRequest) {
     if (!agentType || !validTypes.includes(agentType)) {
       return jsonError('Некорректный тип агента', { status: 400 });
     }
-
-    const isAdmin = isDemoAdminEmail(auth.email);
     
     // Validate API Key logic
     const provider = modelProvider || 'subscription';
@@ -74,7 +71,6 @@ export async function GET(req: NextRequest) {
     }
 
     const agents = await aiAgentsRepository.list();
-    const isAdmin = isDemoAdminEmail(auth.email);
 
     // Filter agents based on visibility
     const visibleAgents = agents.filter(agent => {

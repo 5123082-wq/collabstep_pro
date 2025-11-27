@@ -15,7 +15,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/lib/ui/toast';
-import { isDemoAdminEmail } from '@/lib/auth/demo-session';
 import type { AIAgentType } from '@collabverse/api';
 
 type CreateAIAgentModalProps = {
@@ -69,25 +68,10 @@ export default function CreateAIAgentModal({ open, onClose, onSuccess }: CreateA
     // Force refresh
     const [formData, setFormData] = useState<AgentFormData>(INITIAL_DATA);
     const [loading, setLoading] = useState(false);
-    const [isAdmin, setIsAdmin] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
-        // Check if user is admin
-        const checkAdmin = async () => {
-            try {
-                const res = await fetch('/api/auth/me');
-                if (res.ok) {
-                    const user = await res.json();
-                    setIsAdmin(isDemoAdminEmail(user.email));
-                }
-            } catch (error) {
-                console.error('Failed to check admin status', error);
-            }
-        };
-
         if (open) {
-            void checkAdmin();
             setFormData(INITIAL_DATA);
         }
     }, [open]);

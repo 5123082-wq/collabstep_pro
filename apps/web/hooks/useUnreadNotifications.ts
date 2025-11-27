@@ -35,7 +35,7 @@ export function useUnreadNotifications(userId: string | null) {
       wsClient.connect(userId);
 
       // Подписка на события уведомлений
-      unsubscribe = wsClient.onEventType('notification.new', (event) => {
+      unsubscribe = wsClient.onEventType('notification.new', () => {
         // Обновляем счетчик при получении нового уведомления
         void loadUnreadCount();
       });

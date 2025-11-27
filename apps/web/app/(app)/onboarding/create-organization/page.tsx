@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ContentBlock } from '@/components/ui/content-block';
 import { toast } from '@/lib/ui/toast';
-// @ts-ignore
+// @ts-expect-error lucide-react icon types
 import { Building2, ArrowLeft } from 'lucide-react';
 
 export default function CreateOrganizationPage() {
@@ -46,9 +46,10 @@ export default function CreateOrganizationPage() {
             setTimeout(() => {
                 router.push('/app/dashboard');
             }, 500);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            toast(err.message || 'Ошибка при создании организации', 'warning');
+            const message = err instanceof Error ? err.message : 'Ошибка при создании организации';
+            toast(message, 'warning');
             setIsLoading(false);
         }
     };

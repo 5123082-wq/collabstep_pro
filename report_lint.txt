@@ -1,0 +1,38 @@
+
+> collabverse-monorepo@0.1.0 lint /workspace/collabstep-new
+> eslint .
+
+
+/workspace/collabstep-new/apps/api/src/repositories/admin-modules-repository.ts
+   64:5   error  Do not assign to the variable `module`. See: https://nextjs.org/docs/messages/no-assign-module-variable  @next/next/no-assign-module-variable
+  138:10  error  Do not assign to the variable `module`. See: https://nextjs.org/docs/messages/no-assign-module-variable  @next/next/no-assign-module-variable
+  148:10  error  Do not assign to the variable `module`. See: https://nextjs.org/docs/messages/no-assign-module-variable  @next/next/no-assign-module-variable
+
+/workspace/collabstep-new/apps/api/src/repositories/admin-platform-repository.ts
+  0:0  error  Parsing error: ESLint was configured to run on `<tsconfigRootDir>/apps/api/src/repositories/admin-platform-repository.ts` using `parserOptions.project`: <tsconfigRootDir>/apps/web/tsconfig.json
+However, that TSConfig does not include this file. Either:
+- Change ESLint's list of included files to not include this file
+- Change that TSConfig to include this file
+- Create a new TSConfig that includes this file and include it in your parserOptions.project
+See the typescript-eslint docs for more info: https://typescript-eslint.io/troubleshooting/typed-linting#i-get-errors-telling-me-eslint-was-configured-to-run--however-that-tsconfig-does-not--none-of-those-tsconfigs-include-this-file
+
+/workspace/collabstep-new/apps/api/src/services/admin-platform-service.ts
+  0:0  error  Parsing error: ESLint was configured to run on `<tsconfigRootDir>/apps/api/src/services/admin-platform-service.ts` using `parserOptions.project`: <tsconfigRootDir>/apps/web/tsconfig.json
+However, that TSConfig does not include this file. Either:
+- Change ESLint's list of included files to not include this file
+- Change that TSConfig to include this file
+- Create a new TSConfig that includes this file and include it in your parserOptions.project
+See the typescript-eslint docs for more info: https://typescript-eslint.io/troubleshooting/typed-linting#i-get-errors-telling-me-eslint-was-configured-to-run--however-that-tsconfig-does-not--none-of-those-tsconfigs-include-this-file
+
+/workspace/collabstep-new/apps/api/src/services/admin-service.ts
+  392:10  error  Do not assign to the variable `module`. See: https://nextjs.org/docs/messages/no-assign-module-variable  @next/next/no-assign-module-variable
+
+/workspace/collabstep-new/apps/web/components/project/ui/AssigneeAvatar.tsx
+  49:9  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/workspace/collabstep-new/apps/web/hooks/admin/useFeatureFlags.ts
+  29:23  error  React Hook "useFeatureFlag" is called conditionally. React Hooks must be called in the exact same order in every component render  react-hooks/rules-of-hooks
+
+✖ 8 problems (7 errors, 1 warning)
+
+ ELIFECYCLE  Command failed with exit code 1.

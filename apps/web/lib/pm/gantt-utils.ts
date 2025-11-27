@@ -212,7 +212,7 @@ function calculateTaskDuration(task: Task): number {
  */
 export function transformTasksForGantt(
   tasks: Task[],
-  dependencies: TaskDependency[],
+  _dependencies: TaskDependency[],
   criticalPath?: string[]
 ): GanttTask[] {
   const criticalPathSet = new Set(criticalPath || []);

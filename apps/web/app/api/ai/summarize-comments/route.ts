@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
 
     // Создаём адаптер для AI клиента
     const aiClient = {
-      generateText: async (prompt: string, options?: any) => {
+      generateText: async (prompt: string, options?: Parameters<typeof generateText>[1]) => {
         return await generateText(prompt, options);
       }
     };
@@ -117,4 +117,3 @@ export async function POST(req: NextRequest) {
     });
   }
 }
-

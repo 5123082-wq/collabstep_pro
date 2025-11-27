@@ -58,7 +58,11 @@ export function getExpenseStore(): ExpenseStore {
   }
 
   const driver = resolveExpenseStoreDriver();
-  const logger: Logger = console;
+  const isTestEnv =
+    process.env.NODE_ENV === 'test' ||
+    process.env.JEST_WORKER_ID !== undefined ||
+    typeof (globalThis as Record<string, unknown>).jest !== 'undefined';
+  const logger: Logger = isTestEnv ? { info: () => {}, warn: console.warn } : console;
   logger.info('[ExpenseStoreFactory] selecting expense store', { driver, nodeEnv: process.env.NODE_ENV });
   const store = createExpenseStore(driver, logger);
   cachedStore = store;

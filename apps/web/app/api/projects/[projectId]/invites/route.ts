@@ -3,6 +3,7 @@ import { getCurrentUser } from '@/lib/auth/session';
 import { invitationsRepository, dbProjectsRepository } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { nanoid } from 'nanoid';
+import type { ProjectInvite } from '@collabverse/api';
 
 export async function GET(
     request: NextRequest,
@@ -16,6 +17,21 @@ export async function GET(
     const { projectId } = params;
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status'); // pending_owner_approval etc.
+    const allowedStatuses: ProjectInvite['status'][] = [
+        'invited',
+        'rejected',
+        'pending',
+        'accepted',
+        'expired',
+        'revoked',
+        'previewing',
+        'accepted_by_user',
+        'pending_owner_approval',
+        'approved'
+    ];
+    const normalizedStatus = status && allowedStatuses.includes(status as ProjectInvite['status'])
+        ? (status as ProjectInvite['status'])
+        : undefined;
 
     try {
         // Check permissions (Owner/Manager of project)
@@ -24,7 +40,7 @@ export async function GET(
             return jsonError('FORBIDDEN', { status: 403 });
         }
 
-        const invites = await invitationsRepository.listProjectInvites(projectId, status || undefined);
+        const invites = await invitationsRepository.listProjectInvites(projectId, normalizedStatus);
         return jsonOk({ invites });
 
     } catch (error) {

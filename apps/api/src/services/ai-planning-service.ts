@@ -424,7 +424,7 @@ ${workloadInfo}
       systemPrompt: 'Ты опытный проект-менеджер, специализирующийся на анализе загруженности команды. Отвечай только в формате JSON.'
     });
 
-    let analysis = parseAIJsonResponse<WorkloadAnalysis>(response);
+    const analysis = parseAIJsonResponse<WorkloadAnalysis>(response);
     
     if (!analysis || !analysis.members) {
       throw new Error('AI returned invalid workload analysis');
@@ -542,4 +542,3 @@ ${taskDescription ? `\n**Описание:**\n${taskDescription}` : ''}
     throw new Error('Failed to generate subtasks');
   }
 }
-

@@ -32,8 +32,9 @@ export const { handlers: baseHandlers, auth, signIn: baseSignIn, signOut } = Nex
         async jwt({ token, user }) {
             if (user) {
                 token.id = user.id!
-                token.role = (user as any).role
-                token.roles = (user as any).roles
+                const userWithRoles = user as { role?: string; roles?: string[] };
+                token.role = userWithRoles.role
+                token.roles = userWithRoles.roles
 
                 // If role is not set (DB user), fetch from userControls
                 if (!token.role) {

@@ -3,7 +3,7 @@ import { performerProfilesRepository } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
 
 export async function GET(
-    request: NextRequest,
+    _request: NextRequest,
     { params }: { params: { userId: string } }
 ) {
     const { userId } = params;

@@ -47,7 +47,8 @@ export default function AdminReleasesPage() {
   const [releases] = useState<Release[]>(mockReleases);
 
   const handleCancel = (releaseId: string) => {
-    toast('Релиз отменён', 'info');
+    // TODO: Use releaseId when connected to real API
+    toast(`Релиз ${releaseId} отменён`, 'info');
   };
 
   return (
@@ -91,19 +92,19 @@ export default function AdminReleasesPage() {
                         release.status === 'scheduled'
                           ? 'bg-blue-500/20 text-blue-100'
                           : release.status === 'in_progress'
-                          ? 'bg-orange-500/20 text-orange-100'
-                          : release.status === 'completed'
-                          ? 'bg-green-500/20 text-green-100'
-                          : 'bg-neutral-500/20 text-neutral-100'
+                            ? 'bg-orange-500/20 text-orange-100'
+                            : release.status === 'completed'
+                              ? 'bg-green-500/20 text-green-100'
+                              : 'bg-neutral-500/20 text-neutral-100'
                       )}
                     >
                       {release.status === 'scheduled'
                         ? 'Запланирован'
                         : release.status === 'in_progress'
-                        ? 'В процессе'
-                        : release.status === 'completed'
-                        ? 'Завершён'
-                        : 'Отменён'}
+                          ? 'В процессе'
+                          : release.status === 'completed'
+                            ? 'Завершён'
+                            : 'Отменён'}
                     </span>
                   </div>
                   <p className="mt-2 text-sm text-neutral-400">
@@ -129,15 +130,15 @@ export default function AdminReleasesPage() {
                           release.strategy === 'instant'
                             ? 'bg-purple-500/20 text-purple-100'
                             : release.strategy === 'gradual'
-                            ? 'bg-orange-500/20 text-orange-100'
-                            : 'bg-green-500/20 text-green-100'
+                              ? 'bg-orange-500/20 text-orange-100'
+                              : 'bg-green-500/20 text-green-100'
                         )}
                       >
                         {release.strategy === 'instant'
                           ? 'Мгновенно'
                           : release.strategy === 'gradual'
-                          ? 'Постепенно'
-                          : 'Canary'}
+                            ? 'Постепенно'
+                            : 'Canary'}
                       </span>
                     </div>
                   </div>
@@ -184,4 +185,3 @@ export default function AdminReleasesPage() {
     </div>
   );
 }
-

@@ -236,6 +236,10 @@ export async function POST(request: Request) {
     }
     const visibility = body.visibility === 'public' ? 'public' : 'private';
     const status = typeof body.status === 'string' ? body.status.toLowerCase() : 'draft';
+    const allowedStatuses = ['draft', 'active', 'on_hold', 'completed', 'archived'] as const;
+    const normalizedStatus = allowedStatuses.includes(status as (typeof allowedStatuses)[number])
+      ? (status as (typeof allowedStatuses)[number])
+      : 'draft';
     const workspaceId = body.workspaceId || DEFAULT_WORKSPACE_ID;
     const organizationId = body.organizationId;
     console.log(`[Projects API POST] Creating project: title=${title}, ownerId=${auth.userId}, workspaceId=${workspaceId}, organizationId=${organizationId}, status=${status}, visibility=${visibility}`);
@@ -246,12 +250,11 @@ export async function POST(request: Request) {
       key: body.key,
       ownerId: auth.userId,
       workspaceId,
-      organizationId, // Added organizationId
-      status: status as any,
+      status: normalizedStatus,
       visibility,
       type: body.type,
       deadline: body.deadline
-    } as any);
+    });
 
     // Проверяем, что проект действительно создан
     const verifyProject = projectsRepository.findById(project.id);
@@ -266,4 +269,3 @@ export async function POST(request: Request) {
     return jsonError('INVALID_REQUEST', { status: 400 });
   }
 }
-

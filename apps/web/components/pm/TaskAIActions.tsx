@@ -29,13 +29,11 @@ export default function TaskAIActions({
   taskTitle,
   projectId,
   onDescriptionGenerated,
-  onChecklistGenerated,
   onCommentsSummarized,
   className,
   variant = 'inline'
 }: TaskAIActionsProps) {
   const [generatingDescription, setGeneratingDescription] = useState(false);
-  const [generatingChecklist, setGeneratingChecklist] = useState(false);
   const [summarizingComments, setSummarizingComments] = useState(false);
 
   /**
@@ -81,24 +79,6 @@ export default function TaskAIActions({
       }
     } finally {
       setGeneratingDescription(false);
-    }
-  };
-
-  /**
-   * Генерация чек-листа через AI
-   * (Пока использует endpoint генерации описания, можно добавить отдельный endpoint)
-   */
-  const handleGenerateChecklist = async () => {
-    setGeneratingChecklist(true);
-    try {
-      // TODO: Создать отдельный endpoint /api/ai/generate-checklist
-      // Пока используем generate-description с модифицированным промптом
-      toast('Функция генерации чек-листа будет добавлена в следующей версии', 'info');
-    } catch (error) {
-      console.error('Failed to generate checklist:', error);
-      toast('Ошибка генерации чек-листа', 'warning');
-    } finally {
-      setGeneratingChecklist(false);
     }
   };
 
@@ -150,7 +130,7 @@ export default function TaskAIActions({
   };
 
   const isAnyActionInProgress = 
-    generatingDescription || generatingChecklist || summarizingComments;
+    generatingDescription || summarizingComments;
 
   if (variant === 'inline') {
     return (

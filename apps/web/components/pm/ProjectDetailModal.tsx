@@ -31,6 +31,7 @@ import {
   type FinanceRole
 } from '@/domain/finance/expenses';
 import { DEMO_WORKSPACE_ID } from '@/domain/finance/expenses';
+import type { Task } from '@collabverse/api';
 
 function mapDemoRole(role: string | null): FinanceRole {
   if (role === 'admin') {
@@ -75,7 +76,7 @@ export default function ProjectDetailModal({ projectId, isOpen, onClose }: Proje
   const [savingLimit, setSavingLimit] = useState(false);
   const [publishingListing, setPublishingListing] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'chat' | 'files' | 'gantt' | 'ai-agents'>('overview');
-  const [projectTasks, setProjectTasks] = useState<any[]>([]);
+  const [projectTasks, setProjectTasks] = useState<Task[]>([]);
 
   useEffect(() => {
     async function loadUser() {
@@ -182,8 +183,8 @@ export default function ProjectDetailModal({ projectId, isOpen, onClose }: Proje
       const response = await fetch(`/api/pm/tasks?projectId=${projId}&pageSize=1000`);
       if (response.ok) {
         const data = await response.json();
-        if (data.ok && data.data?.items) {
-          setProjectTasks(data.data.items);
+        if (data.ok && Array.isArray(data.data?.items)) {
+          setProjectTasks(data.data.items as Task[]);
         }
       }
     } catch (err) {
@@ -304,7 +305,7 @@ export default function ProjectDetailModal({ projectId, isOpen, onClose }: Proje
         throw new Error(error.error || 'Failed to create listing');
       }
 
-      const data = await response.json();
+      await response.json(); // Consume response
       
       toast('Листинг успешно создан', 'success');
       
@@ -644,4 +645,3 @@ export default function ProjectDetailModal({ projectId, isOpen, onClose }: Proje
     </LargeContentModal>
   );
 }
-

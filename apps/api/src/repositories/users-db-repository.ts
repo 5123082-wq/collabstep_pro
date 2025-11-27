@@ -2,9 +2,9 @@ import { eq, inArray } from 'drizzle-orm';
 import { db } from '../db/config';
 import { users, userControls } from '../db/schema';
 import type { WorkspaceUser } from '../types';
-import { DEFAULT_ACCOUNT_ID, DEFAULT_WORKSPACE_ID } from '../data/memory';
 
 import type { UsersRepository } from './users-repository.interface';
+type UserInsert = typeof users.$inferInsert;
 
 export class UsersDbRepository implements UsersRepository {
     async list(): Promise<WorkspaceUser[]> {
@@ -85,7 +85,7 @@ export class UsersDbRepository implements UsersRepository {
     async update(id: string, data: Partial<WorkspaceUser>): Promise<WorkspaceUser | null> {
         if (!id) return null;
 
-        const updateData: any = {
+        const updateData: Partial<UserInsert> = {
             updatedAt: new Date(),
         };
 

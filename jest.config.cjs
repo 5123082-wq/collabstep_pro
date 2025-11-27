@@ -15,7 +15,6 @@ module.exports = {
       'ts-jest',
       {
         tsconfig: '<rootDir>/apps/web/tsconfig.json',
-        isolatedModules: true,
         diagnostics: false,
       },
     ],
@@ -30,9 +29,4 @@ module.exports = {
   ],
   extensionsToTreatAsEsm: [],
   setupFilesAfterEnv: [],
-  globals: {
-    'ts-jest': {
-      isolatedModules: true,
-    },
-  },
 };

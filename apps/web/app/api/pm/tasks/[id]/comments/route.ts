@@ -48,26 +48,37 @@ export async function GET(
 
     // Получение комментариев через commentsRepository.listByTask
     const comments = commentsRepository.listByTask(task.projectId, taskId);
+    type CommentNode = typeof comments[number];
+    type CommentWithAuthor = CommentNode & {
+      author: {
+        id: string;
+        name: string;
+        email: string;
+        avatarUrl?: string | null;
+      } | null;
+      children?: CommentWithAuthor[];
+    };
 
     // Функция для добавления информации об авторах в дерево комментариев
-    const addAuthorsToComments = async (commentNodes: typeof comments): Promise<any[]> => {
+    const addAuthorsToComments = async (commentNodes: CommentNode[]): Promise<CommentWithAuthor[]> => {
       return Promise.all(commentNodes.map(async (comment) => {
         const author = await usersRepository.findById(comment.authorId);
-        const commentWithAuthor = {
-          ...comment,
+        const { children, ...restComment } = comment;
+        const commentWithAuthor: CommentWithAuthor = {
+          ...restComment,
           author: author
             ? {
                 id: author.id,
                 name: author.name,
                 email: author.email,
-                avatarUrl: author.avatarUrl
+                avatarUrl: author.avatarUrl ?? null
               }
             : null
         };
         
         // Рекурсивно обрабатываем дочерние комментарии
-        if (comment.children && comment.children.length > 0) {
-          commentWithAuthor.children = await addAuthorsToComments(comment.children);
+        if (children && children.length > 0) {
+          commentWithAuthor.children = await addAuthorsToComments(children);
         }
         
         return commentWithAuthor;
@@ -171,4 +182,3 @@ export async function POST(
     return jsonError('INTERNAL_ERROR', { status: 500 });
   }
 }
-

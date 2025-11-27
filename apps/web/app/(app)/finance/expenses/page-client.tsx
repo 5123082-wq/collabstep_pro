@@ -499,8 +499,9 @@ export default function FinanceExpensesPageClient({
       const params = new URLSearchParams(queryKey);
       params.set('pageSize', '100');
       let page = 1;
+      let totalPages = 1;
       const all: Expense[] = [];
-      while (true) {
+      do {
         params.set('page', `${page}`);
         const response = await fetch(`/api/expenses?${params.toString()}`);
         if (!response.ok) {
@@ -508,12 +509,9 @@ export default function FinanceExpensesPageClient({
         }
         const payload = (await response.json()) as ExpensesResponse;
         all.push(...(payload.items ?? []));
-        const totalPages = payload.pagination?.totalPages ?? 1;
-        if (page >= totalPages) {
-          break;
-        }
+        totalPages = payload.pagination?.totalPages ?? 1;
         page += 1;
-      }
+      } while (page <= totalPages);
       const header = ['Date', 'Category', 'Description', 'Amount', 'Currency', 'Project', 'Vendor', 'Status'];
       const rows = all
         .map((expense) =>

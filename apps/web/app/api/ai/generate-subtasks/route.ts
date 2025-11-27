@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
     // Парсинг тела запроса
     const body = await req.json();
-    const { taskTitle, taskDescription, taskId } = body;
+    const { taskTitle, taskDescription } = body;
 
     // Валидация
     if (!taskTitle || typeof taskTitle !== 'string' || taskTitle.trim().length === 0) {

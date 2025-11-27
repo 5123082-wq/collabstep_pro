@@ -13,7 +13,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-// @ts-ignore
+// @ts-expect-error lucide-react icon types
 import { Mail, Link2, Copy, Check, Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 

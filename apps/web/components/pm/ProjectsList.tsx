@@ -9,13 +9,15 @@ import { type Project } from '@/types/pm';
 import { cn } from '@/lib/utils';
 import { ContentBlock } from '@/components/ui/content-block';
 
-const ITEMS_PER_PAGE = 12;
-
 type ProjectsListProps = {
   projects: Project[];
   loading?: boolean;
   error?: string | null;
   onOpenProject?: (project: Project) => void;
+};
+type ProjectWithMeta = Project & {
+  updatedAt?: string;
+  createdAt?: string;
 };
 
 type PaginationProps = {
@@ -90,7 +92,7 @@ export default function ProjectsList({ projects, loading, error, onOpenProject }
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const urlFilters = useMemo(() => parseProjectFilters(searchParams), [searchParams]);
   const [filters, setFilters] = useState<ProjectListFilters>(urlFilters);
   const filtersRef = useRef(filters);
@@ -178,14 +180,16 @@ export default function ProjectsList({ projects, loading, error, onOpenProject }
 
     // Сортировка
     result.sort((a, b) => {
+      const projectA = a as ProjectWithMeta;
+      const projectB = b as ProjectWithMeta;
       let aValue: number | string = '';
       let bValue: number | string = '';
 
       switch (filters.sortBy) {
         case 'updated':
           // Используем дату создания как fallback, так как updatedAt может отсутствовать
-          aValue = (a as any).updatedAt || (a as any).createdAt || '';
-          bValue = (b as any).updatedAt || (b as any).createdAt || '';
+          aValue = projectA.updatedAt || projectA.createdAt || '';
+          bValue = projectB.updatedAt || projectB.createdAt || '';
           break;
         case 'dueDate':
           aValue = a.dueDate || '';
@@ -332,4 +336,3 @@ export default function ProjectsList({ projects, loading, error, onOpenProject }
     </section>
   );
 }
-

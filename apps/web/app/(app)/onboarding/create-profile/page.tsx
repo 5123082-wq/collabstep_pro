@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ContentBlock } from '@/components/ui/content-block';
 import { toast } from '@/lib/ui/toast';
-// @ts-ignore
+// @ts-expect-error lucide-react icon types
 import { User, ArrowLeft } from 'lucide-react';
 
 export default function CreateProfilePage() {
@@ -69,9 +69,10 @@ export default function CreateProfilePage() {
             setTimeout(() => {
                 router.push('/app/dashboard');
             }, 500);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            toast(err.message || 'Ошибка при создании профиля', 'warning');
+            const message = err instanceof Error ? err.message : 'Ошибка при создании профиля';
+            toast(message, 'warning');
             setIsLoading(false);
         }
     };

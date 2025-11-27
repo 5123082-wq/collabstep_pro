@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-// @ts-ignore
+// @ts-expect-error lucide-react icon types
 import { Check, Clock, Copy, Users } from 'lucide-react';
 import { type Project, type ProjectMember } from '@/types/pm';
 import { trackEvent } from '@/lib/telemetry';

@@ -1,9 +1,8 @@
 import { eq, and, desc } from 'drizzle-orm';
 import { db } from '../db/config';
-import { 
-    projects, 
-    projectMembers, 
-    users 
+import {
+    projects,
+    projectMembers
 } from '../db/schema';
 
 export type DbProject = typeof projects.$inferSelect;
@@ -16,7 +15,7 @@ export type DbProjectMember = typeof projectMembers.$inferSelect;
  * We name this one DbProjectsRepository to avoid collision during migration.
  */
 export class DbProjectsRepository {
-    
+
     async create(project: NewDbProject): Promise<DbProject> {
         return await db.transaction(async (tx) => {
             const [created] = await tx
@@ -51,7 +50,7 @@ export class DbProjectsRepository {
             .select({ project: projects })
             .from(projects)
             .innerJoin(
-                projectMembers, 
+                projectMembers,
                 eq(projects.id, projectMembers.projectId)
             )
             .where(and(
@@ -63,13 +62,13 @@ export class DbProjectsRepository {
         if (organizationId) {
             // Note: complex query building with drizzle needs care, simpler to filter in memory or refine query
             // But we can add another condition to WHERE
-             // logic: ... AND project.organizationId = organizationId
-             // Requires referencing projects.organizationId in the where clause
+            // logic: ... AND project.organizationId = organizationId
+            // Requires referencing projects.organizationId in the where clause
         }
-        
+
         // Simple list for now
         const result = await query.orderBy(desc(projects.createdAt));
-        
+
         if (organizationId) {
             return result.map(r => r.project).filter(p => p.organizationId === organizationId);
         }

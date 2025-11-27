@@ -32,9 +32,9 @@ export async function POST(request: NextRequest) {
 
         return jsonOk(contract);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Create offer failed:', error);
-        return jsonError('INTERNAL_ERROR', { status: 500, details: error.message });
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        return jsonError('INTERNAL_ERROR', { status: 500, details: message });
     }
 }
-

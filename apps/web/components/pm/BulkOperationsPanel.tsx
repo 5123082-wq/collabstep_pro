@@ -71,8 +71,8 @@ export default function BulkOperationsPanel({
     const saved = localStorage.getItem(`bulk-operations-history-${projectId}`);
     if (saved) {
       try {
-        const parsed = JSON.parse(saved);
-        setHistory(parsed.map((h: any) => ({ ...h, timestamp: new Date(h.timestamp) })));
+        const parsed = JSON.parse(saved) as Array<Omit<HistoryEntry, 'timestamp'> & { timestamp: string }>;
+        setHistory(parsed.map((h) => ({ ...h, timestamp: new Date(h.timestamp) })));
       } catch (error) {
         console.error('Error loading history:', error);
       }
@@ -425,4 +425,3 @@ export default function BulkOperationsPanel({
     </div>
   );
 }
-

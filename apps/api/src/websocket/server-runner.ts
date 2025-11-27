@@ -30,8 +30,9 @@ export function startWebSocketServer(): void {
   });
 }
 
-// Запуск сервера, если файл выполняется напрямую
-if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith('server-runner.ts')) {
+// Запуск сервера, если файл выполняется напрямую (без использования import.meta)
+const isExecutedDirectly = typeof process !== 'undefined' && Boolean(process.argv[1]?.includes('server-runner'));
+
+if (isExecutedDirectly) {
   startWebSocketServer();
 }
-

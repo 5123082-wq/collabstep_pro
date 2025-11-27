@@ -5,7 +5,6 @@ import { TeamMemberCard, type TeamMember } from './TeamMemberCard';
 import { type OrganizationRole } from './RoleBadge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-// @ts-ignore
 import { Search, Filter, Users, Loader2 } from 'lucide-react';
 import {
     DropdownMenu,

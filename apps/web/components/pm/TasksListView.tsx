@@ -47,9 +47,9 @@ type TasksListViewProps = {
 export default function TasksListView({ tasks, loading, filters }: TasksListViewProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [editingCell, setEditingCell] = useState<{ taskId: string; columnId: ColumnId } | null>(null);
-  const [visibleColumns, setVisibleColumns] = useState<ColumnId[]>(DEFAULT_COLUMNS.map((c) => c.id));
+  const [visibleColumns] = useState<ColumnId[]>(DEFAULT_COLUMNS.map((c) => c.id));
   const parentRef = useRef<HTMLDivElement>(null);
 
   const columns = useMemo(() => DEFAULT_COLUMNS.filter((c) => visibleColumns.includes(c.id)), [visibleColumns]);
@@ -64,6 +64,7 @@ export default function TasksListView({ tasks, loading, filters }: TasksListView
       sorted.sort((a, b) => {
         let aValue: string | number | undefined;
         let bValue: string | number | undefined;
+        const priorityOrder = { urgent: 4, high: 3, med: 2, low: 1 };
 
         switch (filters.sortBy) {
           case 'title':
@@ -71,7 +72,6 @@ export default function TasksListView({ tasks, loading, filters }: TasksListView
             bValue = b.title.toLowerCase();
             break;
           case 'priority':
-            const priorityOrder = { urgent: 4, high: 3, med: 2, low: 1 };
             aValue = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
             bValue = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
             break;
@@ -384,4 +384,3 @@ export default function TasksListView({ tasks, loading, filters }: TasksListView
     </div>
   );
 }
-

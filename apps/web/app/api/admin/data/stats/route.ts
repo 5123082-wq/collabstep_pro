@@ -3,6 +3,14 @@ import { projectsRepository, tasksRepository, memory } from '@collabverse/api';
 import { getDemoSessionFromCookies } from '@/lib/auth/demo-session.server';
 
 export const dynamic = 'force-dynamic';
+type OwnerProjectStats = {
+  id: string;
+  key: string;
+  title: string;
+  status: string;
+  tasksCount: number;
+  createdAt: string;
+};
 
 /**
  * GET /api/admin/data/stats
@@ -22,7 +30,7 @@ export async function GET() {
   const allTasks = tasksRepository.list();
 
   // Group projects by owner
-  const projectsByOwner = new Map<string, { count: number; projects: any[] }>();
+  const projectsByOwner = new Map<string, { count: number; projects: OwnerProjectStats[] }>();
   const tasksByProject = new Map<string, number>();
 
   // Count tasks per project
@@ -76,4 +84,3 @@ export async function GET() {
     users: usersData,
   });
 }
-

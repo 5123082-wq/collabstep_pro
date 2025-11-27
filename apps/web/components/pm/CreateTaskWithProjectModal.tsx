@@ -12,6 +12,23 @@ type ProjectOption = {
   key: string;
 };
 
+const toProjectOption = (project: unknown): ProjectOption | null => {
+  if (!project || typeof project !== 'object') {
+    return null;
+  }
+  const candidate = project as { id?: unknown; name?: unknown; title?: unknown; key?: unknown };
+  if (typeof candidate.id !== 'string' || typeof candidate.key !== 'string') {
+    return null;
+  }
+  const name =
+    typeof candidate.name === 'string'
+      ? candidate.name
+      : typeof candidate.title === 'string'
+        ? candidate.title
+        : '';
+  return { id: candidate.id, name, key: candidate.key };
+};
+
 type CreateTaskWithProjectModalProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -44,13 +61,10 @@ export default function CreateTaskWithProjectModal({ isOpen, onClose }: CreateTa
         if (response.ok) {
           const data = await response.json();
           if (data.items && Array.isArray(data.items)) {
-            setProjects(
-              data.items.map((p: any) => ({
-                id: p.id,
-                name: p.name,
-                key: p.key
-              }))
-            );
+            const normalized = data.items
+              .map(toProjectOption)
+              .filter((project: ProjectOption | null): project is ProjectOption => project !== null);
+            setProjects(normalized);
           } else {
             setError('Не удалось загрузить список проектов');
           }
@@ -130,13 +144,10 @@ export default function CreateTaskWithProjectModal({ isOpen, onClose }: CreateTa
                     .then((res) => res.json())
                     .then((data) => {
                       if (data.items && Array.isArray(data.items)) {
-                        setProjects(
-                          data.items.map((p: any) => ({
-                            id: p.id,
-                            name: p.name,
-                            key: p.key
-                          }))
-                        );
+                        const normalized = data.items
+                          .map(toProjectOption)
+                          .filter((project: ProjectOption | null): project is ProjectOption => project !== null);
+                        setProjects(normalized);
                         setError(null);
                       } else {
                         setError('Не удалось загрузить список проектов');
@@ -189,7 +200,7 @@ export default function CreateTaskWithProjectModal({ isOpen, onClose }: CreateTa
                       Проекты не найдены
                     </div>
                   ) : (
-                    filteredProjects.map((project) => (
+                    filteredProjects.map((project: ProjectOption) => (
                       <button
                         key={project.id}
                         type="button"
@@ -224,4 +235,3 @@ export default function CreateTaskWithProjectModal({ isOpen, onClose }: CreateTa
     </Modal>
   );
 }
-

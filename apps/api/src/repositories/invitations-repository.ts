@@ -1,11 +1,10 @@
-import { eq, and, gt } from 'drizzle-orm';
+
+import { eq, and } from 'drizzle-orm';
 import { db } from '../db/config';
 import {
     organizationInvites,
     projectInvites,
-    organizationMembers,
     projectMembers,
-    users
 } from '../db/schema';
 
 // Exporting types inferred from schema for external use
@@ -14,6 +13,7 @@ export type NewOrganizationInvite = typeof organizationInvites.$inferInsert;
 
 export type ProjectInvite = typeof projectInvites.$inferSelect;
 export type NewProjectInvite = typeof projectInvites.$inferInsert;
+type ProjectMember = typeof projectMembers.$inferSelect;
 
 export class InvitationsRepository {
 
@@ -134,11 +134,11 @@ export class InvitationsRepository {
         return invites.filter(i => pendingStatuses.includes(i.status));
     }
 
-    async listProjectInvites(projectId: string, status?: string): Promise<ProjectInvite[]> {
+    async listProjectInvites(projectId: string, status?: ProjectInvite['status']): Promise<ProjectInvite[]> {
         const conditions = [eq(projectInvites.projectId, projectId)];
 
         if (status) {
-            conditions.push(eq(projectInvites.status, status as any));
+            conditions.push(eq(projectInvites.status, status));
         }
 
         return await db
@@ -176,7 +176,7 @@ export class InvitationsRepository {
     async approveProjectInviteAndAddMember(
         inviteId: string,
         role: 'owner' | 'manager' | 'contributor' | 'viewer' = 'contributor'
-    ): Promise<{ invite: ProjectInvite; member: any }> {
+    ): Promise<{ invite: ProjectInvite; member: ProjectMember }> {
         return await db.transaction(async (tx) => {
             // 1. Update invite status
             const [updatedInvite] = await tx
@@ -204,10 +204,13 @@ export class InvitationsRepository {
                 })
                 .returning();
 
+            if (!newMember) {
+                throw new Error('Failed to create project member');
+            }
+
             return { invite: updatedInvite, member: newMember };
         });
     }
 }
 
 export const invitationsRepository = new InvitationsRepository();
-

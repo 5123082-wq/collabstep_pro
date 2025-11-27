@@ -16,9 +16,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         await contractService.completeContract(contractId, auth.userId);
         
         return jsonOk({ success: true });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Complete contract failed:', error);
-        return jsonError('INTERNAL_ERROR', { status: 500, details: error.message });
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        return jsonError('INTERNAL_ERROR', { status: 500, details: message });
     }
 }
-

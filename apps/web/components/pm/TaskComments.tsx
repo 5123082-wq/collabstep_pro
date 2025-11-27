@@ -56,16 +56,24 @@ export default function TaskComments({ taskId, projectId, currentUserId }: TaskC
 
   // Подписка на WebSocket события для комментариев
   useProjectEvents(projectId, currentUserId, 'comment.added', (event) => {
-    if (event.data?.taskId === taskId) {
+    if (!event.data || typeof event.data !== 'object') {
+      return;
+    }
+    const payload = event.data as { taskId?: string };
+    if (payload.taskId === taskId) {
       // Перезагружаем комментарии при получении нового комментария
       void loadComments();
     }
   });
 
   useProjectEvents(projectId, currentUserId, 'comment.updated', (event) => {
-    if (event.data?.taskId === taskId) {
+    if (!event.data || typeof event.data !== 'object') {
+      return;
+    }
+    const payload = event.data as { taskId?: string; comment?: CommentWithAuthor };
+    if (payload.taskId === taskId) {
       // Обновляем конкретный комментарий
-      const updatedComment = event.data?.comment;
+      const updatedComment = payload.comment;
       if (updatedComment) {
         setComments((prev) => {
           const updateCommentInTree = (comments: CommentWithAuthor[]): CommentWithAuthor[] => {
@@ -151,4 +159,3 @@ export default function TaskComments({ taskId, projectId, currentUserId }: TaskC
     </div>
   );
 }
-

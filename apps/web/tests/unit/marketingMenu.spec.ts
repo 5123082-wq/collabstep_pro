@@ -16,7 +16,7 @@ describe('marketingMenu config', () => {
   });
 
   it('каждый подпункт имеет валидный href', () => {
-    const hrefPattern = /^\/[\w\-\/]+(#?[\w\-]+)?$/i;
+    const hrefPattern = /^\/[\w/-]+(#?[\w-]+)?$/i;
     marketingMenu.forEach((item) => {
       if (item.href) {
         expect(item.href).toMatch(/^\//);
