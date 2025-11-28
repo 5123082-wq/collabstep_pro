@@ -118,21 +118,30 @@ export default function AIProjectPlanner({
           throw new Error('projectId is required to apply structure');
         }
 
-        for (const phase of structure.phases) {
-          for (const task of phase.tasks) {
-            await fetch('/api/pm/tasks', {
+        const tasksToCreate = structure.phases.flatMap((phase) =>
+          phase.tasks.map((task) => ({
+            projectId,
+            title: `${phase.name}: ${task.title}`,
+            description: `${task.description}\n\n**Этап:** ${phase.name}\n**Оценка:** ${task.estimatedDays} дней`,
+            priority: task.priority,
+            estimatedTime: task.estimatedDays * 8 // Конвертируем дни в часы
+          }))
+        );
+
+        await Promise.all(
+          tasksToCreate.map(async (payload) => {
+            const response = await fetch('/api/pm/tasks', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                projectId,
-                title: `${phase.name}: ${task.title}`,
-                description: `${task.description}\n\n**Этап:** ${phase.name}\n**Оценка:** ${task.estimatedDays} дней`,
-                priority: task.priority,
-                estimatedTime: task.estimatedDays * 8 // Конвертируем дни в часы
-              })
+              body: JSON.stringify(payload)
             });
-          }
-        }
+
+            if (!response.ok) {
+              const data = await response.json().catch(() => ({}));
+              throw new Error(data.error || 'Failed to create task');
+            }
+          })
+        );
       }
 
       toast('Структура проекта применена', 'success');
@@ -147,14 +156,22 @@ export default function AIProjectPlanner({
   };
 
   const handleRemoveTask = (phaseIndex: number, taskIndex: number) => {
-    if (!structure) return;
+    setStructure((current) => {
+      if (!current) {
+        return current;
+      }
 
-    const newStructure = { ...structure };
-    const phase = newStructure.phases[phaseIndex];
-    if (!phase) return;
+      const targetPhase = current.phases[phaseIndex];
+      if (!targetPhase) {
+        return current;
+      }
 
-    phase.tasks.splice(taskIndex, 1);
-    setStructure(newStructure);
+      const updatedPhases = current.phases.map((phase, index) =>
+        index === phaseIndex ? { ...phase, tasks: phase.tasks.filter((_, idx) => idx !== taskIndex) } : phase
+      );
+
+      return { ...current, phases: updatedPhases };
+    });
   };
 
   const priorityColors = {
