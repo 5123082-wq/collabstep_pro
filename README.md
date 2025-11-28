@@ -27,9 +27,20 @@
 - **[Карта документации](docs/README.md)** — полный обзор всей документации
 - **[Быстрый старт](docs/getting-started/quick-start.md)** — начните работу за 5 минут
 - **[Настройка окружения](docs/getting-started/setup.md)** — подробное руководство
-- **[Настройка AI (OpenAI)](docs/AI_SETUP_GUIDE.md)** — подключение AI-функциональности 🤖
+- **[Настройка AI (OpenAI)](docs/ai/AI_ADVANCED_FEATURES_README.md)** — подключение продвинутых AI-фич 🤖
 - **[Дорожная карта](docs/development/PLAN.md)** — этапы разработки
 - **[Архитектура](docs/architecture/system-analysis.md)** — системный обзор
+
+## Ключевые документы
+
+- **Запуск и проверка**: [QUICK_SETUP_GUIDE](docs/getting-started/QUICK_SETUP_GUIDE.md), [VERIFICATION_CHECKLIST](docs/getting-started/VERIFICATION_CHECKLIST.md), [VERCEL_POSTGRES_SETUP_CHECKLIST](docs/getting-started/VERCEL_POSTGRES_SETUP_CHECKLIST.md)
+- **Качество и аудит**: [FIXES_ACTION_PLAN](docs/audit/FIXES_ACTION_PLAN.md), [CODE_AUDIT](docs/audit/CODE_AUDIT.md), [CLEANUP_SUMMARY](docs/audit/CLEANUP_SUMMARY.md)
+- **Runbooks**: [DATABASE_CLEANUP_GUIDE](docs/runbooks/DATABASE_CLEANUP_GUIDE.md), [cursor projects/tasks runbook](docs/runbooks/cursor_runbook_projects_tasks_v1.md)
+- **AI функциональность**: [AI Quick Start](docs/ai/AI_QUICK_START.md), [AI Advanced Features](docs/ai/AI_ADVANCED_FEATURES_README.md), [Проектное объяснение](docs/ai/ПРОЕКТ_ОБЪЯСНЕНИЕ.md)
+- **Финансы**: [Finance System Progress](docs/finance/README_FINANCE.md)
+- **Разработка**: [TypeScript errors fix guide](docs/guides/TYPESCRIPT_ERRORS_FIX_GUIDE.md), [Cheat Sheet](docs/getting-started/CHEAT_SHEET.md)
+- **Исследования пользователей**: [Users analysis summary](docs/research/users/USERS_ANALYSIS_SUMMARY.md) + полный отчёт в той же директории
+- **Справочник**: [Test users IDs](docs/reference/TEST_USERS_IDS.md), [Stage N AI completion](docs/archive/stages/STAGE_N_COMPLETION_REPORT.md)
 
 ## Переменные окружения
 
