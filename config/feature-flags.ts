@@ -3,6 +3,7 @@ export type FeatureFlagKey =
   | 'financeGlobal'
   | 'projectsOverview'
   | 'projectCreateWizard'
+  | 'workspaceDashboard'
   | 'projectDashboard'
   | 'budgetLimits'
   | 'tasksWorkspace'
@@ -51,6 +52,12 @@ export const featureFlagRegistry = {
     env: 'NEXT_PUBLIC_FEATURE_CREATE_WIZARD',
     stage: 3,
     description: 'Мастер создания проекта из трёх шагов.',
+    default: true
+  },
+  workspaceDashboard: {
+    env: 'NEXT_PUBLIC_FEATURE_WORKSPACE_DASHBOARD',
+    stage: 3,
+    description: 'Рабочий стол (workspace dashboard) с настраиваемыми виджетами.',
     default: true
   },
   projectDashboard: {

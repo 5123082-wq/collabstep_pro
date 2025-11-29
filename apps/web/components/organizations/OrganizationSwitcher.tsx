@@ -16,6 +16,9 @@ export function OrganizationSwitcher({ collapsed }: { collapsed?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, width: 0 });
 
   useEffect(() => {
     void fetchOrganizations();
@@ -23,14 +26,46 @@ export function OrganizationSwitcher({ collapsed }: { collapsed?: boolean }) {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        containerRef.current && 
+        !containerRef.current.contains(target) &&
+        menuRef.current &&
+        !menuRef.current.contains(target)
+      ) {
         setIsOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const updatePosition = () => {
+        if (buttonRef.current) {
+          const rect = buttonRef.current.getBoundingClientRect();
+          setMenuPosition({
+            top: rect.bottom + 4,
+            left: collapsed ? rect.left : rect.left + 8,
+            width: collapsed ? 240 : rect.width - 16
+          });
+        }
+      };
+
+      updatePosition();
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+
+      return () => {
+        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
+  }, [isOpen, collapsed]);
 
   const fetchOrganizations = async () => {
     try {
@@ -49,6 +84,7 @@ export function OrganizationSwitcher({ collapsed }: { collapsed?: boolean }) {
   return (
     <div className={cn("relative px-2 mb-4", collapsed && "px-1")} ref={containerRef}>
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "flex w-full items-center gap-2 rounded-xl border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] p-2 hover:border-indigo-500/40 hover:text-[color:var(--text-primary)] transition-colors",
@@ -78,7 +114,16 @@ export function OrganizationSwitcher({ collapsed }: { collapsed?: boolean }) {
       </button>
 
       {isOpen && (
-        <div className="absolute left-2 right-2 top-full z-50 mt-1 rounded-xl border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-popover)] p-1 shadow-lg">
+        <div 
+          ref={menuRef}
+          className="fixed z-[9999] rounded-xl border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-popover)] p-1 shadow-lg"
+          style={{
+            top: `${menuPosition.top}px`,
+            left: `${menuPosition.left}px`,
+            width: `${menuPosition.width}px`,
+            minWidth: collapsed ? '240px' : undefined
+          }}
+        >
           <div className="max-h-48 overflow-y-auto">
             {organizations.length === 0 ? (
               <div className="px-3 py-2 text-xs text-[color:var(--text-tertiary)]">

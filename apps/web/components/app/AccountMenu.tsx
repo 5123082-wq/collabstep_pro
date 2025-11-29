@@ -3,7 +3,7 @@
 import clsx from 'clsx';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useTheme } from '@/components/theme/ThemeContext';
-import { getUserType, setUserType, type UserType } from '@/lib/auth/roles';
+import { getUserType, type UserType } from '@/lib/auth/roles';
 import { useMenuPreferencesStore, MENU_PRESETS } from '@/stores/menuPreferences';
 import { leftMenuConfig } from './LeftMenu.config';
 import type { DemoProfile } from './AppTopbar';
@@ -67,7 +67,7 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut, onOpenSet
   const { mode, resolvedTheme, setMode } = useTheme();
   const [isOpen, setOpen] = useState(false);
   const [isMenuCustomizationOpen, setMenuCustomizationOpen] = useState(false);
-  const [userType, setUserTypeState] = useState<UserType>(() => getUserType());
+  const [userType, setUserTypeState] = useState<UserType>(null);
   // Инициализируем только из profile.avatarUrl, чтобы избежать проблем с гидратацией
   // localStorage будет загружен только после монтирования
   const [avatarUrl, setAvatarUrl] = useState<string | null>(profile.avatarUrl || null);
@@ -78,6 +78,20 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut, onOpenSet
   const menuCustomizationPanelId = useId();
   
   const { visibleMenuIds, toggleMenuVisibility, reset: resetMenuPreferences, isMenuVisible, applyPreset } = useMenuPreferencesStore();
+
+  useEffect(() => {
+    const updateUserType = () => setUserTypeState(getUserType());
+    updateUserType();
+    
+    // Подписываемся на изменения типа пользователя
+    window.addEventListener('cv-user-type-change', updateUserType);
+    window.addEventListener('storage', updateUserType);
+    
+    return () => {
+      window.removeEventListener('cv-user-type-change', updateUserType);
+      window.removeEventListener('storage', updateUserType);
+    };
+  }, []);
 
   // Загружаем avatar из localStorage только после монтирования, чтобы избежать проблем с гидратацией
   useEffect(() => {
@@ -111,18 +125,6 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut, onOpenSet
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userType, visibleMenuIds.length, applyPreset]);
-
-  const handleUserTypeChange = (type: UserType) => {
-    setUserType(type);
-    setUserTypeState(type);
-    // Применяем предустановку меню для типа пользователя
-    const { applyPreset } = useMenuPreferencesStore.getState();
-    applyPreset(type);
-    // Обновляем страницу для применения изменений
-    if (typeof window !== 'undefined') {
-      window.location.reload();
-    }
-  };
 
   const initials = useMemo(() => {
     const [first = ''] = profile.email;
@@ -447,83 +449,6 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut, onOpenSet
                   <circle cx="12" cy="7" r="4" />
                 </svg>
               </button>
-            </section>
-            <section>
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-xs font-semibold uppercase tracking-[0.24em] text-[color:var(--text-tertiary)]">
-                  Тип пользователя
-                </h3>
-              </div>
-              <div className="grid grid-cols-2 gap-1.5">
-                <button
-                  type="button"
-                  role="menuitemradio"
-                  aria-checked={userType === 'performer'}
-                  onClick={() => handleUserTypeChange('performer')}
-                  className={clsx(
-                    'flex flex-col items-center gap-1.5 rounded-lg border px-2.5 py-2 text-xs font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
-                    userType === 'performer'
-                      ? 'border-[color:var(--button-primary-border)] bg-[color:var(--button-primary-bg)] text-[color:var(--button-primary-foreground)] shadow-sm focus-visible:outline-[color:var(--button-primary-border-strong)]'
-                      : 'border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] text-[color:var(--text-secondary)] hover:border-[color:var(--button-primary-border)] hover:text-[color:var(--text-primary)] focus-visible:outline-[color:var(--surface-border-strong)]'
-                  )}
-                >
-                  <svg
-                    aria-hidden="true"
-                    viewBox="0 0 24 24"
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-                  </svg>
-                  Исполнитель
-                  <span className="text-xs text-[color:var(--text-tertiary)]">
-                    Маркетплейс и вакансии
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  role="menuitemradio"
-                  aria-checked={userType === 'marketer'}
-                  onClick={() => handleUserTypeChange('marketer')}
-                  className={clsx(
-                    'flex flex-col items-center gap-1.5 rounded-lg border px-2.5 py-2 text-xs font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
-                    userType === 'marketer'
-                      ? 'border-[color:var(--button-primary-border)] bg-[color:var(--button-primary-bg)] text-[color:var(--button-primary-foreground)] shadow-sm focus-visible:outline-[color:var(--button-primary-border-strong)]'
-                      : 'border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] text-[color:var(--text-secondary)] hover:border-[color:var(--button-primary-border)] hover:text-[color:var(--text-primary)] focus-visible:outline-[color:var(--surface-border-strong)]'
-                  )}
-                >
-                  <svg
-                    aria-hidden="true"
-                    viewBox="0 0 24 24"
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                    <path d="m22 6-10 7L2 6" />
-                  </svg>
-                  Маркетолог
-                  <span className="text-xs text-[color:var(--text-tertiary)]">Маркетинг блок</span>
-                </button>
-              </div>
-              {userType && (
-                <button
-                  type="button"
-                  onClick={() => handleUserTypeChange(null)}
-                  className="mt-2 w-full rounded-lg border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] px-3 py-1.5 text-xs text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
-                >
-                  Сбросить выбор
-                </button>
-              )}
             </section>
             <section>
               <button

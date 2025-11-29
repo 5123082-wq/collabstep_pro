@@ -1,7 +1,7 @@
 'use client';
 
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Settings } from 'lucide-react';
+import { Settings, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { DrawerManager } from './DrawerManager';
 import { DialogManager } from './DialogManager';
@@ -233,8 +233,23 @@ export default function HoverRail({ permissions = [], featureFlags }: HoverRailP
       {shouldRenderRail ? (
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen} side="bottom">
           <SheetContent side="bottom" className="max-h-[80vh] w-full rounded-t-3xl border-neutral-800 bg-neutral-900/95 p-4">
+            {/* Индикатор для drag */}
+            <div className="mb-3 flex justify-center">
+              <div className="h-1 w-12 rounded-full bg-neutral-700" aria-hidden="true" />
+            </div>
+            
             <SheetHeader className="border-none pb-2">
-              <SheetTitle>Быстрый доступ</SheetTitle>
+              <div className="flex items-center justify-between">
+                <SheetTitle>Быстрый доступ</SheetTitle>
+                <button
+                  type="button"
+                  onClick={() => setMobileOpen(false)}
+                  className="rounded-lg p-1.5 text-neutral-400 transition hover:bg-neutral-800 hover:text-neutral-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                  aria-label="Закрыть"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
             </SheetHeader>
             <div className="mt-2 grid gap-2">
               {mobileActions.map((action) => {

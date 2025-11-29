@@ -10,11 +10,11 @@ import { useUiStore } from '@/lib/state/ui-store';
 import { useMenuPreferencesStore, ALL_MENU_IDS } from '@/stores/menuPreferences';
 
 const iconMap: Record<string, string> = {
-  dashboard: 'M4 4h16v16H4z',
-  projects: 'M4 6h16M4 12h16M4 18h10',
+  dashboard: 'M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z',
+  projects: 'M4 4h16v4H4V4zm0 6h14v4H4v-4zm0 6h12v4H4v-4z',
   marketplace: 'M3 7h18l-2 12H5L3 7Zm5 0V5a4 4 0 0 1 8 0v2',
   marketing: 'M4 4h16v4H4V4Zm0 6h6v8H4v-8Zm8 0h6v8h-6v-8Zm-2-6h4v2h-4V4Z',
-  ai: 'M12 3a4 4 0 0 1 4 4 4 4 0 0 0 4 4 4 4 0 1 1-4 4 4 4 0 0 0-4 4 4 4 0 0 1-4-4 4 4 0 0 0-4-4 4 4 0 0 1 4-4 4 4 0 0 0 4-4',
+  ai: 'M9.5 3A6.5 6.5 0 0 0 3 9.5c0 1.61.59 3.09 1.56 4.23l-1.13 1.13A8.5 8.5 0 0 1 1 9.5 8.5 8.5 0 0 1 18 9.5c0 1.61-.59 3.09-1.56 4.23l1.13 1.13A6.5 6.5 0 0 0 9.5 3zm0 2A4.5 4.5 0 0 1 14 9.5c0 .81-.23 1.56-.64 2.2l-1.13-1.13A2.5 2.5 0 0 0 12 9.5 2.5 2.5 0 0 0 9.5 7c-.81 0-1.56.23-2.2.64L6.17 6.51A4.5 4.5 0 0 1 9.5 5zm0 2A2.5 2.5 0 0 1 12 9.5c0 .81-.23 1.56-.64 2.2l-1.13-1.13A.5.5 0 0 0 10 9.5.5.5 0 0 0 9.5 9c-.81 0-1.56.23-2.2.64L6.17 8.51A2.5 2.5 0 0 1 9.5 7z',
   community: 'M8 21a4 4 0 1 1 8 0H8Zm9-9a4 4 0 1 0-6-3.464A4 4 0 1 0 7 12c0 2.761 4 4 4 4s4-1.239 4-4Z',
   finance: 'M3 5h18v4H3V5Zm2 6h14v8H5v-8Zm4 2v4m6-4v4',
   docs: 'M6 3h9l5 5v13H6V3Zm9 5h5',
@@ -243,7 +243,7 @@ export default function Sidebar({ roles }: SidebarProps) {
   const renderCollapsedMenu = () => (
     <nav
       aria-label="Свёрнутая навигация приложения"
-      className="sidebar-nav mt-4 flex flex-1 flex-col items-center gap-2 overflow-y-auto pb-4"
+      className="sidebar-nav mt-4 flex flex-1 flex-col items-center gap-2 overflow-hidden pb-4 md:overflow-y-auto"
     >
       {menu.map((section) => {
         const hasChildren = Boolean(section.children?.length);
@@ -357,12 +357,13 @@ export default function Sidebar({ roles }: SidebarProps) {
   return (
     <aside
       className={clsx(
-        'flex h-full flex-shrink-0 flex-col overflow-hidden border-r border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] py-5 transition-[width] duration-300 ease-out',
+        'flex flex-shrink-0 flex-col overflow-hidden border-r border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] py-5 transition-[width] duration-300 ease-out',
+        'h-screen md:h-full',
         sidebarCollapsed ? 'w-[72px] px-2' : 'w-[230px] px-2'
       )}
       data-collapsed={sidebarCollapsed}
     >
-      <div className={clsx('flex items-center justify-between', sidebarCollapsed ? 'px-1' : 'px-1.5')}>
+      <div className={clsx('flex items-center justify-between flex-shrink-0', sidebarCollapsed ? 'px-1' : 'px-1.5')}>
         {!sidebarCollapsed && (
           <p className="font-mono text-xs font-semibold uppercase tracking-[0.15em] text-neutral-400">Collabverse</p>
         )}
@@ -405,7 +406,7 @@ export default function Sidebar({ roles }: SidebarProps) {
         </div>
       </div>
       
-      <div className="mt-4">
+      <div className="mt-4 flex-shrink-0">
         <OrganizationSwitcher collapsed={sidebarCollapsed} />
       </div>
 

@@ -1,5 +1,6 @@
 import '@/styles/globals.css';
 import '@/styles/layout.css';
+import '@/styles/dashboard.css';
 import { Inter } from 'next/font/google';
 import dynamic from 'next/dynamic';
 import type { Metadata } from 'next';
