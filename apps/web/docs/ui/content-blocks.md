@@ -111,27 +111,33 @@ import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 ## Стандарты
 
 ### Радиус скругления
+
 - **Основной блок**: `1.5rem` (24px) - `rounded-3xl`
 - **Вложенные элементы**: `1rem` (16px) - `rounded-2xl`
 
 ### Отступы
+
 - **Основной блок**: `1.5rem` (24px) - `p-6`
 - **Вложенные элементы**: `1rem` (16px) - `p-4`
 
 ### Обводка
+
 - **Толщина**: `1px`
 - **Цвет**: Используется токен `--content-block-border`
 - **Hover**: Используется токен `--content-block-border-hover`
 
 ### Фон
+
 - **Обычный**: Токен `--content-block-bg` (rgba(13, 13, 13, 0.7))
 - **Hover**: Токен `--content-block-bg-hover`
 
 ### Тени
+
 - **Обычная**: `0 0 12px rgba(0,0,0,0.12)`
 - **Hover**: `0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1)`
 
 ### Отступы между блоками
+
 - **Стандартный**: `1.5rem` (24px)
 
 ## Сетка для карточек
@@ -148,7 +154,8 @@ import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 
 ## Миграция существующих компонентов
 
-### До (неправильно):
+### До (неправильно)
+
 ```tsx
 <div className="rounded-3xl border border-neutral-900 bg-neutral-950/60 p-6">
   <h3 className="text-lg font-semibold text-white">Заголовок</h3>
@@ -156,7 +163,8 @@ import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 </div>
 ```
 
-### После (правильно):
+### После (правильно)
+
 ```tsx
 <ContentBlock>
   <ContentBlockTitle>Заголовок</ContentBlockTitle>
@@ -167,6 +175,7 @@ import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 ## Примеры использования
 
 ### Карточка проекта
+
 ```tsx
 <ContentBlock interactive as="article">
   <ContentBlockTitle>Название проекта</ContentBlockTitle>
@@ -175,6 +184,7 @@ import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 ```
 
 ### Пустое состояние
+
 ```tsx
 <ContentBlock variant="dashed">
   <p className="text-center">Здесь пока ничего нет</p>
@@ -182,6 +192,7 @@ import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 ```
 
 ### Блок с ошибкой
+
 ```tsx
 <ContentBlock variant="error">
   <p>Произошла ошибка при загрузке данных</p>
@@ -189,6 +200,7 @@ import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 ```
 
 ### Блок с действиями
+
 ```tsx
 <ContentBlock
   header={
@@ -205,6 +217,7 @@ import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 ```
 
 ### Вложенные элементы
+
 ```tsx
 <ContentBlock>
   <ContentBlockTitle>Основной блок</ContentBlockTitle>
@@ -312,12 +325,12 @@ import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 
 ## Часто задаваемые вопросы
 
-### Когда использовать компонент ContentBlock, а когда CSS классы?
+### Когда использовать компонент ContentBlock, а когда CSS классы
 
 - **Используйте компонент** для новых блоков и при миграции существующих
 - **Используйте CSS классы** только если компонент не подходит по каким-то причинам (например, нужна специфичная структура)
 
-### Можно ли комбинировать ContentBlock с другими классами?
+### Можно ли комбинировать ContentBlock с другими классами
 
 Да, вы можете передать дополнительные классы через проп `className`:
 
@@ -327,7 +340,7 @@ import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 </ContentBlock>
 ```
 
-### Как мигрировать блок с кастомными стилями?
+### Как мигрировать блок с кастомными стилями
 
 Если блок имеет кастомные стили, которые не покрываются вариантами ContentBlock, используйте проп `className`:
 

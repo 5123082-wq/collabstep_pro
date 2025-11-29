@@ -459,7 +459,7 @@ export default function NotificationsPanel({
 
 ## Файлы для создания/изменения
 
-### Новые файлы:
+### Новые файлы
 
 - `apps/api/src/repositories/notifications-repository.ts`
 - `apps/web/lib/notifications/event-generator.ts`
@@ -469,7 +469,7 @@ export default function NotificationsPanel({
 - `apps/web/tests/unit/notifications.spec.ts`
 - `apps/web/tests/e2e/notifications.spec.ts`
 
-### Изменённые файлы:
+### Изменённые файлы
 
 - `apps/api/src/types.ts` — добавить `Notification` interface
 - `apps/web/components/right-rail/NotificationsPanel.tsx`
@@ -486,7 +486,7 @@ export default function NotificationsPanel({
 **Дата завершения:** 2025-01-XX  
 **Статус:** ✅ ЗАВЕРШЁН (95% готовности)
 
-### Выполненные задачи:
+### Выполненные задачи
 
 - ✅ **Задача 1:** Модель данных уведомлений — созданы типы `Notification`, `NotificationType`, `NotificationStatus` и `NotificationsRepository` с полным набором CRUD методов
 - ✅ **Задача 2:** Генератор событий уведомлений — реализованы все функции: `notifyTaskAssigned`, `notifyTaskUpdated`, `notifyCommentAdded`, `notifyDeadlineApproaching`, `notifyProjectInvite`
@@ -503,7 +503,7 @@ export default function NotificationsPanel({
 - ✅ **Задача 12:** Unit тесты — написаны тесты для всех компонентов (repository, event generators, API endpoints)
 - ✅ **Задача 13:** E2E тесты — написаны тесты для основных сценариев использования
 
-### Созданные файлы:
+### Созданные файлы
 
 - `apps/api/src/repositories/notifications-repository.ts` — repository для работы с уведомлениями
 - `apps/web/lib/notifications/event-generator.ts` — генератор событий уведомлений
@@ -515,7 +515,7 @@ export default function NotificationsPanel({
 - `apps/web/tests/unit/notifications.spec.ts` — unit тесты (20+ тестов)
 - `apps/web/tests/e2e/notifications.spec.ts` — E2E тесты (7 основных сценариев)
 
-### Изменённые файлы:
+### Изменённые файлы (Stage I)
 
 - `apps/api/src/types.ts` — добавлены типы `Notification`, `NotificationType`, `NotificationStatus`
 - `apps/api/src/data/memory.ts` — добавлен массив `NOTIFICATIONS` для хранения уведомлений
@@ -527,27 +527,27 @@ export default function NotificationsPanel({
 - `apps/web/app/api/pm/tasks/[id]/comments/route.ts` — интеграция `notifyCommentAdded` при создании комментария
 - `apps/web/mocks/rail.ts` — обновлен badge для отображения счетчика непрочитанных уведомлений
 
-### Проблемы и решения:
+### Проблемы и решения
 
 - **Проблема:** Не было критических проблем при реализации
 - **Решение:** Все основные задачи выполнены согласно плану
 - **Замечание:** Функция `notifyProjectInvite` реализована, но не интегрирована, так как отсутствует POST endpoint для добавления участников проекта. Это можно добавить в будущем при реализации функционала приглашений.
 - **Замечание:** Автоматическая проверка дедлайнов не интегрирована (опциональная задача). Функция `notifyDeadlineApproaching` готова к использованию и может быть интегрирована позже через cron job или при загрузке страницы.
 
-### Метрики:
+### Метрики
 
 - **Покрытие тестами:** Unit тесты для всех API endpoints и repository методов, E2E тесты для основных сценариев
 - **Время выполнения:** — (план: 10-12 дней)
 - **Количество багов:** 0 критических
 - **Строк кода:** ~1500+ строк нового кода
 
-### Тестирование:
+### Тестирование
 
 - **Unit тесты:** 20+ тестов, все проходят (покрытие repository, event generators, API endpoints)
 - **E2E тесты:** 7 основных сценариев (отображение панели, счетчик, отметка как прочитанное, фильтрация, навигация, удаление)
 - **Ручное тестирование:** выполнено, все функции работают корректно
 
-### Критерии готовности (DoD):
+### Критерии готовности (DoD)
 
 - ✅ Уведомления генерируются при всех критических событиях (задачи, комментарии)
 - ✅ Все API endpoints работают и покрыты тестами
@@ -560,7 +560,7 @@ export default function NotificationsPanel({
 - ⚠️ Уведомления при приглашении участников (функция реализована, но нет POST endpoint)
 - ⚠️ Автоматическая проверка дедлайнов (опционально, функция готова, но не интегрирована)
 
-### Следующие шаги:
+### Следующие шаги
 
 - Переход к **Stage J:** Чат проекта и файловый каталог (может использовать уведомления для сообщений)
 - При необходимости добавить POST endpoint для приглашения участников проекта с интеграцией `notifyProjectInvite`

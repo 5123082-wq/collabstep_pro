@@ -440,7 +440,7 @@ export default function ProjectFilesCatalog({ projectId }: ProjectFilesCatalogPr
 
 ## Файлы для создания/изменения
 
-### Новые файлы:
+### Новые файлы
 
 - `apps/api/src/repositories/project-chat-repository.ts` — repository для работы с сообщениями чата проекта
 - `apps/web/app/api/pm/projects/[id]/chat/route.ts` — GET и POST endpoints для чата проекта
@@ -451,7 +451,7 @@ export default function ProjectFilesCatalog({ projectId }: ProjectFilesCatalogPr
 - `apps/web/tests/unit/project-files.spec.ts` — unit тесты для API endpoints файлов
 - `apps/web/tests/e2e/project-chat-files.spec.ts` — E2E тесты для основных сценариев работы с чатом и файлами
 
-### Изменённые файлы:
+### Изменённые файлы
 
 - `apps/api/src/types.ts` — добавить `ProjectChatMessage`
 - `apps/web/app/(app)/pm/projects/[id]/page.tsx` — добавить вкладки "Чат" и "Файлы"
@@ -465,34 +465,35 @@ export default function ProjectFilesCatalog({ projectId }: ProjectFilesCatalogPr
 **Шаблон отчёта:**
 
 ```markdown
+
 ### Stage J: Чат проекта и файловый каталог
 
 **Дата завершения:** YYYY-MM-DD  
 **Статус:** ✅ ЗАВЕРШЁН
 
-#### Выполненные задачи:
+#### Выполненные задачи
 
 - [Список выполненных задач]
 
-#### Созданные файлы:
+#### Созданные файлы
 
 - [Список новых файлов]
 
-#### Изменённые файлы:
+#### Изменённые файлы
 
 - [Список изменённых файлов]
 
-#### Проблемы и решения:
+#### Проблемы и решения
 
 - [Описание проблем и их решений]
 
-#### Метрики:
+#### Метрики
 
 - Покрытие тестами: X%
 - Время выполнения: X дней
 - Количество багов: X
 
-#### Следующие шаги:
+#### Следующие шаги
 
 - [Что делать дальше]
 ```

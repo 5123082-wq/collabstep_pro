@@ -18,8 +18,6 @@
 
 ## Release checklist
 
-Полная версия чек-листа: [docs/development/release-checklist.md](docs/development/release-checklist.md).
-
 Перед релизом убедитесь, что:
 
 - Выровнены версии Node.js 20 и pnpm 9+
@@ -34,6 +32,4 @@
 - Карта документации: [docs/README.md](docs/README.md)
 - Быстрый старт: [docs/getting-started/quick-start.md](docs/getting-started/quick-start.md)
 - Настройка окружения: [docs/getting-started/setup.md](docs/getting-started/setup.md)
-- Дорожная карта: [docs/development/PLAN.md](docs/development/PLAN.md)
 - Системный анализ: [docs/architecture/system-analysis.md](docs/architecture/system-analysis.md)
-- Чеклист релиза: [docs/development/release-checklist.md](docs/development/release-checklist.md)

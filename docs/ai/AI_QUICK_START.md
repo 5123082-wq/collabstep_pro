@@ -1,12 +1,12 @@
 # 🚀 AI Quick Start - Быстрая настройка
 
-> **Подробная инструкция:** [docs/AI_SETUP_GUIDE.md](docs/AI_SETUP_GUIDE.md)
+> **Подробная инструкция:** [../AI_SETUP_GUIDE.md](../AI_SETUP_GUIDE.md)
 
 ## ⚡ За 5 минут
 
 ### 1. Получите API ключ
 
-```
+```text
 https://platform.openai.com/api-keys
 → Create new secret key
 → Скопируйте ключ (sk-proj-...)
@@ -14,7 +14,7 @@ https://platform.openai.com/api-keys
 
 ### 2. Настройте биллинг
 
-```
+```text
 https://platform.openai.com/account/billing/overview
 → Add payment method
 → Set limit ($5-10 для начала)
@@ -49,11 +49,14 @@ pnpm dev
 ## 🎯 Рекомендуемые настройки
 
 ```bash
+
 # Минимальная конфигурация
+
 OPENAI_API_KEY=sk-proj-...
 NEXT_PUBLIC_FEATURE_AI_V1=true
 
 # Оптимальная для разработки
+
 OPENAI_MODEL=gpt-3.5-turbo
 OPENAI_MAX_TOKENS=1000
 OPENAI_TEMPERATURE=0.7
@@ -70,7 +73,7 @@ OPENAI_TEMPERATURE=0.7
 
 ---
 
-## 🔧 Проблемы?
+## 🔧 Проблемы
 
 **"API key not set"**
 → Проверьте `.env.local`, перезапустите сервер
@@ -81,7 +84,7 @@ OPENAI_TEMPERATURE=0.7
 **"Insufficient quota"**
 → Добавьте баланс в биллинге
 
-**Подробнее:** [docs/AI_SETUP_GUIDE.md](docs/AI_SETUP_GUIDE.md)
+**Подробнее:** [../AI_SETUP_GUIDE.md](../AI_SETUP_GUIDE.md)
 
 ---
 
@@ -94,5 +97,5 @@ OPENAI_TEMPERATURE=0.7
 
 ---
 
-**Готово!** Полная документация: [docs/AI_SETUP_GUIDE.md](docs/AI_SETUP_GUIDE.md)
+**Готово!** Полная документация: [../AI_SETUP_GUIDE.md](../AI_SETUP_GUIDE.md)
 

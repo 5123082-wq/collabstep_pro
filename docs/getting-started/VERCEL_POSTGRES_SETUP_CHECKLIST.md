@@ -34,37 +34,46 @@ Vercel автоматически создаст переменные окруж
 
 В настройках проекта на Vercel (Settings → Environment Variables) добавьте:
 
-#### Обязательные переменные:
+#### Обязательные переменные
 
 ```env
+
 # Database (используйте POSTGRES_URL, созданный автоматически)
+
 DATABASE_URL=$POSTGRES_URL
 
 # Auth Storage (включает использование БД)
+
 AUTH_STORAGE=db
 
 # NextAuth
+
 AUTH_SECRET=<сгенерируйте: openssl rand -base64 32>
 NEXTAUTH_URL=https://your-domain.vercel.app
 
 # Google OAuth (если используете)
+
 GOOGLE_CLIENT_ID=<ваш Google Client ID>
 GOOGLE_CLIENT_SECRET=<ваш Google Client Secret>
 ```
 
-#### Рекомендуемые переменные:
+#### Рекомендуемые переменные
 
 ```env
+
 # Базовые настройки
+
 NAV_V1=on
 APP_LOCALE=ru
 FEATURE_PROJECTS_V1=1
 AUTH_DEV=on
 
 # Finance Storage
+
 FIN_EXPENSES_STORAGE=db
 
 # Демо-администратор
+
 DEMO_ADMIN_EMAIL=admin.demo@collabverse.test
 DEMO_ADMIN_PASSWORD=admin.demo
 ```
@@ -76,31 +85,39 @@ DEMO_ADMIN_PASSWORD=admin.demo
 Создайте/обновите файл `apps/web/.env.local`:
 
 ```env
+
 # Database
+
 POSTGRES_URL=<ваш POSTGRES_URL из Vercel>
 DATABASE_URL=$POSTGRES_URL
 
 # Auth Storage
+
 AUTH_STORAGE=db
 
 # NextAuth
+
 AUTH_SECRET=<сгенерируйте: openssl rand -base64 32>
 NEXTAUTH_URL=http://localhost:3000
 
 # Google OAuth (если используете)
+
 GOOGLE_CLIENT_ID=<ваш Google Client ID>
 GOOGLE_CLIENT_SECRET=<ваш Google Client Secret>
 
 # Базовые настройки
+
 NAV_V1=on
 APP_LOCALE=ru
 FEATURE_PROJECTS_V1=1
 AUTH_DEV=on
 
 # Finance Storage
+
 FIN_EXPENSES_STORAGE=db
 
 # Демо-администратор
+
 DEMO_ADMIN_EMAIL=admin.demo@collabverse.test
 DEMO_ADMIN_PASSWORD=admin.demo
 ```
@@ -110,19 +127,25 @@ DEMO_ADMIN_PASSWORD=admin.demo
 #### Вариант A: Через Vercel CLI (рекомендуется)
 
 ```bash
+
 # Установите Vercel CLI (если еще не установлен)
+
 npm i -g vercel
 
 # Войдите в Vercel
+
 vercel login
 
 # Подключитесь к проекту
+
 vercel link
 
 # Получите переменные окружения
+
 vercel env pull .env.local
 
 # Примените миграции
+
 cd apps/api
 pnpm db:push
 ```
@@ -186,11 +209,15 @@ WHERE email = 'admin.demo@collabverse.test';
 #### 7.1 Локально
 
 ```bash
+
 # Запустите сервер
+
 pnpm dev
 
 # Откройте http://localhost:3000
+
 # Попробуйте войти как admin.demo@collabverse.test
+
 ```
 
 #### 7.2 На Vercel
@@ -290,11 +317,11 @@ pnpm drizzle-kit studio
 1. Проверьте, что администратор создан в БД:
    ```sql
    SELECT * FROM "user" WHERE email = 'admin.demo@collabverse.test';
-   ```
+```text
 2. Проверьте, что у администратора есть пароль:
    ```sql
    SELECT "passwordHash" IS NOT NULL FROM "user" WHERE email = 'admin.demo@collabverse.test';
-   ```
+```text
 3. Запустите скрипт очистки для создания/обновления администратора:
    ```bash
    npx tsx scripts/cleanup-users-db.ts
@@ -315,7 +342,7 @@ pnpm drizzle-kit studio
 - [Vercel Postgres Documentation](https://vercel.com/docs/storage/vercel-postgres)
 - [NextAuth.js Documentation](https://next-auth.js.org/)
 - [Drizzle ORM Documentation](https://orm.drizzle.team/)
-- [Подробное руководство по настройке Vercel Postgres](../docs/getting-started/vercel-postgres-setup.md)
+- [Подробное руководство по настройке Vercel Postgres](../getting-started/vercel-postgres-setup.md)
 
 ## ✅ Финальная проверка
 

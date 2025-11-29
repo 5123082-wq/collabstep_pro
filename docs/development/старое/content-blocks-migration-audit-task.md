@@ -153,7 +153,9 @@
 
 **Команда для поиска:**
 ```bash
+
 # Найти все использования старых стилей
+
 grep -r "rounded-[23]xl border border-neutral-[89]00.*bg-neutral-950" apps/web --include="*.tsx" --include="*.ts" | grep -v "content-block" | grep -v "node_modules"
 ```
 
@@ -339,16 +341,21 @@ grep -r "rounded-[23]xl border border-neutral-[89]00.*bg-neutral-950" apps/web -
 ### Команды для поиска
 
 ```bash
+
 # Найти все использования старых стилей блоков контента
+
 grep -r "rounded-[23]xl border border-neutral-[89]00.*bg-neutral-950" apps/web --include="*.tsx" --include="*.ts" | grep -v "content-block" | grep -v "node_modules" | grep -v ".md"
 
 # Найти все использования ContentBlock
+
 grep -r "ContentBlock" apps/web --include="*.tsx" --include="*.ts" | grep -v "node_modules"
 
 # Найти все использования CSS-классов content-block
+
 grep -r "content-block" apps/web --include="*.tsx" --include="*.ts" | grep -v "node_modules" | grep -v ".md"
 
 # Найти все файлы с блоками контента
+
 find apps/web -name "*.tsx" -o -name "*.ts" | xargs grep -l "rounded.*border.*bg-" | grep -v "node_modules"
 ```
 
@@ -367,7 +374,7 @@ find apps/web -name "*.tsx" -o -name "*.ts" | xargs grep -l "rounded.*border.*bg
 
 ## Критерии успешного аудита
 
-### ✅ Аудит считается успешным, если:
+### ✅ Аудит считается успешным, если
 
 1. **Все этапы проверены:**
    - Все 6 этапов миграции проверены
@@ -394,7 +401,7 @@ find apps/web -name "*.tsx" -o -name "*.ts" | xargs grep -l "rounded.*border.*bg
 
 ## Ожидаемые результаты
 
-### Отчет должен содержать:
+### Отчет должен содержать
 
 1. **Сводку результатов:**
    - Общий процент миграции

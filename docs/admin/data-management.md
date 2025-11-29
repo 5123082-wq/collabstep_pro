@@ -35,10 +35,13 @@
 Используйте скрипт `clear-all-data.ts` для удаления через API:
 
 ```bash
+
 # Запустите сервер Next.js (если еще не запущен)
+
 pnpm dev
 
 # В другом терминале запустите скрипт
+
 npx tsx scripts/clear-all-data.ts
 ```
 
@@ -143,7 +146,7 @@ npx tsx scripts/clear-all-data.ts
 
 ## Структура файлов
 
-```
+```text
 apps/web/
   app/
     api/
@@ -233,7 +236,6 @@ pnpm dev
 
 ## Дополнительные ресурсы
 
-- [Админ-панель README](../app/admin/README.md)
+- [Админ-панель README](../../../apps/web/app/(app)/admin/README.md)
 - [API Documentation](../getting-started/quick-start.md)
-- [Аутентификация и авторизация](../auth/roles.md)
 

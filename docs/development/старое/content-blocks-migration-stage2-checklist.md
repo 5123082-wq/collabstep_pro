@@ -61,6 +61,7 @@
 ### Приоритет 1: Страницы PM (Project Management)
 
 #### 1.1. `app/(app)/pm/page.tsx`
+
 - **Статус:** ⏳ Ожидает миграции
 - **Блоки для миграции:**
   - [ ] Строка 138: Блок ошибки `rounded-3xl border border-rose-500/40 bg-rose-500/10 p-6`
@@ -76,6 +77,7 @@
   - [ ] Обновлен roadmap
 
 #### 1.2. `app/(app)/pm/tasks/page.tsx`
+
 - **Статус:** ⏳ Ожидает миграции
 - **Блоки для миграции:**
   - [ ] Строка 227: Переключатель представлений `rounded-xl border border-neutral-800 bg-neutral-950/60 p-1` (НЕ ТРОГАТЬ - это UI элемент, не контент-блок)
@@ -95,6 +97,7 @@
   - [ ] Обновлен roadmap
 
 #### 1.3. `app/(app)/pm/projects/[id]/page.tsx`
+
 - **Статус:** ⏳ Ожидает миграции
 - **Блоки для миграции:**
   - [ ] Строка 543: Модальное окно/блок `rounded-2xl border border-neutral-800 bg-neutral-950 p-6` (проверить контекст)
@@ -114,6 +117,7 @@
 ### Приоритет 2: Страницы маркетинга
 
 #### 2.1. `app/(app)/marketing/research/page.tsx`
+
 - **Статус:** ⏳ Ожидает миграции
 - **Блоки для миграции:**
   - [ ] Строка 128: Блок `rounded-2xl border border-neutral-900/70 bg-neutral-950/60 p-4`
@@ -134,6 +138,7 @@
   - [ ] Обновлен roadmap
 
 #### 2.2. `app/(app)/marketing/campaigns/page.tsx`
+
 - **Статус:** ⏳ Ожидает миграции
 - **Блоки для миграции:**
   - [ ] Строка 112: Блок колонки `rounded-2xl border border-neutral-900/80 bg-neutral-950/60 p-4`
@@ -156,6 +161,7 @@
   - [ ] Обновлен roadmap
 
 #### 2.3. `app/(app)/marketing/content-seo/page.tsx`
+
 - **Статус:** ⏳ Ожидает миграции
 - **Блоки для миграции:**
   - [ ] Строка 109: Блок элемента `rounded-2xl border border-neutral-900/70 bg-neutral-950/60 p-4`
@@ -174,6 +180,7 @@
   - [ ] Обновлен roadmap
 
 #### 2.4. `app/(app)/marketing/analytics/page.tsx`
+
 - **Статус:** ⏳ Ожидает миграции
 - **Блоки для миграции:**
   - [ ] Строка 111: Блок интеграции `rounded-2xl border border-neutral-900/70 bg-neutral-950/60 p-4`
@@ -191,6 +198,7 @@
   - [ ] Обновлен roadmap
 
 #### 2.5. `app/(app)/marketing/overview/page.tsx`
+
 - **Статус:** ⏳ Ожидает миграции
 - **Блоки для миграции:**
   - [ ] Строка 287: Блок цели `rounded-2xl border border-neutral-900/80 bg-neutral-950/60 p-4`
@@ -216,6 +224,7 @@
 ### Приоритет 3: Страницы финансов
 
 #### 3.1. `app/(app)/finance/expenses/page-client.tsx`
+
 - **Статус:** ⏳ Ожидает миграции
 - **Блоки для миграции:**
   - [ ] Строка 680: Секция фильтров `rounded-3xl border border-neutral-900 bg-neutral-950/60 p-6`
@@ -241,6 +250,7 @@
 ### Приоритет 4: Страницы AI Hub
 
 #### 4.1. `app/(app)/ai-hub/agents/page.tsx`
+
 - **Статус:** ⏳ Ожидает миграции
 - **Блоки для миграции:**
   - [ ] Строка 255: Карточка агента `rounded-3xl border border-neutral-900 bg-neutral-950/70 p-6` с `hover:border-indigo-500/40` и `cursor-pointer`
@@ -262,6 +272,7 @@
 ### Приоритет 5: Страницы админки (низкий приоритет)
 
 #### 5.1. `app/(app)/admin/page.tsx`
+
 - **Статус:** ⏳ Ожидает миграции
 - **Блоки для миграции:**
   - [ ] Строка 131: Блок `rounded-2xl border border-neutral-800 bg-neutral-950/60 p-6`
@@ -275,6 +286,7 @@
   - [ ] Обновлен roadmap
 
 #### 5.2. `app/(app)/admin/data/page.tsx`
+
 - **Статус:** ⏳ Ожидает миграции
 - **Блоки для миграции:**
   - [ ] Строка 151: Блок `rounded-2xl border border-neutral-800 bg-neutral-950/60 p-6`
@@ -292,6 +304,7 @@
   - [ ] Обновлен roadmap
 
 #### 5.3. `app/(app)/admin/users/page.tsx`
+
 - **Статус:** ⏳ Ожидает миграции
 - **Блоки для миграции:**
   - [ ] Строка 276: Блок `rounded-2xl border border-neutral-800 bg-neutral-950/60 p-4`
@@ -309,6 +322,7 @@
   - [ ] Обновлен roadmap
 
 #### 5.4. `app/(app)/admin/audit/page.tsx`
+
 - **Статус:** ⏳ Ожидает миграции
 - **Блоки для миграции:**
   - [ ] Строка 111: Блок `rounded-2xl border border-neutral-800 bg-neutral-950/60 p-4`
@@ -325,6 +339,7 @@
   - [ ] Обновлен roadmap
 
 #### 5.5. `app/(app)/admin/features/page.tsx`
+
 - **Статус:** ⏳ Ожидает миграции
 - **Блоки для миграции:**
   - [ ] Строка 216: Блок `rounded-2xl border border-neutral-800 bg-neutral-950/60 p-4`
@@ -342,6 +357,7 @@
   - [ ] Обновлен roadmap
 
 #### 5.6. `app/(app)/admin/releases/page.tsx`
+
 - **Статус:** ⏳ Ожидает миграции
 - **Блоки для миграции:**
   - [ ] Строка 76: Интерактивный блок `rounded-2xl border border-neutral-800 bg-neutral-950/60 p-6` с `hover:border-indigo-500/40`
@@ -357,6 +373,7 @@
   - [ ] Обновлен roadmap
 
 #### 5.7. `app/(app)/admin/roles/page.tsx`
+
 - **Статус:** ⏳ Ожидает миграции
 - **Блоки для миграции:**
   - [ ] Строка 106: Интерактивный блок `rounded-2xl border border-neutral-800 bg-neutral-950/60 p-6` с `hover:border-indigo-500/40`
@@ -371,6 +388,7 @@
   - [ ] Обновлен roadmap
 
 #### 5.8. `app/(app)/admin/segments/page.tsx`
+
 - **Статус:** ⏳ Ожидает миграции
 - **Блоки для миграции:**
   - [ ] Строка 85: Интерактивный блок `rounded-2xl border border-neutral-800 bg-neutral-950/60 p-6` с `hover:border-indigo-500/40`
@@ -386,6 +404,7 @@
   - [ ] Обновлен roadmap
 
 #### 5.9. `app/(app)/admin/support/page.tsx`
+
 - **Статус:** ⏳ Ожидает миграции
 - **Блоки для миграции:**
   - [ ] Строка 51: Интерактивный блок `rounded-2xl border border-neutral-800 bg-neutral-950/60 p-6` с `hover:border-indigo-500/40`
@@ -417,6 +436,7 @@ import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 ### Шаг 3: Замена блоков
 
 #### Основной блок
+
 ```tsx
 // До
 <section className="rounded-3xl border border-neutral-900 bg-neutral-950/60 p-6">
@@ -431,6 +451,7 @@ import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 ```
 
 #### Вложенный блок
+
 ```tsx
 // До
 <div className="rounded-2xl border border-neutral-800 bg-neutral-950/60 p-6">
@@ -444,6 +465,7 @@ import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 ```
 
 #### Пустое состояние
+
 ```tsx
 // До
 <div className="rounded-2xl border border-dashed border-neutral-800 bg-neutral-950/60 p-12 text-center">
@@ -457,6 +479,7 @@ import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 ```
 
 #### Блок с ошибкой
+
 ```tsx
 // До
 <div className="rounded-3xl border border-rose-500/40 bg-rose-500/10 p-6 text-sm text-rose-100">
@@ -470,6 +493,7 @@ import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 ```
 
 #### Интерактивный блок
+
 ```tsx
 // До
 <div
@@ -546,11 +570,13 @@ import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 ## 📊 Прогресс миграции
 
 ### Приоритет 1: PM (0/3)
+
 - [ ] `app/(app)/pm/page.tsx`
 - [ ] `app/(app)/pm/tasks/page.tsx`
 - [ ] `app/(app)/pm/projects/[id]/page.tsx`
 
 ### Приоритет 2: Маркетинг (0/5)
+
 - [ ] `app/(app)/marketing/research/page.tsx`
 - [ ] `app/(app)/marketing/campaigns/page.tsx`
 - [ ] `app/(app)/marketing/content-seo/page.tsx`
@@ -558,12 +584,15 @@ import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 - [ ] `app/(app)/marketing/overview/page.tsx`
 
 ### Приоритет 3: Финансы (0/1)
+
 - [ ] `app/(app)/finance/expenses/page-client.tsx`
 
 ### Приоритет 4: AI Hub (0/1)
+
 - [ ] `app/(app)/ai-hub/agents/page.tsx`
 
 ### Приоритет 5: Админка (0/9)
+
 - [ ] `app/(app)/admin/page.tsx`
 - [ ] `app/(app)/admin/data/page.tsx`
 - [ ] `app/(app)/admin/users/page.tsx`

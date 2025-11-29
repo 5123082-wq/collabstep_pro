@@ -13,13 +13,16 @@
 В **Settings** → **Environment Variables** добавьте:
 
 ```env
+
 # Обязательно
+
 DATABASE_URL=$POSTGRES_URL
 AUTH_STORAGE=db
 AUTH_SECRET=<сгенерируйте: openssl rand -base64 32>
 NEXTAUTH_URL=https://your-domain.vercel.app
 
 # Демо-администратор
+
 DEMO_ADMIN_EMAIL=admin.demo@collabverse.test
 DEMO_ADMIN_PASSWORD=admin.demo
 ```
@@ -29,17 +32,22 @@ DEMO_ADMIN_PASSWORD=admin.demo
 **Вариант A: Через Vercel CLI (рекомендуется)**
 
 ```bash
+
 # Установите Vercel CLI
+
 npm i -g vercel
 
 # Войдите и подключитесь
+
 vercel login
 vercel link
 
 # Получите переменные окружения
+
 vercel env pull .env.local
 
 # Примените миграции
+
 cd apps/api
 pnpm db:push
 ```
@@ -67,10 +75,13 @@ npx tsx scripts/cleanup-users-db.ts
 ### 5. Проверьте работу
 
 ```bash
+
 # Локально
+
 pnpm dev
 
 # Откройте http://localhost:3000
+
 # Войдите как: admin.demo@collabverse.test / admin.demo
 ```
 
@@ -89,19 +100,23 @@ pnpm dev
 ## 🔧 Команды
 
 ```bash
+
 # Генерация миграций (если изменили схему)
+
 cd apps/api && pnpm db:generate
 
 # Применение миграций
+
 cd apps/api && pnpm db:push
 
 # Просмотр схемы в браузере
+
 cd apps/api && pnpm drizzle-kit studio
 ```
 
 ## 📚 Дополнительно
 
-- [Подробное руководство по настройке Vercel Postgres](./docs/getting-started/vercel-postgres-setup.md)
+- [Подробное руководство по настройке Vercel Postgres](./vercel-postgres-setup.md)
 - [Чеклист настройки](./VERCEL_POSTGRES_SETUP_CHECKLIST.md)
-- [Руководство по очистке базы данных](./DATABASE_CLEANUP_GUIDE.md)
+- [Руководство по очистке базы данных](../runbooks/DATABASE_CLEANUP_GUIDE.md)
 

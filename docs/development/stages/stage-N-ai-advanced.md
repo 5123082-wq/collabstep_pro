@@ -398,7 +398,8 @@ export async function executeBulkOperation(operation: BulkOperation): Promise<vo
 
 ## Файлы для создания/изменения
 
-### Новые файлы:
+### Новые файлы
+
 - `apps/api/src/services/ai-planning-service.ts`
 - `apps/web/lib/ai/planning.ts`
 - `apps/web/lib/ai/assignment-recommender.ts`
@@ -411,7 +412,8 @@ export async function executeBulkOperation(operation: BulkOperation): Promise<vo
 - `apps/web/tests/unit/ai-planning.spec.ts`
 - `apps/web/tests/e2e/ai-advanced.spec.ts`
 
-### Изменённые файлы:
+### Изменённые файлы
+
 - Страница проекта — добавить AI планирование
 - Диаграмма Ганта — интеграция анализа загруженности
 - Форма задачи — генерация подзадач
@@ -425,30 +427,37 @@ export async function executeBulkOperation(operation: BulkOperation): Promise<vo
 **Шаблон отчёта:**
 
 ```markdown
+
 ### Stage N: Расширенная функциональность AI
 
 **Дата завершения:** YYYY-MM-DD  
 **Статус:** ✅ ЗАВЕРШЁН
 
-#### Выполненные задачи:
+#### Выполненные задачи
+
 - [Список выполненных задач]
 
-#### Созданные файлы:
+#### Созданные файлы
+
 - [Список новых файлов]
 
-#### Изменённые файлы:
+#### Изменённые файлы
+
 - [Список изменённых файлов]
 
-#### Проблемы и решения:
+#### Проблемы и решения
+
 - [Описание проблем и их решений]
 
-#### Метрики:
+#### Метрики
+
 - Покрытие тестами: X%
 - Время выполнения: X дней
 - Количество багов: X
 - Средняя стоимость запросов к AI: $X
 
-#### Следующие шаги:
+#### Следующие шаги
+
 - [Что делать дальше]
 ```
 

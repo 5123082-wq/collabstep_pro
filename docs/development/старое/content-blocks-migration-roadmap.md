@@ -487,20 +487,26 @@ import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 #### Найти все использования старого стиля
 
 ```bash
+
 # Основной блок
+
 grep -r "rounded-3xl.*border.*border-neutral-900.*bg-neutral-950/70.*p-6" apps/web
 
 # Вложенный блок
+
 grep -r "rounded-2xl.*border.*border-neutral-800.*bg-neutral-950/60" apps/web
 
 # Маленький блок
+
 grep -r "rounded-xl.*border.*border-neutral-800.*bg-neutral-950/60.*p-4" apps/web
 ```
 
 #### Найти все файлы с блоками
 
 ```bash
+
 # Все файлы с rounded-2xl или rounded-3xl
+
 grep -r "rounded-\(2xl\|3xl\)" apps/web --include="*.tsx" --include="*.ts" | cut -d: -f1 | sort -u
 ```
 

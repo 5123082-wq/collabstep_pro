@@ -66,7 +66,7 @@ pnpm dev
 
 ## Структура проекта
 
-```
+```text
 collabstep-new-3/
 ├── apps/
 │   ├── api/          # Backend API
@@ -104,16 +104,15 @@ npx tsx scripts/cleanup-users-db.ts
 - Переназначает все организации и проекты на демо-администратора
 - Настраивает права администратора
 
-Подробнее см. [DATABASE_CLEANUP_GUIDE.md](../../DATABASE_CLEANUP_GUIDE.md)
+Подробнее см. [DATABASE_CLEANUP_GUIDE.md](../runbooks/DATABASE_CLEANUP_GUIDE.md)
 
 ## Следующие шаги
 
 - Прочитайте [полное руководство по настройке](setup.md)
 - Настройте Vercel Postgres и Google OAuth по [подробной инструкции](vercel-postgres-setup.md)
-- Изучите [дорожную карту проекта](../development/PLAN.md)
 - Ознакомьтесь с [архитектурой системы](../architecture/system-analysis.md)
 
-## Возникли проблемы?
+## Возникли проблемы
 
 Если что-то не работает:
 

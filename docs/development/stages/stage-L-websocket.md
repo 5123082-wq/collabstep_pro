@@ -400,7 +400,8 @@ export function useWebSocket(projectId: string | null) {
 
 ## Файлы для создания/изменения
 
-### Новые файлы:
+### Новые файлы
+
 - `apps/web/app/api/ws/route.ts` (или отдельный WebSocket сервер)
 - `apps/web/lib/websocket/client.ts`
 - `apps/web/lib/websocket/hooks.ts`
@@ -408,14 +409,16 @@ export function useWebSocket(projectId: string | null) {
 - `apps/web/tests/unit/websocket.spec.ts`
 - `apps/web/tests/e2e/websocket.spec.ts`
 
-### Изменённые файлы:
+### Изменённые файлы
+
 - `apps/web/components/pm/TasksBoardView.tsx` — добавить WebSocket
 - `apps/web/components/pm/TaskComments.tsx` — добавить WebSocket
 - `apps/web/components/pm/ProjectChat.tsx` — заменить polling на WebSocket
 - `apps/web/components/right-rail/NotificationsPanel.tsx` — добавить WebSocket
 - API endpoints — добавить рассылку событий после операций
 
-### Зависимости (package.json):
+### Зависимости (package.json)
+
 - `socket.io` или `ws` (в зависимости от выбранной технологии)
 
 ---
@@ -427,29 +430,36 @@ export function useWebSocket(projectId: string | null) {
 **Шаблон отчёта:**
 
 ```markdown
+
 ### Stage L: Real-time обновления (WebSocket)
 
 **Дата завершения:** YYYY-MM-DD  
 **Статус:** ✅ ЗАВЕРШЁН
 
-#### Выполненные задачи:
+#### Выполненные задачи
+
 - [Список выполненных задач]
 
-#### Созданные файлы:
+#### Созданные файлы
+
 - [Список новых файлов]
 
-#### Изменённые файлы:
+#### Изменённые файлы
+
 - [Список изменённых файлов]
 
-#### Проблемы и решения:
+#### Проблемы и решения
+
 - [Описание проблем и их решений]
 
-#### Метрики:
+#### Метрики
+
 - Покрытие тестами: X%
 - Время выполнения: X дней
 - Количество багов: X
 
-#### Следующие шаги:
+#### Следующие шаги
+
 - [Что делать дальше]
 ```
 

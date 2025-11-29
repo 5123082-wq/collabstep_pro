@@ -21,6 +21,7 @@
 **Найденные тестовые администраторы:**
 
 #### 1.1. Алина Админ
+
 - **ID**: `00000000-0000-0000-0000-000000000001`
 - **Email**: `admin.demo@collabverse.test`
 - **Имя**: Алина Админ
@@ -49,6 +50,7 @@
 **Найденные тестовые пользователи:**
 
 #### 2.1. Игорь Участник
+
 - **ID**: `00000000-0000-0000-0000-000000000002`
 - **Email**: `user.demo@collabverse.test`
 - **Имя**: Игорь Участник
@@ -65,6 +67,7 @@
 - **Константа**: `TEST_USER_ID`
 
 #### 2.2. Мария Финансы
+
 - **ID**: `00000000-0000-0000-0000-000000000003`
 - **Email**: `finance.pm@collabverse.test`
 - **Имя**: Мария Финансы
@@ -80,6 +83,7 @@
 - **Константа**: `TEST_FINANCE_USER_ID`
 
 #### 2.3. Диана Дизайн
+
 - **ID**: `00000000-0000-0000-0000-000000000004`
 - **Email**: `designer.demo@collabverse.test`
 - **Имя**: Диана Дизайн
@@ -106,6 +110,7 @@
 **Найденные AI-агенты:**
 
 #### 3.1. AI Ассистент
+
 - **Email**: `ai.assistant@collabverse.ai`
 - **Имя**: AI Ассистент
 - **Должность**: AI-ассистент с OpenAI
@@ -170,21 +175,25 @@
 
 ## Файлы, связанные с созданием пользователей
 
-### Seed-файлы и инициализация:
+### Seed-файлы и инициализация
+
 1. `scripts/seed-demo-users.ts` - создает базовых демо-пользователей
 2. `apps/web/lib/auth/init-demo-accounts.ts` - инициализирует демо-аккаунты с паролями
 3. `apps/api/src/data/memory.ts` - предустановленные пользователи в памяти
 
-### API регистрации:
+### API регистрации
+
 1. `apps/web/app/api/auth/register/route.ts` - обработка регистрации через форму
 2. `apps/web/app/(marketing)/register/register-form.tsx` - форма регистрации
 
-### Репозитории:
+### Репозитории
+
 1. `apps/api/src/repositories/users-repository.ts` - репозиторий для памяти
 2. `apps/api/src/repositories/users-db-repository.ts` - репозиторий для базы данных
 3. `apps/api/src/repositories/ai-agents-repository.ts` - создание AI-агентов
 
-### Константы:
+### Константы
+
 1. `apps/api/src/data/memory.ts` - константы тестовых ID
 2. `apps/api/src/index.ts` - экспорт констант
 
