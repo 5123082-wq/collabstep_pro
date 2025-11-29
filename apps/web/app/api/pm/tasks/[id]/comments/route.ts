@@ -38,7 +38,7 @@ export async function GET(
 
     // Проверка доступа к проекту
     // Теперь getProjectRole правильно определяет владельца проекта как 'owner'
-    const role = getProjectRole(task.projectId, auth.userId);
+    const role = await getProjectRole(task.projectId, auth.userId);
     
     // Просмотр комментариев доступен всем, кто имеет доступ к проекту (включая 'viewer')
     // Но если пользователь вообще не имеет доступа, блокируем
@@ -132,7 +132,7 @@ export async function POST(
     }
 
     // Проверка доступа к проекту
-    const role = getProjectRole(task.projectId, auth.userId);
+    const role = await getProjectRole(task.projectId, auth.userId);
     if (role === 'viewer') {
       return jsonError('ACCESS_DENIED', { status: 403 });
     }

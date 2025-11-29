@@ -57,7 +57,7 @@ export async function generateProjectChatAIResponse(
   question: string
 ): Promise<string> {
   // Получение контекста проекта
-  const project = projectsRepository.findById(projectId);
+  const project = await projectsRepository.findById(projectId);
   if (!project) {
     return 'Извините, проект не найден.';
   }

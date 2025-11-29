@@ -14,7 +14,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
     return jsonError('NOT_FOUND', { status: 404 });
   }
 
-  const role = getProjectRole(expense.projectId, auth.userId);
+  const role = await getProjectRole(expense.projectId, auth.userId);
   if (role === 'viewer') {
     return jsonError('FORBIDDEN', { status: 403 });
   }

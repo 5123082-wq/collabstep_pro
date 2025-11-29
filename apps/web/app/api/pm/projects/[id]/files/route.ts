@@ -59,7 +59,7 @@ export async function GET(
     }
 
     // Проверка доступа к проекту
-    const role = getProjectRole(projectId, auth.userId);
+    const role = await getProjectRole(projectId, auth.userId);
     if (role === 'viewer') {
       return jsonError('ACCESS_DENIED', { status: 403 });
     }
@@ -211,7 +211,7 @@ export async function POST(
     }
 
     // Проверка доступа к проекту
-    const role = getProjectRole(projectId, auth.userId);
+    const role = await getProjectRole(projectId, auth.userId);
     if (role === 'viewer') {
       return jsonError('ACCESS_DENIED', { status: 403 });
     }

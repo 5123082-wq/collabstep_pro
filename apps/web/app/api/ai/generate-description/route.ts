@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     let projectContext: { projectName?: string; projectDescription?: string } = {};
 
     if (projectId) {
-      const project = projectsRepository.findById(projectId);
+      const project = await projectsRepository.findById(projectId);
       if (project) {
         // Проверяем, есть ли доступ к проекту
         const members = await projectsRepository.listMembers(projectId);

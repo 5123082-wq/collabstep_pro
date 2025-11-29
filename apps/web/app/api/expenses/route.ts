@@ -89,7 +89,7 @@ function collectAccessibleProjects(userId: string) {
   const projects = projectsRepository.list();
   const accessMap = new Map<string, ReturnType<typeof getProjectRole>>();
   for (const project of projects) {
-    const role = getProjectRole(project.id, userId);
+    const role = await getProjectRole(project.id, userId);
     if (role !== 'viewer') {
       accessMap.set(project.id, role);
     }
@@ -146,7 +146,7 @@ export async function GET(request: Request) {
   const accessMap = collectAccessibleProjects(auth.userId);
 
   if (filters.projectId) {
-    const role = getProjectRole(filters.projectId, auth.userId);
+    const role = await getProjectRole(filters.projectId, auth.userId);
     if (role === 'viewer') {
       return jsonOk({ items: [], pagination: { page, pageSize, total: 0, totalPages: 1 } });
     }
@@ -198,7 +198,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const role = getProjectRole(projectId, auth.userId);
+    const role = await getProjectRole(projectId, auth.userId);
     assertProjectAccess(role, ['owner', 'admin', 'member']);
 
     const idempotencyKey = request.headers.get('x-idempotency-key');

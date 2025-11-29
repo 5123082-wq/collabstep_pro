@@ -51,7 +51,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     return jsonError('NOT_FOUND', { status: 404 });
   }
 
-  const role = getProjectRole(current.projectId, auth.userId);
+  const role = await getProjectRole(current.projectId, auth.userId);
   if (role === 'viewer') {
     return jsonError('FORBIDDEN', { status: 403 });
   }

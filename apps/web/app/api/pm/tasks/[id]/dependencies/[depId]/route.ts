@@ -36,7 +36,7 @@ export async function DELETE(
     }
 
     // Проверка доступа к проекту
-    const role = getProjectRole(task.projectId, auth.userId);
+    const role = await getProjectRole(task.projectId, auth.userId);
     if (!role || role === 'viewer') {
       return jsonError('ACCESS_DENIED', { status: 403 });
     }

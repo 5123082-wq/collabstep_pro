@@ -18,13 +18,13 @@ export async function POST(
     return jsonError('UNAUTHORIZED', { status: 401 });
   }
 
-  const role = getProjectRole(params.id, auth.userId);
+  const role = await getProjectRole(params.id, auth.userId);
   if (role !== 'owner' && role !== 'admin') {
     return jsonError('ACCESS_DENIED', { status: 403 });
   }
 
   try {
-    const project = projectsRepository.findById(params.id);
+    const project = await projectsRepository.findById(params.id);
     if (!project) {
       return jsonError('PROJECT_NOT_FOUND', { status: 404 });
     }
@@ -88,13 +88,13 @@ export async function PATCH(
     return jsonError('UNAUTHORIZED', { status: 401 });
   }
 
-  const role = getProjectRole(params.id, auth.userId);
+  const role = await getProjectRole(params.id, auth.userId);
   if (role !== 'owner' && role !== 'admin') {
     return jsonError('ACCESS_DENIED', { status: 403 });
   }
 
   try {
-    const project = projectsRepository.findById(params.id);
+    const project = await projectsRepository.findById(params.id);
     if (!project) {
       return jsonError('PROJECT_NOT_FOUND', { status: 404 });
     }
@@ -161,13 +161,13 @@ export async function DELETE(
     return jsonError('UNAUTHORIZED', { status: 401 });
   }
 
-  const role = getProjectRole(params.id, auth.userId);
+  const role = await getProjectRole(params.id, auth.userId);
   if (role !== 'owner' && role !== 'admin') {
     return jsonError('ACCESS_DENIED', { status: 403 });
   }
 
   try {
-    const project = projectsRepository.findById(params.id);
+    const project = await projectsRepository.findById(params.id);
     if (!project) {
       return jsonError('PROJECT_NOT_FOUND', { status: 404 });
     }

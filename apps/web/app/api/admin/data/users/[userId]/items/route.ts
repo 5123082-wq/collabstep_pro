@@ -81,11 +81,11 @@ export async function GET(
       id: task.id,
       title: task.title,
       status: task.status,
-      priority: task.priority,
+      ...(task.priority ? { priority: task.priority } : {}),
       projectId: task.projectId,
-      projectKey: project?.key,
-      projectTitle: project?.title,
-      assigneeId: task.assigneeId,
+      ...(project?.key ? { projectKey: project.key } : {}),
+      ...(project?.title ? { projectTitle: project.title } : {}),
+      ...(task.assigneeId ? { assigneeId: task.assigneeId } : {}),
       reason: 'project_owner',
       createdAt: task.createdAt,
       updatedAt: task.updatedAt
@@ -96,16 +96,16 @@ export async function GET(
     if (dedupTasks.has(task.id)) {
       continue;
     }
-    const project = projectsRepository.findById(task.projectId);
+    const project = await projectsRepository.findById(task.projectId);
     dedupTasks.set(task.id, {
       type: 'task',
       id: task.id,
       title: task.title,
       status: task.status,
-      priority: task.priority,
+      ...(task.priority ? { priority: task.priority } : {}),
       projectId: task.projectId,
-      projectKey: project?.key,
-      projectTitle: project?.title,
+      ...(project?.key ? { projectKey: project.key } : {}),
+      ...(project?.title ? { projectTitle: project.title } : {}),
       assigneeId: task.assigneeId,
       reason: 'assignee',
       createdAt: task.createdAt,
