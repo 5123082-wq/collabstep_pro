@@ -128,3 +128,4 @@ export { walletRepository, type WalletType, type Currency, type TransactionType 
 export { walletService, WalletService } from './services/wallet-service';
 export { contractService, ContractService } from './services/contract-service';
 export { contractsRepository, ContractsRepository, type ContractStatus } from './repositories/contracts-repository';
+export { pmPgHydration } from './storage/pm-pg-bootstrap';

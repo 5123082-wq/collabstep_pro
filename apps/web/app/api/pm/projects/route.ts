@@ -8,10 +8,10 @@ import {
   DEFAULT_WORKSPACE_ID,
   DEFAULT_WORKSPACE_USER_ID,
   isAdminUserId,
+  pmPgHydration,
   type ExpenseStatus,
   type TaskStatus
 } from '@collabverse/api';
-import { pmPgHydration } from '@collabverse/api/src/storage/pm-pg-bootstrap';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { parseProjectFilters, type ProjectScope } from '@/lib/pm/filters';
 import { getProjectsOverview } from '@/lib/pm/projects-overview.server';
