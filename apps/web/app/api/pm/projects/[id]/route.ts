@@ -5,8 +5,11 @@ import {
   projectsRepository,
   tasksRepository,
   usersRepository,
-  DEFAULT_WORKSPACE_ID
+  DEFAULT_WORKSPACE_ID,
+  deletionService,
+  isAdminUserId
 } from '@collabverse/api';
+import { isDemoAdminEmail } from '@/lib/auth/demo-session';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { transformProjectAsync as transformProjectFromAggregator, buildTaskMetrics } from '@/lib/pm/stage2-aggregator';
 // Project type removed as it was unused
@@ -32,12 +35,12 @@ export async function GET(
   }
 
   // Try to find project by ID first
-  let apiProject = projectsRepository.findById(params.id);
+  let apiProject = await projectsRepository.findById(params.id);
 
   // If not found by ID, try to find by key (assuming default workspace)
   if (!apiProject) {
     console.log(`[Project API GET] Project not found by ID, trying findByKey: workspaceId=${DEFAULT_WORKSPACE_ID}, key=${params.id}`);
-    apiProject = projectsRepository.findByKey(DEFAULT_WORKSPACE_ID, params.id);
+    apiProject = await projectsRepository.findByKey(DEFAULT_WORKSPACE_ID, params.id);
   }
 
   if (!apiProject) {
@@ -48,14 +51,14 @@ export async function GET(
   console.log(`[Project API GET] Project found: id=${apiProject.id}, workspaceId=${apiProject.workspaceId}, ownerId=${apiProject.ownerId}`);
 
   // Check if user has access to the project
-  const hasAccess = projectsRepository.hasAccess(apiProject.id, auth.userId);
+  const hasAccess = await projectsRepository.hasAccess(apiProject.id, auth.userId);
   if (!hasAccess) {
     console.error(`[Project API] Access denied: projectId=${apiProject.id}, userId=${auth.userId}, ownerId=${apiProject.ownerId}, visibility=${apiProject.visibility}`);
     return jsonError('ACCESS_DENIED', { status: 403 });
   }
 
   // Получаем все необходимые данные для трансформации проекта
-  const members = projectsRepository.listMembers(apiProject.id);
+  const members = await projectsRepository.listMembers(apiProject.id);
   const allTasks = tasksRepository.list({ projectId: apiProject.id });
   const metricsMap = buildTaskMetrics(allTasks);
   const resolvedMetrics = metricsMap.get(apiProject.id) ?? {
@@ -106,19 +109,23 @@ export async function PATCH(
   }
 
   // Try to find project by ID first
-  let apiProject = projectsRepository.findById(params.id);
+  let apiProject = await projectsRepository.findById(params.id);
 
   // If not found by ID, try to find by key (assuming default workspace)
   if (!apiProject) {
-    apiProject = projectsRepository.findByKey(DEFAULT_WORKSPACE_ID, params.id);
+    apiProject = await projectsRepository.findByKey(DEFAULT_WORKSPACE_ID, params.id);
   }
 
   if (!apiProject) {
     return jsonError('NOT_FOUND', { status: 404 });
   }
 
-  const role = getProjectRole(apiProject.id, auth.userId);
-  if (role !== 'owner' && role !== 'admin') {
+  const isAdmin =
+    isAdminUserId(auth.userId) ||
+    isDemoAdminEmail(auth.email) ||
+    isDemoAdminEmail(auth.userId);
+
+  if (!isAdmin) {
     return jsonError('ACCESS_DENIED', { status: 403 });
   }
 
@@ -145,26 +152,43 @@ export async function DELETE(
   }
 
   // Try to find project by ID first
-  let apiProject = projectsRepository.findById(params.id);
+  let apiProject = await projectsRepository.findById(params.id);
 
   // If not found by ID, try to find by key (assuming default workspace)
   if (!apiProject) {
-    apiProject = projectsRepository.findByKey(DEFAULT_WORKSPACE_ID, params.id);
+    apiProject = await projectsRepository.findByKey(DEFAULT_WORKSPACE_ID, params.id);
   }
 
   if (!apiProject) {
     return jsonError('NOT_FOUND', { status: 404 });
   }
 
-  const role = getProjectRole(apiProject.id, auth.userId);
+  const role = await getProjectRole(apiProject.id, auth.userId);
   if (role !== 'owner' && role !== 'admin') {
     return jsonError('ACCESS_DENIED', { status: 403 });
   }
 
   try {
-    projectsRepository.delete(apiProject.id);
-    console.log(`[Project API DELETE] Project deleted: id=${apiProject.id}, userId=${auth.userId}`);
-    return jsonOk({ deleted: true });
+    const url = new URL(req.url);
+    const previewRequested = url.searchParams.get('preview') === 'true';
+
+    if (previewRequested) {
+      const preview = deletionService.getProjectPreview(apiProject.id);
+      if (!preview) {
+        return jsonError('NOT_FOUND', { status: 404 });
+      }
+      return jsonOk({ preview });
+    }
+
+    const result = deletionService.deleteProject(apiProject.id);
+    if (!result) {
+      return jsonError('NOT_FOUND', { status: 404 });
+    }
+
+    console.log(
+      `[Project API DELETE] Project deleted: id=${apiProject.id}, tasks=${result.deletedTaskIds.length}, userId=${auth.userId}`
+    );
+    return jsonOk({ deleted: true, result });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error(`[Project API DELETE] Error deleting project: ${message}`);

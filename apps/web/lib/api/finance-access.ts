@@ -45,7 +45,7 @@ export function getAuthFromRequest(request: Request): AuthContext | null {
   };
 }
 
-export function getProjectRole(projectId: string, userId: string, email?: string): FinanceRole {
+export async function getProjectRole(projectId: string, userId: string, email?: string): Promise<FinanceRole> {
   // Проверяем, является ли пользователь администратором по userId (UUID) - основной путь для новых пользователей
   if (isAdminUserId(userId)) {
     return 'owner';
@@ -72,7 +72,7 @@ export function getProjectRole(projectId: string, userId: string, email?: string
   }
 
   // Проверяем, является ли пользователь владельцем проекта
-  const project = projectsRepository.findById(projectId);
+  const project = await projectsRepository.findById(projectId);
   if (!project) {
     return 'viewer';
   }

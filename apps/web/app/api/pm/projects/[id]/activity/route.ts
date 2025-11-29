@@ -30,12 +30,12 @@ export async function GET(
   }
 
   const projectId = params.id;
-  const project = projectsRepository.findById(projectId);
+  const project = await projectsRepository.findById(projectId);
   if (!project) {
     return jsonError('NOT_FOUND', { status: 404 });
   }
 
-  if (!projectsRepository.hasAccess(projectId, auth.userId)) {
+  if (!(await projectsRepository.hasAccess(projectId, auth.userId))) {
     return jsonError('FORBIDDEN', { status: 403 });
   }
 

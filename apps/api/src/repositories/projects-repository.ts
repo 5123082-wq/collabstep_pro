@@ -3,6 +3,9 @@ import type { Project, ProjectMember, ProjectStage, ProjectStatus, ProjectType, 
 import { pmPgHydration } from '../storage/pm-pg-bootstrap';
 import {
   deleteProjectFromPg,
+  fetchProjectByIdFromPg,
+  fetchProjectByKeyFromPg,
+  fetchProjectMembersFromPg,
   isPmDbEnabled,
   persistProjectMembersToPg,
   persistProjectToPg
@@ -47,12 +50,39 @@ export class ProjectsRepository {
     return items.map(cloneProject);
   }
 
-  findById(id: string): Project | null {
+  async findById(id: string): Promise<Project | null> {
+    // Сначала ищем в памяти
     const project = memory.PROJECTS.find((item) => item.id === id);
-    if (!project) {
-      console.log(`[ProjectsRepository] Project not found by ID: ${id}, totalProjects=${memory.PROJECTS.length}, projectIds=[${memory.PROJECTS.map(p => p.id).join(', ')}]`);
+    if (project) {
+      return cloneProject(project);
     }
-    return project ? cloneProject(project) : null;
+
+    // Если не найден в памяти и БД включена, загружаем из БД
+    if (isPmDbEnabled()) {
+      try {
+        const dbProject = await fetchProjectByIdFromPg(id);
+        if (dbProject) {
+          // Добавляем в память для последующих запросов
+          memory.PROJECTS.push(dbProject);
+          console.log(`[ProjectsRepository] Loaded project from DB: id=${dbProject.id}, title=${dbProject.title}`);
+          
+          // Также загружаем участников проекта, если их нет в памяти
+          if (!memory.PROJECT_MEMBERS[dbProject.id]) {
+            const members = await fetchProjectMembersFromPg(dbProject.id);
+            if (members.length > 0) {
+              memory.PROJECT_MEMBERS[dbProject.id] = members;
+            }
+          }
+          
+          return cloneProject(dbProject);
+        }
+      } catch (error) {
+        console.error(`[ProjectsRepository] Error loading project from DB: ${id}`, error);
+      }
+    }
+
+    console.log(`[ProjectsRepository] Project not found by ID: ${id}, totalProjects=${memory.PROJECTS.length}`);
+    return null;
   }
 
   getMember(projectId: string, userId: string): ProjectMember | null {
@@ -60,8 +90,26 @@ export class ProjectsRepository {
     return members.find((member) => member.userId === userId) ?? null;
   }
 
-  listMembers(projectId: string): ProjectMember[] {
-    return (memory.PROJECT_MEMBERS[projectId] ?? []).map((member) => ({ ...member }));
+  async listMembers(projectId: string): Promise<ProjectMember[]> {
+    // Сначала проверяем память
+    if (memory.PROJECT_MEMBERS[projectId]) {
+      return memory.PROJECT_MEMBERS[projectId].map((member) => ({ ...member }));
+    }
+
+    // Если нет в памяти и БД включена, загружаем из БД
+    if (isPmDbEnabled()) {
+      try {
+        const members = await fetchProjectMembersFromPg(projectId);
+        if (members.length > 0) {
+          memory.PROJECT_MEMBERS[projectId] = members;
+          return members.map((member) => ({ ...member }));
+        }
+      } catch (error) {
+        console.error(`[ProjectsRepository] Error loading project members from DB: ${projectId}`, error);
+      }
+    }
+
+    return [];
   }
 
   upsertMember(projectId: string, userId: string, role: ProjectMember['role']): ProjectMember {
@@ -106,8 +154,8 @@ export class ProjectsRepository {
     return true;
   }
 
-  hasAccess(projectId: string, userId: string): boolean {
-    const project = this.findById(projectId);
+  async hasAccess(projectId: string, userId: string): Promise<boolean> {
+    const project = await this.findById(projectId);
     if (!project) {
       return false;
     }
@@ -387,11 +435,40 @@ export class ProjectsRepository {
     return this.update(id, { status: 'active', archived: false });
   }
 
-  findByKey(workspaceId: string, key: string): Project | null {
+  async findByKey(workspaceId: string, key: string): Promise<Project | null> {
+    // Сначала ищем в памяти
     const project = memory.PROJECTS.find(
       (item) => item.workspaceId === workspaceId && item.key === key.toUpperCase()
     );
-    return project ? cloneProject(project) : null;
+    if (project) {
+      return cloneProject(project);
+    }
+
+    // Если не найден в памяти и БД включена, загружаем из БД
+    if (isPmDbEnabled()) {
+      try {
+        const dbProject = await fetchProjectByKeyFromPg(workspaceId, key);
+        if (dbProject) {
+          // Добавляем в память для последующих запросов
+          memory.PROJECTS.push(dbProject);
+          console.log(`[ProjectsRepository] Loaded project from DB by key: key=${key}, id=${dbProject.id}, title=${dbProject.title}`);
+          
+          // Также загружаем участников проекта, если их нет в памяти
+          if (!memory.PROJECT_MEMBERS[dbProject.id]) {
+            const members = await fetchProjectMembersFromPg(dbProject.id);
+            if (members.length > 0) {
+              memory.PROJECT_MEMBERS[dbProject.id] = members;
+            }
+          }
+          
+          return cloneProject(dbProject);
+        }
+      } catch (error) {
+        console.error(`[ProjectsRepository] Error loading project from DB by key: ${workspaceId}/${key}`, error);
+      }
+    }
+
+    return null;
   }
 }
 
