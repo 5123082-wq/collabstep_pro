@@ -11,6 +11,7 @@
 - **Disabled** — не требуется; компонент предоставляет статическую информацию.
 
 ## Пример использования
+
 ```tsx
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 

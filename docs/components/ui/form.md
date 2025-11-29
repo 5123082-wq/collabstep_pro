@@ -11,6 +11,7 @@
 - **Disabled** — следует поведению вложенных контролов (`Input`, `Button` и т.д.), сохраняя стили токенов.
 
 ## Пример использования
+
 ```tsx
 import { Button } from '@/components/ui/button';
 import {

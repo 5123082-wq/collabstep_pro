@@ -11,6 +11,7 @@
 - **Disabled** — меняет фон на `--surface-muted`, текст и плейсхолдер — на `--text-tertiary`, отключает курсор.
 
 ## Пример использования
+
 ```tsx
 import { Input } from '@/components/ui/input';
 

@@ -436,6 +436,7 @@ import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 ### Шаг 3: Замена блоков
 
 #### Основной блок
+
 ```tsx
 // До
 <section className="rounded-3xl border border-neutral-900 bg-neutral-950/60 p-6">
@@ -450,6 +451,7 @@ import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 ```
 
 #### Вложенный блок
+
 ```tsx
 // До
 <div className="rounded-2xl border border-neutral-800 bg-neutral-950/60 p-6">
@@ -463,6 +465,7 @@ import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 ```
 
 #### Пустое состояние
+
 ```tsx
 // До
 <div className="rounded-2xl border border-dashed border-neutral-800 bg-neutral-950/60 p-12 text-center">
@@ -476,6 +479,7 @@ import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 ```
 
 #### Блок с ошибкой
+
 ```tsx
 // До
 <div className="rounded-3xl border border-rose-500/40 bg-rose-500/10 p-6 text-sm text-rose-100">
@@ -489,6 +493,7 @@ import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 ```
 
 #### Интерактивный блок
+
 ```tsx
 // До
 <div
