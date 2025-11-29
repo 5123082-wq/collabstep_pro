@@ -74,9 +74,9 @@ export const PROJECTS_MENU_SECTION: LeftMenuSection = {
 const baseLeftMenuConfig: LeftMenuSection[] = [
   {
     id: 'dashboard',
-    label: 'Обзор',
+    label: 'Рабочий стол',
     icon: 'dashboard',
-    href: '/dashboard'
+    href: '/app/dashboard'
   },
   PM_MENU_SECTION,
   {

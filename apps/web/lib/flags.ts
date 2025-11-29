@@ -25,6 +25,7 @@ export const flags = {
   MARKETPLACE_ATTACH: resolveLegacyBooleanFlag(['NEXT_PUBLIC_FEATURE_MARKETPLACE_ATTACH', 'FEATURE_MARKETPLACE_ATTACH']),
   PROJECTS_OVERVIEW: isFeatureEnabled('projectsOverview'),
   PROJECT_CREATE_WIZARD: isFeatureEnabled('projectCreateWizard'),
+  WORKSPACE_DASHBOARD: isFeatureEnabled('workspaceDashboard'),
   PROJECT_DASHBOARD: isFeatureEnabled('projectDashboard'),
   TASKS_WORKSPACE: isFeatureEnabled('tasksWorkspace'),
   BUDGET_LIMITS: isFeatureEnabled('budgetLimits'),

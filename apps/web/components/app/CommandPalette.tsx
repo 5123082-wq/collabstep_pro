@@ -156,6 +156,12 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
       role="dialog"
       aria-modal="true"
       aria-label="Командная палитра"
+      onClick={(e) => {
+        // Закрываем при клике на overlay (фон)
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
     >
       <div style={{ maxWidth: '70vw', width: 'auto' }}>
         <ContentBlock 
@@ -169,7 +175,29 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
               Маски: @ — участники и подрядчики, # — задачи, $ — счета.
             </p>
           </div>
-          <span className="rounded-full border border-[color:var(--surface-border-subtle)] px-3 py-1 text-xs text-[color:var(--text-tertiary)]">Esc</span>
+          <div className="flex items-center gap-2">
+            <span className="hidden rounded-full border border-[color:var(--surface-border-subtle)] px-3 py-1 text-xs text-[color:var(--text-tertiary)] md:inline">Esc</span>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] text-[color:var(--text-secondary)] transition hover:border-[color:var(--surface-border-strong)] hover:text-[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 md:hidden"
+              aria-label="Закрыть командную палитру"
+            >
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
         </div>
         <div className="mt-4">
           <label htmlFor="command-input" className="sr-only">

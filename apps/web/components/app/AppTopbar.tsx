@@ -102,7 +102,23 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
   const [userType, setUserTypeState] = useState<UserType>(null);
 
   useEffect(() => {
-    setUserTypeState(getUserType());
+    const updateUserType = () => setUserTypeState(getUserType());
+    updateUserType();
+    
+    // Обработчик для кастомного события с правильной типизацией
+    const handleUserTypeChange = (e: Event) => {
+      const customEvent = e as CustomEvent<UserType>;
+      // Используем detail из события, если оно есть, иначе читаем из localStorage
+      const newType = customEvent.detail ?? getUserType();
+      setUserTypeState(newType);
+    };
+    
+    window.addEventListener('cv-user-type-change', handleUserTypeChange);
+    window.addEventListener('storage', updateUserType);
+    return () => {
+      window.removeEventListener('cv-user-type-change', handleUserTypeChange);
+      window.removeEventListener('storage', updateUserType);
+    };
   }, []);
 
   const suggestions: QuickSuggestion[] = useMemo(() => {
@@ -375,6 +391,37 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
           </button>
           <IconButton icon="wallet" label="Кошелёк" />
           <ThemeToggle />
+          <AccountMenu 
+            profile={profile} 
+            onLogout={onLogout} 
+            isLoggingOut={isLoggingOut}
+            {...(onOpenSettings && { onOpenSettings })}
+            {...(onOpenProfileSettings && { onOpenProfileSettings })}
+            {...(onAvatarChange && { onAvatarChange })}
+          />
+        </div>
+        {/* Мобильная версия: поиск и меню пользователя */}
+        <div className="flex items-center gap-[7.2px] md:hidden">
+          <button
+            type="button"
+            onClick={onOpenPalette}
+            className="flex h-9 w-9 items-center justify-center rounded-full border transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 border-[color:var(--theme-control-border)] bg-[color:var(--theme-control-bg)] text-[color:var(--theme-control-foreground)] hover:border-[color:var(--theme-control-border-hover)] hover:text-[color:var(--theme-control-foreground-hover)]"
+            aria-label="Поиск"
+          >
+            <svg
+              aria-hidden="true"
+              className="h-[14px] w-[14px]"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+          </button>
           <AccountMenu 
             profile={profile} 
             onLogout={onLogout} 

@@ -78,8 +78,9 @@ export function setUserType(type: UserType): void {
     } else {
       window.localStorage.removeItem('cv-user-type');
     }
-    // Применение предустановки меню теперь происходит в компоненте AccountMenu
+    // Применение предустановки меню происходит на уровне UI (AccountMenu/UserProfileSettingsModal)
     // для избежания циклических зависимостей
+    window.dispatchEvent(new CustomEvent<UserType>('cv-user-type-change', { detail: type }));
   }
 }
 

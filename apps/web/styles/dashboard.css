@@ -1,0 +1,20 @@
+.dashboard-grid {
+  display: grid;
+  gap: clamp(1rem, 2vw, 1.25rem);
+  align-items: stretch;
+}
+
+.dashboard-grid__item {
+  min-width: 0;
+  height: 100%;
+}
+
+.dashboard-grid__item .dashboard-widget {
+  height: 100%;
+}
+
+@media (max-width: 767px) {
+  .dashboard-grid {
+    gap: 0.75rem;
+  }
+}
