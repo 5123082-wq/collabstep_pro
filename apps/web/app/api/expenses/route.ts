@@ -85,9 +85,9 @@ function handleError(error: unknown) {
   }
 }
 
-function collectAccessibleProjects(userId: string) {
+async function collectAccessibleProjects(userId: string) {
   const projects = projectsRepository.list();
-  const accessMap = new Map<string, ReturnType<typeof getProjectRole>>();
+  const accessMap = new Map<string, Awaited<ReturnType<typeof getProjectRole>>>();
   for (const project of projects) {
     const role = await getProjectRole(project.id, userId);
     if (role !== 'viewer') {
@@ -99,7 +99,7 @@ function collectAccessibleProjects(userId: string) {
 
 function filterByAccess(
   expenses: Expense[],
-  accessMap: Map<string, ReturnType<typeof getProjectRole>>,
+  accessMap: Map<string, Awaited<ReturnType<typeof getProjectRole>>>,
   userId: string
 ) {
   return expenses.filter((expense) => {
@@ -143,7 +143,7 @@ export async function GET(request: Request) {
   const { page, pageSize } = parsePagination(url);
   const filters = parseFilters(url);
 
-  const accessMap = collectAccessibleProjects(auth.userId);
+  const accessMap = await collectAccessibleProjects(auth.userId);
 
   if (filters.projectId) {
     const role = await getProjectRole(filters.projectId, auth.userId);

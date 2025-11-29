@@ -106,7 +106,7 @@ export async function GET(
       projectId: task.projectId,
       ...(project?.key ? { projectKey: project.key } : {}),
       ...(project?.title ? { projectTitle: project.title } : {}),
-      assigneeId: task.assigneeId,
+      ...(task.assigneeId ? { assigneeId: task.assigneeId } : {}),
       reason: 'assignee',
       createdAt: task.createdAt,
       updatedAt: task.updatedAt
