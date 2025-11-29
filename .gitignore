@@ -9,3 +9,4 @@ test-results
 .env.local
 /apps/web/.env.local
 *.tsbuildinfo
+.tmp/

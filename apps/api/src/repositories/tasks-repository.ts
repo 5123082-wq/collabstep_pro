@@ -1,5 +1,10 @@
 import { memory } from '../data/memory';
 import type { FileObject, Task, TaskStatus, TaskTreeNode } from '../types';
+import { pmPgHydration } from '../storage/pm-pg-bootstrap';
+import { deleteTaskFromPg, isPmDbEnabled, persistTaskToPg, fetchTaskByIdFromPg } from '../storage/pm-pg-adapter';
+
+// Fire-and-forget hydration for serverless; avoids top-level await in CJS builds
+void pmPgHydration;
 
 type TaskListView = 'list' | 'tree';
 
@@ -94,10 +99,20 @@ export class TasksRepository {
 
   findById(id: string): Task | null {
     const task = memory.TASKS.find((task) => task.id === id);
-    if (!task) {
-      return null;
+    if (task) {
+      return enrichTask(task);
     }
-    return enrichTask(task);
+    if (isPmDbEnabled()) {
+      // Lazy fetch from Postgres if not present in memory (can happen on new lambdas)
+      void fetchTaskByIdFromPg(id)
+        .then((fetched) => {
+          if (fetched) {
+            memory.TASKS.push(fetched);
+          }
+        })
+        .catch((error) => console.error('[TasksRepository] Failed to fetch task from Postgres', error));
+    }
+    return null;
   }
 
   /**
@@ -147,6 +162,12 @@ export class TasksRepository {
     };
 
     memory.TASKS.push(task);
+
+    if (isPmDbEnabled()) {
+      void persistTaskToPg(task).catch((error) =>
+        console.error('[TasksRepository] Failed to persist task', error)
+      );
+    }
 
     return enrichTask(task);
   }
@@ -243,6 +264,11 @@ export class TasksRepository {
     }
 
     memory.TASKS[idx] = updated;
+    if (isPmDbEnabled()) {
+      void persistTaskToPg(updated).catch((error) =>
+        console.error('[TasksRepository] Failed to persist task update', error)
+      );
+    }
 
     return enrichTask(updated);
   }
@@ -258,6 +284,12 @@ export class TasksRepository {
     memory.TASK_DEPENDENCIES = memory.TASK_DEPENDENCIES.filter(
       (dep) => dep.dependentTaskId !== id && dep.blockerTaskId !== id
     );
+
+    if (isPmDbEnabled()) {
+      void deleteTaskFromPg(id).catch((error) =>
+        console.error('[TasksRepository] Failed to delete task from Postgres', error)
+      );
+    }
 
     return true;
   }

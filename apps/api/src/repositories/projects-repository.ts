@@ -1,5 +1,15 @@
 import { memory, isAdminUserId } from '../data/memory';
 import type { Project, ProjectMember, ProjectStage, ProjectStatus, ProjectType, ProjectVisibility } from '../types';
+import { pmPgHydration } from '../storage/pm-pg-bootstrap';
+import {
+  deleteProjectFromPg,
+  isPmDbEnabled,
+  persistProjectMembersToPg,
+  persistProjectToPg
+} from '../storage/pm-pg-adapter';
+
+// Fire-and-forget hydration; repositories stay sync for serverless lambdas without blocking CJS builds
+void pmPgHydration;
 
 function cloneProject(project: Project): Project {
   return { ...project };
@@ -64,6 +74,11 @@ export class ProjectsRepository {
       members[index] = member;
     }
     memory.PROJECT_MEMBERS[projectId] = members;
+    if (isPmDbEnabled()) {
+      void persistProjectMembersToPg(projectId, members).catch((error) =>
+        console.error('[ProjectsRepository] Failed to persist members', error)
+      );
+    }
     return { ...member };
   }
 
@@ -81,6 +96,12 @@ export class ProjectsRepository {
       delete memory.PROJECT_MEMBERS[projectId];
     } else {
       memory.PROJECT_MEMBERS[projectId] = members;
+    }
+    if (isPmDbEnabled()) {
+      const snapshot = memory.PROJECT_MEMBERS[projectId] ?? [];
+      void persistProjectMembersToPg(projectId, snapshot).catch((error) =>
+        console.error('[ProjectsRepository] Failed to persist members', error)
+      );
     }
     return true;
   }
@@ -216,6 +237,11 @@ export class ProjectsRepository {
     }
     memory.PROJECTS.push(project);
     console.log(`[ProjectsRepository] Created project: id=${project.id}, workspaceId=${project.workspaceId}, ownerId=${project.ownerId}, title=${project.title}, totalProjects=${memory.PROJECTS.length}`);
+    if (isPmDbEnabled()) {
+      void persistProjectToPg(project).catch((error) =>
+        console.error('[ProjectsRepository] Failed to persist project', error)
+      );
+    }
 
     return cloneProject(project);
   }
@@ -323,6 +349,11 @@ export class ProjectsRepository {
     }
 
     memory.PROJECTS[idx] = next;
+    if (isPmDbEnabled()) {
+      void persistProjectToPg(next).catch((error) =>
+        console.error('[ProjectsRepository] Failed to persist project update', error)
+      );
+    }
 
     return cloneProject(next);
   }
@@ -338,6 +369,11 @@ export class ProjectsRepository {
     memory.ITERATIONS = memory.ITERATIONS.filter((iteration) => iteration.projectId !== id);
     delete memory.WORKFLOWS[id];
     delete memory.PROJECT_MEMBERS[id];
+    if (isPmDbEnabled()) {
+      void deleteProjectFromPg(id).catch((error) =>
+        console.error('[ProjectsRepository] Failed to delete project from Postgres', error)
+      );
+    }
 
     return true;
   }
