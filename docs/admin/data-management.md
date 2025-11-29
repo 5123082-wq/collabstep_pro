@@ -236,7 +236,6 @@ pnpm dev
 
 ## Дополнительные ресурсы
 
-- [Админ-панель README](../app/admin/README.md)
+- [Админ-панель README](../../../apps/web/app/(app)/admin/README.md)
 - [API Documentation](../getting-started/quick-start.md)
-- [Аутентификация и авторизация](../auth/roles.md)
 

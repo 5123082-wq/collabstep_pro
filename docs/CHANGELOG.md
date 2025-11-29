@@ -215,8 +215,8 @@ docs/
 
 - `docs/README.md` — полностью переписан с новой структурой навигации
 - `docs/getting-started/setup.md` — обновлена дата → 2025-11-10
-- `docs/development/release-checklist.md` — обновлена дата → 2025-11-10
-- `docs/development/PLAN.md` — обновлена дата → 2025-11-10
+- `docs/development/release-checklist.md` — файл удален (устарел)
+- `docs/development/PLAN.md` — файл удален (устарел)
 - `docs/architecture/system-analysis.md` — обновлена дата → 2025-11-10
 
 **Исходный код:**

@@ -33,7 +33,7 @@
     "ensure-env": "node scripts/ensure-env.mjs",
     "verify": "pnpm ensure-env && pnpm -w lint && pnpm --filter @collabverse/web typecheck && pnpm --filter @collabverse/web build && pnpm -w --filter @collabverse/web run check:routes && pnpm test && pnpm exec playwright install --with-deps && pnpm test:e2e && pnpm verify:routes && node scripts/run-vercel-build.mjs",
     "docs:lint": "markdownlint '**/*.md' --ignore node_modules",
-    "docs:links": "find . -name '*.md' -not -path './node_modules/*' -not -path './apps/*/node_modules/*' -print0 | xargs -0 -n1 markdown-link-check -c .mlc.config.json",
+    "docs:links": "node scripts/check-docs-links.mjs",
     "seed:finance": "tsx scripts/seed-finance.ts",
     "seed:test-project": "tsx scripts/seed-test-project.ts",
     "reset:ai-agents": "tsx scripts/reset-ai-agents.ts",

@@ -116,7 +116,7 @@ cd apps/api && pnpm drizzle-kit studio
 
 ## 📚 Дополнительно
 
-- [Подробное руководство по настройке Vercel Postgres](./docs/getting-started/vercel-postgres-setup.md)
+- [Подробное руководство по настройке Vercel Postgres](./vercel-postgres-setup.md)
 - [Чеклист настройки](./VERCEL_POSTGRES_SETUP_CHECKLIST.md)
-- [Руководство по очистке базы данных](./DATABASE_CLEANUP_GUIDE.md)
+- [Руководство по очистке базы данных](../runbooks/DATABASE_CLEANUP_GUIDE.md)
 

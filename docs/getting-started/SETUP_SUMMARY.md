@@ -130,8 +130,8 @@ GOOGLE_CLIENT_SECRET=<ваш Client Secret>
 
 - **[QUICK_SETUP_GUIDE.md](./QUICK_SETUP_GUIDE.md)** - Быстрое руководство (5 минут)
 - **[VERCEL_POSTGRES_SETUP_CHECKLIST.md](./VERCEL_POSTGRES_SETUP_CHECKLIST.md)** - Полный чеклист
-- **[DATABASE_CLEANUP_GUIDE.md](./DATABASE_CLEANUP_GUIDE.md)** - Руководство по очистке БД
-- **[docs/getting-started/vercel-postgres-setup.md](./docs/getting-started/vercel-postgres-setup.md)** - Подробная инструкция
+- **[DATABASE_CLEANUP_GUIDE.md](../runbooks/DATABASE_CLEANUP_GUIDE.md)** - Руководство по очистке БД
+- **[vercel-postgres-setup.md](./vercel-postgres-setup.md)** - Подробная инструкция
 
 ## ⚠️ Критически важно
 

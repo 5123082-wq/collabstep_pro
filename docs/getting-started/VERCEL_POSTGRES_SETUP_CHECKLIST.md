@@ -342,7 +342,7 @@ pnpm drizzle-kit studio
 - [Vercel Postgres Documentation](https://vercel.com/docs/storage/vercel-postgres)
 - [NextAuth.js Documentation](https://next-auth.js.org/)
 - [Drizzle ORM Documentation](https://orm.drizzle.team/)
-- [Подробное руководство по настройке Vercel Postgres](../docs/getting-started/vercel-postgres-setup.md)
+- [Подробное руководство по настройке Vercel Postgres](../getting-started/vercel-postgres-setup.md)
 
 ## ✅ Финальная проверка
 

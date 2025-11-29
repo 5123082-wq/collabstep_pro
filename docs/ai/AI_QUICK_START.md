@@ -1,6 +1,6 @@
 # 🚀 AI Quick Start - Быстрая настройка
 
-> **Подробная инструкция:** [docs/AI_SETUP_GUIDE.md](docs/AI_SETUP_GUIDE.md)
+> **Подробная инструкция:** [../AI_SETUP_GUIDE.md](../AI_SETUP_GUIDE.md)
 
 ## ⚡ За 5 минут
 
@@ -84,7 +84,7 @@ OPENAI_TEMPERATURE=0.7
 **"Insufficient quota"**
 → Добавьте баланс в биллинге
 
-**Подробнее:** [docs/AI_SETUP_GUIDE.md](docs/AI_SETUP_GUIDE.md)
+**Подробнее:** [../AI_SETUP_GUIDE.md](../AI_SETUP_GUIDE.md)
 
 ---
 
@@ -97,5 +97,5 @@ OPENAI_TEMPERATURE=0.7
 
 ---
 
-**Готово!** Полная документация: [docs/AI_SETUP_GUIDE.md](docs/AI_SETUP_GUIDE.md)
+**Готово!** Полная документация: [../AI_SETUP_GUIDE.md](../AI_SETUP_GUIDE.md)
 

@@ -173,8 +173,9 @@ collabstep-new-3/
 
 ## Ссылки
 
-- 📚 [QUICK_START.md](./QUICK_START.md) - Полная инструкция
-- 🔧 [PERFORMANCE_FIX.md](./PERFORMANCE_FIX.md) - Технические детали
+- 📚 [quick-start.md](./quick-start.md) - Полная инструкция
 - 🌐 Web: http://localhost:3000
 - 📡 WebSocket: ws://localhost:8080
+
+> **Примечание:** Файлы `QUICK_START.md` и `PERFORMANCE_FIX.md` были удалены как устаревшие. Используйте `quick-start.md` для инструкций по запуску.
 
