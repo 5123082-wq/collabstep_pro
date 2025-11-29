@@ -11,6 +11,7 @@ import {
   type ExpenseStatus,
   type TaskStatus
 } from '@collabverse/api';
+import { pmPgHydration } from '@collabverse/api/src/storage/pm-pg-bootstrap';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { parseProjectFilters, type ProjectScope } from '@/lib/pm/filters';
 import { getProjectsOverview } from '@/lib/pm/projects-overview.server';
@@ -122,6 +123,13 @@ async function createTestProject(ownerId: string, projectTitle: string, projectD
 }
 
 async function ensureTestProject(userId: string) {
+  // Дожидаемся гидрации из Postgres, чтобы не создавать дубликаты на холодном старте
+  try {
+    await pmPgHydration;
+  } catch (error) {
+    console.error('[Auto-seed] Failed to hydrate projects from Postgres before seed', error);
+  }
+
   const allProjects = projectsRepository.list();
 
   // Проверяем, есть ли проект от администратора
