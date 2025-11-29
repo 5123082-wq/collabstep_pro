@@ -1,6 +1,11 @@
 import { memory } from '../data/memory';
 import { attachmentsRepository } from './files-repository';
 import type { FileObject, TaskComment } from '../types';
+import { pmPgHydration } from '../storage/pm-pg-bootstrap';
+import { deleteCommentFromPg, fetchCommentsByTaskFromPg, isPmDbEnabled, persistCommentToPg } from '../storage/pm-pg-adapter';
+
+// Fire-and-forget hydration; avoids top-level await in CJS builds
+void pmPgHydration;
 
 export interface TaskCommentNode extends TaskComment {
   attachmentsFiles: FileObject[];
@@ -119,6 +124,21 @@ export class CommentsRepository {
     const comments = memory.TASK_COMMENTS.filter(
       (comment) => comment.projectId === projectId && comment.taskId === taskId
     ).map(cloneComment);
+    if (comments.length === 0 && isPmDbEnabled()) {
+      // Lazy hydrate from Postgres if memory is empty for this task
+      void fetchCommentsByTaskFromPg(projectId, taskId)
+        .then((fromPg) => {
+          if (fromPg.length > 0) {
+            for (const comment of fromPg) {
+              const exists = memory.TASK_COMMENTS.some((c) => c.id === comment.id);
+              if (!exists) {
+                memory.TASK_COMMENTS.push(comment);
+              }
+            }
+          }
+        })
+        .catch((error) => console.error('[CommentsRepository] Failed to fetch comments from Postgres', error));
+    }
     return buildTree(comments);
   }
 
@@ -139,6 +159,11 @@ export class CommentsRepository {
     };
     memory.TASK_COMMENTS.push(comment);
     syncCommentAttachments(comment);
+    if (isPmDbEnabled()) {
+      void persistCommentToPg(comment).catch((error) =>
+        console.error('[CommentsRepository] Failed to persist comment', error)
+      );
+    }
     return withFileAttachments(comment);
   }
 
@@ -158,6 +183,11 @@ export class CommentsRepository {
     }
     match.updatedAt = new Date().toISOString();
     syncCommentAttachments(match);
+    if (isPmDbEnabled()) {
+      void persistCommentToPg(match).catch((error) =>
+        console.error('[CommentsRepository] Failed to persist comment update', error)
+      );
+    }
     return withFileAttachments(match);
   }
 
@@ -184,6 +214,13 @@ export class CommentsRepository {
       }
       return !idsToRemove.has(attachment.entityId ?? '');
     });
+    if (isPmDbEnabled()) {
+      for (const id of idsToRemove) {
+        void deleteCommentFromPg(id).catch((error) =>
+          console.error('[CommentsRepository] Failed to delete comment from Postgres', error)
+        );
+      }
+    }
   }
 }
 

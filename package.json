@@ -35,6 +35,7 @@
     "docs:lint": "markdownlint '**/*.md' --ignore node_modules",
     "docs:links": "node scripts/check-docs-links.mjs",
     "seed:finance": "tsx scripts/seed-finance.ts",
+    "seed:demo-pg": "tsx scripts/seed-demo-postgres.ts",
     "seed:test-project": "tsx scripts/seed-test-project.ts",
     "reset:ai-agents": "tsx scripts/reset-ai-agents.ts",
     "prepare": "husky install",
