@@ -62,7 +62,7 @@ function deduplicateLabels(values: string[] | undefined): string[] {
 }
 
 export class ProjectCatalogService {
-  getProjects(options: { archived?: boolean | null; currentUserId?: string } = {}): CatalogProjectItem[] {
+  async getProjects(options: { archived?: boolean | null; currentUserId?: string } = {}): Promise<CatalogProjectItem[]> {
     const tasks = tasksRepository.list();
     const aggregation = new Map<string, { count: number; labels: Set<string> }>();
     for (const task of tasks) {
@@ -85,23 +85,25 @@ export class ProjectCatalogService {
       archived: options.archived ?? null
     });
 
-    return projects
-      .filter((project) => {
-        // For private projects, check if user has access
-        if (project.visibility === 'private') {
-          return projectsRepository.hasAccess(project.id, currentUserId);
+    const filteredProjects = [];
+    for (const project of projects) {
+      // For private projects, check if user has access
+      if (project.visibility === 'private') {
+        const hasAccess = await projectsRepository.hasAccess(project.id, currentUserId);
+        if (!hasAccess) {
+          continue;
         }
-        // Public projects are accessible to everyone
-        return true;
-      })
-      .map((project) => {
-        const stats = aggregation.get(project.id);
-        return {
-          ...project,
-          tasksCount: stats?.count ?? 0,
-          labels: stats ? Array.from(stats.labels.values()).sort((a, b) => a.localeCompare(b, 'ru')) : []
-        };
+      }
+      // Public projects are accessible to everyone
+      const stats = aggregation.get(project.id);
+      filteredProjects.push({
+        ...project,
+        tasksCount: stats?.count ?? 0,
+        labels: stats ? Array.from(stats.labels.values()).sort((a, b) => a.localeCompare(b, 'ru')) : []
       });
+    }
+
+    return filteredProjects;
   }
 
   getTemplates(): CatalogTemplateItem[] {
