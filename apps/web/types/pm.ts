@@ -46,6 +46,14 @@ export interface Project {
 
 export type TaskStatus = 'new' | 'in_progress' | 'review' | 'done' | 'blocked';
 
+export interface TaskAttachment {
+  id: string;
+  filename: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  storageUrl?: string;
+}
+
 export interface Task {
   id: string;
   projectId: string;
@@ -66,6 +74,7 @@ export interface Task {
   loggedTime?: number | null; // In minutes
   updatedAt: string;
   createdAt: string;
+  attachments?: TaskAttachment[];
   // Legacy fields for compatibility
   dueDate?: string; // Alias for dueAt
   estimate?: number; // Alias for estimatedTime
@@ -73,4 +82,3 @@ export interface Task {
   deps?: string[];
   customFields?: Record<string, unknown>;
 }
-

@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { toast } from '@/lib/ui/toast';
-import type { Task, TaskDependency } from '@collabverse/api';
+import type { Task } from '@/types/pm';
+import type { TaskDependency } from '@collabverse/api';
 import {
   type GanttTask,
   type GanttLink,

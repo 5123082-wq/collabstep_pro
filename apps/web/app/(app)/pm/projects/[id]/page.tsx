@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useReducer } from 'react';
+import { useCallback, useEffect, useState, useReducer } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { type Project } from '@/types/pm';
 import { flags } from '@/lib/flags';
@@ -23,6 +23,8 @@ import TasksGanttView from '@/components/pm/TasksGanttView';
 import CreateTaskModal from '@/components/pm/CreateTaskModal';
 import ProjectAIAgents from '@/components/pm/ProjectAIAgents';
 import ProjectInviteModal from '@/components/pm/ProjectInviteModal';
+import ProjectTasksSection from '@/components/pm/ProjectTasksSection';
+import TaskDetailDrawer from '@/components/pm/TaskDetailDrawer';
 import { ContentBlock } from '@/components/ui/content-block';
 import {
   drawerReducer,
@@ -31,7 +33,7 @@ import {
   type FinanceRole
 } from '@/domain/finance/expenses';
 import { DEMO_WORKSPACE_ID } from '@/domain/finance/expenses';
-import type { Task } from '@collabverse/api';
+import type { Task } from '@/types/pm';
 
 function mapDemoRole(role: string | null): FinanceRole {
   if (role === 'admin') {
@@ -74,6 +76,37 @@ export default function PMProjectDetailPage() {
   const [publishingListing, setPublishingListing] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'chat' | 'files' | 'gantt' | 'ai-agents'>('overview');
   const [projectTasks, setProjectTasks] = useState<Task[]>([]);
+  const [tasksLoading, setTasksLoading] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+
+  const loadProjectTasks = useCallback(async (projId: string) => {
+    try {
+      setTasksLoading(true);
+      const response = await fetch(`/api/pm/tasks?projectId=${projId}&pageSize=1000`, {
+        headers: { 'cache-control': 'no-store' }
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to load tasks for project ${projId}`);
+      }
+      const data = await response.json();
+      const items: Task[] =
+        (data.ok && Array.isArray(data.data?.items)
+          ? data.data.items
+          : Array.isArray(data.items)
+            ? data.items
+            : []) as Task[];
+      setProjectTasks(items);
+      setSelectedTask((current) => {
+        if (!current) return null;
+        const fresh = items.find((task) => task.id === current.id);
+        return fresh ?? current;
+      });
+    } catch (err) {
+      console.error('Failed to load project tasks:', err);
+    } finally {
+      setTasksLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     async function loadUser() {
@@ -164,25 +197,31 @@ export default function PMProjectDetailPage() {
     if (projectId) {
       void loadProject();
     }
-  }, [projectId, router, currentUserId]);
+  }, [projectId, router, currentUserId, loadProjectTasks]);
+
+  useEffect(() => {
+    if (!projectId) return;
+
+    const handleTaskEvent: EventListener = (event) => {
+      const detail = (event as CustomEvent<{ projectId?: string }>).detail;
+      if (detail?.projectId && detail.projectId !== projectId) {
+        return;
+      }
+      void loadProjectTasks(projectId);
+    };
+
+    window.addEventListener('task-created', handleTaskEvent);
+    window.addEventListener('task-updated', handleTaskEvent);
+
+    return () => {
+      window.removeEventListener('task-created', handleTaskEvent);
+      window.removeEventListener('task-updated', handleTaskEvent);
+    };
+  }, [projectId, loadProjectTasks]);
 
   if (!flags.PM_NAV_PROJECTS_AND_TASKS || !flags.PM_PROJECT_CARD) {
     return <FeatureComingSoon title="Проект" />;
   }
-
-  const loadProjectTasks = async (projId: string) => {
-    try {
-      const response = await fetch(`/api/pm/tasks?projectId=${projId}&pageSize=1000`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.ok && Array.isArray(data.data?.items)) {
-          setProjectTasks(data.data.items as Task[]);
-        }
-      }
-    } catch (err) {
-      console.error('Failed to load project tasks:', err);
-    }
-  };
 
   const handleExpenseCreate = () => {
     dispatchDrawer({
@@ -481,6 +520,14 @@ export default function PMProjectDetailPage() {
             onMarketplacePublish={handleMarketplacePublish}
           />
 
+          <ProjectTasksSection
+            projectId={projectId}
+            tasks={projectTasks}
+            loading={tasksLoading}
+            onTaskClick={(task) => setSelectedTask(task)}
+            onCreateTask={() => setShowCreateTaskModal(true)}
+          />
+
           <div className="grid gap-6 lg:grid-cols-2">
             <ProjectTeam project={project} currentUserId={currentUserId} />
             <ProjectLinks project={project} />
@@ -524,6 +571,13 @@ export default function PMProjectDetailPage() {
           />
         </div>
       )}
+
+      <TaskDetailDrawer
+        task={selectedTask}
+        open={selectedTask !== null}
+        onClose={() => setSelectedTask(null)}
+        currentUserId={currentUserId}
+      />
 
       {/* Модальное окно изменения лимита */}
       {showLimitModal && (
@@ -612,6 +666,7 @@ export default function PMProjectDetailPage() {
         isOpen={showCreateTaskModal}
         onClose={() => setShowCreateTaskModal(false)}
         onSuccess={() => {
+          void loadProjectTasks(projectId);
           // Перезагружаем проект для обновления метрик
           void fetch(`/api/pm/projects/${projectId}`)
             .then((res) => {

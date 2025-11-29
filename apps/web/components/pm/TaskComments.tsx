@@ -28,6 +28,7 @@ export default function TaskComments({ taskId, projectId, currentUserId }: TaskC
   const [comments, setComments] = useState<CommentWithAuthor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
   const loadComments = useCallback(async () => {
     try {
@@ -120,42 +121,72 @@ export default function TaskComments({ taskId, projectId, currentUserId }: TaskC
     );
   }
 
+  const commentsCountLabel =
+    comments.length === 0
+      ? 'Пока нет комментариев'
+      : `${comments.length} ${comments.length === 1 ? 'комментарий' : 'комментариев'}`;
+  const visibleComments = showAll ? comments : comments.slice(-5);
+
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-3">
       {/* Заголовок секции */}
-      <div>
-        <h3 className="text-lg font-semibold text-white">Комментарии</h3>
-        <p className="mt-1 text-sm text-neutral-400">
-          {comments.length === 0
-            ? 'Пока нет комментариев'
-            : `${comments.length} ${comments.length === 1 ? 'комментарий' : 'комментариев'}`}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-base font-semibold text-white">Комментарии</h3>
+          <p className="mt-0.5 text-xs text-neutral-500">{commentsCountLabel}</p>
+        </div>
       </div>
 
-      {/* Форма создания комментария */}
-      <ContentBlock size="sm">
+      {/* Лента комментариев с прокруткой и переключателем */}
+      <ContentBlock
+        size="sm"
+        className="flex min-h-[260px] flex-col gap-2 rounded-2xl border-neutral-900 bg-neutral-950/80 p-3"
+      >
+        <div className="flex items-center justify-between text-[12px] text-neutral-400">
+          <span>
+            {showAll || comments.length <= 5
+              ? 'Все комментарии'
+              : `Показаны последние ${visibleComments.length}`}
+          </span>
+          {comments.length > 5 && (
+            <button
+              type="button"
+              className="font-semibold text-indigo-300 transition hover:text-indigo-200"
+              onClick={() => setShowAll((prev) => !prev)}
+            >
+              {showAll ? 'Свернуть' : 'Предыдущие комментарии'}
+            </button>
+          )}
+        </div>
+
+        <div className="flex-1 space-y-2 overflow-y-auto pr-1">
+          {visibleComments.length > 0 ? (
+            visibleComments.map((comment) => (
+              <TaskCommentItem
+                key={comment.id}
+                comment={comment}
+                taskId={taskId}
+                projectId={projectId}
+                currentUserId={currentUserId}
+                onUpdate={handleCommentAdded}
+              />
+            ))
+          ) : (
+            <div className="rounded-xl border border-dashed border-neutral-800 bg-neutral-900/40 px-4 py-6 text-center text-sm text-neutral-500">
+              Пока нет комментариев
+            </div>
+          )}
+        </div>
+      </ContentBlock>
+
+      {/* Форма создания комментария внизу (как в мессенджерах) */}
+      <ContentBlock size="sm" className="rounded-2xl border-neutral-900 bg-neutral-950/85">
         <TaskCommentForm
           taskId={taskId}
           projectId={projectId}
           onSuccess={handleCommentAdded}
         />
       </ContentBlock>
-
-      {/* Список комментариев */}
-      {comments.length > 0 && (
-        <div className="space-y-4">
-          {comments.map((comment) => (
-            <TaskCommentItem
-              key={comment.id}
-              comment={comment}
-              taskId={taskId}
-              projectId={projectId}
-              currentUserId={currentUserId}
-              onUpdate={handleCommentAdded}
-            />
-          ))}
-        </div>
-      )}
     </div>
   );
 }
