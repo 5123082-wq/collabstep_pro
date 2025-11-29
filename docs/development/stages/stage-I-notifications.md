@@ -515,7 +515,7 @@ export default function NotificationsPanel({
 - `apps/web/tests/unit/notifications.spec.ts` — unit тесты (20+ тестов)
 - `apps/web/tests/e2e/notifications.spec.ts` — E2E тесты (7 основных сценариев)
 
-### Изменённые файлы
+### Изменённые файлы (Stage I)
 
 - `apps/api/src/types.ts` — добавлены типы `Notification`, `NotificationType`, `NotificationStatus`
 - `apps/api/src/data/memory.ts` — добавлен массив `NOTIFICATIONS` для хранения уведомлений
