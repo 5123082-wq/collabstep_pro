@@ -155,7 +155,7 @@ export class DeletionService {
       task: {
         id: task.id,
         projectId: task.projectId,
-        projectTitle: project?.title,
+        ...(project?.title ? { projectTitle: project.title } : {}),
         title: task.title,
         status: task.status,
         ...(typeof task.number === 'number' ? { number: task.number } : {})
