@@ -18,7 +18,7 @@ export async function notifyTaskAssigned(
   const task = tasksRepository.findById(taskId);
   if (!task) return;
 
-  const project = projectsRepository.findById(projectId);
+  const project = await projectsRepository.findById(projectId);
   if (!project) return;
 
   const notification = notificationsRepository.create({
@@ -50,7 +50,7 @@ export async function notifyTaskUpdated(
   const task = tasksRepository.findById(taskId);
   if (!task) return;
 
-  const project = projectsRepository.findById(projectId);
+  const project = await projectsRepository.findById(projectId);
   if (!project) return;
 
   // Уведомляем исполнителя задачи, если он есть и это не тот, кто обновил
@@ -109,7 +109,7 @@ export async function notifyCommentAdded(
   const task = tasksRepository.findById(taskId);
   if (!task) return;
 
-  const project = projectsRepository.findById(projectId);
+  const project = await projectsRepository.findById(projectId);
   if (!project) return;
 
   const recipients = new Set<string>();
@@ -166,7 +166,7 @@ export async function notifyDeadlineApproaching(
   const task = tasksRepository.findById(taskId);
   if (!task || !task.dueAt) return;
 
-  const project = projectsRepository.findById(projectId);
+  const project = await projectsRepository.findById(projectId);
   if (!project) return;
 
   notificationsRepository.create({
@@ -187,7 +187,7 @@ export async function notifyProjectInvite(
   projectId: string,
   userId: string
 ): Promise<void> {
-  const project = projectsRepository.findById(projectId);
+  const project = await projectsRepository.findById(projectId);
   if (!project) return;
 
   notificationsRepository.create({
