@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Проверка прав доступа
-    const members = projectsRepository.listMembers(projectId);
+    const members = await projectsRepository.listMembers(projectId);
     const currentMember = members.find(m => m.userId === auth.userId);
     
     if (!currentMember || (currentMember.role !== 'owner' && currentMember.role !== 'admin')) {

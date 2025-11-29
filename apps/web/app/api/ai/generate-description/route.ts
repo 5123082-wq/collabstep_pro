@@ -46,10 +46,10 @@ export async function POST(req: NextRequest) {
     let projectContext: { projectName?: string; projectDescription?: string } = {};
 
     if (projectId) {
-      const project = projectsRepository.findById(projectId);
+      const project = await projectsRepository.findById(projectId);
       if (project) {
         // Проверяем, есть ли доступ к проекту
-        const members = projectsRepository.listMembers(projectId);
+        const members = await projectsRepository.listMembers(projectId);
         const isMember = members.some(m => m.userId === auth.userId);
 
         if (isMember) {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 // @ts-expect-error lucide-react icon types
 import { FileText, Trash2, RefreshCw, AlertTriangle } from 'lucide-react';
@@ -246,6 +247,12 @@ export default function AdminDataPage() {
                       >
                         {expandedUserId === user.userId ? 'Скрыть' : 'Показать'}
                       </button>
+                      <Link
+                        href={`/admin/data/users/${user.userId}`}
+                        className="rounded-lg border border-neutral-700 bg-neutral-900/60 px-3 py-2 text-sm text-neutral-300 transition hover:border-indigo-500/40 hover:bg-indigo-500/10"
+                      >
+                        Удаление
+                      </Link>
                       <button
                         onClick={() => handleClearUser(user.userId, user.userName)}
                         disabled={user.projectsCount === 0}

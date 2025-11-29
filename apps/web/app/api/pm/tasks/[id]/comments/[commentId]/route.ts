@@ -60,7 +60,7 @@ export async function PATCH(
     }
 
     // Проверка прав (автор или owner/admin проекта)
-    const role = getProjectRole(task.projectId, auth.userId);
+    const role = await getProjectRole(task.projectId, auth.userId);
     const isAuthor = comment.authorId === auth.userId;
     const isOwnerOrAdmin = role === 'owner' || role === 'admin';
 
@@ -189,7 +189,7 @@ export async function DELETE(
     }
 
     // Проверка прав (автор или owner/admin проекта)
-    const role = getProjectRole(task.projectId, auth.userId);
+    const role = await getProjectRole(task.projectId, auth.userId);
     const isAuthor = comment.authorId === auth.userId;
     const isOwnerOrAdmin = role === 'owner' || role === 'admin';
 

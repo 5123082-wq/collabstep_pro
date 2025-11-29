@@ -62,7 +62,7 @@ function deduplicateLabels(values: string[] | undefined): string[] {
 }
 
 export class ProjectCatalogService {
-  getProjects(options: { archived?: boolean | null; currentUserId?: string } = {}): CatalogProjectItem[] {
+  async getProjects(options: { archived?: boolean | null; currentUserId?: string } = {}): Promise<CatalogProjectItem[]> {
     const tasks = tasksRepository.list();
     const aggregation = new Map<string, { count: number; labels: Set<string> }>();
     for (const task of tasks) {
@@ -85,30 +85,32 @@ export class ProjectCatalogService {
       archived: options.archived ?? null
     });
 
-    return projects
-      .filter((project) => {
-        // For private projects, check if user has access
-        if (project.visibility === 'private') {
-          return projectsRepository.hasAccess(project.id, currentUserId);
+    const filteredProjects = [];
+    for (const project of projects) {
+      // For private projects, check if user has access
+      if (project.visibility === 'private') {
+        const hasAccess = await projectsRepository.hasAccess(project.id, currentUserId);
+        if (!hasAccess) {
+          continue;
         }
-        // Public projects are accessible to everyone
-        return true;
-      })
-      .map((project) => {
-        const stats = aggregation.get(project.id);
-        return {
-          ...project,
-          tasksCount: stats?.count ?? 0,
-          labels: stats ? Array.from(stats.labels.values()).sort((a, b) => a.localeCompare(b, 'ru')) : []
-        };
+      }
+      // Public projects are accessible to everyone
+      const stats = aggregation.get(project.id);
+      filteredProjects.push({
+        ...project,
+        tasksCount: stats?.count ?? 0,
+        labels: stats ? Array.from(stats.labels.values()).sort((a, b) => a.localeCompare(b, 'ru')) : []
       });
+    }
+
+    return filteredProjects;
   }
 
   getTemplates(): CatalogTemplateItem[] {
     return templatesRepository.list();
   }
 
-  getProjectCards(params: {
+  async getProjectCards(params: {
     tab: ProjectCardTab;
     currentUserId?: string;
     query?: string | null;
@@ -116,7 +118,7 @@ export class ProjectCatalogService {
     filters?: ProjectCardFilters | null;
     page?: number | null;
     pageSize?: number | null;
-  }): { items: ProjectCardItem[]; total: number } {
+  }): Promise<{ items: ProjectCardItem[]; total: number }> {
     const currentUserId = params.currentUserId ?? DEFAULT_WORKSPACE_USER_ID;
     const filters: InternalProjectCardFilters = {
       status: params.filters?.status ?? 'all',
@@ -199,16 +201,16 @@ export class ProjectCatalogService {
       };
     };
 
-    const buildMembers = (
+    const buildMembers = async (
       projectId: string,
       ownerId: string,
       rawMembers?: ProjectMember[]
-    ): ProjectCardMember[] => {
+    ): Promise<ProjectCardMember[]> => {
       const cached = membershipCache.get(projectId);
       if (cached) {
         return cached;
       }
-      const source = rawMembers ?? projectsRepository.listMembers(projectId);
+      const source = rawMembers ?? await projectsRepository.listMembers(projectId);
       const members = source
         .filter((member) => member.userId !== ownerId)
         .map((member) => toMember(member.userId, member.role));
@@ -222,8 +224,8 @@ export class ProjectCatalogService {
     for (const project of projects) {
       const ownerProfile = resolveUser(project.ownerId);
       const owner: ProjectCardOwner = { ...ownerProfile };
-      const rawMembers = projectsRepository.listMembers(project.id);
-      const members = buildMembers(project.id, project.ownerId, rawMembers);
+      const rawMembers = await projectsRepository.listMembers(project.id);
+      const members = await buildMembers(project.id, project.ownerId, rawMembers);
       const isOwner =
         project.ownerId === currentUserId ||
         rawMembers.some((member) => member.role === 'owner' && member.userId === currentUserId);

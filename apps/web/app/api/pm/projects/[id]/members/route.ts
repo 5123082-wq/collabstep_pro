@@ -23,13 +23,13 @@ export async function GET(
 
   try {
     // Проверка доступа к проекту
-    const role = getProjectRole(projectId, auth.userId);
+    const role = await getProjectRole(projectId, auth.userId);
     if (role === 'viewer') {
       return jsonError('ACCESS_DENIED', { status: 403 });
     }
 
     // Получение участников проекта
-    const members = projectsRepository.listMembers(projectId);
+    const members = await projectsRepository.listMembers(projectId);
 
     // Получение информации о пользователях
     const users = await Promise.all(members.map(async (member) => {
@@ -43,7 +43,7 @@ export async function GET(
     }));
 
     // Добавляем владельца проекта, если его нет в списке участников
-    const project = projectsRepository.findById(projectId);
+    const project = await projectsRepository.findById(projectId);
     if (project) {
       const ownerExists = members.some((m) => m.userId === project.ownerId);
       if (!ownerExists) {

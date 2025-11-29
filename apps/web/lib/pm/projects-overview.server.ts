@@ -37,7 +37,7 @@ export async function getProjectsOverview(
   filters: Partial<ProjectListFilters>
 ): Promise<ProjectsOverviewResult> {
   try {
-    const { normalizedFilters, entries, ownersMap } = collectStage2Projects(currentUserId, filters);
+    const { normalizedFilters, entries, ownersMap } = await collectStage2Projects(currentUserId, filters);
 
     // Защита: убеждаемся, что entries - это массив
     const safeEntries = Array.isArray(entries) ? entries : [];

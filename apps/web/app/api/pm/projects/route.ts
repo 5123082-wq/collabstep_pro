@@ -257,7 +257,7 @@ export async function POST(request: Request) {
     });
 
     // Проверяем, что проект действительно создан
-    const verifyProject = projectsRepository.findById(project.id);
+    const verifyProject = await projectsRepository.findById(project.id);
     if (!verifyProject) {
       console.error(`[Projects API POST] Project was created but not found immediately: id=${project.id}`);
     } else {

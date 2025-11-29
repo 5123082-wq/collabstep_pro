@@ -31,7 +31,7 @@ export async function GET(
   }
 
   // Проверка доступа к проекту
-  const role = getProjectRole(projectId, auth.userId);
+  const role = await getProjectRole(projectId, auth.userId);
   if (!role) {
     return jsonError('ACCESS_DENIED', {
       status: 403
@@ -76,7 +76,7 @@ export async function POST(
   }
 
   // Проверка прав доступа (только owner/admin может добавлять агентов)
-  const role = getProjectRole(projectId, auth.userId);
+  const role = await getProjectRole(projectId, auth.userId);
   if (role !== 'owner' && role !== 'admin') {
     return jsonError('ACCESS_DENIED', {
       status: 403
@@ -104,7 +104,7 @@ export async function POST(
     }
 
     // Проверка, не добавлен ли агент уже
-    const members = projectsRepository.listMembers(projectId);
+    const members = await projectsRepository.listMembers(projectId);
     const alreadyAdded = members.some(m => m.userId === agentId);
 
     if (alreadyAdded) {
@@ -167,7 +167,7 @@ export async function DELETE(
   }
 
   // Проверка прав доступа (только owner/admin может удалять агентов)
-  const role = getProjectRole(projectId, auth.userId);
+  const role = await getProjectRole(projectId, auth.userId);
   if (role !== 'owner' && role !== 'admin') {
     return jsonError('ACCESS_DENIED', {
       status: 403

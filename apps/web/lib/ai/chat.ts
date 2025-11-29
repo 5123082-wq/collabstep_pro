@@ -57,14 +57,14 @@ export async function generateProjectChatAIResponse(
   question: string
 ): Promise<string> {
   // Получение контекста проекта
-  const project = projectsRepository.findById(projectId);
+  const project = await projectsRepository.findById(projectId);
   if (!project) {
     return 'Извините, проект не найден.';
   }
 
   // Получение задач проекта для контекста
   const tasks = tasksRepository.list().filter(t => t.projectId === projectId);
-  const members = projectsRepository.listMembers(projectId);
+  const members = await projectsRepository.listMembers(projectId);
 
   // Получение недавних сообщений чата для контекста (последние 5)
   const recentMessagesResult = projectChatRepository.listByProject(projectId, { pageSize: 5 });

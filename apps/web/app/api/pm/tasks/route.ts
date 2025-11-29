@@ -143,9 +143,13 @@ export async function GET(request: Request) {
 
   // Получаем ВСЕ проекты напрямую из репозитория (как в дашборде)
   const allProjects = projectsRepository.list();
-  const accessibleProjects = allProjects.filter((project) =>
-    projectsRepository.hasAccess(project.id, auth.userId)
-  );
+  const accessibleProjects = [];
+  for (const project of allProjects) {
+    const hasAccess = await projectsRepository.hasAccess(project.id, auth.userId);
+    if (hasAccess) {
+      accessibleProjects.push(project);
+    }
+  }
 
   // Получаем все задачи и фильтруем их по доступу к проектам
   const allTasks = tasksRepository.list();
@@ -160,20 +164,21 @@ export async function GET(request: Request) {
   }
 
   // Формируем projectOptions из ВСЕХ доступных проектов (не фильтруем по наличию задач)
-  const projectOptions: TaskProjectOption[] = accessibleProjects.map((project) => {
-    const members = projectsRepository.listMembers(project.id) ?? [];
+  const projectOptions: TaskProjectOption[] = [];
+  for (const project of accessibleProjects) {
+    const members = await projectsRepository.listMembers(project.id);
     const isOwner = project.ownerId === auth.userId;
     const isMember = members.some((member) => member.userId === auth.userId);
     // Определяем scope: owned > member > all (для public проектов, где пользователь не member)
     const scope: ProjectScope = isOwner ? 'owned' : isMember ? 'member' : 'all';
-    return {
+    projectOptions.push({
       id: project.id,
       name: project.title,
       key: project.key,
       scope,
       isOwner
-    };
-  });
+    });
+  }
 
   // Получаем задачи в зависимости от фильтров
   let baseTasks: ReturnType<typeof tasksRepository.list> = [];
@@ -182,7 +187,7 @@ export async function GET(request: Request) {
     // Конкретный проект выбран - проверяем доступ и scope
     const project = accessibleProjects.find((p) => p.id === filters.projectId);
     if (project) {
-      const members = projectsRepository.listMembers(project.id) ?? [];
+      const members = await projectsRepository.listMembers(project.id);
       const isOwner = project.ownerId === auth.userId;
       const isMember = members.some((member) => member.userId === auth.userId);
       const projectScope: ProjectScope = isOwner ? 'owned' : isMember ? 'member' : 'all';

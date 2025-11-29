@@ -108,6 +108,7 @@ if (!canAccessAdmin(roles)) {
 ## Тестирование
 
 E2E тесты в `tests/e2e/admin-panel.spec.ts`:
+
 - Доступ администратора
 - Редирект не-админа
 - Навигация между разделами
@@ -145,4 +146,3 @@ E2E тесты в `tests/e2e/admin-panel.spec.ts`:
 - 2FA для product_admin (TODO)
 - Rate limiting на API (TODO)
 - Re-auth для критичных операций (TODO)
-

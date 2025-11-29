@@ -363,6 +363,38 @@ export async function fetchTaskByIdFromPg(taskId: string): Promise<Task | null> 
   return row ? mapTaskRow(row) : null;
 }
 
+export async function fetchProjectByIdFromPg(projectId: string): Promise<Project | null> {
+  if (!isPmDbEnabled()) return null;
+  await ensurePmTables();
+  const result = await sql.query(`SELECT * FROM ${TABLE_PROJECTS} WHERE id = $1 LIMIT 1`, [projectId]);
+  const row = result.rows[0];
+  return row ? mapProjectRow(row) : null;
+}
+
+export async function fetchProjectByKeyFromPg(workspaceId: string, key: string): Promise<Project | null> {
+  if (!isPmDbEnabled()) return null;
+  await ensurePmTables();
+  const result = await sql.query(
+    `SELECT * FROM ${TABLE_PROJECTS} WHERE workspace_id = $1 AND key = $2 LIMIT 1`,
+    [workspaceId, key.toUpperCase()]
+  );
+  const row = result.rows[0];
+  return row ? mapProjectRow(row) : null;
+}
+
+export async function fetchProjectMembersFromPg(projectId: string): Promise<ProjectMember[]> {
+  if (!isPmDbEnabled()) return [];
+  await ensurePmTables();
+  const result = await sql.query(
+    `SELECT * FROM ${TABLE_PROJECT_MEMBERS} WHERE project_id = $1`,
+    [projectId]
+  );
+  return result.rows.map((row) => ({
+    userId: String(row.user_id),
+    role: String(row.role) as ProjectMember['role']
+  }));
+}
+
 export async function fetchCommentsByTaskFromPg(projectId: string, taskId: string): Promise<TaskComment[]> {
   if (!isPmDbEnabled()) return [];
   await ensurePmTables();
