@@ -108,7 +108,7 @@ export class ProjectCatalogService {
     return templatesRepository.list();
   }
 
-  getProjectCards(params: {
+  async getProjectCards(params: {
     tab: ProjectCardTab;
     currentUserId?: string;
     query?: string | null;
@@ -116,7 +116,7 @@ export class ProjectCatalogService {
     filters?: ProjectCardFilters | null;
     page?: number | null;
     pageSize?: number | null;
-  }): { items: ProjectCardItem[]; total: number } {
+  }): Promise<{ items: ProjectCardItem[]; total: number }> {
     const currentUserId = params.currentUserId ?? DEFAULT_WORKSPACE_USER_ID;
     const filters: InternalProjectCardFilters = {
       status: params.filters?.status ?? 'all',
@@ -199,16 +199,16 @@ export class ProjectCatalogService {
       };
     };
 
-    const buildMembers = (
+    const buildMembers = async (
       projectId: string,
       ownerId: string,
       rawMembers?: ProjectMember[]
-    ): ProjectCardMember[] => {
+    ): Promise<ProjectCardMember[]> => {
       const cached = membershipCache.get(projectId);
       if (cached) {
         return cached;
       }
-      const source = rawMembers ?? projectsRepository.listMembers(projectId);
+      const source = rawMembers ?? await projectsRepository.listMembers(projectId);
       const members = source
         .filter((member) => member.userId !== ownerId)
         .map((member) => toMember(member.userId, member.role));
@@ -222,8 +222,8 @@ export class ProjectCatalogService {
     for (const project of projects) {
       const ownerProfile = resolveUser(project.ownerId);
       const owner: ProjectCardOwner = { ...ownerProfile };
-      const rawMembers = projectsRepository.listMembers(project.id);
-      const members = buildMembers(project.id, project.ownerId, rawMembers);
+      const rawMembers = await projectsRepository.listMembers(project.id);
+      const members = await buildMembers(project.id, project.ownerId, rawMembers);
       const isOwner =
         project.ownerId === currentUserId ||
         rawMembers.some((member) => member.role === 'owner' && member.userId === currentUserId);

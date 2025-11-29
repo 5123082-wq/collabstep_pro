@@ -154,7 +154,7 @@ export class AIAgentsRepository {
 
   async listByProject(projectId: string): Promise<AIAgent[]> {
     await this.ensureInitialized();
-    const members = projectsRepository.listMembers(projectId);
+    const members = await projectsRepository.listMembers(projectId);
     const agentIds: string[] = [];
     for (const m of members) {
       const user = await usersRepository.findById(m.userId);
