@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useReducer } from 'react';
+import { useCallback, useEffect, useState, useReducer } from 'react';
 import { type Project } from '@/types/pm';
 import { flags } from '@/lib/flags';
 import { FeatureComingSoon } from '@/components/app/FeatureComingSoon';
@@ -22,6 +22,8 @@ import TasksGanttView from '@/components/pm/TasksGanttView';
 import CreateTaskModal from '@/components/pm/CreateTaskModal';
 import ProjectAIAgents from '@/components/pm/ProjectAIAgents';
 import ProjectInviteModal from '@/components/pm/ProjectInviteModal';
+import ProjectTasksSection from '@/components/pm/ProjectTasksSection';
+import TaskDetailModal from '@/components/pm/TaskDetailModal';
 import { ContentBlock } from '@/components/ui/content-block';
 import LargeContentModal from '@/components/ui/large-content-modal';
 import {
@@ -31,7 +33,7 @@ import {
   type FinanceRole
 } from '@/domain/finance/expenses';
 import { DEMO_WORKSPACE_ID } from '@/domain/finance/expenses';
-import type { Task } from '@collabverse/api';
+import type { Task } from '@/types/pm';
 
 function mapDemoRole(role: string | null): FinanceRole {
   if (role === 'admin') {
@@ -77,6 +79,37 @@ export default function ProjectDetailModal({ projectId, isOpen, onClose }: Proje
   const [publishingListing, setPublishingListing] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'chat' | 'files' | 'gantt' | 'ai-agents'>('overview');
   const [projectTasks, setProjectTasks] = useState<Task[]>([]);
+  const [tasksLoading, setTasksLoading] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+
+  const loadProjectTasks = useCallback(async (projId: string) => {
+    try {
+      setTasksLoading(true);
+      const response = await fetch(`/api/pm/tasks?projectId=${projId}&pageSize=1000`, {
+        headers: { 'cache-control': 'no-store' }
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to load tasks for project ${projId}`);
+      }
+      const data = await response.json();
+      const items: Task[] =
+        (data.ok && Array.isArray(data.data?.items)
+          ? data.data.items
+          : Array.isArray(data.items)
+            ? data.items
+            : []) as Task[];
+      setProjectTasks(items);
+      setSelectedTask((current) => {
+        if (!current) return null;
+        const fresh = items.find((task) => task.id === current.id);
+        return fresh ?? current;
+      });
+    } catch (err) {
+      console.error('Failed to load project tasks:', err);
+    } finally {
+      setTasksLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     async function loadUser() {
@@ -166,7 +199,27 @@ export default function ProjectDetailModal({ projectId, isOpen, onClose }: Proje
     }
 
     void loadProject();
-  }, [projectId, isOpen, currentUserId]);
+  }, [projectId, isOpen, currentUserId, loadProjectTasks]);
+
+  useEffect(() => {
+    if (!isOpen || !projectId) return;
+
+    const handleTaskEvent: EventListener = (event) => {
+      const detail = (event as CustomEvent<{ projectId?: string }>).detail;
+      if (detail?.projectId && detail.projectId !== projectId) {
+        return;
+      }
+      void loadProjectTasks(projectId);
+    };
+
+    window.addEventListener('task-created', handleTaskEvent);
+    window.addEventListener('task-updated', handleTaskEvent);
+
+    return () => {
+      window.removeEventListener('task-created', handleTaskEvent);
+      window.removeEventListener('task-updated', handleTaskEvent);
+    };
+  }, [isOpen, projectId, loadProjectTasks]);
 
   if (!flags.PM_NAV_PROJECTS_AND_TASKS || !flags.PM_PROJECT_CARD) {
     return (
@@ -177,20 +230,6 @@ export default function ProjectDetailModal({ projectId, isOpen, onClose }: Proje
       </LargeContentModal>
     );
   }
-
-  const loadProjectTasks = async (projId: string) => {
-    try {
-      const response = await fetch(`/api/pm/tasks?projectId=${projId}&pageSize=1000`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.ok && Array.isArray(data.data?.items)) {
-          setProjectTasks(data.data.items as Task[]);
-        }
-      }
-    } catch (err) {
-      console.error('Failed to load project tasks:', err);
-    }
-  };
 
   const handleExpenseCreate = () => {
     dispatchDrawer({
@@ -372,7 +411,7 @@ export default function ProjectDetailModal({ projectId, isOpen, onClose }: Proje
 
   return (
     <LargeContentModal isOpen={isOpen} onClose={onClose}>
-      <div className="space-y-6 p-6">
+      <div className="space-y-6 rounded-lg border border-neutral-800 p-6">
         {loading && (
           <div className="flex min-h-[320px] items-center justify-center">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-neutral-800 border-t-indigo-500" />
@@ -389,10 +428,11 @@ export default function ProjectDetailModal({ projectId, isOpen, onClose }: Proje
 
         {!loading && !error && project && (
           <>
-            <ProjectHeader project={project} />
+            <div className="space-y-2">
+              <ProjectHeader project={project} />
 
-            {canAccessChatAndFiles && (
-              <div className="flex gap-2 border-b border-neutral-800">
+              {canAccessChatAndFiles && (
+                <div className="flex gap-2 border-b border-neutral-800">
                 <button
                   type="button"
                   onClick={() => setActiveTab('overview')}
@@ -449,7 +489,8 @@ export default function ProjectDetailModal({ projectId, isOpen, onClose }: Proje
                   AI-агенты
                 </button>
               </div>
-            )}
+              )}
+            </div>
 
             {activeTab === 'overview' && (
               <>
@@ -469,6 +510,14 @@ export default function ProjectDetailModal({ projectId, isOpen, onClose }: Proje
                   }}
                   onExpenseCreate={handleExpenseCreate}
                   onMarketplacePublish={handleMarketplacePublish}
+                />
+
+                <ProjectTasksSection
+                  projectId={projectId}
+                  tasks={projectTasks}
+                  loading={tasksLoading}
+                  onTaskClick={(task) => setSelectedTask(task)}
+                  onCreateTask={() => setShowCreateTaskModal(true)}
                 />
 
                 <div className="grid gap-6 lg:grid-cols-2">
@@ -512,6 +561,13 @@ export default function ProjectDetailModal({ projectId, isOpen, onClose }: Proje
                 />
               </div>
             )}
+
+            <TaskDetailModal
+              task={selectedTask}
+              isOpen={selectedTask !== null}
+              onClose={() => setSelectedTask(null)}
+              currentUserId={currentUserId}
+            />
 
             {showLimitModal && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
@@ -596,6 +652,7 @@ export default function ProjectDetailModal({ projectId, isOpen, onClose }: Proje
               isOpen={showCreateTaskModal}
               onClose={() => setShowCreateTaskModal(false)}
               onSuccess={() => {
+                void loadProjectTasks(projectId);
                 void fetch(`/api/pm/projects/${projectId}`)
                   .then((res) => {
                     if (res.ok) {

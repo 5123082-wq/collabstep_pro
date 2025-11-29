@@ -10,6 +10,7 @@ type LargeContentModalProps = {
   children: ReactNode;
   className?: string;
   contentClassName?: string;
+  showCloseButton?: boolean;
 };
 
 export default function LargeContentModal({
@@ -17,7 +18,8 @@ export default function LargeContentModal({
   onClose,
   children,
   className,
-  contentClassName
+  contentClassName,
+  showCloseButton = true
 }: LargeContentModalProps) {
   const [mounted, setMounted] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -93,14 +95,16 @@ export default function LargeContentModal({
           )}
           onClick={(e) => e.stopPropagation()}
         >
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute right-4 top-4 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] text-[color:var(--text-secondary)] transition-colors duration-200 hover:border-[color:var(--surface-border-strong)] hover:text-[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent-border-strong)]"
-          >
-            <span aria-hidden="true">×</span>
-            <span className="sr-only">Закрыть модальное окно</span>
-          </button>
+          {showCloseButton && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="absolute right-4 top-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full border border-neutral-800 bg-neutral-950/90 text-lg text-neutral-300 transition hover:border-neutral-700 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent-border-strong)]"
+            >
+              <span aria-hidden="true">×</span>
+              <span className="sr-only">Закрыть модальное окно</span>
+            </button>
+          )}
           <div className="overflow-y-auto">{children}</div>
         </div>
       </div>
@@ -108,4 +112,3 @@ export default function LargeContentModal({
     document.body
   );
 }
-

@@ -179,9 +179,9 @@ const baseLeftMenuConfig: LeftMenuSection[] = [
     icon: 'org',
     href: '/org/team',
     children: [
-      // { id: 'org-team', label: 'Команда', href: '/org/team' },
-      // { id: 'org-billing', label: 'Биллинг', href: '/org/billing' },
-      // { id: 'org-templates', label: 'Процесс-шаблоны', href: '/org/process-templates' }
+      { id: 'org-team', label: 'Команда', href: '/org/team' },
+      { id: 'org-settings', label: 'Настройки', href: '/org/settings' },
+      { id: 'org-finance', label: 'Финансы', href: '/org/finance' }
     ]
   },
   {
