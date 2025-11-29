@@ -26,7 +26,7 @@ export async function GET(
 
   try {
     // Проверка существования проекта
-    const project = projectsRepository.findById(projectId);
+    const project = await projectsRepository.findById(projectId);
     if (!project) {
       return jsonError('PROJECT_NOT_FOUND', { status: 404 });
     }
@@ -99,7 +99,7 @@ export async function POST(
     }
 
     // Проверка существования проекта
-    const project = projectsRepository.findById(projectId);
+    const project = await projectsRepository.findById(projectId);
     if (!project) {
       return jsonError('PROJECT_NOT_FOUND', { status: 404 });
     }
