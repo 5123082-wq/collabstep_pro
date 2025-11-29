@@ -1,14 +1,17 @@
 # Form
 
 ## Описание
+
 `Form` собирает стандартизированную обёртку для форм: фон `--surface-base`, обводка `--surface-border-subtle`, тени и внутренние отступы. Дополнительные элементы (`FormField`, `FormLabel`, `FormControl`, `FormDescription`, `FormMessage`, `FormActions`) помогают строить вертикальные и горизонтальные формы с единым стилем.
 
 ## Состояния
+
 - **Hover** — усиливает тень контейнера, подчёркивая активную область.
 - **Focus within** — поле подсвечивает границу токеном `--accent-border` и меняет фон на `--surface-muted`.
 - **Disabled** — следует поведению вложенных контролов (`Input`, `Button` и т.д.), сохраняя стили токенов.
 
 ## Пример использования
+
 ```tsx
 import { Button } from '@/components/ui/button';
 import {

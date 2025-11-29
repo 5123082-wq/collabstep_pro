@@ -66,7 +66,7 @@ pnpm dev
 
 ## Структура проекта
 
-```
+```text
 collabstep-new-3/
 ├── apps/
 │   ├── api/          # Backend API
@@ -113,7 +113,7 @@ npx tsx scripts/cleanup-users-db.ts
 - Изучите [дорожную карту проекта](../development/PLAN.md)
 - Ознакомьтесь с [архитектурой системы](../architecture/system-analysis.md)
 
-## Возникли проблемы?
+## Возникли проблемы
 
 Если что-то не работает:
 

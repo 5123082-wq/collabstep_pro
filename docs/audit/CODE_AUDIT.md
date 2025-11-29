@@ -140,24 +140,24 @@
 
 ## 8. Рекомендации по качеству кода, тестам и процессам
 
-### Линтинг:
+### Линтинг
 
 - ⚠️ Исправить parsing error для `drizzle.config.ts`
 - ⚠️ Заменить все `any` на конкретные типы
 - ✅ ESLint настроен для обоих пакетов
 
-### Типизация:
+### Типизация
 
 - ✅ `tsconfig.base.json` заполнен
 - ⚠️ Добавить `typecheck` для `apps/api` в корневой `package.json`
 
-### Тесты:
+### Тесты
 
 - ✅ `menuBuilder.spec.ts` исправлен
 - ⚠️ Исправить `stageCopy.spec.ts` (исключить файлы аудита)
 - ⚠️ Обновить `uiStore.spec.ts` (заменить `ReactDOMTestUtils.act`)
 
-### CI/CD:
+### CI/CD
 
 - ⚠️ Добавить `typecheck` для `apps/api`
 - ⚠️ Убедиться, что все проверки проходят
@@ -167,16 +167,19 @@
 ## 9. План действий (roadmap)
 
 ### Шаг 1 (P0) — разблокировать проверки
+
 1. Починить `stageCopy.spec.ts` (исключить аудит-доки или переписать формулировки).
 2. Добавить `apps/api/drizzle.config.ts` в `tsconfig.json`.
 3. Закрыть кластеры lint (`any`, `ban-ts-comment`, логические ошибки) — сначала API (`ai-agents-repository.ts`, `wallet-repository.ts`, др.), затем WEB (файлы из `report_lint.txt`).
 
 ### Шаг 2 (P1) — стабилизировать конфиги
+
 1. Обновить `package.json` `typecheck` (web + api) и прогнать.
 2. Убрать `globals` из `jest.config.cjs`.
 3. Добавить guard/разделение для `server-runner.ts`, чтобы Jest не падал на `import.meta`.
 
 ### Шаг 3 (P2) — шум и DX
+
 1. Подавить логи ExpenseStore в тестах.
 2. Убрать `-u` из скрипта `test`, вынести апдейт снапов в отдельный скрипт.
 

@@ -626,7 +626,7 @@ test.describe('Task Comments', () => {
 
 ## Файлы для создания/изменения
 
-### Новые файлы:
+### Новые файлы
 
 - `apps/web/app/api/pm/tasks/[id]/comments/route.ts`
 - `apps/web/app/api/pm/tasks/[id]/comments/[commentId]/route.ts`
@@ -636,7 +636,7 @@ test.describe('Task Comments', () => {
 - `apps/web/tests/unit/task-comments-api.spec.ts`
 - `apps/web/tests/e2e/task-comments.spec.ts`
 
-### Изменённые файлы:
+### Изменённые файлы
 
 - `apps/web/app/(app)/pm/tasks/page.tsx` (или создание новой страницы задачи)
 - `apps/web/lib/api/finance-access.ts` (если нужно добавить проверку доступа к задачам)

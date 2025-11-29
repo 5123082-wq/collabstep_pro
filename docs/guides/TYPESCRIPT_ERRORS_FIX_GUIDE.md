@@ -1,6 +1,7 @@
 # Руководство по исправлению ошибок TypeScript
 
 ## Обзор
+
 В коде обнаружено **47 ошибок TypeScript**, которые необходимо исправить. Ниже приведен детальный список проблем и способы их решения.
 
 ---
@@ -8,6 +9,7 @@
 ## 1. Ошибки в API репозиториях (Backend)
 
 ### 1.1. `organizations-repository.ts` (строка 123)
+
 **Ошибка:** `Type 'undefined' is not assignable to type 'OrganizationMember'`
 
 **Проблема:** Метод `addMember` возвращает результат `insert().returning()`, который может быть `undefined`, но тип возврата не допускает `undefined`.
@@ -29,6 +31,7 @@ async addMember(member: NewOrganizationMember): Promise<OrganizationMember> {
 ---
 
 ### 1.2. `performer-profiles-repository.ts` (строки 20, 26, 80)
+
 **Ошибки:**
 - Строка 20, 26: `Type 'undefined' is not assignable to type 'PerformerProfile'`
 - Строка 80: `Property 'where' does not exist on type`
@@ -101,6 +104,7 @@ async listPublic(options?: { specialization?: string; limit?: number; offset?: n
 ---
 
 ### 1.3. `wallet-service.ts` (множественные ошибки)
+
 **Ошибки:**
 - `Type 'undefined' is not assignable to type 'Wallet | null'` (строки 9, 29, 117)
 - `'wallet' is possibly 'null'` (строки 12, 13, 14, 34, 43)
@@ -194,6 +198,7 @@ async updateBalance(walletId: string, amount: number, tx: any = db) { ... }
 ## 2. Ошибки в API routes (Frontend)
 
 ### 2.1. `jsonError` с параметром `details` (22 ошибки)
+
 **Ошибка:** `Object literal may only specify known properties, and 'details' does not exist in type 'ResponseInit'`
 
 **Проблема:** Функция `jsonError` принимает `ResponseInit`, который не имеет свойства `details`.
@@ -237,6 +242,7 @@ export function jsonError(message: string, init?: ResponseInit & { details?: str
 ---
 
 ### 2.2. `performers/route.ts` (строка 12)
+
 **Ошибка:** `Type 'string | undefined' is not assignable to type 'string'`
 
 **Проблема:** `specialization` может быть `undefined`, но метод `listPublic` ожидает `string | undefined` с `exactOptionalPropertyTypes: true`.
@@ -253,6 +259,7 @@ const performers = await performerProfilesRepository.listPublic({
 ---
 
 ### 2.3. `projects/[projectId]/invites/route.ts` (строка 27)
+
 **Ошибка:** `Property 'listProjectInvites' does not exist on type 'InvitationsRepository'`
 
 **Проблема:** Метод `listProjectInvites` не существует в репозитории.
@@ -280,6 +287,7 @@ async listProjectInvites(projectId: string, status?: string): Promise<ProjectInv
 ---
 
 ### 2.4. `pm/projects/route.ts` (строка 249)
+
 **Ошибка:** `Property 'organizationId' does not exist in type`
 
 **Проблема:** Тип проекта не содержит поле `organizationId`.
@@ -306,6 +314,7 @@ const project = projectsRepository.create({
 ## 3. Ошибки в компонентах (Frontend)
 
 ### 3.1. `OrganizationFinanceClient.tsx` (строки 5)
+
 **Ошибка:** `Module 'lucide-react' has no exported member 'CreditCard'` и `'History'`
 
 **Проблема:** Иконки `CreditCard` и `History` не существуют в `lucide-react`.
@@ -327,6 +336,7 @@ import { Loader2, TrendingUp, Wallet, Clock } from 'lucide-react';
 ---
 
 ### 3.2. `ProjectCreateWizardClient.tsx` (строка 32)
+
 **Ошибка:** `Cannot find name 'useEffect'`
 
 **Проблема:** Отсутствует импорт `useEffect`.
@@ -339,6 +349,7 @@ import { useState, useEffect } from 'react';
 ---
 
 ### 3.3. `CreateOrganizationModal.tsx` и `InvitePerformerModal.tsx`
+
 **Ошибка:** `Type '"outline"' is not assignable to type 'ButtonVariant'`
 
 **Проблема:** Вариант `'outline'` не существует в типе `ButtonVariant` (доступны: `'primary' | 'secondary' | 'ghost' | 'danger' | 'trendy'`).
@@ -357,18 +368,21 @@ import { useState, useEffect } from 'react';
 
 ## 4. Приоритет исправлений
 
-### Высокий приоритет (критично для работы):
+### Высокий приоритет (критично для работы)
+
 1. ✅ Исправить типы транзакций в `wallet-repository.ts` и `wallet-service.ts`
 2. ✅ Добавить проверки на `null/undefined` в репозиториях
 3. ✅ Исправить функцию `jsonError` для поддержки `details`
 4. ✅ Добавить метод `listProjectInvites` в `InvitationsRepository`
 
-### Средний приоритет (функциональность):
+### Средний приоритет (функциональность)
+
 5. ✅ Исправить импорты иконок в `OrganizationFinanceClient.tsx`
 6. ✅ Добавить импорт `useEffect` в `ProjectCreateWizardClient.tsx`
 7. ✅ Исправить варианты кнопок (`outline` → `secondary`)
 
-### Низкий приоритет (типы):
+### Низкий приоритет (типы)
+
 8. ✅ Исправить типы в `performers/route.ts`
 9. ✅ Добавить `organizationId` в схему проекта или использовать временное решение
 

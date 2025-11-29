@@ -39,6 +39,7 @@
 ## Переменные окружения
 
 ### `NEXT_PUBLIC_WS_URL`
+
 URL WebSocket сервера. Если не указан, WebSocket отключен.
 
 **Примеры:**
@@ -46,6 +47,7 @@ URL WebSocket сервера. Если не указан, WebSocket отключ
 - `wss://ws.example.com` — production (WebSocket Secure)
 
 ### `NEXT_PUBLIC_WS_ENABLED`
+
 Явное включение/отключение WebSocket. По умолчанию WebSocket включен, если указан `NEXT_PUBLIC_WS_URL`.
 
 **Значения:**
@@ -54,11 +56,13 @@ URL WebSocket сервера. Если не указан, WebSocket отключ
 
 ## Проверка работы
 
-### Без WebSocket сервера:
+### Без WebSocket сервера
+
 - В консоли браузера: `[WebSocket] WebSocket disabled or URL not configured, using polling fallback`
 - Обновления работают через polling интервалы
 
-### С WebSocket сервером:
+### С WebSocket сервером
+
 - В консоли браузера: `[WebSocket] Connected`
 - Обновления происходят мгновенно
 - При недоступности сервера автоматически переключается на polling

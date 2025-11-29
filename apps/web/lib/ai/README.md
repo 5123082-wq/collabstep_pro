@@ -15,11 +15,14 @@ Get your API key from: https://platform.openai.com/api-keys
 ### 2. Optional Configuration
 
 ```bash
+
 # AI Feature Flag
+
 NEXT_PUBLIC_FEATURE_AI_V1=true
 FEATURE_AI_V1=true
 
 # Model Configuration
+
 OPENAI_MODEL=gpt-3.5-turbo
 OPENAI_MAX_TOKENS=1000
 OPENAI_TEMPERATURE=0.7

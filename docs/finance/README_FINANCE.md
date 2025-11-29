@@ -1,6 +1,7 @@
 # Finance System Implementation Progress
 
 ## Completed Phases
+
 1.  **Phase 1: Backend Data & Foundation**
     *   Database Schema: Created `wallets`, `transactions`, `contracts` tables.
     *   Repositories: `WalletRepository`, `ContractsRepository`.
@@ -20,6 +21,7 @@
 ## Next Steps
 
 ### Phase 3: Integration into Tasks (In Progress)
+
 *   [ ] **Update Task Creation UI**: Add `price` and `currency` fields to `CreateTaskModal.tsx`.
 *   [ ] **Update Task Details UI**:
     *   Display Price in `TaskDetailDrawer.tsx` / `TaskDetailModal.tsx`.
@@ -27,12 +29,14 @@
     *   Connect UI to `ContractService` API endpoints.
 
 ### Phase 4: Performer Interface
+
 *   [ ] **My Wallet Page**: Create `/settings/wallet` or `/finance/earnings` for users.
     *   Show current balance.
     *   Withdrawal button (stub).
     *   Transaction history.
 
 ### Notes for Next Developer
+
 *   The `ContractService` expects amounts in **cents** (integer), but `WalletService` internal logic (via `money.ts` utils) handles normalization.
 *   The API endpoints handle conversion from "100.00" string to cents.
 *   Ensure to export `walletService` and `contractService` in `apps/api/src/index.ts` (Done).

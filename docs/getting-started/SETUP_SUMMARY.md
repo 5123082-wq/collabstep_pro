@@ -53,13 +53,16 @@ npx tsx scripts/cleanup-users-db.ts
 В настройках проекта на Vercel добавьте:
 
 ```env
+
 # Обязательно
+
 DATABASE_URL=$POSTGRES_URL
 AUTH_STORAGE=db
 AUTH_SECRET=<сгенерируйте: openssl rand -base64 32>
 NEXTAUTH_URL=https://your-domain.vercel.app
 
 # Демо-администратор
+
 DEMO_ADMIN_EMAIL=admin.demo@collabverse.test
 DEMO_ADMIN_PASSWORD=admin.demo
 ```
@@ -68,39 +71,47 @@ DEMO_ADMIN_PASSWORD=admin.demo
 
 ## 📋 Полный список переменных окружения
 
-### Обязательные для работы с БД:
+### Обязательные для работы с БД
 
 ```env
+
 # Database
+
 POSTGRES_URL=<ваш URL из Vercel/Neon>
 DATABASE_URL=$POSTGRES_URL
 
 # Auth Storage (критически важно!)
+
 AUTH_STORAGE=db
 
 # NextAuth
+
 AUTH_SECRET=<сгенерируйте: openssl rand -base64 32>
 NEXTAUTH_URL=http://localhost:3000  # или https://your-domain.vercel.app
 ```
 
-### Рекомендуемые:
+### Рекомендуемые
 
 ```env
+
 # Базовые настройки
+
 NAV_V1=on
 APP_LOCALE=ru
 FEATURE_PROJECTS_V1=1
 AUTH_DEV=on
 
 # Finance Storage
+
 FIN_EXPENSES_STORAGE=db
 
 # Демо-администратор
+
 DEMO_ADMIN_EMAIL=admin.demo@collabverse.test
 DEMO_ADMIN_PASSWORD=admin.demo
 ```
 
-### Опциональные (Google OAuth):
+### Опциональные (Google OAuth)
 
 ```env
 GOOGLE_CLIENT_ID=<ваш Client ID>
@@ -146,7 +157,7 @@ SELECT roles FROM "userControl"
 WHERE "userId" = '00000000-0000-0000-0000-000000000001';
 ```
 
-## ✅ Готово!
+## ✅ Готово
 
 После выполнения всех шагов система будет работать с Vercel Postgres, и все данные будут сохраняться в базе данных.
 

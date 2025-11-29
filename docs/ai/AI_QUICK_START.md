@@ -6,7 +6,7 @@
 
 ### 1. Получите API ключ
 
-```
+```text
 https://platform.openai.com/api-keys
 → Create new secret key
 → Скопируйте ключ (sk-proj-...)
@@ -14,7 +14,7 @@ https://platform.openai.com/api-keys
 
 ### 2. Настройте биллинг
 
-```
+```text
 https://platform.openai.com/account/billing/overview
 → Add payment method
 → Set limit ($5-10 для начала)
@@ -49,11 +49,14 @@ pnpm dev
 ## 🎯 Рекомендуемые настройки
 
 ```bash
+
 # Минимальная конфигурация
+
 OPENAI_API_KEY=sk-proj-...
 NEXT_PUBLIC_FEATURE_AI_V1=true
 
 # Оптимальная для разработки
+
 OPENAI_MODEL=gpt-3.5-turbo
 OPENAI_MAX_TOKENS=1000
 OPENAI_TEMPERATURE=0.7
@@ -70,7 +73,7 @@ OPENAI_TEMPERATURE=0.7
 
 ---
 
-## 🔧 Проблемы?
+## 🔧 Проблемы
 
 **"API key not set"**
 → Проверьте `.env.local`, перезапустите сервер

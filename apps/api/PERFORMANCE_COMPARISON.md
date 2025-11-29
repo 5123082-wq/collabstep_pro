@@ -4,7 +4,7 @@
 
 ### CPU Usage (Idle)
 
-```
+```text
 Full Mode:     ██████████ (5-10%)
 Lightweight:   █ (<1%)
                
@@ -13,7 +13,7 @@ Improvement:   🔥 90% reduction
 
 ### Memory Usage
 
-```
+```text
 Full Mode:     ███████████████ (150MB)
 Lightweight:   █████ (50MB)
                
@@ -22,7 +22,7 @@ Improvement:   💾 66% reduction
 
 ### Logs Per Minute
 
-```
+```text
 Full Mode:     ████████████████████ (200 logs/min)
 Lightweight:   █ (5 logs/min)
                
@@ -31,7 +31,7 @@ Improvement:   📝 97% reduction
 
 ### Latency
 
-```
+```text
 Full Mode:     █ (1-5ms)
 Lightweight:   █ (1ms)
                
@@ -195,11 +195,13 @@ Improvement:   ✅ Stable, no degradation
 - No other heavy apps
 
 ### Full Mode
+
 - 🔋 Battery drain: ~8-10% per hour
 - ⚡ Energy Impact: High (Activity Monitor)
 - 🔥 Heat: Noticeable
 
 ### Lightweight
+
 - 🔋 Battery drain: ~2-3% per hour
 - ⚡ Energy Impact: Low (Activity Monitor)
 - 🔥 Heat: Minimal
@@ -212,7 +214,7 @@ Improvement:   ✅ Stable, no degradation
 
 ### Full Mode (30 seconds)
 
-```
+```text
 [RealtimeServer] New connection: conn_1699... from ::1
 [ConnectionManager] New connection: conn_1699...
 [ConnectionManager] Authenticated: conn_1699... -> user_test
@@ -232,7 +234,7 @@ Improvement:   ✅ Stable, no degradation
 
 ### Lightweight (30 seconds)
 
-```
+```text
 [Lightweight WS] ✅ Server listening on ws://localhost:8080
 [Lightweight WS] 🚀 Optimized for low resource usage
 [Lightweight WS] First client connected

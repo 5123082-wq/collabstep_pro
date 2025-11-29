@@ -69,6 +69,7 @@ FEATURE_PROJECTS_V1=1
 AUTH_DEV=on
 
 # Auth & Database
+
 AUTH_STORAGE=db
 DATABASE_URL=postgresql://...
 GOOGLE_CLIENT_ID=...
@@ -135,7 +136,7 @@ DEMO_USER_PASSWORD=demo-user
 
    **Обязательные:**
 
-   ```
+```text
    NAV_V1=on
    APP_LOCALE=ru
    AUTH_DEV=on
@@ -145,7 +146,7 @@ DEMO_USER_PASSWORD=demo-user
 
    **Демо-аккаунты:**
 
-   ```
+```text
    DEMO_ADMIN_EMAIL=admin.demo@collabverse.test
    DEMO_ADMIN_PASSWORD=demo-admin
    DEMO_USER_EMAIL=user.demo@collabverse.test
@@ -154,13 +155,13 @@ DEMO_USER_PASSWORD=demo-user
 
    **Для production/staging:**
 
-   ```
+```text
    FIN_EXPENSES_STORAGE=db
    ```
 
    **Опциональные (WebSocket):**
 
-   ```
+```text
    NEXT_PUBLIC_WS_URL=wss://your-websocket-server.com
    NEXT_PUBLIC_WS_ENABLED=true
    ```
@@ -196,32 +197,47 @@ DEMO_USER_PASSWORD=demo-user
 ### Создание новой ветки для изменений
 
 ```bash
+
 # Обновите main ветку
+
 git checkout main
 git pull origin main
 
 # Создайте новую ветку для вашей работы
+
 git checkout -b feature/название-функции
+
 # или
+
 git checkout -b fix/описание-бага
+
 # или
+
 git checkout -b docs/обновление-документации
 ```
 
 ### Коммит и отправка изменений
 
 ```bash
+
 # Добавьте изменения
+
 git add .
 
 # Сделайте коммит с понятным сообщением
+
 git commit -m "feat: добавить новую функцию X"
+
 # или
+
 git commit -m "fix: исправить баг с Y"
+
 # или
+
 git commit -m "docs: обновить README"
 
 # Отправьте ветку на GitHub
+
 git push -u origin feature/название-функции
 ```
 
@@ -238,13 +254,17 @@ git push -u origin feature/название-функции
 ### После одобрения PR
 
 ```bash
+
 # Вернитесь на main
+
 git checkout main
 
 # Обновите main с GitHub
+
 git pull origin main
 
 # Удалите локальную ветку (опционально)
+
 git branch -d feature/название-функции
 ```
 

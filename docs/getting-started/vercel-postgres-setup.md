@@ -33,17 +33,22 @@ Vercel автоматически создаст следующие переме
 ### Обязательные переменные
 
 ```env
+
 # Database (автоматически добавляется при создании Postgres)
+
 DATABASE_URL=$POSTGRES_URL
 
 # Auth Storage
+
 AUTH_STORAGE=db
 
 # NextAuth
+
 AUTH_SECRET=<сгенерируйте: openssl rand -base64 32>
 NEXTAUTH_URL=https://your-domain.vercel.app
 
 # Google OAuth
+
 GOOGLE_CLIENT_ID=<ваш Google Client ID>
 GOOGLE_CLIENT_SECRET=<ваш Google Client Secret>
 ```
@@ -51,16 +56,20 @@ GOOGLE_CLIENT_SECRET=<ваш Google Client Secret>
 ### Рекомендуемые переменные
 
 ```env
+
 # Базовые настройки
+
 NAV_V1=on
 APP_LOCALE=ru
 FEATURE_PROJECTS_V1=1
 AUTH_DEV=on
 
 # Finance Storage
+
 FIN_EXPENSES_STORAGE=db
 
 # Демо-аккаунты (опционально)
+
 DEMO_ADMIN_EMAIL=admin.demo@collabverse.test
 DEMO_ADMIN_PASSWORD=demo-admin
 DEMO_USER_EMAIL=user.demo@collabverse.test
@@ -78,15 +87,15 @@ DEMO_USER_PASSWORD=demo-user
 4. Перейдите в **APIs & Services** → **Credentials** → **Create Credentials** → **OAuth client ID**
 5. Выберите тип приложения: **Web application**
 6. Настройте **Authorized redirect URIs**:
-   ```
+```text
    https://your-domain.vercel.app/api/auth/callback/google
    http://localhost:3000/api/auth/callback/google (для локальной разработки)
-   ```
+```text
 7. При появлении поля **Authorized JavaScript origins** укажите:
-   ```
+```text
    https://your-domain.vercel.app
    http://localhost:3000
-   ```
+```text
 8. Скопируйте **Client ID** и **Client Secret**
 9. Добавьте их в переменные окружения Vercel
 
@@ -97,19 +106,25 @@ DEMO_USER_PASSWORD=demo-user
 ### Вариант A: Через Vercel CLI (рекомендуется)
 
 ```bash
+
 # Установите Vercel CLI (если еще не установлен)
+
 npm i -g vercel
 
 # Войдите в Vercel
+
 vercel login
 
 # Подключитесь к проекту
+
 vercel link
 
 # Получите переменные окружения
+
 vercel env pull .env.local
 
 # Примените миграции
+
 pnpm --filter @collabverse/api db:push
 ```
 
@@ -119,7 +134,7 @@ pnpm --filter @collabverse/api db:push
 2. Создайте локальный `.env.local`:
    ```env
    DATABASE_URL=<ваш POSTGRES_URL>
-   ```
+```text
 3. Выполните команду:
    ```bash
    pnpm --filter @collabverse/api db:push
@@ -132,7 +147,7 @@ pnpm --filter @collabverse/api db:push
 3. Выполните SQL из файла миграции:
    ```bash
    cat apps/api/src/db/migrations/0000_*.sql
-   ```
+```text
 4. Скопируйте и выполните SQL в редакторе
 
 ## Шаг 5: Проверка настройки
