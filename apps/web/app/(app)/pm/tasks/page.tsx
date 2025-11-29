@@ -63,15 +63,19 @@ export default function PMTasksPage() {
   // Стабильный ключ кэша, который не меняется при каждом рендере
   const cacheKey = useMemo(() => {
     const params = buildTaskFilterParams(urlFilters);
-    // Исключаем view из ключа кэша, так как он не влияет на данные
+    // Исключаем view и pageSize из ключа кэша для доски, так как они не влияют на данные
     params.delete('view');
+    // Для доски pageSize всегда большой, поэтому не включаем его в ключ кэша
+    if (view === 'board') {
+      params.delete('pageSize');
+    }
     // Сортируем параметры для стабильности ключа
     const sortedParams = new URLSearchParams();
     Array.from(params.entries())
       .sort(([a], [b]) => a.localeCompare(b))
       .forEach(([key, value]) => sortedParams.set(key, value));
     return sortedParams.toString();
-  }, [urlFilters]);
+  }, [urlFilters, view]);
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projectOptions, setProjectOptions] = useState<TaskProjectOption[]>([]);
@@ -82,6 +86,10 @@ export default function PMTasksPage() {
   const [currentUserId, setCurrentUserId] = useState<string>('');
   // Ref для отслеживания предыдущего cacheKey, чтобы избежать лишних перезагрузок
   const prevCacheKeyRef = useRef<string>('');
+  // Ref для отслеживания текущей загрузки, чтобы избежать race conditions
+  const loadingRef = useRef<string | null>(null);
+  // Ref для хранения актуального cacheKey для обработчиков событий
+  const currentCacheKeyRef = useRef<string>('');
 
   useEffect(() => {
     async function loadCurrentUser() {
@@ -103,46 +111,74 @@ export default function PMTasksPage() {
 
   useEffect(() => {
     // Проверяем, изменился ли cacheKey - если нет, не перезагружаем данные
-    if (cacheKey === prevCacheKeyRef.current) {
+    // НО: при первом рендере (когда prevCacheKeyRef пустой) всегда загружаем
+    const isFirstLoad = prevCacheKeyRef.current === '';
+    const cacheKeyChanged = cacheKey !== prevCacheKeyRef.current;
+    
+    if (!isFirstLoad && !cacheKeyChanged) {
       return;
     }
 
-    // Обновляем предыдущий ключ
+    // Обновляем предыдущий ключ и текущий ключ для обработчиков событий
     prevCacheKeyRef.current = cacheKey;
+    currentCacheKeyRef.current = cacheKey;
 
     // Проверяем кэш перед загрузкой
     const cached = cacheRef.current.get(cacheKey);
-    if (cached) {
-      // Показываем кэшированные данные сразу
+    if (cached && !isFirstLoad) {
+      // Показываем кэшированные данные сразу (но не при первой загрузке)
       setTasks(cached.items);
       setProjectOptions(cached.projects);
       setScopeCounts(cached.scopeCounts);
       setInitialLoading(false);
-    } else {
-      setInitialLoading(true);
+      loadingRef.current = null;
+      return; // Не загружаем данные, если они уже в кэше
     }
+
+    // Если кэша нет или это первая загрузка, устанавливаем loading и загружаем данные
+    // Отмечаем, что идет загрузка для этого cacheKey
+    loadingRef.current = cacheKey;
+    setInitialLoading(true);
+    // Очищаем предыдущие данные только если это новая загрузка (не из кэша)
+    setTasks([]);
+    setError(null);
 
     let cancelled = false;
 
     async function loadTasks() {
       try {
-        const params = buildTaskFilterParams(urlFilters);
+        // Для доски задач увеличиваем pageSize, чтобы показать все задачи
+        const filtersForRequest = view === 'board' 
+          ? { ...urlFilters, pageSize: 1000 }
+          : urlFilters;
+        const params = buildTaskFilterParams(filtersForRequest);
+        const url = `/api/pm/tasks?${params.toString()}`;
         // Отключаем кэширование браузера, чтобы избежать конфликтов со старыми данными
-        const response = await fetch(`/api/pm/tasks?${params.toString()}`, {
+        const response = await fetch(url, {
           headers: { 'cache-control': 'no-store' }
         });
+        
         if (!response.ok) {
-          throw new Error('Failed to load tasks');
+          const errorText = await response.text();
+          throw new Error(`Failed to load tasks: ${response.status} ${errorText}`);
         }
+        
         const responseData = await response.json();
         // jsonOk возвращает { ok: true, data: ... }
         const data = responseData.ok ? responseData.data : responseData;
 
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
+
+        // Проверяем, не изменился ли cacheKey во время загрузки
+        if (loadingRef.current !== cacheKey) {
+          return; // Игнорируем результат, если cacheKey изменился
+        }
 
         const cacheData: TasksCacheData = {
-          items: data?.items || [],
-          projects: data?.meta?.projects ?? [],
+          items: Array.isArray(data?.items) ? data.items : [],
+          projects: Array.isArray(data?.meta?.projects) ? data.meta.projects : [],
           scopeCounts: data?.meta?.scopeCounts ?? DEFAULT_SCOPE_COUNTS
         };
 
@@ -154,11 +190,21 @@ export default function PMTasksPage() {
         setScopeCounts(cacheData.scopeCounts);
         setError(null);
       } catch (err) {
-        if (cancelled) return;
-        setError(err instanceof Error ? err.message : 'Unknown error');
+        if (cancelled) {
+          return;
+        }
+        // Проверяем, не изменился ли cacheKey во время загрузки
+        if (loadingRef.current !== cacheKey) {
+          return; // Игнорируем ошибку, если cacheKey изменился
+        }
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        console.error('[PMTasksPage] Failed to load tasks:', errorMessage);
+        setError(errorMessage);
       } finally {
-        if (!cancelled) {
+        // Всегда сбрасываем loading, если это текущая загрузка
+        if (loadingRef.current === cacheKey) {
           setInitialLoading(false);
+          loadingRef.current = null;
         }
       }
     }
@@ -167,10 +213,18 @@ export default function PMTasksPage() {
 
     // Слушаем события создания и обновления задачи для обновления списка
     const handleTaskEvent = () => {
-      // Инвалидируем кэш и перезагружаем данные
-      cacheRef.current.delete(cacheKey);
+      // Инвалидируем весь кэш, так как задача может появиться в любом фильтре
+      // Используем актуальный cacheKey из ref
+      const currentKey = currentCacheKeyRef.current;
+      if (currentKey) {
+        cacheRef.current.delete(currentKey);
+      }
+      // Также очищаем все кэшированные данные для надежности
+      cacheRef.current.clear();
       // Небольшая задержка для того, чтобы задача успела сохраниться в базе данных
       setTimeout(() => {
+        // Принудительно обновляем данные, игнорируя проверку на изменение cacheKey
+        prevCacheKeyRef.current = '';
         void loadTasks();
       }, 100);
     };
@@ -205,7 +259,9 @@ export default function PMTasksPage() {
       window.removeEventListener('task-created', handleTaskEvent);
       window.removeEventListener('task-updated', handleTaskEvent);
     };
-  }, [urlFilters, currentUserId, cacheKey]);
+    // currentUserId используется только для WebSocket подключения, которое опционально
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlFilters, cacheKey, view]);
 
   const handleViewChange = (newView: TaskListView) => {
     trackEvent('pm_view_changed', { view: newView });
