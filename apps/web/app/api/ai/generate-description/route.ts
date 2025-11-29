@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       const project = projectsRepository.findById(projectId);
       if (project) {
         // Проверяем, есть ли доступ к проекту
-        const members = projectsRepository.listMembers(projectId);
+        const members = await projectsRepository.listMembers(projectId);
         const isMember = members.some(m => m.userId === auth.userId);
 
         if (isMember) {

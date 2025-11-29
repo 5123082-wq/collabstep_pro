@@ -422,11 +422,11 @@ function getUserWorkspaceIds(userId: string): Set<string> {
   return workspaceIds;
 }
 
-export function collectStage2Projects(
+export async function collectStage2Projects(
   currentUserId: string,
   filters: Partial<ProjectListFilters> = {},
   options: Stage2CollectionOptions = {}
-): Stage2Context {
+): Promise<Stage2Context> {
   const normalizedFilters = normalizeFilters(filters);
   const allTasks = tasksRepository.list();
   const metricsMap = buildTaskMetrics(allTasks);
@@ -479,13 +479,16 @@ export function collectStage2Projects(
       }
     }
 
-    if (!projectsRepository.hasAccess(project.id, currentUserId)) {
+    const hasAccess = await projectsRepository.hasAccess(project.id, currentUserId);
+    if (!hasAccess) {
       continue;
     }
 
-    const members =
-      membersCache.get(project.id) ?? projectsRepository.listMembers(project.id) ?? [];
-    membersCache.set(project.id, members);
+    let members = membersCache.get(project.id);
+    if (!members) {
+      members = await projectsRepository.listMembers(project.id);
+      membersCache.set(project.id, members);
+    }
 
     // isOwner уже определен выше для фильтрации по workspace
     const membership = members.find((member) => member.userId === currentUserId) ?? null;

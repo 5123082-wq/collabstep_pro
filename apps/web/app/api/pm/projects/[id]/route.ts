@@ -173,14 +173,14 @@ export async function DELETE(
     const previewRequested = url.searchParams.get('preview') === 'true';
 
     if (previewRequested) {
-      const preview = deletionService.getProjectPreview(apiProject.id);
+      const preview = await deletionService.getProjectPreview(apiProject.id);
       if (!preview) {
         return jsonError('NOT_FOUND', { status: 404 });
       }
       return jsonOk({ preview });
     }
 
-    const result = deletionService.deleteProject(apiProject.id);
+    const result = await deletionService.deleteProject(apiProject.id);
     if (!result) {
       return jsonError('NOT_FOUND', { status: 404 });
     }

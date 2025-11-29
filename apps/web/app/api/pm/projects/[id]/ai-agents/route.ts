@@ -104,7 +104,7 @@ export async function POST(
     }
 
     // Проверка, не добавлен ли агент уже
-    const members = projectsRepository.listMembers(projectId);
+    const members = await projectsRepository.listMembers(projectId);
     const alreadyAdded = members.some(m => m.userId === agentId);
 
     if (alreadyAdded) {

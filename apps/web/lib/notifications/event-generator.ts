@@ -211,11 +211,11 @@ export async function notifyChatMessageAdded(
   const message = projectChatRepository.findById(messageId);
   if (!message) return;
 
-  const project = projectsRepository.findById(projectId);
+  const project = await projectsRepository.findById(projectId);
   if (!project) return;
 
   // Получаем всех участников проекта
-  const members = projectsRepository.listMembers(projectId);
+  const members = await projectsRepository.listMembers(projectId);
   const recipients = new Set<string>();
 
   // Добавляем всех участников проекта, кроме автора сообщения

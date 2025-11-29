@@ -34,6 +34,14 @@ export {
   type ProjectCardTab
 } from './services/project-catalog-service';
 export {
+  DeletionService,
+  deletionService,
+  type TaskDeletionPreview,
+  type ProjectDeletionPreview,
+  type TaskDeletionResult,
+  type ProjectDeletionResult
+} from './services/deletion-service';
+export {
   MemoryExpenseStore,
   DbExpenseStore,
   type ExpenseStore,
@@ -120,4 +128,3 @@ export { walletRepository, type WalletType, type Currency, type TransactionType 
 export { walletService, WalletService } from './services/wallet-service';
 export { contractService, ContractService } from './services/contract-service';
 export { contractsRepository, ContractsRepository, type ContractStatus } from './repositories/contracts-repository';
-
