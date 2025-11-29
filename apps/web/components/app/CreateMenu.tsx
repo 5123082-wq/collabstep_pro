@@ -129,7 +129,6 @@ export default function CreateMenu({ open, onClose, triggerRef }: CreateMenuProp
 
   const visibleActions = useMemo(() => {
     const context = resolveContext(pathname);
-    console.log('CreateMenu Context:', context, pathname); // Debug log
     const actions = CONTEXT_ACTIONS[context] ?? [];
     return actions.filter((action) => {
       if (!action.roles) {

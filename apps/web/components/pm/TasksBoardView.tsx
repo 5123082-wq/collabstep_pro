@@ -12,7 +12,7 @@ import { trackEvent } from '@/lib/telemetry';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { ContentBlock } from '@/components/ui/content-block';
 
-const DEFAULT_STATUSES: TaskStatus[] = ['new', 'in_progress', 'review', 'done'];
+const DEFAULT_STATUSES: TaskStatus[] = ['new', 'in_progress', 'review', 'done', 'blocked'];
 
 const STATUS_LABELS: Record<TaskStatus, string> = {
   new: 'Backlog',
@@ -127,6 +127,7 @@ function TaskCard({ task, isDragging, onOpenDetail }: TaskCardProps & { onOpenDe
       data-task-id={task.id}
       className={cn(
         'relative rounded-xl border p-3 transition hover:border-indigo-500/40 cursor-pointer',
+        'block', // Явно указываем display
         priorityColor,
         (isDragging || isDraggingState) && 'opacity-50'
       )}
@@ -199,15 +200,16 @@ function StatusColumn({ status, tasks, isOver, onOpenDetail }: StatusColumnProps
           {tasks.length}
         </span>
       </div>
-      <div className="flex-1 space-y-2">
-        {tasks.map((task) => (
-          <TaskCard 
-            key={task.id} 
-            task={task} 
-            {...(onOpenDetail && { onOpenDetail })}
-          />
-        ))}
-        {tasks.length === 0 && (
+      <div className="flex-1 space-y-2 overflow-y-auto">
+        {tasks.length > 0 ? (
+          tasks.map((task) => (
+            <TaskCard 
+              key={task.id} 
+              task={task} 
+              {...(onOpenDetail && { onOpenDetail })}
+            />
+          ))
+        ) : (
           <div className="py-8 text-center text-sm text-neutral-500">Нет задач</div>
         )}
       </div>
@@ -329,7 +331,7 @@ export default function TasksBoardView({ tasks, loading, filters, onTaskClick }:
   if (loading) {
     return (
       <div className="min-w-0 max-w-full">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 items-start">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 items-start">
           {DEFAULT_STATUSES.map((status) => (
             <div key={status} className="h-96 animate-pulse rounded-2xl bg-neutral-900/50" />
           ))}
@@ -347,7 +349,7 @@ export default function TasksBoardView({ tasks, loading, filters, onTaskClick }:
       onDragCancel={handleDragCancel}
     >
       <div className="min-w-0 max-w-full">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 items-start">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 items-start">
           {DEFAULT_STATUSES.map((status) => (
             <StatusColumn key={status} status={status} tasks={tasksByStatus[status]} {...(onTaskClick && { onOpenDetail: onTaskClick })} />
           ))}

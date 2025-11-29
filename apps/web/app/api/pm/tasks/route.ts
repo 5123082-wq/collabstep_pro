@@ -175,12 +175,6 @@ export async function GET(request: Request) {
     };
   });
 
-  const scopeCounts: Record<ProjectScope, number> = {
-    all: projectOptions.length,
-    owned: projectOptions.filter((option) => option.scope === 'owned').length,
-    member: projectOptions.filter((option) => option.scope === 'member').length
-  };
-
   // Получаем задачи в зависимости от фильтров
   let baseTasks: ReturnType<typeof tasksRepository.list> = [];
 
@@ -226,6 +220,24 @@ export async function GET(request: Request) {
   });
 
   const { items: paginated, pagination } = applyPagination(filtered, page, pageSize);
+
+  // Подсчитываем количество задач по каждому scope
+  const ownedProjectIds = new Set(
+    projectOptions
+      .filter((option) => option.scope === 'owned')
+      .map((option) => option.id)
+  );
+  const memberProjectIds = new Set(
+    projectOptions
+      .filter((option) => option.scope === 'member')
+      .map((option) => option.id)
+  );
+
+  const scopeCounts: Record<ProjectScope, number> = {
+    all: accessibleTasks.length,
+    owned: Array.from(ownedProjectIds).flatMap((id) => tasksByProject.get(id) ?? []).length,
+    member: Array.from(memberProjectIds).flatMap((id) => tasksByProject.get(id) ?? []).length
+  };
 
   const response: TasksResponse = {
     items: paginated,
