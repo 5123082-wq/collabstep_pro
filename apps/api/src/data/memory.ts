@@ -26,7 +26,9 @@ import type {
   WorkspaceUser,
   PlatformModule,
   PlatformUserControl,
-  Notification
+  Notification,
+  Organization,
+  OrganizationMember
 } from '../types';
 
 // Предсказуемые UUID для тестовых пользователей (для стабильности тестирования)
@@ -85,6 +87,8 @@ type GlobalMemory = {
   NOTIFICATIONS: Notification[];
   PROJECT_CHAT_MESSAGES: ProjectChatMessage[];
   WORKSPACE_USERS: WorkspaceUser[];
+  ORGANIZATIONS: Organization[];
+  ORGANIZATION_MEMBERS: OrganizationMember[];
 };
 
 type GlobalMemoryScope = typeof globalThis & {
@@ -108,7 +112,7 @@ const getOrCreateGlobalMemory = (): GlobalMemory => {
     }
     return globalMemoryScope.__collabverseMemory__;
   }
-  
+
   const mem: GlobalMemory = {
     PROJECTS: [] as Project[],
     TASKS: [] as Task[],
@@ -131,9 +135,11 @@ const getOrCreateGlobalMemory = (): GlobalMemory => {
     }>,
     NOTIFICATIONS: [] as Notification[],
     PROJECT_CHAT_MESSAGES: [] as ProjectChatMessage[],
-    WORKSPACE_USERS: [...WORKSPACE_USERS] as WorkspaceUser[]
+    WORKSPACE_USERS: [...WORKSPACE_USERS] as WorkspaceUser[],
+    ORGANIZATIONS: [] as Organization[],
+    ORGANIZATION_MEMBERS: [] as OrganizationMember[]
   };
-  
+
   globalMemoryScope.__collabverseMemory__ = mem;
   return mem;
 };
@@ -141,11 +147,11 @@ const getOrCreateGlobalMemory = (): GlobalMemory => {
 const globalMemory = getOrCreateGlobalMemory();
 
 export const memory = {
-  get WORKSPACE_USERS() { 
+  get WORKSPACE_USERS() {
     if (!globalMemory.WORKSPACE_USERS) {
       globalMemory.WORKSPACE_USERS = [...WORKSPACE_USERS];
     }
-    return globalMemory.WORKSPACE_USERS; 
+    return globalMemory.WORKSPACE_USERS;
   },
   set WORKSPACE_USERS(value: WorkspaceUser[]) { globalMemory.WORKSPACE_USERS = value; },
   ACCOUNTS: [
@@ -441,7 +447,71 @@ export const memory = {
   get NOTIFICATIONS() { return globalMemory.NOTIFICATIONS; },
   set NOTIFICATIONS(value: Notification[]) { globalMemory.NOTIFICATIONS = value; },
   get PROJECT_CHAT_MESSAGES() { return globalMemory.PROJECT_CHAT_MESSAGES; },
-  set PROJECT_CHAT_MESSAGES(value: ProjectChatMessage[]) { globalMemory.PROJECT_CHAT_MESSAGES = value; }
+  set PROJECT_CHAT_MESSAGES(value: ProjectChatMessage[]) { globalMemory.PROJECT_CHAT_MESSAGES = value; },
+  get ORGANIZATIONS() {
+    if (globalMemory.ORGANIZATIONS.length === 0) {
+      // Default demo organization
+      globalMemory.ORGANIZATIONS = [
+        {
+          id: DEFAULT_ACCOUNT_ID, // Using account ID as org ID for backward compatibility/simplicity in demo
+          ownerId: TEST_ADMIN_USER_ID,
+          name: 'Collabverse Demo Org',
+          description: 'Демонстрационная организация',
+          type: 'closed',
+          isPublicInDirectory: true,
+          createdAt: new Date('2024-01-10T08:00:00.000Z'),
+          updatedAt: new Date('2024-06-01T10:00:00.000Z')
+        }
+      ];
+    }
+    return globalMemory.ORGANIZATIONS;
+  },
+  set ORGANIZATIONS(value: Organization[]) { globalMemory.ORGANIZATIONS = value; },
+  get ORGANIZATION_MEMBERS() {
+    if (globalMemory.ORGANIZATION_MEMBERS.length === 0) {
+      // Default members matching ACCOUNT_MEMBERS
+      globalMemory.ORGANIZATION_MEMBERS = [
+        {
+          id: 'mem-admin',
+          organizationId: DEFAULT_ACCOUNT_ID,
+          userId: TEST_ADMIN_USER_ID,
+          role: 'owner',
+          status: 'active',
+          createdAt: new Date('2024-01-10T08:00:00.000Z'),
+          updatedAt: new Date('2024-01-10T08:00:00.000Z')
+        },
+        {
+          id: 'mem-user',
+          organizationId: DEFAULT_ACCOUNT_ID,
+          userId: TEST_USER_ID,
+          role: 'admin',
+          status: 'active',
+          createdAt: new Date('2024-01-11T09:00:00.000Z'),
+          updatedAt: new Date('2024-01-11T09:00:00.000Z')
+        },
+        {
+          id: 'mem-finance',
+          organizationId: DEFAULT_ACCOUNT_ID,
+          userId: TEST_FINANCE_USER_ID,
+          role: 'member',
+          status: 'active',
+          createdAt: new Date('2024-01-12T10:00:00.000Z'),
+          updatedAt: new Date('2024-01-12T10:00:00.000Z')
+        },
+        {
+          id: 'mem-designer',
+          organizationId: DEFAULT_ACCOUNT_ID,
+          userId: TEST_DESIGNER_USER_ID,
+          role: 'member', // Viewer in account, but member in org for simplicity or adjust as needed
+          status: 'active',
+          createdAt: new Date('2024-01-13T11:00:00.000Z'),
+          updatedAt: new Date('2024-01-13T11:00:00.000Z')
+        }
+      ];
+    }
+    return globalMemory.ORGANIZATION_MEMBERS;
+  },
+  set ORGANIZATION_MEMBERS(value: OrganizationMember[]) { globalMemory.ORGANIZATION_MEMBERS = value; }
 };
 
 export function resetFinanceMemory(): void {
@@ -450,6 +520,9 @@ export function resetFinanceMemory(): void {
   memory.PROJECT_BUDGETS = [];
   memory.AUDIT_LOG = [];
   memory.EVENTS = [];
+  memory.EVENTS = [];
+  memory.ORGANIZATIONS = [];
+  memory.ORGANIZATION_MEMBERS = [];
   const freshKeys = new Map<string, string>();
   memory.IDEMPOTENCY_KEYS = freshKeys;
   globalMemoryScope.__collabverseFinanceIdempotencyKeys__ = freshKeys;

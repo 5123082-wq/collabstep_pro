@@ -436,3 +436,24 @@ export interface Notification {
   createdAt: string;
   readAt?: string;
 }
+
+export interface Organization {
+  id: ID;
+  ownerId: ID;
+  name: string;
+  description?: string;
+  type: 'open' | 'closed';
+  isPublicInDirectory: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface OrganizationMember {
+  id: ID;
+  organizationId: ID;
+  userId: ID;
+  role: 'owner' | 'admin' | 'member' | 'viewer';
+  status: 'active' | 'inactive' | 'blocked';
+  createdAt: Date;
+  updatedAt: Date;
+}

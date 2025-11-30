@@ -6,12 +6,7 @@ import { MembersTab } from '@/components/organizations/settings/MembersTab';
 import { InvitesTab } from '@/components/organizations/settings/InvitesTab';
 import { cn } from '@/lib/utils';
 
-interface Organization {
-  id: string;
-  name: string;
-  description: string | null;
-  isPublicInDirectory: boolean;
-}
+import { Organization } from '@collabverse/api';
 
 const TABS = [
   { id: 'general', label: 'Общие' },

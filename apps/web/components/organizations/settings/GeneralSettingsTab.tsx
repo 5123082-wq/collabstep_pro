@@ -6,12 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
-interface Organization {
-  id: string;
-  name: string;
-  description: string | null;
-  isPublicInDirectory: boolean;
-}
+import { Organization } from '@collabverse/api';
 
 export function GeneralSettingsTab({ organization }: { organization: Organization }) {
   const router = useRouter();
