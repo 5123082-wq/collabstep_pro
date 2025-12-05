@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server';
-import { projectsRepository, tasksRepository, taskDependenciesRepository } from '@collabverse/api';
+import { projectsRepository, tasksRepository, taskDependenciesRepository, isAdminUserId, pmPgHydration } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { getAuthFromRequest } from '@/lib/api/finance-access';
+import { isDemoAdminEmail } from '@/lib/auth/demo-session';
 import { flags } from '@/lib/flags';
 import { DASHBOARD_WIDGET_TYPES, type WidgetData, type WidgetType } from '@/lib/dashboard/types';
 import type { ProjectsTasksPayload } from '@/components/dashboard/widgets';
@@ -59,17 +60,36 @@ function formatDueLabel(raw?: string): string {
   return parsed.toLocaleDateString('ru-RU');
 }
 
-function buildProjectsTasksData(userId: string): WidgetData<ProjectsTasksPayload> {
+async function buildProjectsTasksData(userId: string, email: string): Promise<WidgetData<ProjectsTasksPayload>> {
   const now = Date.now();
   const generatedAt = new Date().toISOString();
 
   const allProjects = projectsRepository.list();
-  const accessibleProjects = allProjects.filter((project) => projectsRepository.hasAccess(project.id, userId));
+  
+  // Проверяем, является ли пользователь админом (по UUID или email)
+  const isAdmin = isAdminUserId(userId) || isDemoAdminEmail(email);
+  
+  // Если админ - даём доступ ко всем проектам
+  // Иначе - проверяем доступ к каждому проекту
+  const accessibleProjects: typeof allProjects = [];
+  if (isAdmin) {
+    accessibleProjects.push(...allProjects);
+  } else {
+    for (const project of allProjects) {
+      const hasAccess = await projectsRepository.hasAccess(project.id, userId);
+      if (hasAccess) {
+        accessibleProjects.push(project);
+      }
+    }
+  }
+  
   const projectIds = new Set(accessibleProjects.map((project) => project.id));
 
   // Логирование для диагностики
   console.log('[dashboard/data] buildProjectsTasksData:', {
     userId,
+    email,
+    isAdmin,
     allProjectsCount: allProjects.length,
     accessibleProjectsCount: accessibleProjects.length,
     projectIds: Array.from(projectIds)
@@ -211,6 +231,9 @@ export async function GET(request: NextRequest) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }
 
+  // Ждём гидратацию данных из PostgreSQL (если включена БД)
+  await pmPgHydration;
+
   const requested = parseRequestedWidgets(request.nextUrl.searchParams.get('widgets'));
   const widgets: Partial<Record<WidgetType, WidgetData>> = {};
 
@@ -223,7 +246,7 @@ export async function GET(request: NextRequest) {
   for (const type of requested) {
     try {
       if (type === 'projects-tasks') {
-        widgets[type] = buildProjectsTasksData(auth.userId);
+        widgets[type] = await buildProjectsTasksData(auth.userId, auth.email);
       } else {
         widgets[type] = buildPlaceholderData('dashboard-mock');
       }
