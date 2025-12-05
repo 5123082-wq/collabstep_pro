@@ -140,12 +140,14 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ result });
     } catch (error: unknown) {
         console.error('AI Generation Error:', error);
+        const errorObj = error instanceof Error ? error : { message: String(error) };
+        const errorWithProps = error as { status?: number; code?: string };
         console.error('Error details:', {
-            message: error?.message,
-            stack: error?.stack,
-            name: error?.name,
-            status: error?.status,
-            code: error?.code
+            message: errorObj.message,
+            stack: errorObj instanceof Error ? errorObj.stack : undefined,
+            name: errorObj instanceof Error ? errorObj.name : undefined,
+            status: errorWithProps.status,
+            code: errorWithProps.code
         });
         
         // Более информативные сообщения об ошибках
@@ -169,9 +171,9 @@ export async function POST(req: NextRequest) {
             { 
                 error: errorMessage,
                 // В development режиме возвращаем больше деталей
-                ...(process.env.NODE_ENV === 'development' && {
-                    details: error?.stack,
-                    type: error?.name
+                ...(process.env.NODE_ENV === 'development' && error instanceof Error && {
+                    details: error.stack,
+                    type: error.name
                 })
             }, 
             { status: statusCode }
