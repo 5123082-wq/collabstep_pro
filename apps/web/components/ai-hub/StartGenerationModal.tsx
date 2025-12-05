@@ -7,10 +7,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 
+type GenerationData = {
+    projectName?: string;
+    description?: string;
+    taskTitle?: string;
+    taskDescription?: string;
+    teamSize?: number;
+    deadline?: string;
+    preferences?: Record<string, unknown>;
+};
+
 interface StartGenerationModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onStart: (type: string, data: any) => void;
+    onStart: (type: string, data: GenerationData) => void;
 }
 
 export function StartGenerationModal({ open, onOpenChange, onStart }: StartGenerationModalProps) {
@@ -29,7 +39,7 @@ export function StartGenerationModal({ open, onOpenChange, onStart }: StartGener
             return;
         }
 
-        const data: any = {};
+        const data: GenerationData = {};
         if (type === 'generate-structure') {
             data.projectName = projectName;
             data.description = description;

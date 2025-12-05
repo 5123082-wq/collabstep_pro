@@ -46,7 +46,7 @@ export class OpenAIClient implements AIClient {
             }
             
             return content;
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('OpenAI API Error:', error);
             
             // Более детальная обработка ошибок

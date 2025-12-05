@@ -16,7 +16,7 @@ export function GenerationResultViewer({ task, open, onOpenChange }: GenerationR
 
     const renderContent = () => {
         if (task.type === 'generate-structure') {
-            const structure = task.result;
+            const structure = task.result as { phases?: Array<{ name: string; description: string; tasks?: Array<{ title: string; description: string; estimatedDays: number; priority: string }> }>; estimatedTotalDays?: number; suggestedTeamSize?: number; recommendations?: string[] };
             return (
                 <div className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
@@ -32,12 +32,12 @@ export function GenerationResultViewer({ task, open, onOpenChange }: GenerationR
 
                     <div className="space-y-4">
                         <h3 className="text-lg font-semibold">Этапы проекта</h3>
-                        {structure.phases?.map((phase: any, i: number) => (
+                        {structure.phases?.map((phase: { name: string; description: string; tasks?: Array<{ title: string; description: string; estimatedDays: number; priority: string }> }, i: number) => (
                             <div key={i} className="border rounded-lg p-4">
                                 <h4 className="font-medium text-base mb-1">{phase.name}</h4>
                                 <p className="text-sm text-muted-foreground mb-3">{phase.description}</p>
                                 <div className="space-y-2 pl-4 border-l-2 border-muted">
-                                    {phase.tasks?.map((t: any, j: number) => (
+                                    {phase.tasks?.map((t: { title: string; description: string; estimatedDays: number; priority: string }, j: number) => (
                                         <div key={j} className="text-sm">
                                             <div className="flex items-center gap-2">
                                                 <span className="font-medium">{t.title}</span>
@@ -69,11 +69,12 @@ export function GenerationResultViewer({ task, open, onOpenChange }: GenerationR
         }
 
         if (task.type === 'generate-subtasks') {
+            const subtasks = Array.isArray(task.result) ? task.result : [];
             return (
                 <div className="space-y-4">
                     <h3 className="text-lg font-semibold">Сгенерированные подзадачи</h3>
                     <div className="space-y-3">
-                        {task.result.map((subtask: any, i: number) => (
+                        {subtasks.map((subtask: { title: string; description: string; estimatedHours: number }, i: number) => (
                             <div key={i} className="flex items-start gap-3 p-3 border rounded-lg">
                                 <div className="mt-1 h-5 w-5 flex items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">
                                     {i + 1}
@@ -93,13 +94,13 @@ export function GenerationResultViewer({ task, open, onOpenChange }: GenerationR
         }
 
         if (task.type === 'analyze-workload') {
-            const analysis = task.result;
+            const analysis = task.result as { members?: Array<{ userName: string; activeTasks: number; estimatedHours: number; upcomingDeadlines: number; overloadLevel: string }>; recommendations?: string[] };
             return (
                 <div className="space-y-6">
                     <div className="space-y-4">
                         <h3 className="text-lg font-semibold">Загруженность команды</h3>
                         <div className="space-y-3">
-                            {analysis.members?.map((member: any, i: number) => (
+                            {analysis.members?.map((member: { userName: string; activeTasks: number; estimatedHours: number; upcomingDeadlines: number; overloadLevel: string }, i: number) => (
                                 <div key={i} className="p-3 border rounded-lg">
                                     <div className="flex justify-between items-center mb-2">
                                         <span className="font-medium">{member.userName}</span>

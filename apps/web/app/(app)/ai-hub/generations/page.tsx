@@ -16,13 +16,26 @@ export default function AiGenerationsPage() {
   const [selectedTask, setSelectedTask] = useState<GenerationTask | null>(null);
   const [tasks, setTasks] = useState<GenerationTask[]>([]);
 
-  const handleStartGeneration = async (type: string, data: any) => {
+  type GenerationType = 'generate-structure' | 'generate-subtasks' | 'analyze-workload';
+  type GenerationData = {
+    projectName?: string;
+    description?: string;
+    taskTitle?: string;
+    taskDescription?: string;
+    teamSize?: number;
+    deadline?: string;
+    preferences?: Record<string, unknown>;
+    tasks?: unknown[];
+    members?: unknown[];
+  };
+
+  const handleStartGeneration = async (type: string, data: GenerationData) => {
     // Безопасно: провайдер выбирается на клиенте, но ключи хранятся на сервере
     const provider = localStorage.getItem('ai_provider') || 'openai';
 
     const newTask: GenerationTask = {
       id: nanoid(),
-      type: type as any,
+      type: type as GenerationType,
       status: 'loading',
       createdAt: new Date(),
       title: data.projectName || data.taskTitle || 'Анализ загруженности',
@@ -32,7 +45,11 @@ export default function AiGenerationsPage() {
 
     try {
       // Безопасно: ключи НЕ отправляются с клиента, используются на сервере из .env.local
-      const requestBody: any = {
+      const requestBody: {
+        action: string;
+        provider: string;
+        data: GenerationData;
+      } = {
         action: type,
         provider, // Только провайдер, без ключей
         data
@@ -61,14 +78,15 @@ export default function AiGenerationsPage() {
       ));
       toast.success('Генерация успешно завершена');
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Generation error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Неизвестная ошибка';
       setTasks(prev => prev.map(t =>
         t.id === newTask.id
-          ? { ...t, status: 'error', error: error.message }
+          ? { ...t, status: 'error', error: errorMessage }
           : t
       ));
-      toast.error(`Ошибка: ${error.message}`);
+      toast.error(`Ошибка: ${errorMessage}`);
     }
   };
 
@@ -98,7 +116,7 @@ export default function AiGenerationsPage() {
             <div className="text-center py-12 border-2 border-dashed rounded-lg">
               <h3 className="text-lg font-medium text-muted-foreground">Нет активных генераций</h3>
               <p className="text-sm text-muted-foreground mt-2">
-                Нажмите "Запустить генерацию", чтобы создать новый проект или задачу с помощью AI.
+                Нажмите &quot;Запустить генерацию&quot;, чтобы создать новый проект или задачу с помощью AI.
               </p>
             </div>
           ) : (

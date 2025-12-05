@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
         }
 
         return NextResponse.json({ result });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('AI Generation Error:', error);
         console.error('Error details:', {
             message: error?.message,

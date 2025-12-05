@@ -179,7 +179,7 @@ ${taskDescription ? `\n**Описание:**\n${taskDescription}` : ''}
         systemPrompt: 'Ты опытный проект-менеджер. Отвечай только в формате JSON.'
     });
 
-    const result = parseAIJsonResponse<{ subtasks: Array<any> }>(response);
+    const result = parseAIJsonResponse<{ subtasks: Array<{ title: string; description: string; estimatedHours: number }> }>(response);
     if (!result || !result.subtasks) {
         console.error('Failed to parse subtasks. Response:', response.substring(0, 500));
         throw new Error('Failed to parse subtasks from AI response. The AI may have returned invalid JSON.');
@@ -188,9 +188,12 @@ ${taskDescription ? `\n**Описание:**\n${taskDescription}` : ''}
 }
 
 export async function analyzeWorkload(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _aiClient: AIClient,
-    _tasks: any[],
-    _members: any[]
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _tasks: unknown[],
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _members: unknown[]
 ): Promise<WorkloadAnalysis> {
     // Mock implementation for demo if real logic is too complex to copy without DB
     // Or just use the prompt logic if we pass data

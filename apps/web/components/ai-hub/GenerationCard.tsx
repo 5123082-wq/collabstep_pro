@@ -7,13 +7,19 @@ import { Loader2, CheckCircle, X, FileText, ListTodo, BarChart4 } from 'lucide-r
 import { formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
+export type GenerationResult = 
+    | { phases: Array<{ name: string; description: string; tasks: Array<{ title: string; description: string; estimatedDays: number; priority: string }> }>; estimatedTotalDays: number; suggestedTeamSize: number; recommendations?: string[] }
+    | Array<{ title: string; description: string; estimatedHours: number }>
+    | { members: Array<{ userName: string; activeTasks: number; estimatedHours: number; upcomingDeadlines: number; overloadLevel: string }>; recommendations: string[] }
+    | Record<string, unknown>;
+
 export interface GenerationTask {
     id: string;
     type: 'generate-structure' | 'generate-subtasks' | 'analyze-workload';
     status: 'pending' | 'loading' | 'success' | 'error';
     createdAt: Date;
     title: string;
-    result?: any;
+    result?: GenerationResult;
     error?: string;
 }
 
