@@ -22,7 +22,6 @@ export async function POST() {
       execSync('npx tsx scripts/index-assistant-docs.ts > /tmp/ai-assistant-indexing.log 2>&1 &', {
         cwd: process.cwd(),
         stdio: 'ignore',
-        detached: true,
       });
       
       return NextResponse.json({

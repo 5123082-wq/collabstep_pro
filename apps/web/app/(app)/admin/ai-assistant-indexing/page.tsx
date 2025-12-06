@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { RefreshCw, Save, Plus, Trash2, Check, FileText, AlertCircle } from 'lucide-react';
+import { RefreshCw, SaveIcon, Plus, Trash2, CheckCircle, FileText, AlertTriangle } from 'lucide-react';
 
 interface DocumentIndexConfig {
   path: string;
@@ -115,7 +115,7 @@ export default function AIAssistantIndexingPage() {
       path: newDocPath.trim(),
       enabled: true,
       priority: config.documents.length,
-      description: newDocDesc.trim() || undefined,
+      ...(newDocDesc.trim() ? { description: newDocDesc.trim() } : {}),
     };
 
     setConfig({
@@ -204,7 +204,7 @@ export default function AIAssistantIndexingPage() {
             disabled={saving}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
           >
-            <Save className="h-4 w-4" />
+            <SaveIcon className="h-4 w-4" />
             {saving ? 'Сохранение...' : 'Сохранить'}
           </button>
         </div>
@@ -213,14 +213,14 @@ export default function AIAssistantIndexingPage() {
       {/* Messages */}
       {error && (
         <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
+          <AlertTriangle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
           <p className="text-red-400 text-sm">{error}</p>
         </div>
       )}
 
       {successMessage && (
         <div className="rounded-lg border border-green-500/20 bg-green-500/10 p-4 flex items-start gap-3">
-          <Check className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
+          <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
           <p className="text-green-400 text-sm">{successMessage}</p>
         </div>
       )}
