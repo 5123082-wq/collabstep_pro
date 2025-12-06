@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { RefreshCw, Save, Plus, Trash2, Check, X, FileText, AlertCircle } from 'lucide-react';
+import { RefreshCw, Save, Plus, Trash2, Check, FileText, AlertCircle } from 'lucide-react';
 
 interface DocumentIndexConfig {
   path: string;
@@ -38,8 +38,8 @@ export default function AIAssistantIndexingPage() {
   const [newDocDesc, setNewDocDesc] = useState('');
 
   useEffect(() => {
-    loadConfig();
-    loadIndexStatus();
+    void loadConfig();
+    void loadIndexStatus();
   }, []);
 
   const loadConfig = async () => {
@@ -146,7 +146,7 @@ export default function AIAssistantIndexingPage() {
       
       // Обновляем статус через 5 секунд
       setTimeout(() => {
-        loadIndexStatus();
+        void loadIndexStatus();
       }, 5000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка при индексации');

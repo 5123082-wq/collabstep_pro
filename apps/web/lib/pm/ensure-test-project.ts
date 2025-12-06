@@ -128,4 +128,3 @@ export async function ensureTestProject(userId: string, email: string): Promise<
     console.log('[ensureTestProject] Admin test project created:', adminProject.id);
   }
 }
-

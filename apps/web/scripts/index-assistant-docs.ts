@@ -13,7 +13,7 @@
 // Загрузка переменных окружения из .env.local
 import { config } from 'dotenv';
 import { readdirSync, readFileSync, existsSync, mkdirSync, writeFileSync } from 'fs';
-import { join, extname, relative, basename } from 'path';
+import { join, extname, relative } from 'path';
 import { createHash } from 'crypto';
 import { execSync } from 'child_process';
 import OpenAI from 'openai';

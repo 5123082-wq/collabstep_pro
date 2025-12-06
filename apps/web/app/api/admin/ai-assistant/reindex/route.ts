@@ -18,8 +18,6 @@ export async function POST() {
     }
     
     // Запускаем индексацию в фоновом режиме
-    const indexScript = join(process.cwd(), 'scripts', 'index-assistant-docs.ts');
-    
     try {
       // Запускаем в отдельном процессе, чтобы не блокировать ответ
       execSync('npx tsx scripts/index-assistant-docs.ts > /tmp/ai-assistant-indexing.log 2>&1 &', {
