@@ -9,19 +9,19 @@ type DesignTokens = {
 
 export const designTokens: DesignTokens = {
   shared: {
-    'content-inline-padding': '20px',
+    'content-inline-padding': '16px',        // было 20px - уменьшено для более компактного вида
     'rail-collapsed-width': '56px',
     'rail-dock-spacing': '1rem',
     'rail-safe-gap': '5px',
     'rail-safe-area': 'calc(var(--rail-collapsed-width) + var(--rail-dock-spacing) + var(--rail-safe-gap))',
     
     // Единые стили для блоков контента (эталонный блок)
-    'content-block-radius': '1.5rem',        // 24px - rounded-3xl
-    'content-block-radius-sm': '1rem',       // 16px - rounded-2xl (для вложенных элементов)
-    'content-block-padding': '1.5rem',       // 24px - p-6
-    'content-block-padding-sm': '1rem',      // 16px - p-4 (для вложенных элементов)
-    'content-block-gap': '1.5rem',           // 24px - space-y-6, gap-6
-    'content-block-gap-sm': '1rem',          // 16px - gap-4 (для меньших отступов)
+    'content-block-radius': '1rem',          // было 1.5rem (24px -> 16px) - уменьшено для компактности
+    'content-block-radius-sm': '0.75rem',    // было 1rem (16px -> 12px) - уменьшено для вложенных элементов
+    'content-block-padding': '1rem',         // было 1.5rem (24px -> 16px) - уменьшено для компактности
+    'content-block-padding-sm': '0.75rem',   // было 1rem (16px -> 12px) - уменьшено для вложенных элементов
+    'content-block-gap': '1rem',             // было 1.5rem (24px -> 16px) - уменьшено для компактности
+    'content-block-gap-sm': '0.75rem',       // было 1rem (16px -> 12px) - уменьшено для меньших отступов
     'content-block-border-width': '1px',
     'content-block-shadow': '0_0_12px_rgba(0,0,0,0.12)',
     
@@ -35,20 +35,20 @@ export const designTokens: DesignTokens = {
     // ============================================
     
     // Основные размеры для контента (используются везде)
-    'font-size-xs': '12px',                  // 0.75rem - метки, подписи, вторичная информация
-    'font-size-sm': '14px',                  // 0.875rem - основной текст в блоках, кнопки, формы
-    'font-size-base': '16px',                // 1rem - базовый размер (body) - стандартный веб-размер для доступности
-    'font-size-lg': '18px',                  // 1.125rem - заголовки блоков контента
-    'font-size-xl': '24px',                  // 1.5rem - заголовки разделов, важные значения
+    'font-size-xs': '11px',                  // было 12px - уменьшено для меток, подписей, вторичной информации
+    'font-size-sm': '13px',                  // было 14px - уменьшено для основного текста в блоках, кнопок, форм
+    'font-size-base': '14px',                // было 16px - уменьшено для базового размера (body)
+    'font-size-lg': '16px',                  // было 18px - уменьшено для заголовков блоков контента
+    'font-size-xl': '20px',                  // было 24px - уменьшено для заголовков разделов, важных значений
     
     // Дополнительные размеры для маркетинга и hero секций (используются редко)
-    'font-size-2xl': '30px',                 // 1.875rem - большие заголовки (маркетинг)
-    'font-size-3xl': '36px',                 // 2.25rem - очень большие заголовки (hero)
+    'font-size-2xl': '26px',                 // было 30px - уменьшено для больших заголовков (маркетинг)
+    'font-size-3xl': '32px',                 // было 36px - уменьшено для очень больших заголовков (hero)
     
     // Line heights для типографики
     'line-height-tight': '1.2',              // Для заголовков
-    'line-height-normal': '1.5',             // Для обычного текста
-    'line-height-relaxed': '1.7'             // Для параграфов
+    'line-height-normal': '1.4',             // было 1.5 - уменьшено для обычного текста
+    'line-height-relaxed': '1.5'            // было 1.7 - уменьшено для параграфов
   },
   themes: {
     dark: {

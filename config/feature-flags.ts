@@ -17,7 +17,8 @@ export type FeatureFlagKey =
   | 'pmTasksList'
   | 'pmTasksCalendar'
   | 'pmDashboard'
-  | 'pmArchive';
+  | 'pmArchive'
+  | 'aiAssistant';
 
 export type FeatureFlagDefinition = {
   env: string;
@@ -143,6 +144,12 @@ export const featureFlagRegistry = {
     stage: 4,
     description: 'Архив проектов с возможностью восстановления.',
     default: true
+  },
+  aiAssistant: {
+    env: 'NEXT_PUBLIC_FEATURE_AI_ASSISTANT',
+    stage: 0,
+    description: 'AI-ассистент для изучения платформы с RAG поиском по документации.',
+    default: false
   }
 } as const satisfies Record<FeatureFlagKey, FeatureFlagDefinition>;
 

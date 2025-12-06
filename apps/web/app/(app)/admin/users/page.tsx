@@ -1,12 +1,15 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 // @ts-expect-error lucide-react icon types
 import { Search, Filter, Shield, UserX, UserCheck, RefreshCw, User, Trash2, Edit } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import clsx from 'clsx';
 import type { AdminUserView } from '@collabverse/api';
 import { ContentBlock } from '@/components/ui/content-block';
+import SectionHeader from '@/components/common/SectionHeader';
+import { getAdminMenuItems } from '@/lib/nav/navigation-utils';
 
 interface User {
   id: string;
@@ -73,6 +76,7 @@ function convertAdminUserToUser(adminUser: AdminUserView): User {
 }
 
 export default function AdminUsersPage() {
+  const pathname = usePathname();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -245,17 +249,15 @@ export default function AdminUsersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [users.length, searchQuery, statusFilter]);
 
+  const menuItems = getAdminMenuItems(pathname ?? '');
+
   return (
     <div className="space-y-6">
-      <header className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-semibold text-neutral-50">Управление пользователями</h1>
-            <p className="text-sm text-neutral-400">
-              Блокировки, разрешения и управление доступом пользователей
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
+      <SectionHeader
+        title="Управление пользователями"
+        menuItems={menuItems}
+        actions={
+          <>
             <button
               onClick={() => void loadUsers()}
               disabled={loading}
@@ -271,9 +273,9 @@ export default function AdminUsersPage() {
             >
               + Пригласить
             </button>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       {/* Filters */}
       <ContentBlock size="sm">

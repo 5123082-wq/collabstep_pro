@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Modal, ModalContent, ModalHeader, ModalTitle, ModalBody, ModalFooter, ModalClose } from '@/components/ui/modal';
-import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
+import { ContentBlock } from '@/components/ui/content-block';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -21,6 +21,24 @@ export function CreateOrganizationModal({ open, onOpenChange, onSuccess }: Creat
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState<'open' | 'closed'>('closed');
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onOpenChange(false);
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [open, onOpenChange]);
+
+  if (!open) {
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,23 +81,37 @@ export function CreateOrganizationModal({ open, onOpenChange, onSuccess }: Creat
   };
 
   return (
-    <Modal open={open} onOpenChange={onOpenChange}>
-      <ModalContent className="max-w-lg">
-        <ModalHeader>
-          <ModalTitle>Создать организацию</ModalTitle>
-          <ModalClose />
-        </ModalHeader>
-        <form onSubmit={handleSubmit}>
-          <ModalBody>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div style={{ maxWidth: '70vw', width: 'auto' }}>
+        <ContentBlock
+          as="form"
+          onSubmit={handleSubmit}
+          className="max-h-[90vh] overflow-y-auto p-6 shadow-2xl"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-lg font-semibold text-white">Создать организацию</h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="rounded-full border border-neutral-700 px-3 py-1 text-xs text-neutral-300 transition hover:border-neutral-500 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="space-y-4">
             {error && (
-              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-500">
+              <div className="rounded-lg border border-rose-500/40 bg-rose-500/10 p-3 text-sm text-rose-100">
                 {error}
               </div>
             )}
 
-            <div className="space-y-4">
               <div className="space-y-2">
-                <label htmlFor="org-name" className="text-sm font-medium text-[color:var(--text-secondary)]">
+              <label htmlFor="org-name" className="text-sm font-medium text-neutral-300">
                   Название
                 </label>
                 <Input
@@ -92,7 +124,7 @@ export function CreateOrganizationModal({ open, onOpenChange, onSuccess }: Creat
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="org-desc" className="text-sm font-medium text-[color:var(--text-secondary)]">
+              <label htmlFor="org-desc" className="text-sm font-medium text-neutral-300">
                   Описание
                 </label>
                 <Textarea
@@ -105,9 +137,9 @@ export function CreateOrganizationModal({ open, onOpenChange, onSuccess }: Creat
               </div>
 
               <div className="space-y-2">
-                <span className="text-sm font-medium text-[color:var(--text-secondary)]">Тип организации</span>
+              <span className="text-sm font-medium text-neutral-300">Тип организации</span>
                 <div className="flex gap-4">
-                  <label className="flex items-center gap-2 text-sm text-[color:var(--text-secondary)]">
+                <label className="flex items-center gap-2 text-sm text-neutral-400">
                     <input
                       type="radio"
                       name="org-type"
@@ -118,7 +150,7 @@ export function CreateOrganizationModal({ open, onOpenChange, onSuccess }: Creat
                     />
                     Закрытая (по приглашениям)
                   </label>
-                  <label className="flex items-center gap-2 text-sm text-[color:var(--text-secondary)]">
+                <label className="flex items-center gap-2 text-sm text-neutral-400">
                     <input
                       type="radio"
                       name="org-type"
@@ -132,18 +164,27 @@ export function CreateOrganizationModal({ open, onOpenChange, onSuccess }: Creat
                 </div>
               </div>
             </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={isLoading}>
+
+          <div className="flex gap-3 pt-6 mt-6 border-t border-neutral-800">
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading}
+              className="flex-1 rounded-xl border border-neutral-800 px-4 py-2 text-sm font-medium text-neutral-300 transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+            >
               Отмена
-            </Button>
-            <Button type="submit" disabled={isLoading}>
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="flex-1 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"
+            >
               {isLoading ? 'Создание...' : 'Создать'}
-            </Button>
-          </ModalFooter>
-        </form>
-      </ModalContent>
-    </Modal>
+            </button>
+          </div>
+        </ContentBlock>
+      </div>
+    </div>
   );
 }
 

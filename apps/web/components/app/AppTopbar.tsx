@@ -9,19 +9,22 @@ import { toast } from '@/lib/ui/toast';
 import ThemeToggle from '@/components/app/ThemeToggle';
 import AccountMenu from '@/components/app/AccountMenu';
 import { getUserType, type UserType } from '@/lib/auth/roles';
-import { marketingNavigation } from '@/components/marketing/app/MarketingLayoutShell';
 import { MARKETING_HUB_PATH, PM_HUB_PATH } from '@/components/app/LeftMenu.config';
-import { pmNavigation } from '@/components/pm/pmNavigation';
+import { marketingNavigation } from '@/components/marketing/app/MarketingLayoutShell';
 import SectionNavigationBar from '@/components/app/SectionNavigationBar';
-import { marketplaceNavigation } from '@/components/marketplace/marketplaceNavigation';
-import { performersNavigation } from '@/components/performers/performersNavigation';
-import { aiHubNavigation } from '@/components/ai-hub/aiHubNavigation';
-import { communityNavigation } from '@/components/community/communityNavigation';
-import { financeNavigation } from '@/components/finance/financeNavigation';
-import { docsNavigation } from '@/components/docs/docsNavigation';
-import { getOrgNavigation, extractOrgIdFromPath } from '@/components/org/orgNavigation';
-import { supportNavigation } from '@/components/support/supportNavigation';
-import { adminNavigation } from '@/components/admin/adminNavigation';
+import {
+  getPMNavigation,
+  getMarketplaceNavigation,
+  getPerformersNavigation,
+  getAIHubNavigation,
+  getCommunityNavigation,
+  getFinanceNavigation,
+  getDocsNavigation,
+  getSupportNavigation,
+  getAdminNavigation,
+  getOrgNavigation,
+  extractOrgIdFromPath
+} from '@/lib/nav/navigation-utils';
 
 type QuickSuggestion = {
   id: string;
@@ -463,44 +466,44 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
       )}
       {isPMSection && (
         <SectionNavigationBar
-          items={pmNavigation}
+          items={getPMNavigation()}
           ariaLabel="Навигация по разделам проектов и задач"
           basePath={PM_HUB_PATH}
         />
       )}
       {isMarketplaceSection && (
         <SectionNavigationBar
-          items={marketplaceNavigation}
+          items={getMarketplaceNavigation()}
           ariaLabel="Навигация по разделам маркетплейса"
         />
       )}
       {isPerformersSection && (
         <SectionNavigationBar
-          items={performersNavigation}
+          items={getPerformersNavigation()}
           ariaLabel="Навигация по разделам исполнителей"
         />
       )}
       {isAiHubSection && (
         <SectionNavigationBar
-          items={aiHubNavigation}
+          items={getAIHubNavigation()}
           ariaLabel="Навигация по разделам AI-хаба"
         />
       )}
       {isCommunitySection && (
         <SectionNavigationBar
-          items={communityNavigation}
+          items={getCommunityNavigation()}
           ariaLabel="Навигация по разделам комьюнити"
         />
       )}
       {isFinanceSection && (
         <SectionNavigationBar
-          items={financeNavigation}
+          items={getFinanceNavigation()}
           ariaLabel="Навигация по разделам финансов"
         />
       )}
       {isDocsSection && (
         <SectionNavigationBar
-          items={docsNavigation}
+          items={getDocsNavigation()}
           ariaLabel="Навигация по разделам документов"
         />
       )}
@@ -512,13 +515,13 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
       )}
       {isSupportSection && (
         <SectionNavigationBar
-          items={supportNavigation}
+          items={getSupportNavigation()}
           ariaLabel="Навигация по разделам поддержки"
         />
       )}
       {isAdminSection && (
         <SectionNavigationBar
-          items={adminNavigation}
+          items={getAdminNavigation()}
           ariaLabel="Навигация по разделам админки"
           basePath="/admin"
         />

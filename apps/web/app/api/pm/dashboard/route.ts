@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { flags } from '@/lib/flags';
 import { getAuthFromRequest } from '@/lib/api/finance-access';
-import {
-  projectsRepository,
-  tasksRepository
-} from '@collabverse/api';
+import { tasksRepository } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
+import { getAccessibleProjects } from '@/lib/api/project-access';
 
 export async function GET(_req: NextRequest): Promise<NextResponse> {
   if (!flags.PM_NAV_PROJECTS_AND_TASKS) {
@@ -19,10 +17,16 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
 
   const currentUserId = auth.userId;
 
-  // Get only user's own projects (not all accessible projects)
-  // This ensures users see only their projects by default, which is simpler and more scalable
-  const allProjects = projectsRepository.list();
-  const userProjects = allProjects.filter((project) => project.ownerId === currentUserId);
+  // Get all projects that user has access to (owned, member, or public)
+  const userProjects = await getAccessibleProjects(currentUserId, auth.email);
+  
+  // Логирование для диагностики
+  console.log('[pm/dashboard] GET request:', {
+    userId: currentUserId,
+    email: auth.email,
+    accessibleProjectsCount: userProjects.length,
+    projectIds: userProjects.map(p => ({ id: p.id, title: p.title, ownerId: p.ownerId }))
+  });
 
   // Filter active projects (only 'active' status, not 'draft')
   const activeProjects = userProjects.filter(

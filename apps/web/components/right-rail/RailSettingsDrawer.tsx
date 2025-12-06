@@ -41,7 +41,7 @@ export default function RailSettingsDrawer() {
 
   return (
     <Sheet open={isOpen} onOpenChange={(next) => (!next ? closeDrawer() : undefined)}>
-      <SheetContent className="flex h-full flex-col bg-neutral-900/95 p-0 text-neutral-50 shadow-2xl" side="right">
+      <SheetContent className="flex h-full flex-col bg-neutral-900/95 p-0 text-neutral-50 shadow-2xl sm:max-w-[440px] md:max-w-[500px] lg:max-w-[560px]" side="right">
         <SheetHeader className="px-6 py-4">
           <SheetTitle>Настройка быстрого доступа</SheetTitle>
           <p className="text-xs text-neutral-400">Выберите действия, которые будут доступны в правом меню.</p>

@@ -7,9 +7,12 @@
 // - Использовать типы из @collabverse/api
 
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { UserSearch, Activity, RefreshCw } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import { ContentBlock } from '@/components/ui/content-block';
+import SectionHeader from '@/components/common/SectionHeader';
+import { getAdminMenuItems } from '@/lib/nav/navigation-utils';
 
 interface ImpersonationSession {
   id: string;
@@ -30,20 +33,16 @@ const mockSessions: ImpersonationSession[] = [
 ];
 
 export default function AdminSupportPage() {
+  const pathname = usePathname();
   const [sessions] = useState<ImpersonationSession[]>(mockSessions);
+  const menuItems = getAdminMenuItems(pathname ?? '');
 
   return (
     <div className="space-y-6">
-      <header className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-semibold text-neutral-50">Support Tools</h1>
-            <p className="text-sm text-neutral-400">
-              Инструменты поддержки: имперсонация, сессии, демо-данные
-            </p>
-          </div>
-        </div>
-      </header>
+      <SectionHeader
+        title="Support Tools"
+        menuItems={menuItems}
+      />
 
       {/* Quick Actions */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

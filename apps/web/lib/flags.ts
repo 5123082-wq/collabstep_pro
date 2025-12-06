@@ -22,6 +22,7 @@ export const flags = {
   PROJECTS_V1: isFeatureEnabled('projectsCore'),
   PROJECTS_VIEWS: isFeatureEnabled('projectsOverview'),
   AI_V1: resolveLegacyBooleanFlag(['NEXT_PUBLIC_FEATURE_AI_V1', 'FEATURE_AI_V1']),
+  AI_ASSISTANT: isFeatureEnabled('aiAssistant'),
   MARKETPLACE_ATTACH: resolveLegacyBooleanFlag(['NEXT_PUBLIC_FEATURE_MARKETPLACE_ATTACH', 'FEATURE_MARKETPLACE_ATTACH']),
   PROJECTS_OVERVIEW: isFeatureEnabled('projectsOverview'),
   PROJECT_CREATE_WIZARD: isFeatureEnabled('projectCreateWizard'),

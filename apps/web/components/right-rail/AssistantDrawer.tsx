@@ -1,123 +1,316 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 import AssistantIcon from './AssistantIcon';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { ContentBlock } from '@/components/ui/content-block';
 import { cn } from '@/lib/utils';
-import { toast } from '@/lib/ui/toast';
 import { useUI } from '@/stores/ui';
+import { Loader2, ExternalLink, X } from 'lucide-react';
 
-const SUGGESTIONS = [
-  { id: 'next-steps', title: 'Предложить следующие шаги', description: 'AI составит чек-лист на неделю' },
-  { id: 'estimate', title: 'Оценить смету', description: 'Сгенерировать оценку задач и сроки' },
-  { id: 'summary', title: 'Собрать саммари встречи', description: 'Конспект по заметкам и чатам' }
-];
+interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  sources?: string[];
+  timestamp: Date;
+}
+
+interface Suggestion {
+  id: string;
+  text: string;
+}
 
 export default function AssistantDrawer() {
   const drawer = useUI((state) => state.drawer);
   const closeDrawer = useUI((state) => state.closeDrawer);
   const isOpen = drawer === 'assistant';
+  const pathname = usePathname();
+  const [messages, setMessages] = useState<Message[]>([]);
   const [prompt, setPrompt] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const placeholder = useMemo(() => 'Например: Подготовь апдейт для команды к пятнице', []);
+  // Загрузка контекстных подсказок
+  useEffect(() => {
+    if (isOpen) {
+      fetch(`/api/ai-assistant/suggestions?pathname=${encodeURIComponent(pathname || '/')}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.suggestions) {
+            setSuggestions(data.suggestions);
+          }
+        })
+        .catch(console.error);
+    }
+  }, [isOpen, pathname]);
 
-  const handleSend = () => {
+  // Прокрутка к последнему сообщению
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const placeholder = useMemo(() => 'Например: Как создать новый проект?', []);
+
+  const handleSend = useCallback(async () => {
     const text = prompt.trim();
-    if (!text) {
-      toast('Введите запрос для помощника');
+    if (!text || isLoading) {
       return;
     }
-    toast('AI-ассистент готовит ответ…');
+
+    const userMessage: Message = {
+      id: `user-${Date.now()}`,
+      role: 'user',
+      content: text,
+      timestamp: new Date(),
+    };
+
+    setMessages(prev => [...prev, userMessage]);
     setPrompt('');
-  };
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/ai-assistant/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: text,
+          context: {
+            currentPath: pathname,
+          },
+        }),
+      });
+
+      const data = await response.json();
+
+      const assistantMessage: Message = {
+        id: `assistant-${Date.now()}`,
+        role: 'assistant',
+        content: data.answer || data.error || 'Не удалось получить ответ',
+        sources: data.sources,
+        timestamp: new Date(),
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('AI Assistant error:', error);
+      const errorMessage: Message = {
+        id: `error-${Date.now()}`,
+        role: 'assistant',
+        content: 'Произошла ошибка при обработке запроса. Пожалуйста, попробуйте позже.',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [prompt, isLoading, pathname]);
 
   const handleSuggestion = (message: string) => {
     setPrompt(message);
+    textareaRef.current?.focus();
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      void handleSend();
+    }
+  };
+
+  // Обработка Escape для закрытия
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeDrawer();
+      }
+    };
+    
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isOpen, closeDrawer]);
+
+  if (!isOpen) return null;
+
   return (
-    <Sheet open={isOpen} onOpenChange={(next) => (!next ? closeDrawer() : undefined)}>
-      <SheetContent className="flex h-full flex-col bg-neutral-900/95 p-0 text-neutral-50 shadow-2xl" side="right">
-        <SheetHeader className="flex items-center gap-3 px-6 py-4">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-200">
-            <AssistantIcon className="h-5 w-5" aria-hidden="true" strokeWidth={1.8} />
-          </span>
-          <div>
-            <SheetTitle>AI-помощник</SheetTitle>
-            <p className="text-xs text-neutral-400">Отвечает на вопросы по проекту и предлагает сценарии</p>
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) closeDrawer();
+      }}
+    >
+      <div className="w-full max-w-2xl rounded-2xl border border-neutral-800 bg-neutral-900/95 shadow-2xl flex flex-col max-h-[85vh]">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-neutral-800 px-6 py-4">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-200">
+              <AssistantIcon className="h-5 w-5" aria-hidden="true" strokeWidth={1.8} />
+            </span>
+            <div>
+              <h2 className="text-sm font-semibold text-neutral-100">AI-ассистент платформы</h2>
+              <p className="text-xs text-neutral-400">Помощь по использованию Collabverse</p>
+            </div>
           </div>
-        </SheetHeader>
-        <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 py-6">
-          <section className="space-y-3">
-            <h3 className="text-sm font-semibold text-neutral-100">Рекомендуем попробовать</h3>
-            <div className="grid gap-3">
-              {SUGGESTIONS.map((item) => (
-                <ContentBlock
-                  key={item.id}
-                  as="button"
-                  size="sm"
-                  interactive
-                  type="button"
-                  onClick={() => handleSuggestion(item.title)}
-                  className="flex flex-col items-start text-left"
-                >
-                  <span className="text-sm font-semibold text-neutral-100">{item.title}</span>
-                  <span className="text-xs text-neutral-400">{item.description}</span>
-                </ContentBlock>
-              ))}
-            </div>
-          </section>
-          <section className="space-y-3">
-            <h3 className="text-sm font-semibold text-neutral-100">История</h3>
-            <div className="space-y-3">
-              <ContentBlock as="article" size="sm">
-                <p className="text-xs uppercase tracking-wide text-indigo-200">AI</p>
-                <p className="mt-2 text-sm text-neutral-300">
-                  Я подготовил план запуска мерча. Готов отправить команде?
-                </p>
-              </ContentBlock>
-              <ContentBlock as="article" size="sm" variant="muted">
-                <p className="text-xs uppercase tracking-wide text-neutral-500">Вы</p>
-                <p className="mt-2 text-sm text-neutral-300">Сделай сравнительную таблицу подрядчиков по стоимости.</p>
-              </ContentBlock>
-            </div>
-          </section>
+          <button
+            onClick={closeDrawer}
+            className="rounded-full p-1.5 text-neutral-400 transition hover:bg-neutral-800 hover:text-neutral-200"
+            aria-label="Закрыть"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
-        <div className="border-t border-neutral-800 bg-neutral-950/80 px-6 py-5">
-          <ContentBlock size="sm">
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-4 min-h-[300px]">
+          {messages.length > 0 ? (
+            <div className="space-y-4">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={cn(
+                    'flex',
+                    message.role === 'user' ? 'justify-end' : 'justify-start'
+                  )}
+                >
+                  <div
+                    className={cn(
+                      'max-w-[85%] rounded-2xl px-4 py-2.5',
+                      message.role === 'user'
+                        ? 'bg-indigo-500/20 text-indigo-100'
+                        : 'bg-neutral-800 text-neutral-200'
+                    )}
+                  >
+                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    {message.sources && message.sources.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-neutral-700/50">
+                        <p className="text-xs text-neutral-500 mb-1">Источники:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {message.sources.map((source, idx) => (
+                            <span
+                              key={idx}
+                              className="inline-flex items-center gap-1 rounded bg-neutral-700/50 px-2 py-0.5 text-xs text-neutral-400"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              {source.split('/').pop()}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="flex items-center gap-2 rounded-2xl bg-neutral-800 px-4 py-2.5">
+                    <Loader2 className="h-4 w-4 animate-spin text-indigo-400" />
+                    <span className="text-sm text-neutral-400">Думаю...</span>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="text-center space-y-2">
+                <p className="text-sm text-neutral-400">
+                  Привет! Я AI-ассистент платформы. Задайте вопрос о том, как использовать Collabverse.
+                </p>
+              </div>
+              
+              {/* Контекстные подсказки */}
+              {suggestions.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-neutral-100">Попробуйте спросить</h3>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {suggestions.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => handleSuggestion(item.text)}
+                        className="rounded-xl border border-neutral-700 bg-neutral-800/50 px-4 py-3 text-left text-sm text-neutral-300 transition hover:border-indigo-500/50 hover:bg-indigo-500/10"
+                      >
+                        {item.text}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Общие подсказки */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-neutral-100">Рекомендуем попробовать</h3>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => handleSuggestion('Как начать работу с платформой?')}
+                    className="rounded-xl border border-neutral-700 bg-neutral-800/50 px-4 py-3 text-left text-sm text-neutral-300 transition hover:border-indigo-500/50 hover:bg-indigo-500/10"
+                  >
+                    <span className="font-semibold text-neutral-100">Как начать работу с платформой?</span>
+                    <p className="mt-1 text-xs text-neutral-400">Быстрый старт и основные функции</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSuggestion('Где найти документацию?')}
+                    className="rounded-xl border border-neutral-700 bg-neutral-800/50 px-4 py-3 text-left text-sm text-neutral-300 transition hover:border-indigo-500/50 hover:bg-indigo-500/10"
+                  >
+                    <span className="font-semibold text-neutral-100">Где найти документацию?</span>
+                    <p className="mt-1 text-xs text-neutral-400">Ссылки на руководства и справочники</p>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* Input */}
+        <div className="border-t border-neutral-800 p-6">
+          <div className="flex gap-3">
             <textarea
+              ref={textareaRef}
               value={prompt}
               onChange={(event) => setPrompt(event.target.value)}
+              onKeyDown={handleKeyDown}
               placeholder={placeholder}
-              className="h-24 w-full resize-none rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
+              disabled={isLoading}
+              className="flex-1 rounded-xl border border-neutral-700 bg-neutral-800/50 px-4 py-3 text-sm text-neutral-100 placeholder-neutral-500 transition focus:border-indigo-500 focus:outline-none disabled:opacity-50 resize-none"
+              rows={3}
             />
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <button
-                type="button"
-                onClick={() => setPrompt('')}
-                className="text-xs text-neutral-400 underline-offset-2 transition hover:text-neutral-200 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
-              >
-                Очистить
-              </button>
-              <button
-                type="button"
-                onClick={handleSend}
-                className={cn(
-                  'rounded-full px-5 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
-                  prompt.trim()
-                    ? 'bg-indigo-500 text-white hover:bg-indigo-400'
-                    : 'bg-neutral-800 text-neutral-400 cursor-not-allowed'
-                )}
-                disabled={!prompt.trim()}
-              >
-                Отправить
-              </button>
-            </div>
-          </ContentBlock>
+            <button
+              type="button"
+              onClick={() => void handleSend()}
+              disabled={!prompt.trim() || isLoading}
+              className="rounded-xl bg-indigo-500 px-6 py-3 text-sm font-medium text-white transition hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-neutral-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="hidden sm:inline">Отправка...</span>
+                </>
+              ) : (
+                <span>Отправить</span>
+              )}
+            </button>
+          </div>
+          <div className="mt-3 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => {
+                setPrompt('');
+                setMessages([]);
+              }}
+              className="text-xs text-neutral-400 underline-offset-2 transition hover:text-neutral-200 hover:underline"
+            >
+              Очистить историю
+            </button>
+            <p className="text-xs text-neutral-500">
+              Нажмите Enter для отправки • Esc для закрытия
+            </p>
+          </div>
         </div>
-      </SheetContent>
-    </Sheet>
+      </div>
+    </div>
   );
 }
-

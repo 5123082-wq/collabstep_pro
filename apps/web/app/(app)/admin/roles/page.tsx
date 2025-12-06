@@ -7,9 +7,12 @@
 // - Использовать типы из @collabverse/api
 
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { Shield, Users, Plus, Edit, Trash2 } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import { ContentBlock } from '@/components/ui/content-block';
+import SectionHeader from '@/components/common/SectionHeader';
+import { getAdminMenuItems } from '@/lib/nav/navigation-utils';
 
 interface Role {
   id: string;
@@ -67,6 +70,7 @@ const mockRoles: Role[] = [
 ];
 
 export default function AdminRolesPage() {
+  const pathname = usePathname();
   const [roles, setRoles] = useState<Role[]>(mockRoles);
 
   const handleDelete = (roleId: string) => {
@@ -79,16 +83,14 @@ export default function AdminRolesPage() {
     toast('Роль удалена', 'success');
   };
 
+  const menuItems = getAdminMenuItems(pathname ?? '');
+
   return (
     <div className="space-y-6">
-      <header className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-semibold text-neutral-50">Роли и разрешения</h1>
-            <p className="text-sm text-neutral-400">
-              Настройка прав и ролей пользователей платформы
-            </p>
-          </div>
+      <SectionHeader
+        title="Роли и разрешения"
+        menuItems={menuItems}
+        actions={
           <button
             onClick={() => toast('TODO: Создать роль', 'info')}
             className="rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-4 py-2 text-sm font-medium text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/20"
@@ -96,8 +98,8 @@ export default function AdminRolesPage() {
             <Plus className="mr-2 inline h-4 w-4" />
             Создать роль
           </button>
-        </div>
-      </header>
+        }
+      />
 
       {/* Roles Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

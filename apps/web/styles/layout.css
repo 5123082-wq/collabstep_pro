@@ -11,10 +11,11 @@
   display: flex;
   align-items: center;
   gap: var(--section-menu-gap);
-  min-width: 100%;
   scroll-snap-type: x mandatory;
   padding-block: 0.25rem;
   flex-wrap: nowrap;
+  width: max-content; /* Позволяет контейнеру расширяться по содержимому */
+  min-width: 100%; /* Минимум на всю ширину родителя */
 }
 
 .section-menu__item {

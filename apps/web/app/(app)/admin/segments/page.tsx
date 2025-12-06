@@ -7,9 +7,12 @@
 // - Использовать типы из @collabverse/api
 
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { Plus, Users, Filter, Shield } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import { ContentBlock } from '@/components/ui/content-block';
+import SectionHeader from '@/components/common/SectionHeader';
+import { getAdminMenuItems } from '@/lib/nav/navigation-utils';
 
 interface Segment {
   id: string;
@@ -56,18 +59,16 @@ const mockSegments: Segment[] = [
 ];
 
 export default function AdminSegmentsPage() {
+  const pathname = usePathname();
   const [segments] = useState<Segment[]>(mockSegments);
+  const menuItems = getAdminMenuItems(pathname ?? '');
 
   return (
     <div className="space-y-6">
-      <header className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-semibold text-neutral-50">Сегменты пользователей</h1>
-            <p className="text-sm text-neutral-400">
-              Группы тестировщиков и управление сегментами пользователей
-            </p>
-          </div>
+      <SectionHeader
+        title="Сегменты пользователей"
+        menuItems={menuItems}
+        actions={
           <button
             onClick={() => toast('TODO: Создать сегмент', 'info')}
             className="rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-4 py-2 text-sm font-medium text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/20"
@@ -75,8 +76,8 @@ export default function AdminSegmentsPage() {
             <Plus className="mr-2 inline h-4 w-4" />
             Создать сегмент
           </button>
-        </div>
-      </header>
+        }
+      />
 
       {/* Segments List */}
       <div className="space-y-4">

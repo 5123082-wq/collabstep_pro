@@ -16,6 +16,9 @@ import PlatformSettingsModal from '@/components/settings/PlatformSettingsModal';
 import UserProfileSettingsModal from '@/components/settings/UserProfileSettingsModal';
 import CreateTaskWithProjectModal from '@/components/pm/CreateTaskWithProjectModal';
 import { CreateAIAgentModal } from '@/components/ai-hub';
+import { AIAssistantChat, AIAssistantButton } from '@/components/ai-assistant';
+import { flags } from '@/lib/flags';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import type { DemoSession } from '@/lib/auth/demo-session';
 import { getRolesForDemoAccount, setUserRoles } from '@/lib/auth/roles';
 import { toast } from '@/lib/ui/toast';
@@ -54,13 +57,21 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
   const [isProfileSettingsOpen, setProfileSettingsOpen] = useState(false);
   const [isLoggingOut, setLoggingOut] = useState(false);
   const [activeModal, setActiveModal] = useState<string | null>(null);
+  const [isAssistantOpen, setAssistantOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   // Инициализируем как null, чтобы избежать проблем с гидратацией
   // Загружаем avatar только после монтирования компонента
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const createButtonRef = useRef<HTMLButtonElement>(null);
   const roles = useMemo(() => getRolesForDemoAccount(session.email, session.role), [session.email, session.role]);
+  const isAIAssistantEnabled = useFeatureFlag('FEATURE_AI_ASSISTANT');
   useQueryToast(TOAST_MESSAGES);
   useUnreadNotifications(session.userId);
+
+  // Устанавливаем mounted после монтирования для избежания проблем с гидратацией
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Загружаем avatar только после монтирования, чтобы избежать проблем с гидратацией
   useEffect(() => {
@@ -225,6 +236,18 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
           )}
           <ToastHub />
           {isHoverRailEnabled ? <HoverRail permissions={roles} /> : null}
+          {/* AI Assistant - рендерим только после монтирования для избежания проблем с гидратацией */}
+          {isMounted && (flags.AI_ASSISTANT || isAIAssistantEnabled) && (
+            <div className="fixed bottom-6 right-6 z-50">
+              <AIAssistantButton onClick={() => setAssistantOpen(true)} />
+            </div>
+          )}
+          {isMounted && (flags.AI_ASSISTANT || isAIAssistantEnabled) && (
+            <AIAssistantChat
+              open={isAssistantOpen}
+              onClose={() => setAssistantOpen(false)}
+            />
+          )}
         </div>
       </AppShellProvider>
     </SessionProvider>

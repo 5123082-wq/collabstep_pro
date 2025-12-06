@@ -1,11 +1,14 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 import { Search, Filter, Power, Settings, ChevronDown, ChevronRight } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import clsx from 'clsx';
 import type { AdminModuleNodeView } from '@collabverse/api';
 import { ContentBlock } from '@/components/ui/content-block';
+import SectionHeader from '@/components/common/SectionHeader';
+import { getAdminMenuItems } from '@/lib/nav/navigation-utils';
 
 type FeatureCategory = 'all' | 'platform' | 'section' | 'subsection';
 type FeatureStatus = 'all' | 'enabled' | 'disabled';
@@ -181,17 +184,16 @@ export default function AdminFeaturesPage() {
 
   const getChildren = (parentId: string) => childFeatures.filter((f) => f.parentId === parentId);
 
+  const pathname = usePathname();
+  const menuItems = getAdminMenuItems(pathname ?? '');
+
   return (
     <div className="space-y-6">
-      <header className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-semibold text-neutral-50">Управление Фичами</h1>
-            <p className="text-sm text-neutral-400">
-              Включение и отключение разделов платформы. Изменения применяются глобально для всех пользователей.
-            </p>
-          </div>
-          <div className="flex gap-2">
+      <SectionHeader
+        title="Управление Фичами"
+        menuItems={menuItems}
+        actions={
+          <>
             <button
               onClick={() => toast('TODO: Импорт конфигурации', 'info')}
               className="rounded-xl border border-neutral-800 bg-neutral-900/60 px-4 py-2 text-sm font-medium text-neutral-300 transition hover:border-blue-500/40 hover:bg-blue-500/10"
@@ -209,9 +211,9 @@ export default function AdminFeaturesPage() {
             >
               Экспорт
             </button>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       {/* Filters */}
       <ContentBlock size="sm">
