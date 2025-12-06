@@ -13,13 +13,16 @@
 // Загрузка переменных окружения из .env.local
 import { config } from 'dotenv';
 import { readdirSync, readFileSync, existsSync, mkdirSync, writeFileSync } from 'fs';
-import { join, extname, relative } from 'path';
+import { join, extname, relative, basename } from 'path';
 import { createHash } from 'crypto';
 import { execSync } from 'child_process';
 import OpenAI from 'openai';
 
 // Загружаем .env.local
 config({ path: join(process.cwd(), '.env.local') });
+
+// Импортируем конфигурацию индексации
+import { loadIndexingConfig, getEnabledDocuments, updateDocumentIndexDate } from '../lib/ai-assistant/indexing-config';
 
 const DOCS_DIR = join(process.cwd(), '..', '..', 'docs');
 const CHUNK_SIZE = 800;
@@ -188,8 +191,40 @@ async function main() {
     mkdirSync(STORE_DIR, { recursive: true });
   }
   
-  // Собираем файлы
-  const files = collectFiles(DOCS_DIR);
+  // Загружаем конфигурацию индексации
+  const indexingConfig = loadIndexingConfig();
+  const enabledDocs = getEnabledDocuments(indexingConfig);
+  
+  console.log(`📋 Конфигурация индексации загружена:`);
+  console.log(`   • Документов в конфигурации: ${indexingConfig.documents.length}`);
+  console.log(`   • Включено для индексации: ${enabledDocs.length}`);
+  console.log(`   • Автопереиндексация: ${indexingConfig.autoReindex ? 'Да' : 'Нет'}\n`);
+  
+  // Собираем файлы на основе конфигурации
+  const files: string[] = [];
+  
+  if (enabledDocs.length === 0) {
+    console.log('⚠️  Нет включенных документов в конфигурации.');
+    console.log('💡 Используйте админ-панель для настройки документов для индексации.\n');
+    
+    // Если нет конфигурации, используем старый подход (сканируем все файлы)
+    console.log('📚 Используем автоматическое сканирование всех файлов...\n');
+    const allFiles = collectFiles(DOCS_DIR);
+    files.push(...allFiles);
+  } else {
+    // Используем файлы из конфигурации
+    for (const doc of enabledDocs) {
+      const filePath = join(DOCS_DIR, doc.path);
+      
+      if (!existsSync(filePath)) {
+        console.log(`⚠️  Файл не найден: ${doc.path}`);
+        continue;
+      }
+      
+      files.push(filePath);
+    }
+  }
+  
   console.log(`📚 Найдено ${files.length} файлов для индексации\n`);
   
   if (files.length === 0) {
@@ -216,6 +251,14 @@ async function main() {
     const fileName = filePath.split('/').pop()?.replace(extname(filePath), '') || 'unknown';
     
     console.log(`📄 ${relative(DOCS_DIR, filePath)} (${textChunks.length} чанков)`);
+    
+    // Обновляем дату индексации документа в конфигурации
+    const relPath = relative(DOCS_DIR, filePath);
+    try {
+      updateDocumentIndexDate(relPath, new Date().toISOString());
+    } catch (error) {
+      // Игнорируем ошибки обновления даты
+    }
     
     for (let i = 0; i < textChunks.length; i++) {
       const chunkText = textChunks[i];
