@@ -25,7 +25,7 @@ export default function SectionHeader({ title, actions, menuItems }: SectionHead
       </div>
 
       {menuItems && menuItems.length > 0 ? (
-        <div className="-mx-4 sm:mx-0">
+        <div className="-mx-4 sm:mx-0" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           <nav
             className={SECTION_MENU_CLASSNAMES.nav}
             aria-label={`Меню раздела ${title}`}

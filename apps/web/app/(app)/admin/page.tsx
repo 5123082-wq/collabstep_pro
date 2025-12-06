@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import {
   Users,
@@ -19,6 +19,8 @@ import { toast } from '@/lib/ui/toast';
 import { canAccessAdmin, getRolesForDemoAccount } from '@/lib/auth/roles';
 import { ContentBlock } from '@/components/ui/content-block';
 import { useSessionContext } from '@/components/app/SessionContext';
+import SectionHeader from '@/components/common/SectionHeader';
+import { getAdminMenuItems } from '@/lib/nav/navigation-utils';
 
 const overviewCards = [
   {
@@ -106,6 +108,7 @@ function formatNumber(num: number): string {
 
 export default function AdminOverviewPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const session = useSessionContext();
   const [stats, setStats] = useState<QuickStat[]>([
     { label: 'Активных пользователей', value: '...' },
@@ -175,17 +178,14 @@ export default function AdminOverviewPage() {
     void loadStats();
   }, [session, router, loadStats]);
 
+  const menuItems = getAdminMenuItems(pathname ?? '');
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <header className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-semibold text-neutral-50">Панель администратора</h1>
-            <p className="text-sm text-neutral-400">
-              Глобальное управление продуктом, пользователями и функциями платформы
-            </p>
-          </div>
+      <SectionHeader
+        title="Панель администратора"
+        menuItems={menuItems}
+        actions={
           <button
             onClick={() => {
               void loadStats();
@@ -197,8 +197,8 @@ export default function AdminOverviewPage() {
             <RefreshCw className={clsx('h-4 w-4', loading && 'animate-spin')} />
             Обновить
           </button>
-        </div>
-      </header>
+        }
+      />
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

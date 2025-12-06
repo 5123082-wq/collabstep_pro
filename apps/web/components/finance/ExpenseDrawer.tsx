@@ -57,7 +57,7 @@ export default function ExpenseDrawer({
 
   return (
     <Sheet open={state.open} onOpenChange={(open) => (open ? null : onClose())}>
-      <SheetContent side="right" className="flex h-full flex-col bg-neutral-950/95">
+      <SheetContent side="right" className="flex h-full flex-col bg-neutral-950/95 sm:max-w-[440px] md:max-w-[500px] lg:max-w-[560px]">
         <SheetHeader className="space-y-2">
           <SheetTitle>{state.expense ? 'Карточка траты' : 'Новая трата'}</SheetTitle>
           <button

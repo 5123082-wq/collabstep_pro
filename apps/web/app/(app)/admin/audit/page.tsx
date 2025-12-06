@@ -7,10 +7,13 @@
 // - Использовать типы AuditLogEntry из @collabverse/api
 
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { File, Search, Filter, Clock } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import clsx from 'clsx';
 import { ContentBlock } from '@/components/ui/content-block';
+import SectionHeader from '@/components/common/SectionHeader';
+import { getAdminMenuItems } from '@/lib/nav/navigation-utils';
 
 interface AuditEvent {
   id: string;
@@ -64,6 +67,7 @@ const actionTypes = [
 ];
 
 export default function AdminAuditPage() {
+  const pathname = usePathname();
   const [events] = useState<AuditEvent[]>(mockAuditEvents);
   const [searchQuery, setSearchQuery] = useState('');
   const [actionFilter, setActionFilter] = useState('all');
@@ -84,16 +88,14 @@ export default function AdminAuditPage() {
     return map[action] || action;
   };
 
+  const menuItems = getAdminMenuItems(pathname ?? '');
+
   return (
     <div className="space-y-6">
-      <header className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-semibold text-neutral-50">Журнал аудита</h1>
-            <p className="text-sm text-neutral-400">
-              История всех административных действий и изменений
-            </p>
-          </div>
+      <SectionHeader
+        title="Журнал аудита"
+        menuItems={menuItems}
+        actions={
           <button
             onClick={() => {
               const logs = JSON.stringify(events, null, 2);
@@ -105,8 +107,8 @@ export default function AdminAuditPage() {
           >
             Экспорт
           </button>
-        </div>
-      </header>
+        }
+      />
 
       {/* Filters */}
       <ContentBlock size="sm">

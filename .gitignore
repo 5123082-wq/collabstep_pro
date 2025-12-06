@@ -10,3 +10,5 @@ test-results
 /apps/web/.env.local
 *.tsbuildinfo
 .tmp/
+.ai-assistant/
+.env

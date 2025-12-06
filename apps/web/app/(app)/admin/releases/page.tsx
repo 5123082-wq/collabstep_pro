@@ -7,10 +7,13 @@
 // - Использовать типы из @collabverse/api
 
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { Calendar, Play, Pause, X } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import clsx from 'clsx';
 import { ContentBlock } from '@/components/ui/content-block';
+import SectionHeader from '@/components/common/SectionHeader';
+import { getAdminMenuItems } from '@/lib/nav/navigation-utils';
 
 interface Release {
   id: string;
@@ -44,6 +47,7 @@ const mockReleases: Release[] = [
 ];
 
 export default function AdminReleasesPage() {
+  const pathname = usePathname();
   const [releases] = useState<Release[]>(mockReleases);
 
   const handleCancel = (releaseId: string) => {
@@ -51,24 +55,22 @@ export default function AdminReleasesPage() {
     toast(`Релиз ${releaseId} отменён`, 'info');
   };
 
+  const menuItems = getAdminMenuItems(pathname ?? '');
+
   return (
     <div className="space-y-6">
-      <header className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-semibold text-neutral-50">Управление релизами</h1>
-            <p className="text-sm text-neutral-400">
-              Планировщик запуска фич по расписанию
-            </p>
-          </div>
+      <SectionHeader
+        title="Управление релизами"
+        menuItems={menuItems}
+        actions={
           <button
             onClick={() => toast('TODO: Создать релиз', 'info')}
             className="rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-4 py-2 text-sm font-medium text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/20"
           >
             + Создать релиз
           </button>
-        </div>
-      </header>
+        }
+      />
 
       {/* Releases List */}
       <div className="space-y-4">
