@@ -15,6 +15,7 @@ import { config } from 'dotenv';
 import { readdirSync, readFileSync, existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join, extname, relative } from 'path';
 import { createHash } from 'crypto';
+import { execSync } from 'child_process';
 import OpenAI from 'openai';
 
 // Загружаем .env.local
@@ -263,12 +264,26 @@ async function main() {
     }
   }
   
+  // Вычисляем hash документации для отслеживания изменений
+  let docsHash: string | undefined;
+  try {
+    docsHash = execSync('git ls-files -s docs/ | git hash-object --stdin', {
+      encoding: 'utf-8',
+      cwd: join(process.cwd(), '..', '..'),
+      stdio: 'pipe',
+    }).toString().trim();
+  } catch (error) {
+    // Если git недоступен (например, на Vercel), пропускаем hash
+    console.log('   ⚠️  Git недоступен, hash документации не сохранен');
+  }
+
   // Финальное сохранение
   console.log('\n💾 Финальное сохранение...');
   const store = {
     chunks: allChunks,
     indexedAt: new Date().toISOString(),
     version: 1,
+    ...(docsHash ? { docsHash } : {}),
   };
   writeFileSync(STORE_FILE, JSON.stringify(store), 'utf-8');
   
