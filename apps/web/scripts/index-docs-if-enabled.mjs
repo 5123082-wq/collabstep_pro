@@ -30,7 +30,7 @@ if (!hasApiKey || !isFeatureEnabled) {
 const STORE_DIR = join(process.cwd(), '.ai-assistant');
 const STORE_FILE = join(STORE_DIR, 'chunks.json');
 
-function shouldReindex(): boolean {
+function shouldReindex() {
   // Если файла нет - нужно индексировать
   if (!existsSync(STORE_FILE)) {
     console.log('📚 Файл индексации не найден, требуется индексация');
@@ -51,6 +51,12 @@ function shouldReindex(): boolean {
     // Проверяем дату последней индексации
     const indexedAt = store.indexedAt ? new Date(store.indexedAt) : null;
     const now = new Date();
+    
+    // Проверяем, что дата валидна (не Invalid Date)
+    if (indexedAt && isNaN(indexedAt.getTime())) {
+      console.log('📚 Дата индексации повреждена, требуется переиндексация');
+      return true;
+    }
     
     if (indexedAt) {
       const daysSinceIndex = (now - indexedAt) / (1000 * 60 * 60 * 24);
