@@ -2,7 +2,8 @@
 
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import clsx from 'clsx';
 import { AppShellProvider } from '@/components/app/AppShellContext';
 import { SessionProvider } from '@/components/app/SessionContext';
 import AppTopbar from '@/components/app/AppTopbar';
@@ -51,6 +52,7 @@ function getStoredAvatar(email: string): string | null {
 
 export default function AppLayoutClient({ session, children }: AppLayoutClientProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isCreateOpen, setCreateOpen] = useState(false);
   const [isPaletteOpen, setPaletteOpen] = useState(false);
   const [isSettingsOpen, setSettingsOpen] = useState(false);
@@ -185,10 +187,17 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
     }
   };
 
+  const isAdminRoute = pathname?.startsWith('/admin');
+
   return (
     <SessionProvider session={session}>
       <AppShellProvider openCreateMenu={openCreateMenu} openCommandPalette={openCommandPalette}>
-        <div className="flex h-screen min-h-0 max-h-screen overflow-hidden bg-transparent text-[color:var(--text-primary)]">
+        <div
+          className={clsx(
+            'flex h-screen min-h-0 max-h-screen overflow-hidden bg-transparent text-[color:var(--text-primary)]',
+            isAdminRoute && 'admin-route'
+          )}
+        >
           <Sidebar roles={roles} />
           <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
             <AppTopbar

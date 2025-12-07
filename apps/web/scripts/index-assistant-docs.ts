@@ -313,8 +313,8 @@ async function main() {
     docsHash = execSync('git ls-files -s docs/ | git hash-object --stdin', {
       encoding: 'utf-8',
       cwd: join(process.cwd(), '..', '..'),
-      stdio: 'pipe',
-    }).toString().trim();
+      shell: '/bin/sh',
+    }).trim();
   } catch (error) {
     // Если git недоступен (например, на Vercel), пропускаем hash
     console.log('   ⚠️  Git недоступен, hash документации не сохранен');

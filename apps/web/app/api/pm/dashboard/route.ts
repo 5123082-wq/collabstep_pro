@@ -4,6 +4,7 @@ import { getAuthFromRequest } from '@/lib/api/finance-access';
 import { tasksRepository } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { getAccessibleProjects } from '@/lib/api/project-access';
+import { ensureTestProject } from '@/lib/pm/ensure-test-project';
 
 export async function GET(_req: NextRequest): Promise<NextResponse> {
   if (!flags.PM_NAV_PROJECTS_AND_TASKS) {
@@ -14,6 +15,9 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }
+
+  // Очищаем возможные устаревшие демо-данные перед расчётом метрик
+  await ensureTestProject(auth.userId, auth.email);
 
   const currentUserId = auth.userId;
 

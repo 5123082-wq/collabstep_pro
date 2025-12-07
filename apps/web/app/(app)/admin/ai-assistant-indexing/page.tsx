@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 // @ts-expect-error lucide-react icon types
 import { RefreshCw, Save, Plus, Trash2, CheckCircle, FileText, AlertCircle } from 'lucide-react';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 
 interface DocumentIndexConfig {
   path: string;
@@ -46,10 +47,15 @@ export default function AIAssistantIndexingPage() {
   const loadConfig = async () => {
     try {
       const response = await fetch('/api/admin/ai-assistant/indexing-config');
+      
+      if (!response.ok) {
+        throw new Error('Не удалось загрузить конфигурацию');
+      }
+      
       const data = await response.json();
       setConfig(data.config);
     } catch (err) {
-      setError('Не удалось загрузить конфигурацию');
+      setError(err instanceof Error ? err.message : 'Не удалось загрузить конфигурацию');
     } finally {
       setLoading(false);
     }
@@ -58,6 +64,12 @@ export default function AIAssistantIndexingPage() {
   const loadIndexStatus = async () => {
     try {
       const response = await fetch('/api/admin/ai-assistant/reindex');
+      
+      if (!response.ok) {
+        console.error('Failed to load index status: HTTP', response.status);
+        return;
+      }
+      
       const data = await response.json();
       setIndexStatus(data);
     } catch (err) {
@@ -180,36 +192,33 @@ export default function AIAssistantIndexingPage() {
   const enabledCount = config.documents.filter(d => d.enabled).length;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="admin-page p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Управление индексацией AI ассистента</h1>
-          <p className="mt-1 text-sm text-neutral-400">
-            Настройте документы для индексации и управляйте базой знаний
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <button
-            onClick={startReindex}
-            disabled={indexing || enabledCount === 0}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <RefreshCw className={`h-4 w-4 ${indexing ? 'animate-spin' : ''}`} />
-            {indexing ? 'Индексация...' : 'Переиндексировать'}
-          </button>
-          
-          <button
-            onClick={saveConfig}
-            disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
-          >
-            <Save className="h-4 w-4" />
-            {saving ? 'Сохранение...' : 'Сохранить'}
-          </button>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Управление индексацией AI ассистента"
+        description="Настройте документы для индексации и управляйте базой знаний"
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={startReindex}
+              disabled={indexing || enabledCount === 0}
+              className="flex items-center gap-2 rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-4 py-2 text-sm font-medium text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <RefreshCw className={`h-4 w-4 ${indexing ? 'animate-spin' : ''}`} />
+              {indexing ? 'Индексация...' : 'Переиндексировать'}
+            </button>
+
+            <button
+              onClick={saveConfig}
+              disabled={saving}
+              className="flex items-center gap-2 rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-2 text-sm font-medium text-green-100 transition hover:border-green-400 hover:bg-green-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Save className="h-4 w-4" />
+              {saving ? 'Сохранение...' : 'Сохранить'}
+            </button>
+          </div>
+        }
+      />
 
       {/* Messages */}
       {error && (
@@ -249,7 +258,7 @@ export default function AIAssistantIndexingPage() {
           <div className="text-sm text-neutral-400">Последняя индексация</div>
           <div className="mt-1 text-sm font-medium text-white">
             {indexStatus?.indexedAt
-              ? new Date(indexStatus.indexedAt).toLocaleDateString('ru-RU', {
+              ? new Date(indexStatus.indexedAt).toLocaleString('ru-RU', {
                   day: '2-digit',
                   month: '2-digit',
                   year: 'numeric',

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { execSync } from 'child_process';
+import { tmpdir } from 'os';
+import { join } from 'path';
 
 /**
  * POST /api/admin/ai-assistant/reindex
@@ -19,9 +21,18 @@ export async function POST() {
     // Запускаем индексацию в фоновом режиме
     try {
       // Запускаем в отдельном процессе, чтобы не блокировать ответ
-      execSync('npx tsx scripts/index-assistant-docs.ts > /tmp/ai-assistant-indexing.log 2>&1 &', {
+      const logPath = join(tmpdir(), 'ai-assistant-indexing.log');
+      const isWindows = process.platform === 'win32';
+      
+      // Формируем команду в зависимости от платформы
+      const command = isWindows
+        ? `start /b npx tsx scripts/index-assistant-docs.ts > "${logPath}" 2>&1`
+        : `npx tsx scripts/index-assistant-docs.ts > "${logPath}" 2>&1 &`;
+      
+      execSync(command, {
         cwd: process.cwd(),
         stdio: 'ignore',
+        shell: isWindows ? undefined : '/bin/sh',
       });
       
       return NextResponse.json({

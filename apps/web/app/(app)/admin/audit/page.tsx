@@ -7,13 +7,11 @@
 // - Использовать типы AuditLogEntry из @collabverse/api
 
 import { useState } from 'react';
-import { usePathname } from 'next/navigation';
 import { File, Search, Filter, Clock } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import clsx from 'clsx';
 import { ContentBlock } from '@/components/ui/content-block';
-import SectionHeader from '@/components/common/SectionHeader';
-import { getAdminMenuItems } from '@/lib/nav/navigation-utils';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 
 interface AuditEvent {
   id: string;
@@ -67,7 +65,6 @@ const actionTypes = [
 ];
 
 export default function AdminAuditPage() {
-  const pathname = usePathname();
   const [events] = useState<AuditEvent[]>(mockAuditEvents);
   const [searchQuery, setSearchQuery] = useState('');
   const [actionFilter, setActionFilter] = useState('all');
@@ -88,13 +85,10 @@ export default function AdminAuditPage() {
     return map[action] || action;
   };
 
-  const menuItems = getAdminMenuItems(pathname ?? '');
-
   return (
-    <div className="space-y-6">
-      <SectionHeader
+    <div className="admin-page space-y-6">
+      <AdminPageHeader
         title="Журнал аудита"
-        menuItems={menuItems}
         actions={
           <button
             onClick={() => {

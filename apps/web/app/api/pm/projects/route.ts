@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }
 
-  // Автоматическое создание тестовых проектов
+  // Очищаем возможные устаревшие демо-данные (без автосоздания)
   await ensureTestProject(auth.userId, auth.email);
 
   const searchParams = request.nextUrl.searchParams;

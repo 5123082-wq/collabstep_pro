@@ -1,15 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { usePathname } from 'next/navigation';
 // @ts-expect-error lucide-react icon types
 import { Search, Filter, Shield, UserX, UserCheck, RefreshCw, User, Trash2, Edit } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import clsx from 'clsx';
 import type { AdminUserView } from '@collabverse/api';
 import { ContentBlock } from '@/components/ui/content-block';
-import SectionHeader from '@/components/common/SectionHeader';
-import { getAdminMenuItems } from '@/lib/nav/navigation-utils';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 
 interface User {
   id: string;
@@ -76,7 +74,6 @@ function convertAdminUserToUser(adminUser: AdminUserView): User {
 }
 
 export default function AdminUsersPage() {
-  const pathname = usePathname();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -249,19 +246,16 @@ export default function AdminUsersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [users.length, searchQuery, statusFilter]);
 
-  const menuItems = getAdminMenuItems(pathname ?? '');
-
   return (
-    <div className="space-y-6">
-      <SectionHeader
+    <div className="admin-page space-y-6">
+      <AdminPageHeader
         title="Управление пользователями"
-        menuItems={menuItems}
         actions={
           <>
             <button
               onClick={() => void loadUsers()}
               disabled={loading}
-              className="rounded-xl border border-neutral-700/50 bg-neutral-800/50 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:border-neutral-600 hover:bg-neutral-700/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="flex items-center gap-2 rounded-xl border border-neutral-700/50 bg-neutral-800/50 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:border-neutral-600 hover:bg-neutral-700/50 disabled:cursor-not-allowed disabled:opacity-50"
               title="Обновить список"
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />

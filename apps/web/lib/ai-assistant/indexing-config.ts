@@ -134,6 +134,14 @@ const CONFIG_DIR = join(process.cwd(), '.ai-assistant');
 const CONFIG_FILE = join(CONFIG_DIR, 'indexing-config.json');
 
 /**
+ * Нормализует путь к единому формату (forward slashes)
+ * Решает проблему с разными разделителями на Windows и Unix
+ */
+function normalizePath(path: string): string {
+  return path.replace(/\\/g, '/');
+}
+
+/**
  * Загрузить конфигурацию индексации
  */
 export function loadIndexingConfig(): IndexingConfig {
@@ -188,14 +196,15 @@ export function getEnabledDocuments(config?: IndexingConfig): DocumentIndexConfi
  */
 export function toggleDocument(path: string, enabled: boolean): void {
   const config = loadIndexingConfig();
-  const doc = config.documents.find(d => d.path === path);
+  const normalizedPath = normalizePath(path);
+  const doc = config.documents.find(d => d.path === normalizedPath);
   
   if (doc) {
     doc.enabled = enabled;
   } else {
     // Добавляем новый документ
     config.documents.push({
-      path,
+      path: normalizedPath,
       enabled,
       priority: config.documents.length,
     });
@@ -209,7 +218,8 @@ export function toggleDocument(path: string, enabled: boolean): void {
  */
 export function updateDocumentIndexDate(path: string, date: string): void {
   const config = loadIndexingConfig();
-  const doc = config.documents.find(d => d.path === path);
+  const normalizedPath = normalizePath(path);
+  const doc = config.documents.find(d => d.path === normalizedPath);
   
   if (doc) {
     doc.lastIndexed = date;
@@ -222,14 +232,18 @@ export function updateDocumentIndexDate(path: string, date: string): void {
  */
 export function addDocument(doc: DocumentIndexConfig): void {
   const config = loadIndexingConfig();
+  const normalizedPath = normalizePath(doc.path);
   
   // Проверяем, нет ли уже такого документа
-  const existing = config.documents.find(d => d.path === doc.path);
+  const existing = config.documents.find(d => d.path === normalizedPath);
   if (existing) {
-    throw new Error(`Document ${doc.path} already exists in config`);
+    throw new Error(`Document ${normalizedPath} already exists in config`);
   }
   
-  config.documents.push(doc);
+  config.documents.push({
+    ...doc,
+    path: normalizedPath,
+  });
   saveIndexingConfig(config);
 }
 
@@ -238,7 +252,8 @@ export function addDocument(doc: DocumentIndexConfig): void {
  */
 export function removeDocument(path: string): void {
   const config = loadIndexingConfig();
-  config.documents = config.documents.filter(d => d.path !== path);
+  const normalizedPath = normalizePath(path);
+  config.documents = config.documents.filter(d => d.path !== normalizedPath);
   saveIndexingConfig(config);
 }
 

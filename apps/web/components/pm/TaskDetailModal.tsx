@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
 import { ContentBlock } from '@/components/ui/content-block';
 import TaskComments from './TaskComments';
 import type { Task, TaskAttachment, TaskStatus } from '@/types/pm';
@@ -349,10 +350,12 @@ export default function TaskDetailModal({
                         className="group flex gap-3 rounded-xl border border-neutral-800 bg-neutral-900/50 p-3 transition hover:border-indigo-500/40 hover:bg-neutral-900"
                       >
                         <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900/70">
-                          {image ? (
-                            <img
+                          {image && file.storageUrl ? (
+                            <Image
                               src={file.storageUrl}
                               alt={file.filename}
+                              width={56}
+                              height={56}
                               className="h-full w-full object-cover"
                             />
                           ) : (

@@ -72,7 +72,7 @@ function shouldReindex() {
         const docsHash = execSync('git ls-files -s docs/ | git hash-object --stdin', {
           encoding: 'utf-8',
           cwd: join(process.cwd(), '..', '..'),
-          stdio: 'pipe',
+          shell: '/bin/sh',
         }).trim();
         
         // Сохраняем hash в файле индексации для сравнения
