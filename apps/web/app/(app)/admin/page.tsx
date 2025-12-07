@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import {
   Users,
@@ -18,9 +18,8 @@ import {
 import { toast } from '@/lib/ui/toast';
 import { canAccessAdmin, getRolesForDemoAccount } from '@/lib/auth/roles';
 import { ContentBlock } from '@/components/ui/content-block';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import { useSessionContext } from '@/components/app/SessionContext';
-import SectionHeader from '@/components/common/SectionHeader';
-import { getAdminMenuItems } from '@/lib/nav/navigation-utils';
 
 const overviewCards = [
   {
@@ -108,7 +107,6 @@ function formatNumber(num: number): string {
 
 export default function AdminOverviewPage() {
   const router = useRouter();
-  const pathname = usePathname();
   const session = useSessionContext();
   const [stats, setStats] = useState<QuickStat[]>([
     { label: 'Активных пользователей', value: '...' },
@@ -178,13 +176,10 @@ export default function AdminOverviewPage() {
     void loadStats();
   }, [session, router, loadStats]);
 
-  const menuItems = getAdminMenuItems(pathname ?? '');
-
   return (
-    <div className="space-y-6">
-      <SectionHeader
+    <div className="admin-page space-y-6">
+      <AdminPageHeader
         title="Панель администратора"
-        menuItems={menuItems}
         actions={
           <button
             onClick={() => {
@@ -192,7 +187,7 @@ export default function AdminOverviewPage() {
               toast('Статистика обновлена', 'success');
             }}
             disabled={loading}
-            className="flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900/60 px-4 py-2 text-sm font-medium text-neutral-300 transition hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900/60 px-4 py-2 text-sm font-medium text-neutral-300 transition hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-indigo-100 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <RefreshCw className={clsx('h-4 w-4', loading && 'animate-spin')} />
             Обновить

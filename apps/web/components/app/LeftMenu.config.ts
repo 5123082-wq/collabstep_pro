@@ -210,6 +210,7 @@ const baseLeftMenuConfig: LeftMenuSection[] = [
       { id: 'admin-audit', label: 'Аудит', href: '/admin/audit' },
       { id: 'admin-releases', label: 'Релизы', href: '/admin/releases' },
       { id: 'admin-ai-agents', label: 'AI-агенты', href: '/admin/ai-agents' },
+      { id: 'admin-ai-indexing', label: 'Индексация AI', href: '/admin/ai-assistant-indexing' },
       { id: 'admin-support', label: 'Support Tools', href: '/admin/support' }
     ]
   }

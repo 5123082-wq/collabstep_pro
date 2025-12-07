@@ -1,14 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { usePathname } from 'next/navigation';
 import { Search, Filter, Power, Settings, ChevronDown, ChevronRight } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import clsx from 'clsx';
 import type { AdminModuleNodeView } from '@collabverse/api';
 import { ContentBlock } from '@/components/ui/content-block';
-import SectionHeader from '@/components/common/SectionHeader';
-import { getAdminMenuItems } from '@/lib/nav/navigation-utils';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 
 type FeatureCategory = 'all' | 'platform' | 'section' | 'subsection';
 type FeatureStatus = 'all' | 'enabled' | 'disabled';
@@ -184,14 +182,10 @@ export default function AdminFeaturesPage() {
 
   const getChildren = (parentId: string) => childFeatures.filter((f) => f.parentId === parentId);
 
-  const pathname = usePathname();
-  const menuItems = getAdminMenuItems(pathname ?? '');
-
   return (
-    <div className="space-y-6">
-      <SectionHeader
+    <div className="admin-page space-y-6">
+      <AdminPageHeader
         title="Управление Фичами"
-        menuItems={menuItems}
         actions={
           <>
             <button

@@ -9,6 +9,7 @@ import { toast } from '@/lib/ui/toast';
 import { canAccessAdmin, getRolesForDemoAccount } from '@/lib/auth/roles';
 import { ContentBlock } from '@/components/ui/content-block';
 import { useSessionContext } from '@/components/app/SessionContext';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 
 interface UserData {
   userId: string;
@@ -138,26 +139,21 @@ export default function AdminDataPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <header className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-semibold text-neutral-50">Управление данными</h1>
-            <p className="text-sm text-neutral-400">
-              Просмотр и управление проектами и задачами в памяти системы
-            </p>
-          </div>
+    <div className="admin-page space-y-6">
+      <AdminPageHeader
+        title="Управление данными"
+        description="Просмотр и управление проектами и задачами в памяти системы"
+        actions={
           <button
             onClick={loadStats}
             disabled={loading}
-            className="rounded-xl border border-neutral-800 bg-neutral-900/60 px-4 py-2 text-sm font-medium text-neutral-300 transition hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-indigo-100 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900/60 px-4 py-2 text-sm font-medium text-neutral-300 transition hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-indigo-100 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <RefreshCw className={`inline h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Обновить
           </button>
-        </div>
-      </header>
+        }
+      />
 
       {/* Summary Stats */}
       {stats && (

@@ -54,6 +54,7 @@ export interface ChunkStore {
   chunks: DocumentationChunk[];
   indexedAt: string;
   version: number;
+  docsHash?: string; // Git hash документации для отслеживания изменений
 }
 
 export interface SearchResult {

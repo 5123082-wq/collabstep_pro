@@ -524,6 +524,7 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
           items={getAdminNavigation()}
           ariaLabel="Навигация по разделам админки"
           basePath="/admin"
+          exactMatch={true}
         />
       )}
     </header>

@@ -7,12 +7,10 @@
 // - Использовать типы из @collabverse/api
 
 import { useState } from 'react';
-import { usePathname } from 'next/navigation';
 import { Shield, Users, Plus, Edit, Trash2 } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import { ContentBlock } from '@/components/ui/content-block';
-import SectionHeader from '@/components/common/SectionHeader';
-import { getAdminMenuItems } from '@/lib/nav/navigation-utils';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 
 interface Role {
   id: string;
@@ -70,7 +68,6 @@ const mockRoles: Role[] = [
 ];
 
 export default function AdminRolesPage() {
-  const pathname = usePathname();
   const [roles, setRoles] = useState<Role[]>(mockRoles);
 
   const handleDelete = (roleId: string) => {
@@ -83,13 +80,10 @@ export default function AdminRolesPage() {
     toast('Роль удалена', 'success');
   };
 
-  const menuItems = getAdminMenuItems(pathname ?? '');
-
   return (
-    <div className="space-y-6">
-      <SectionHeader
+    <div className="admin-page space-y-6">
+      <AdminPageHeader
         title="Роли и разрешения"
-        menuItems={menuItems}
         actions={
           <button
             onClick={() => toast('TODO: Создать роль', 'info')}

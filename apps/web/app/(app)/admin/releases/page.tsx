@@ -7,13 +7,11 @@
 // - Использовать типы из @collabverse/api
 
 import { useState } from 'react';
-import { usePathname } from 'next/navigation';
 import { Calendar, Play, Pause, X } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import clsx from 'clsx';
 import { ContentBlock } from '@/components/ui/content-block';
-import SectionHeader from '@/components/common/SectionHeader';
-import { getAdminMenuItems } from '@/lib/nav/navigation-utils';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 
 interface Release {
   id: string;
@@ -47,7 +45,6 @@ const mockReleases: Release[] = [
 ];
 
 export default function AdminReleasesPage() {
-  const pathname = usePathname();
   const [releases] = useState<Release[]>(mockReleases);
 
   const handleCancel = (releaseId: string) => {
@@ -55,13 +52,10 @@ export default function AdminReleasesPage() {
     toast(`Релиз ${releaseId} отменён`, 'info');
   };
 
-  const menuItems = getAdminMenuItems(pathname ?? '');
-
   return (
-    <div className="space-y-6">
-      <SectionHeader
+    <div className="admin-page space-y-6">
+      <AdminPageHeader
         title="Управление релизами"
-        menuItems={menuItems}
         actions={
           <button
             onClick={() => toast('TODO: Создать релиз', 'info')}

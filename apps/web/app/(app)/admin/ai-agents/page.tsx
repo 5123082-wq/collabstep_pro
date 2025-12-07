@@ -1,14 +1,12 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { usePathname } from 'next/navigation';
 import { ContentBlock } from '@/components/ui/content-block';
 // @ts-expect-error lucide-react icon types
 import { Sparkles, RefreshCw, CheckCircle, AlertCircle, Clock, Database, Loader2 } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import { flags } from '@/lib/flags';
-import SectionHeader from '@/components/common/SectionHeader';
-import { getAdminMenuItems } from '@/lib/nav/navigation-utils';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
 
 interface AssistantStatus {
   enabled: boolean;
@@ -45,7 +43,6 @@ function StatusBadge({ status }: { status: AssistantStatus['status'] }) {
 }
 
 export default function AdminAIAgentsPage() {
-  const pathname = usePathname();
   const [status, setStatus] = useState<AssistantStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isIndexing, setIsIndexing] = useState(false);
@@ -102,17 +99,14 @@ export default function AdminAIAgentsPage() {
     }
   };
 
-  const menuItems = getAdminMenuItems(pathname ?? '');
-
   return (
-    <div className="space-y-6">
-      <SectionHeader
+    <div className="admin-page space-y-6">
+      <AdminPageHeader
         title="AI-агенты и ассистенты"
-        menuItems={menuItems}
         actions={
           <button
             onClick={() => toast('Функционал создания глобальных агентов в разработке', 'info')}
-            className="rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-4 py-2 text-sm font-medium text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/20 flex items-center gap-2"
+            className="flex items-center gap-2 rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-4 py-2 text-sm font-medium text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/20"
           >
             <Sparkles className="h-4 w-4" />
             Создать глобального агента

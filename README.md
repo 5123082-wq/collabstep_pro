@@ -12,7 +12,10 @@
 
 1. Установите зависимости: `pnpm install`
 2. Подготовьте переменные окружения: `pnpm ensure-env`
+   - Скрипт автоматически проверит наличие `AUTH_STORAGE=db` и `POSTGRES_URL`
+   - При необходимости будут показаны предупреждения
 3. Режим разработки: `pnpm dev` (откройте `http://localhost:3000/`)
+   - Для работы с БД убедитесь, что `AUTH_STORAGE=db` и `POSTGRES_URL` установлены
 4. Продакшен-сборка: `pnpm build && pnpm start`
 
 > Подробное руководство: [docs/getting-started/setup.md](docs/getting-started/setup.md)
@@ -48,7 +51,8 @@
 - `FEATURE_PROJECTS_V1` — включает CRM «Проекты v1» (0/1)
 - `AUTH_DEV` — включает dev-авторизацию (on/off)
 - `AUTH_STORAGE` — хранилище пользователей (`memory` или `db`). Для работы с БД установите `db`.
-- `DATABASE_URL` — строка подключения к PostgreSQL (Vercel Postgres).
+- `POSTGRES_URL` — строка подключения к PostgreSQL (Vercel Postgres). Используется для подключения к БД.
+- `DATABASE_URL` — альтернативная строка подключения к PostgreSQL (может быть установлена равной `$POSTGRES_URL`).
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` — ключи для Google OAuth.
 - `AUTH_SECRET` — секретный ключ для NextAuth (сгенерировать: `openssl rand -base64 32`).
 - `NEXTAUTH_URL` — URL приложения (например, `http://localhost:3000`).
@@ -70,7 +74,8 @@ AUTH_DEV=on
 # Auth & Database
 
 AUTH_STORAGE=db
-DATABASE_URL=postgresql://...
+POSTGRES_URL=postgresql://...
+DATABASE_URL=$POSTGRES_URL  # Опционально, для совместимости
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
 AUTH_SECRET=...
@@ -141,29 +146,29 @@ DEMO_USER_PASSWORD=demo-user
    AUTH_DEV=on
    FIN_EXPENSES_STORAGE=memory
    AUTH_SECRET=<generate with: openssl rand -base64 32>
-   ```
+```
 
-   **Демо-аккаунты:**
+**Демо-аккаунты:**
 
 ```text
    DEMO_ADMIN_EMAIL=admin.demo@collabverse.test
    DEMO_ADMIN_PASSWORD=demo-admin
    DEMO_USER_EMAIL=user.demo@collabverse.test
    DEMO_USER_PASSWORD=demo-user
-   ```
+```
 
-   **Для production/staging:**
+**Для production/staging:**
 
 ```text
    FIN_EXPENSES_STORAGE=db
-   ```
+```
 
-   **Опциональные (WebSocket):**
+**Опциональные (WebSocket):**
 
 ```text
    NEXT_PUBLIC_WS_URL=wss://your-websocket-server.com
    NEXT_PUBLIC_WS_ENABLED=true
-   ```
+```
 
 4. **Настройки Node.js и pnpm:**
    - Node.js Version: `20.x`

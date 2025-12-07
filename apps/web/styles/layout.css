@@ -38,6 +38,12 @@
   white-space: nowrap;
 }
 
+/* Hide legacy section-menu for admin routes to avoid double nav bars */
+.admin-route .section-menu,
+.admin-page .section-menu {
+  display: none;
+}
+
 @media (min-width: 640px) {
   .section-menu {
     padding-inline: 0;

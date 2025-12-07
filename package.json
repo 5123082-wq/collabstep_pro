@@ -34,9 +34,6 @@
     "verify": "pnpm ensure-env && pnpm -w lint && pnpm --filter @collabverse/web typecheck && pnpm --filter @collabverse/web build && pnpm -w --filter @collabverse/web run check:routes && pnpm test && pnpm exec playwright install --with-deps && pnpm test:e2e && pnpm verify:routes && node scripts/run-vercel-build.mjs",
     "docs:lint": "markdownlint '**/*.md' --ignore node_modules",
     "docs:links": "node scripts/check-docs-links.mjs",
-    "seed:finance": "tsx scripts/seed-finance.ts",
-    "seed:demo-pg": "tsx scripts/seed-demo-postgres.ts",
-    "seed:test-project": "tsx scripts/seed-test-project.ts",
     "reset:ai-agents": "tsx scripts/reset-ai-agents.ts",
     "prepare": "husky install",
     "vercel-build": "pnpm -C apps/web build"

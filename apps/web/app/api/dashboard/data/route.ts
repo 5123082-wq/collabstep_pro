@@ -213,7 +213,7 @@ export async function GET(request: NextRequest) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }
 
-  // Ждём гидратацию данных из PostgreSQL и проверяем наличие тестового проекта
+  // Очищаем устаревшие демо-данные (без автосоздания)
   await ensureTestProject(auth.userId, auth.email);
 
   const requested = parseRequestedWidgets(request.nextUrl.searchParams.get('widgets'));
