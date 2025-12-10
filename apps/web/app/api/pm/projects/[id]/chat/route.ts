@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { flags } from '@/lib/flags';
 import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
 import { projectChatRepository, projectsRepository, usersRepository } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
@@ -11,11 +10,6 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
-  // Проверка feature flag
-  if (!flags.PM_NAV_PROJECTS_AND_TASKS) {
-    return jsonError('FEATURE_DISABLED', { status: 404 });
-  }
-
   // Проверка авторизации
   const auth = getAuthFromRequest(req);
   if (!auth) {
@@ -75,11 +69,6 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
-  // Проверка feature flag
-  if (!flags.PM_NAV_PROJECTS_AND_TASKS) {
-    return jsonError('FEATURE_DISABLED', { status: 404 });
-  }
-
   // Проверка авторизации
   const auth = getAuthFromRequest(req);
   if (!auth) {

@@ -8,7 +8,19 @@ import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 type PulseWidgetProps = {
   data?: {
     activeProjects: number;
+    activeProjectsByOwner?: Array<{
+      ownerId: string;
+      ownerName: string;
+      ownerEmail?: string;
+      projects: Array<{ id: string; key: string; title: string; status: string }>;
+    }>;
     draftProjects?: number;
+    draftProjectsByOwner?: Array<{
+      ownerId: string;
+      ownerName: string;
+      ownerEmail?: string;
+      projects: Array<{ id: string; key: string; title: string; status: string }>;
+    }>;
     openTasks: number;
     myOpenTasks: number;
     overdue: number;
@@ -30,7 +42,9 @@ export default function PulseWidget({ data }: PulseWidgetProps) {
   // Default values to prevent errors when data is undefined
   const pulseData = data || {
     activeProjects: 0,
+    activeProjectsByOwner: [],
     draftProjects: 0,
+    draftProjectsByOwner: [],
     openTasks: 0,
     myOpenTasks: 0,
     overdue: 0,
@@ -55,6 +69,33 @@ export default function PulseWidget({ data }: PulseWidgetProps) {
       router.push(`/pm/tasks?scope=all&taskId=${params.taskId}`);
     }
   };
+
+  const formatOwnerProjects = (
+    items?: Array<{
+      ownerId: string;
+      ownerName: string;
+      ownerEmail?: string;
+      projects: Array<{ id: string; key: string; title: string; status: string }>;
+    }>
+  ) => {
+    if (!items || items.length === 0) {
+      return 'Нет данных';
+    }
+
+    return items
+      .map(({ ownerName, ownerEmail, projects }) => {
+        const projectLabels =
+          projects && projects.length > 0
+            ? projects.map((project) => project.key || project.title).join(', ')
+            : '—';
+        const ownerLabel = ownerName || ownerEmail || 'Неизвестный пользователь';
+        return `${ownerLabel}: ${projectLabels}`;
+      })
+      .join(' • ');
+  };
+
+  const activeOwnersSubtitle = formatOwnerProjects(pulseData.activeProjectsByOwner);
+  const draftOwnersSubtitle = formatOwnerProjects(pulseData.draftProjectsByOwner);
 
   // Единая структура карточки
   const CardContent = ({
@@ -122,6 +163,7 @@ export default function PulseWidget({ data }: PulseWidgetProps) {
         <CardContent
           title="Активные проекты"
           value={pulseData.activeProjects}
+          subtitle={activeOwnersSubtitle}
           onClick={() => handleDrilldown('projects')}
         />
 
@@ -130,6 +172,7 @@ export default function PulseWidget({ data }: PulseWidgetProps) {
           title="Черновики"
           value={pulseData.draftProjects ?? 0}
           valueColor={(pulseData.draftProjects ?? 0) > 0 ? 'text-amber-400' : 'text-white'}
+          subtitle={draftOwnersSubtitle}
           onClick={() => handleDrilldown('drafts')}
           buttonClassName={cn(
             (pulseData.draftProjects ?? 0) > 0

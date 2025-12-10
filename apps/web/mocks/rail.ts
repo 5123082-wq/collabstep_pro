@@ -31,8 +31,8 @@ export const defaultRailConfig: QuickAction[] = [
     id: 'chats',
     label: 'Чаты',
     icon: MessageSquare,
-    intent: 'sheet',
-    payload: { sheet: 'chats' },
+    intent: 'command',
+    payload: { command: 'open-chats-modal' },
     section: 'communication',
     badgeSelector: (state) => {
       const casted = state as { ui?: { unreadChats?: number } };

@@ -6,7 +6,9 @@ export type WebSocketEventType =
   | 'task.deleted'
   | 'comment.added'
   | 'comment.updated'
+  | 'comment.deleted'
   | 'chat.message'
+  | 'chat.message.deleted'
   | 'notification.new';
 
 export interface WebSocketEvent {

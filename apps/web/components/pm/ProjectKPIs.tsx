@@ -33,7 +33,7 @@ export default function ProjectKPIs({ project, onUpdateLimit, onBudgetSettingsCl
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* Прогресс */}
         <ContentBlock size="sm" className="!p-2">
           <div className="text-[10px] leading-tight text-[color:var(--text-tertiary)]">Прогресс</div>

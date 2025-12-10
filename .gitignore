@@ -8,6 +8,9 @@ test-results
 \.env
 .env.local
 /apps/web/.env.local
+*.env.local.bak
+.env.local.bak
+/apps/web/.env.local.bak
 *.tsbuildinfo
 .tmp/
 .ai-assistant/

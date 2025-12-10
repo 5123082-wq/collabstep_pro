@@ -7,6 +7,7 @@ import { DrawerManager } from './DrawerManager';
 import { DialogManager } from './DialogManager';
 import { RailItem } from './RailItem';
 import { useRailConfig, type QuickActionWithBadge } from './useRailConfig';
+import { AllChatsModal } from '../pm/AllChatsModal';
 import {
   COLLAPSED_RAIL_WIDTH,
   EXPANDED_RAIL_WIDTH,
@@ -285,6 +286,7 @@ export default function HoverRail({ permissions = [], featureFlags }: HoverRailP
 
       <DrawerManager />
       <DialogManager />
+      <AllChatsModal />
     </>
   );
 }

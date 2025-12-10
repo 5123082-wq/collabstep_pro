@@ -1,4 +1,12 @@
 import { memory } from '../data/memory';
+import { pmPgHydration } from '../storage/pm-pg-bootstrap';
+import {
+  deleteChatMessageFromPg,
+  fetchChatMessageByIdFromPg,
+  fetchChatMessagesByProjectFromPg,
+  isPmDbEnabled,
+  persistChatMessageToPg
+} from '../storage/pm-pg-adapter';
 import { attachmentsRepository } from './files-repository';
 import type { FileObject, ProjectChatMessage } from '../types';
 
@@ -23,6 +31,9 @@ export type ListChatMessagesOptions = {
   page?: number;
   pageSize?: number;
 };
+
+// Kick off optional Postgres hydration without blocking module import
+void pmPgHydration;
 
 function cloneMessage(message: ProjectChatMessage): ProjectChatMessage {
   return {
@@ -78,10 +89,38 @@ function withFileAttachments(message: ProjectChatMessage): ProjectChatMessageWit
 }
 
 export class ProjectChatRepository {
+  private hydrateProjectMessages(projectId: string): void {
+    if (!isPmDbEnabled()) {
+      return;
+    }
+    const hasMessages = memory.PROJECT_CHAT_MESSAGES.some(
+      (message) => message.projectId === projectId
+    );
+    if (hasMessages) {
+      return;
+    }
+    void fetchChatMessagesByProjectFromPg(projectId)
+      .then((fetched) => {
+        if (!fetched.length) {
+          return;
+        }
+        const existingIds = new Set(memory.PROJECT_CHAT_MESSAGES.map((item) => item.id));
+        const unique = fetched.filter((item) => !existingIds.has(item.id));
+        if (unique.length > 0) {
+          memory.PROJECT_CHAT_MESSAGES.push(...unique);
+        }
+      })
+      .catch((error) =>
+        console.error('[ProjectChatRepository] Failed to hydrate chat messages from Postgres', error)
+      );
+  }
+
   listByProject(projectId: string, options?: ListChatMessagesOptions): {
     messages: ProjectChatMessageWithFiles[];
     pagination: { page: number; pageSize: number; total: number; totalPages: number };
   } {
+    this.hydrateProjectMessages(projectId);
+
     const allMessages = memory.PROJECT_CHAT_MESSAGES.filter(
       (message) => message.projectId === projectId
     )
@@ -115,6 +154,11 @@ export class ProjectChatRepository {
     };
     memory.PROJECT_CHAT_MESSAGES.push(message);
     syncChatAttachments(message);
+    if (isPmDbEnabled()) {
+      void persistChatMessageToPg(message).catch((error) =>
+        console.error('[ProjectChatRepository] Failed to persist chat message', error)
+      );
+    }
     return withFileAttachments(message);
   }
 
@@ -131,6 +175,11 @@ export class ProjectChatRepository {
     }
     match.updatedAt = new Date().toISOString();
     syncChatAttachments(match);
+    if (isPmDbEnabled()) {
+      void persistChatMessageToPg(match).catch((error) =>
+        console.error('[ProjectChatRepository] Failed to persist updated chat message', error)
+      );
+    }
     return withFileAttachments(match);
   }
 
@@ -144,11 +193,27 @@ export class ProjectChatRepository {
       }
       return attachment.entityId !== messageId;
     });
+    if (isPmDbEnabled()) {
+      void deleteChatMessageFromPg(messageId).catch((error) =>
+        console.error('[ProjectChatRepository] Failed to delete chat message in Postgres', error)
+      );
+    }
   }
 
   findById(messageId: string): ProjectChatMessageWithFiles | null {
     const message = memory.PROJECT_CHAT_MESSAGES.find((m) => m.id === messageId);
     if (!message) {
+      if (isPmDbEnabled()) {
+        void fetchChatMessageByIdFromPg(messageId)
+          .then((fetched) => {
+            if (fetched) {
+              memory.PROJECT_CHAT_MESSAGES.push(fetched);
+            }
+          })
+          .catch((error) =>
+            console.error('[ProjectChatRepository] Failed to fetch chat message from Postgres', error)
+          );
+      }
       return null;
     }
     return withFileAttachments(message);

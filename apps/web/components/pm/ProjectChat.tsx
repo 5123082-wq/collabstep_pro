@@ -43,6 +43,17 @@ export default function ProjectChat({ projectId, currentUserId }: ProjectChatPro
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  const normalizeMessages = useCallback((incoming: ChatMessage[]): ChatMessage[] => {
+    const byId = new Map<string, ChatMessage>();
+    // Later entries override earlier to keep freshest data
+    incoming.forEach((message) => {
+      byId.set(message.id, message);
+    });
+    return Array.from(byId.values()).sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+  }, []);
+
   const loadMessages = useCallback(async (pageNum: number = 1, append: boolean = false) => {
     try {
       if (append) {
@@ -51,7 +62,9 @@ export default function ProjectChat({ projectId, currentUserId }: ProjectChatPro
         setLoading(true);
       }
 
-      const response = await fetch(`/api/pm/projects/${projectId}/chat?page=${pageNum}&pageSize=50`);
+      const response = await fetch(
+        `/api/chat/threads/project-${projectId}/messages?page=${pageNum}&pageSize=50`
+      );
 
       if (!response.ok) {
         const data = await response.json();
@@ -61,11 +74,12 @@ export default function ProjectChat({ projectId, currentUserId }: ProjectChatPro
       const data = await response.json();
       const newMessages = data.data?.messages || [];
       const pagination = data.data?.pagination || { totalPages: 1 };
+      const normalized = normalizeMessages(newMessages);
 
       if (append) {
-        setMessages((prev) => [...newMessages, ...prev]);
+        setMessages((prev) => normalizeMessages([...prev, ...normalized]));
       } else {
-        setMessages(newMessages);
+        setMessages(normalizeMessages(normalized));
         // Автопрокрутка к новым сообщениям только при первой загрузке
         setTimeout(() => {
           messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -81,7 +95,7 @@ export default function ProjectChat({ projectId, currentUserId }: ProjectChatPro
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [projectId]);
+  }, [normalizeMessages, projectId]);
 
   useEffect(() => {
     void loadMessages(1, false);
@@ -122,8 +136,8 @@ export default function ProjectChat({ projectId, currentUserId }: ProjectChatPro
         if (exists) {
           return prev;
         }
-        // Добавляем новое сообщение в начало списка (новые сообщения идут первыми)
-        return [enrichedMessage, ...prev];
+        // Новые сообщения добавляем в конец, чтобы сохранять порядок по времени
+        return normalizeMessages([...prev, enrichedMessage]);
       });
       // Автопрокрутка к новому сообщению
       setTimeout(() => {
@@ -143,7 +157,7 @@ export default function ProjectChat({ projectId, currentUserId }: ProjectChatPro
     try {
       setSending(true);
 
-      const response = await fetch(`/api/pm/projects/${projectId}/chat`, {
+      const response = await fetch(`/api/chat/threads/project-${projectId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -161,7 +175,7 @@ export default function ProjectChat({ projectId, currentUserId }: ProjectChatPro
       const newMessage = data.data?.message;
 
       if (newMessage) {
-        setMessages((prev) => [...prev, newMessage]);
+        setMessages((prev) => normalizeMessages([...prev, newMessage]));
         setBody('');
         setAttachments([]);
         setTimeout(() => {
