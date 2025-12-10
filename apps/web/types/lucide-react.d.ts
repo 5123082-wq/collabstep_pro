@@ -6,6 +6,7 @@ declare module 'lucide-react' {
   export const Bell: LucideIcon;
   export const ListTodo: LucideIcon;
   export const MessageSquare: LucideIcon;
+  export const MessageSquarePlus: LucideIcon;
   export const PlusCircle: LucideIcon;
   export const UserPlus: LucideIcon;
   export const LayoutGrid: LucideIcon;
@@ -37,6 +38,7 @@ declare module 'lucide-react' {
   export const ChevronDown: LucideIcon;
   export const ChevronLeft: LucideIcon;
   export const ChevronRight: LucideIcon;
+  export const ArrowLeft: LucideIcon;
   export const UserX: LucideIcon;
   export const UserCheck: LucideIcon;
   export const MoreVertical: LucideIcon;
@@ -52,4 +54,5 @@ declare module 'lucide-react' {
   export const Circle: LucideIcon;
   export const Link2: LucideIcon;
   export const DollarSign: LucideIcon;
+  export const Maximize2: LucideIcon;
 }

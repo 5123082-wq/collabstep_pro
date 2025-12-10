@@ -11,7 +11,19 @@ import { trackEvent } from '@/lib/telemetry';
 type DashboardData = {
   pulse: {
     activeProjects: number;
+    activeProjectsByOwner: Array<{
+      ownerId: string;
+      ownerName: string;
+      ownerEmail?: string;
+      projects: Array<{ id: string; key: string; title: string; status: string }>;
+    }>;
     draftProjects?: number;
+    draftProjectsByOwner?: Array<{
+      ownerId: string;
+      ownerName: string;
+      ownerEmail?: string;
+      projects: Array<{ id: string; key: string; title: string; status: string }>;
+    }>;
     openTasks: number;
     myOpenTasks: number;
     overdue: number;
@@ -103,7 +115,7 @@ export default function PMDashboardPage() {
   //     <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 py-12 text-center text-neutral-300">
   //       <div className="space-y-2">
   //         <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">Проекты и задачи</p>
-  //         <h1 className="text-xl font-semibold text-white">Дашборд</h1>
+  //         <h1 className="text-xl font-semibold text-white">Метрики</h1>
   //         <p className="max-w-md text-sm text-neutral-400">
   //           Здесь будет отображаться обзор ваших проектов и задач. Раздел находится в разработке.
   //         </p>
@@ -116,7 +128,7 @@ export default function PMDashboardPage() {
     return (
       <div className="space-y-6">
         <header>
-          <h1 className="text-xl font-semibold text-white">Дашборд</h1>
+          <h1 className="text-xl font-semibold text-white">Метрики</h1>
           <p className="mt-2 text-sm text-neutral-400">Обзор проектов и задач</p>
         </header>
         <div className="grid gap-6">
@@ -132,11 +144,11 @@ export default function PMDashboardPage() {
     return (
       <div className="space-y-6">
         <header>
-          <h1 className="text-xl font-semibold text-white">Дашборд</h1>
+          <h1 className="text-xl font-semibold text-white">Метрики</h1>
           <p className="mt-2 text-sm text-neutral-400">Обзор проектов и задач</p>
         </header>
         <ContentBlock variant="error">
-          <p className="text-sm">Не удалось загрузить данные дашборда. Попробуйте обновить страницу.</p>
+          <p className="text-sm">Не удалось загрузить данные метрик. Попробуйте обновить страницу.</p>
         </ContentBlock>
       </div>
     );
@@ -146,7 +158,9 @@ export default function PMDashboardPage() {
   const safeData = {
     pulse: data.pulse || {
       activeProjects: 0,
+      activeProjectsByOwner: [],
       draftProjects: 0,
+      draftProjectsByOwner: [],
       openTasks: 0,
       myOpenTasks: 0,
       overdue: 0,
@@ -167,7 +181,7 @@ export default function PMDashboardPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-xl font-semibold text-white">Дашборд</h1>
+        <h1 className="text-xl font-semibold text-white">Метрики</h1>
         <p className="mt-2 text-sm text-neutral-400">Обзор проектов и задач</p>
       </header>
 

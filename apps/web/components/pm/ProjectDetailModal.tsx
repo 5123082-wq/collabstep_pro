@@ -24,6 +24,7 @@ import ProjectAIAgents from '@/components/pm/ProjectAIAgents';
 import ProjectInviteModal from '@/components/pm/ProjectInviteModal';
 import ProjectTasksSection from '@/components/pm/ProjectTasksSection';
 import TaskDetailModal from '@/components/pm/TaskDetailModal';
+import { InlineChat } from '@/components/pm/InlineChat';
 import { ContentBlock } from '@/components/ui/content-block';
 import LargeContentModal from '@/components/ui/large-content-modal';
 import {
@@ -493,48 +494,64 @@ export default function ProjectDetailModal({ projectId, isOpen, onClose }: Proje
             </div>
 
             {activeTab === 'overview' && (
-              <>
-                <ProjectKPIs 
-                  project={project} 
-                  onUpdateLimit={handleUpdateLimit}
-                  {...(flags.BUDGET_LIMITS && { onBudgetSettingsClick: () => setShowBudgetSettingsModal(true) })}
-                />
+              <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.8fr)] lg:max-h-[calc(100vh-220px)] lg:overflow-hidden">
+                <div className="space-y-6 min-h-0 lg:max-h-[calc(100vh-240px)] lg:overflow-y-auto lg:pr-1">
+                  <ProjectKPIs 
+                    project={project} 
+                    onUpdateLimit={handleUpdateLimit}
+                    {...(flags.BUDGET_LIMITS && { onBudgetSettingsClick: () => setShowBudgetSettingsModal(true) })}
+                  />
 
-                <QuickActions
-                  project={project}
-                  onTaskCreate={() => {
-                    setShowCreateTaskModal(true);
-                  }}
-                  onInvite={() => {
-                    setShowInviteModal(true);
-                  }}
-                  onExpenseCreate={handleExpenseCreate}
-                  onMarketplacePublish={handleMarketplacePublish}
-                />
+                  <QuickActions
+                    project={project}
+                    onTaskCreate={() => {
+                      setShowCreateTaskModal(true);
+                    }}
+                    onInvite={() => {
+                      setShowInviteModal(true);
+                    }}
+                    onExpenseCreate={handleExpenseCreate}
+                    onMarketplacePublish={handleMarketplacePublish}
+                  />
 
-                <ProjectTasksSection
-                  projectId={projectId}
-                  tasks={projectTasks}
-                  loading={tasksLoading}
-                  onTaskClick={(task) => setSelectedTask(task)}
-                  onCreateTask={() => setShowCreateTaskModal(true)}
-                />
+                  <ProjectTasksSection
+                    projectId={projectId}
+                    tasks={projectTasks}
+                    loading={tasksLoading}
+                    onTaskClick={(task) => setSelectedTask(task)}
+                    onCreateTask={() => setShowCreateTaskModal(true)}
+                  />
 
-                <div className="grid gap-6 lg:grid-cols-2">
-                  <ProjectTeam project={project} currentUserId={currentUserId} />
-                  <ProjectLinks project={project} />
+                  <div className="grid gap-6 lg:grid-cols-2">
+                    <ProjectTeam project={project} currentUserId={currentUserId} />
+                    <ProjectLinks project={project} />
+                  </div>
+
+                  {project.metrics?.budgetLimit && (
+                    <LimitsLog project={project} />
+                  )}
+
+                  {flags.FINANCE_AUTOMATIONS && (
+                    <AutomationsLog project={project} />
+                  )}
+
+                  <ProjectActivity project={project} />
                 </div>
 
-                {project.metrics?.budgetLimit && (
-                  <LimitsLog project={project} />
+                {canAccessChatAndFiles ? (
+                  <InlineChat
+                    contextId={projectId}
+                    contextType="project"
+                    currentUserId={currentUserId}
+                    title="Чат по проекту"
+                    className="h-full lg:max-h-[calc(100vh-240px)]"
+                  />
+                ) : (
+                  <div className="flex h-full min-h-[360px] items-center justify-center rounded-2xl border border-dashed border-neutral-800 bg-neutral-950/60 p-4 text-sm text-neutral-500">
+                    Чат доступен участникам проекта
+                  </div>
                 )}
-
-                {flags.FINANCE_AUTOMATIONS && (
-                  <AutomationsLog project={project} />
-                )}
-
-                <ProjectActivity project={project} />
-              </>
+              </div>
             )}
 
             {activeTab === 'chat' && canAccessChatAndFiles && (

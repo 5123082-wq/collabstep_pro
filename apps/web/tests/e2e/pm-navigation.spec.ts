@@ -34,15 +34,15 @@ test.describe('PM navigation', () => {
     captureConsole(page, logs);
     await loginAsDemo(page, 'admin', appOrigin);
 
-    // Переходим на дашборд PM
+    // Переходим на страницу метрик PM
     await page.goto(`${appOrigin}/pm`);
     await expect(page).toHaveURL(`${appOrigin}/pm`);
-    await expect(page.getByRole('heading', { name: 'Дашборд' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Метрики' })).toBeVisible();
 
     // Переходим на страницу проектов
     await page.goto(`${appOrigin}/pm/projects`);
     await expect(page).toHaveURL(`${appOrigin}/pm/projects`);
-    await expect(page.getByRole('heading', { name: 'Список проектов' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Проекты' })).toBeVisible();
 
     // Переходим на страницу задач
     await page.goto(`${appOrigin}/pm/tasks`);
@@ -70,13 +70,16 @@ test.describe('PM navigation', () => {
     await expect(pmMenuLink).toBeVisible();
 
     // Проверяем наличие подменю (children)
-    const dashboardLink = navigation.getByRole('link', { name: 'Дашборд' });
-    const projectsLink = navigation.getByRole('link', { name: 'Проекты' });
-    const tasksLink = navigation.getByRole('link', { name: 'Задачи' });
-    const archiveLink = navigation.getByRole('link', { name: 'Архив' });
+    const expandPmSectionButton = navigation.getByRole('button', { name: /Проекты и задачи/ });
+    await expandPmSectionButton.click();
+
+    const metricsLink = navigation.getByRole('link', { name: 'Метрики', exact: true });
+    const projectsLink = navigation.getByRole('link', { name: 'Проекты', exact: true });
+    const tasksLink = navigation.getByRole('link', { name: 'Задачи', exact: true });
+    const archiveLink = navigation.getByRole('link', { name: 'Архив', exact: true });
 
     // Кликаем на каждый пункт и проверяем URL
-    await dashboardLink.click();
+    await metricsLink.click();
     await expect(page).toHaveURL(`${appOrigin}/pm`);
 
     await projectsLink.click();

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { flags } from '@/lib/flags';
 import { getAuthFromRequest } from '@/lib/api/finance-access';
-import { tasksRepository } from '@collabverse/api';
+import { tasksRepository, usersRepository } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { getAccessibleProjects } from '@/lib/api/project-access';
 import { ensureTestProject } from '@/lib/pm/ensure-test-project';
@@ -41,6 +41,49 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
   const draftProjects = userProjects.filter(
     (project) => project.status === 'draft' && !project.archived
   );
+
+  // Resolve owners to display human-friendly names/emails in the widget
+  const ownerIds = Array.from(new Set(userProjects.map((project) => project.ownerId).filter(Boolean)));
+  const owners = await usersRepository.findMany(ownerIds);
+  const ownerLookup = new Map(owners.map((owner) => [owner.id, owner]));
+
+  const buildOwnerProjects = (projects: typeof userProjects) =>
+    projects.reduce<
+      Array<{
+        ownerId: string;
+        ownerName: string;
+        ownerEmail?: string;
+        projects: Array<{ id: string; key: string; title: string; status: string }>;
+      }>
+    >((acc, project) => {
+      const owner = ownerLookup.get(project.ownerId);
+      const ownerName = owner?.name || 'Неизвестный пользователь';
+      const ownerEmail = owner?.email;
+
+      const existing = acc.find((item) => item.ownerId === project.ownerId);
+      const projectInfo = {
+        id: project.id,
+        key: project.key,
+        title: project.title,
+        status: project.status
+      };
+
+      if (existing) {
+        existing.projects.push(projectInfo);
+        return acc;
+      }
+
+      acc.push({
+        ownerId: project.ownerId,
+        ownerName,
+        ...(ownerEmail ? { ownerEmail } : {}),
+        projects: [projectInfo]
+      });
+      return acc;
+    }, []);
+
+  const activeProjectsByOwner = buildOwnerProjects(activeProjects);
+  const draftProjectsByOwner = buildOwnerProjects(draftProjects);
 
   // Get all tasks from user's projects
   const allTasks = tasksRepository.list();
@@ -227,7 +270,9 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
   return jsonOk({
     pulse: {
       activeProjects: activeProjects.length,
+      activeProjectsByOwner,
       draftProjects: draftProjects.length,
+      draftProjectsByOwner,
       openTasks,
       myOpenTasks,
       overdue,

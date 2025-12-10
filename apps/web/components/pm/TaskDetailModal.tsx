@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { ContentBlock } from '@/components/ui/content-block';
-import TaskComments from './TaskComments';
+import { InlineChat } from '@/components/pm/InlineChat';
 import type { Task, TaskAttachment, TaskStatus } from '@/types/pm';
 import LargeContentModal from '@/components/ui/large-content-modal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -282,219 +282,220 @@ export default function TaskDetailModal({
           </div>
         </header>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(260px,1fr)]">
-          {/* Задание + вложения */}
-          <ContentBlock
-            size="sm"
-            className="space-y-4 rounded-2xl border-neutral-900 bg-neutral-950/85 p-4"
-          >
-            <div className="space-y-2">
-              <div className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
-                Задание
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)] lg:max-h-[calc(100vh-200px)] lg:overflow-hidden">
+          <div className="space-y-6 min-h-0 lg:max-h-[calc(100vh-220px)] lg:overflow-y-auto lg:pr-1">
+            {/* Задание + вложения */}
+            <ContentBlock
+              size="sm"
+              className="space-y-4 rounded-2xl border-neutral-900 bg-neutral-950/85 p-4"
+            >
+              <div className="space-y-2">
+                <div className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                  Задание
+                </div>
+                {taskData.description ? (
+                  <p className="text-sm leading-relaxed text-neutral-200">{taskData.description}</p>
+                ) : (
+                  <p className="text-sm text-neutral-500">Пока нет описания задачи.</p>
+                )}
               </div>
-              {taskData.description ? (
-                <p className="text-sm leading-relaxed text-neutral-200">{taskData.description}</p>
-              ) : (
-                <p className="text-sm text-neutral-500">Пока нет описания задачи.</p>
-              )}
-            </div>
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <div className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
-                    Вложения
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                      Вложения
+                    </div>
+                    <p className="text-xs text-neutral-500">
+                      Добавьте файлы или превью, чтобы видеть контекст задачи.
+                    </p>
                   </div>
-                  <p className="text-xs text-neutral-500">
-                    Добавьте файлы или превью, чтобы видеть контекст задачи.
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      className="hidden"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) {
+                          void handleFileUpload(file);
+                        }
+                        if (fileInputRef.current) {
+                          fileInputRef.current.value = '';
+                        }
+                      }}
+                      disabled={uploading}
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      loading={uploading}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      Прикрепить файл
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    className="hidden"
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      if (file) {
-                        void handleFileUpload(file);
-                      }
-                      if (fileInputRef.current) {
-                        fileInputRef.current.value = '';
-                      }
-                    }}
-                    disabled={uploading}
-                  />
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    loading={uploading}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    Прикрепить файл
-                  </Button>
-                </div>
-              </div>
 
-              {taskData.attachments && taskData.attachments.length > 0 ? (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {taskData.attachments.map((file) => {
-                    const image = isImageAttachment(file);
-                    return (
-                      <a
-                        key={file.id}
-                        href={file.storageUrl || '#'}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group flex gap-3 rounded-xl border border-neutral-800 bg-neutral-900/50 p-3 transition hover:border-indigo-500/40 hover:bg-neutral-900"
-                      >
-                        <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900/70">
-                          {image && file.storageUrl ? (
-                            <Image
-                              src={file.storageUrl}
-                              alt={file.filename}
-                              width={56}
-                              height={56}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-lg">📎</span>
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-medium text-white group-hover:text-indigo-200">
-                            {file.filename}
+                {taskData.attachments && taskData.attachments.length > 0 ? (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {taskData.attachments.map((file) => {
+                      const image = isImageAttachment(file);
+                      return (
+                        <a
+                          key={file.id}
+                          href={file.storageUrl || '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group flex gap-3 rounded-xl border border-neutral-800 bg-neutral-900/50 p-3 transition hover:border-indigo-500/40 hover:bg-neutral-900"
+                        >
+                          <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900/70">
+                            {image && file.storageUrl ? (
+                              <Image
+                                src={file.storageUrl}
+                                alt={file.filename}
+                                width={56}
+                                height={56}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-lg">📎</span>
+                            )}
                           </div>
-                          {file.sizeBytes ? (
-                            <div className="text-xs text-neutral-400">
-                              {(file.sizeBytes / 1024).toFixed(0)} КБ
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-sm font-medium text-white group-hover:text-indigo-200">
+                              {file.filename}
                             </div>
-                          ) : null}
-                        </div>
-                      </a>
-                    );
-                  })}
+                            {file.sizeBytes ? (
+                              <div className="text-xs text-neutral-400">
+                                {(file.sizeBytes / 1024).toFixed(0)} КБ
+                              </div>
+                            ) : null}
+                          </div>
+                        </a>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-neutral-800 bg-neutral-900/40 px-4 py-6 text-center text-sm text-neutral-500">
+                    Пока нет вложений
+                  </div>
+                )}
+              </div>
+            </ContentBlock>
+
+            {/* Управление задачей (компактно в колонку) */}
+            <ContentBlock
+              size="sm"
+              className="flex flex-col gap-4 rounded-2xl border-neutral-900 bg-neutral-950/85 p-4"
+            >
+              <div className="space-y-1">
+                <div className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                  Статус / этап
                 </div>
-              ) : (
-                <div className="rounded-xl border border-dashed border-neutral-800 bg-neutral-900/40 px-4 py-6 text-center text-sm text-neutral-500">
-                  Пока нет вложений
+                <Select
+                  value={taskData.status}
+                  onValueChange={(value) => void handleUpdate({ status: value as TaskStatus })}
+                  disabled={savingField === 'status'}
+                >
+                  <SelectTrigger className="h-10 rounded-xl border-neutral-800 bg-neutral-950 text-white">
+                    <SelectValue placeholder="Выберите статус" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <div className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                  Исполнитель
                 </div>
-              )}
-            </div>
-          </ContentBlock>
-
-          {/* Управление задачей (компактно в колонку) */}
-          <ContentBlock
-            size="sm"
-            className="flex flex-col gap-4 rounded-2xl border-neutral-900 bg-neutral-950/85 p-4"
-          >
-            <div className="space-y-1">
-              <div className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
-                Статус / этап
+                <Select
+                  value={taskData.assigneeId ?? 'unassigned'}
+                  onValueChange={(value) =>
+                    void handleUpdate({ assigneeId: value === 'unassigned' ? '' : value })
+                  }
+                  disabled={savingField === 'assigneeId' || loadingMembers}
+                >
+                  <SelectTrigger className="h-10 rounded-xl border-neutral-800 bg-neutral-950 text-white">
+                    <SelectValue placeholder="Назначить исполнителя" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unassigned">Не назначено</SelectItem>
+                    {members.map((member) => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.name || member.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <Select
-                value={taskData.status}
-                onValueChange={(value) => void handleUpdate({ status: value as TaskStatus })}
-                disabled={savingField === 'status'}
-              >
-                <SelectTrigger className="h-10 rounded-xl border-neutral-800 bg-neutral-950 text-white">
-                  <SelectValue placeholder="Выберите статус" />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
 
-            <div className="space-y-1">
-              <div className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
-                Исполнитель
+              <div className="space-y-1">
+                <div className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                  Приоритет
+                </div>
+                <Select
+                  value={taskData.priority ?? 'unset'}
+                  onValueChange={(value) => {
+                    if (value === 'unset') return;
+                    void handleUpdate({ priority: value as Task['priority'] });
+                  }}
+                  disabled={savingField === 'priority'}
+                >
+                  <SelectTrigger className="h-10 rounded-xl border-neutral-800 bg-neutral-950 text-white">
+                    <SelectValue placeholder="Установить приоритет" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unset">Не задано</SelectItem>
+                    {PRIORITY_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <Select
-                value={taskData.assigneeId ?? 'unassigned'}
-                onValueChange={(value) =>
-                  void handleUpdate({ assigneeId: value === 'unassigned' ? '' : value })
-                }
-                disabled={savingField === 'assigneeId' || loadingMembers}
-              >
-                <SelectTrigger className="h-10 rounded-xl border-neutral-800 bg-neutral-950 text-white">
-                  <SelectValue placeholder="Назначить исполнителя" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unassigned">Не назначено</SelectItem>
-                  {members.map((member) => (
-                    <SelectItem key={member.id} value={member.id}>
-                      {member.name || member.email}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
 
-            <div className="space-y-1">
-              <div className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
-                Приоритет
+              <div className="space-y-1">
+                <div className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                  Дедлайн
+                </div>
+                <Input
+                  type="date"
+                  value={toDateInputValue(taskData.dueAt)}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    void handleUpdate({
+                      dueAt: value ? new Date(value).toISOString() : null
+                    });
+                  }}
+                  disabled={savingField === 'dueAt'}
+                  className="h-10 rounded-xl border-neutral-800 bg-neutral-950 text-white"
+                />
+                {taskData.dueAt && (
+                  <p className="text-xs text-neutral-500">
+                    Текущее значение: {formatDate(taskData.dueAt)}
+                  </p>
+                )}
               </div>
-              <Select
-                value={taskData.priority ?? 'unset'}
-                onValueChange={(value) => {
-                  if (value === 'unset') return;
-                  void handleUpdate({ priority: value as Task['priority'] });
-                }}
-                disabled={savingField === 'priority'}
-              >
-                <SelectTrigger className="h-10 rounded-xl border-neutral-800 bg-neutral-950 text-white">
-                  <SelectValue placeholder="Установить приоритет" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unset">Не задано</SelectItem>
-                  {PRIORITY_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            </ContentBlock>
+          </div>
 
-            <div className="space-y-1">
-              <div className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
-                Дедлайн
-              </div>
-              <Input
-                type="date"
-                value={toDateInputValue(taskData.dueAt)}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  void handleUpdate({
-                    dueAt: value ? new Date(value).toISOString() : null
-                  });
-                }}
-                disabled={savingField === 'dueAt'}
-                className="h-10 rounded-xl border-neutral-800 bg-neutral-950 text-white"
-              />
-              {taskData.dueAt && (
-                <p className="text-xs text-neutral-500">
-                  Текущее значение: {formatDate(taskData.dueAt)}
-                </p>
-              )}
-            </div>
-          </ContentBlock>
-        </div>
-
-        {/* Комментарии */}
-        <ContentBlock size="sm">
-          <TaskComments
-            taskId={taskData.id}
-            projectId={taskData.projectId}
+          <InlineChat
+            contextId={taskData.id}
+            contextType="task"
             currentUserId={currentUserId}
+            title="Чат по задаче"
+            className="h-full lg:max-h-[calc(100vh-220px)]"
           />
-        </ContentBlock>
+        </div>
       </div>
     </LargeContentModal>
   );
