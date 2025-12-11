@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Loader2, MessageSquare } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useChatsModal } from '@/stores/chatsModal';
 import type { ProjectChatMessage } from '@collabverse/api';
@@ -59,7 +60,6 @@ export function InlineChat({ contextId, contextType, currentUserId, title, class
   };
 
   const threadId = useMemo(() => `${contextType}-${contextId}`, [contextId, contextType]);
-  const effectiveUserId = currentUserId ?? meId ?? null;
 
   const scrollToBottom = () => {
     const el = messagesRef.current;
@@ -67,35 +67,46 @@ export function InlineChat({ contextId, contextType, currentUserId, title, class
     el.scrollTop = el.scrollHeight;
   };
 
+  // Загрузка userId один раз
+  useEffect(() => {
+    if (currentUserId) return;
+    const loadMe = async () => {
+      try {
+        const res = await fetch('/api/auth/me', { headers: { 'cache-control': 'no-store' } });
+        if (res.ok) {
+          const data = await res.json();
+          setMeId(data?.user?.id ?? null);
+        }
+      } catch {
+        setMeId(null);
+      }
+    };
+    void loadMe();
+  }, [currentUserId]);
+
+  // Загрузка сообщений при смене контекста
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
         setError(null);
-        if (!currentUserId) {
-          try {
-            const res = await fetch('/api/auth/me', { headers: { 'cache-control': 'no-store' } });
-            if (res.ok) {
-              const data = await res.json();
-              setMeId(data?.user?.id ?? null);
-            }
-          } catch {
-            setMeId(null);
-          }
-        }
+        setMessages([]); // полностью очищаем перед загрузкой нового треда
         const thread = `${contextType}-${contextId}`;
-        const res = await fetch(`/api/chat/threads/${thread}/messages`);
+        const res = await fetch(`/api/chat/threads/${thread}/messages`, {
+          headers: { 'cache-control': 'no-store' }
+        });
         if (!res.ok) throw new Error('Не удалось загрузить чат');
         const data = await res.json();
         const msgsRaw = (data.data?.messages ?? data.messages ?? []) as ApiMessage[];
+        const userId = currentUserId ?? meId;
         const msgs = msgsRaw.map((m) => ({
           id: m.id,
           author: m.author?.name || m.author?.email || 'Без имени',
           text: m.body,
           time: m.createdAt ?? m.updatedAt ?? new Date().toISOString(),
-          isOwn: effectiveUserId ? m.author?.id === effectiveUserId : false
+          isOwn: userId ? m.author?.id === userId : false
         }));
-        setMessages((prev) => normalizeMessages([...prev, ...msgs]));
+        setMessages(normalizeMessages(msgs));
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Ошибка загрузки чата');
       } finally {
@@ -104,7 +115,7 @@ export function InlineChat({ contextId, contextType, currentUserId, title, class
     };
 
     void load();
-  }, [contextId, contextType, currentUserId, effectiveUserId]);
+  }, [contextId, contextType, currentUserId, meId]);
 
   useEffect(() => {
     scrollToBottom();
@@ -241,8 +252,8 @@ export function InlineChat({ contextId, contextType, currentUserId, title, class
         ) : messages.length === 0 ? (
           <div className="flex flex-1 items-center justify-center text-sm text-neutral-500">Пока нет сообщений</div>
         ) : (
-          <div ref={messagesRef} className="flex-1 min-h-0 overflow-y-auto pr-2">
-            <div className="space-y-4 pb-2">
+          <ScrollArea className="flex-1 min-h-0 pr-1">
+            <div ref={messagesRef} className="space-y-4 pb-2">
               {messages.map((message) => {
                 const align = message.isOwn ? 'items-end text-right' : 'items-start';
                 const bubble = message.isOwn
@@ -300,7 +311,7 @@ export function InlineChat({ contextId, contextType, currentUserId, title, class
                 );
               })}
             </div>
-          </div>
+          </ScrollArea>
         )}
       </div>
 

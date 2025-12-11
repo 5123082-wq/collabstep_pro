@@ -44,11 +44,13 @@ export function AllChatsModal() {
   const [query, setQuery] = useState('');
   const [threads, setThreads] = useState<Thread[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
-  const messagesRef = useRef<HTMLDivElement | null>(null);
+  const messagesScrollRef = useRef<HTMLDivElement | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const [isEditingLoading, setIsEditingLoading] = useState(false);
+  const [inputValue, setInputValue] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   const normalizeMessages = (items: Message[]): Message[] => {
     const byId = new Map<string, Message>();
@@ -59,9 +61,14 @@ export function AllChatsModal() {
   };
 
   const scrollToBottom = () => {
-    const el = messagesRef.current;
+    const el = messagesScrollRef.current;
     if (!el) return;
-    el.scrollTop = el.scrollHeight;
+    // Используем двойной requestAnimationFrame для гарантии, что DOM полностью обновлен
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        el.scrollTop = el.scrollHeight;
+      });
+    });
   };
 
   useEffect(() => {
@@ -90,7 +97,16 @@ export function AllChatsModal() {
       }
     };
     void loadMe();
-  }, [isOpen]);
+
+    // Обработка ESC для закрытия модалки
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        close();
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isOpen, close]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -179,19 +195,35 @@ export function AllChatsModal() {
   }, [query, threads]);
 
   const activeThread = useMemo(() => {
-    const found = filteredThreads.find((thread) => thread.id === activeThreadId);
-    return found ?? filteredThreads[0] ?? null;
+    // Если задан конкретный тред, ждём его появления и не подставляем другой,
+    // чтобы не показать чужие сообщения (исправляет смешение тредов при загрузке).
+    if (activeThreadId) {
+      return filteredThreads.find((thread) => thread.id === activeThreadId) ?? null;
+    }
+    // Если тред не задан — можно выбрать первый доступный.
+    return filteredThreads[0] ?? null;
   }, [activeThreadId, filteredThreads]);
 
+  // При смене треда загружаем сообщения (объединяем логику в один useEffect)
   useEffect(() => {
     const loadMessages = async () => {
+      // Сброс состояния перед загрузкой
+      setMessages([]);
+      setEditingId(null);
+      setEditValue('');
+      setIsEditingLoading(false);
+      setInputValue(''); // Очищаем поле ввода при смене треда
+      setSendingMessage(false);
+
       if (!activeThread) {
-        setMessages([]);
         return;
       }
+
       try {
         setState('loading');
-        const res = await fetch(`/api/chat/threads/${activeThread.id}/messages?page=1&pageSize=50`);
+        const res = await fetch(`/api/chat/threads/${activeThread.id}/messages?page=1&pageSize=50`, {
+          headers: { 'cache-control': 'no-store' }
+        });
         if (!res.ok) throw new Error('Не удалось загрузить чат');
         const data = await res.json();
         const msgs = ((data.data?.messages ?? data.messages ?? []) as ApiMessage[]).map((m) => ({
@@ -201,7 +233,7 @@ export function AllChatsModal() {
           time: m.createdAt ?? m.updatedAt ?? new Date().toISOString(),
           isOwn: m.author?.id === currentUserId
         }));
-        setMessages((prev) => normalizeMessages([...prev, ...msgs]));
+        setMessages(normalizeMessages(msgs));
         setState('ready');
       } catch (err) {
         console.error(err);
@@ -209,6 +241,7 @@ export function AllChatsModal() {
       }
     };
     void loadMessages();
+    // Загружаем при смене треда или currentUserId (для правильного флага isOwn)
   }, [activeThread, currentUserId]);
   const handleStartEdit = (id: string, text: string) => {
     setEditingId(id);
@@ -259,6 +292,41 @@ export function AllChatsModal() {
     }
   };
 
+  const handleSendMessage = async () => {
+    if (!activeThread || !inputValue.trim() || sendingMessage) return;
+    setSendingMessage(true);
+    try {
+      const res = await fetch(`/api/chat/threads/${activeThread.id}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body: inputValue.trim() })
+      });
+      if (!res.ok) throw new Error('Не удалось отправить сообщение');
+      const data = await res.json();
+      const m = data.data?.message ?? data.message;
+      if (m) {
+        setMessages((prev) =>
+          normalizeMessages([
+            ...prev,
+            {
+              id: m.id,
+              author: m.author?.name || m.author?.email || 'Вы',
+              text: m.body,
+              time: m.createdAt ?? new Date().toISOString(),
+              isOwn: true
+            }
+          ])
+        );
+      }
+      setInputValue('');
+    } catch (err) {
+      console.error('[AllChatsModal] Error sending message:', err);
+      alert('Не удалось отправить сообщение');
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -285,9 +353,9 @@ export function AllChatsModal() {
           </div>
         </header>
 
-        <div className="grid min-h-[520px] grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-[360px_1fr]">
-          <section className="flex min-h-0 flex-col rounded-2xl border border-neutral-800/70 bg-neutral-950/80 p-3">
-            <div className="flex items-center gap-2 pb-3">
+        <div className="flex h-[calc(100vh-200px)] min-h-[520px] flex-col gap-4 px-4 py-4 lg:flex-row">
+          <section className="flex h-full min-h-0 w-full flex-col rounded-2xl border border-neutral-800/70 bg-neutral-950/80 p-3 overflow-hidden lg:w-[360px] lg:flex-shrink-0">
+            <div className="flex items-center gap-2 pb-3 flex-shrink-0">
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -296,7 +364,7 @@ export function AllChatsModal() {
                 className="h-10 border-neutral-800 bg-neutral-900/80 text-sm text-white placeholder:text-neutral-500"
               />
             </div>
-            <ScrollArea className="flex-1 pr-2">
+            <ScrollArea className="flex-1 min-h-0 pr-2">
               {state === 'loading' ? (
                 <div className="space-y-3">
                   {Array.from({ length: 4 }).map((_, idx) => (
@@ -363,8 +431,8 @@ export function AllChatsModal() {
             </ScrollArea>
           </section>
 
-          <section className="flex min-h-0 flex-col rounded-2xl border border-neutral-800/70 bg-neutral-950/80">
-            <header className="flex items-center justify-between gap-3 border-b border-neutral-800/70 px-4 py-3">
+          <section className="flex h-full min-h-0 flex-1 flex-col rounded-2xl border border-neutral-800/70 bg-neutral-950/80 overflow-hidden">
+            <header className="flex items-center justify-between gap-3 border-b border-neutral-800/70 px-4 py-3 flex-shrink-0">
               <div className="flex items-center gap-3">
                 <button
                   type="button"
@@ -386,23 +454,25 @@ export function AllChatsModal() {
               </div>
             </header>
 
-            <div className="flex min-h-0 flex-1 flex-col gap-3 p-4">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
               {state === 'loading' ? (
-                <div className="flex flex-1 items-center justify-center gap-2 text-sm text-neutral-400">
+                <div className="flex flex-1 items-center justify-center gap-2 text-sm text-neutral-400 p-4">
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                   Загружаем сообщения...
                 </div>
               ) : state === 'error' ? (
-                <div className="flex flex-1 items-center justify-center rounded-xl border border-red-900/50 bg-red-900/10 px-4 py-6 text-sm text-red-200">
-                  Не удалось загрузить чат. Попробуйте позже.
+                <div className="flex flex-1 items-center justify-center p-4">
+                  <div className="rounded-xl border border-red-900/50 bg-red-900/10 px-4 py-6 text-sm text-red-200">
+                    Не удалось загрузить чат. Попробуйте позже.
+                  </div>
                 </div>
               ) : !activeThread ? (
-                <div className="flex flex-1 items-center justify-center text-sm text-neutral-500">Выберите чат слева</div>
+                <div className="flex flex-1 items-center justify-center text-sm text-neutral-500 p-4">Выберите чат слева</div>
               ) : messages.length === 0 ? (
-                <div className="flex flex-1 items-center justify-center text-sm text-neutral-500">В этом чате пока нет сообщений</div>
+                <div className="flex flex-1 items-center justify-center text-sm text-neutral-500 p-4">В этом чате пока нет сообщений</div>
               ) : (
-                <div ref={messagesRef} className="flex-1 overflow-y-auto px-2">
-                  <div className="space-y-4 pb-2">
+                <div ref={messagesScrollRef} className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:w-2">
+                  <div className="space-y-4 p-4 pb-4">
                     {messages.map((message) => {
                       const align = message.isOwn ? 'items-end text-right' : 'items-start';
                       const bubble = message.isOwn
@@ -464,18 +534,29 @@ export function AllChatsModal() {
                 </div>
               )}
 
-              <div className="mt-auto flex items-center gap-2 rounded-xl border border-neutral-800/70 bg-neutral-900/70 px-3 py-2">
+              <div className="flex-shrink-0 flex items-center gap-2 rounded-xl border border-neutral-800/70 bg-neutral-900/70 px-3 py-2 m-4 mt-0">
                 <Input
                   placeholder="Напишите сообщение..."
                   aria-label="Напишите сообщение"
                   className="flex-1 border-none bg-transparent text-sm text-white placeholder:text-neutral-500 focus-visible:ring-0"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      void handleSendMessage();
+                    }
+                  }}
+                  disabled={!activeThread || sendingMessage}
                 />
                 <Button
                   type="button"
                   size="sm"
                   className="gap-2"
+                  onClick={handleSendMessage}
+                  disabled={!activeThread || !inputValue.trim() || sendingMessage}
                 >
-                  Отправить
+                  {sendingMessage ? 'Отправка...' : 'Отправить'}
                 </Button>
               </div>
             </div>
