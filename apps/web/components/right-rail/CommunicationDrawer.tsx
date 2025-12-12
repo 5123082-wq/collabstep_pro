@@ -1,14 +1,15 @@
 'use client';
 
 import { useEffect, useMemo, type SVGProps } from 'react';
-import { Bell, MessageSquare } from 'lucide-react';
+import { Bell, MessageSquare, UserPlus } from 'lucide-react';
 import ChatPanel from './ChatPanel';
+import InvitesPanel from './InvitesPanel';
 import NotificationsPanel from './NotificationsPanel';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { useUI } from '@/stores/ui';
 
-type CommunicationTab = 'notifications' | 'chats';
+type CommunicationTab = 'notifications' | 'chats' | 'invites';
 
 type TabDefinition = {
   id: CommunicationTab;
@@ -18,7 +19,8 @@ type TabDefinition = {
 
 const tabs: TabDefinition[] = [
   { id: 'notifications', label: 'Уведомления', icon: Bell },
-  { id: 'chats', label: 'Чаты', icon: MessageSquare }
+  { id: 'chats', label: 'Чаты', icon: MessageSquare },
+  { id: 'invites', label: 'Приглашения', icon: UserPlus }
 ];
 
 function CloseIcon(props: SVGProps<SVGSVGElement>) {
@@ -36,10 +38,12 @@ export default function CommunicationDrawer() {
   const closeDrawer = useUI((state) => state.closeDrawer);
   const setUnreadChats = useUI((state) => state.setUnreadChats);
   const setUnreadNotifications = useUI((state) => state.setUnreadNotifications);
+  const setUnreadInvites = useUI((state) => state.setUnreadInvites);
   const unreadChats = useUI((state) => state.unreadChats);
   const unreadNotifications = useUI((state) => state.unreadNotifications);
+  const unreadInvites = useUI((state) => state.unreadInvites);
 
-  const isOpen = drawer === 'notifications' || drawer === 'chats';
+  const isOpen = drawer === 'notifications' || drawer === 'chats' || drawer === 'invites';
   const activeTab: CommunicationTab = isOpen ? (drawer as CommunicationTab) : 'notifications';
 
   useEffect(() => {
@@ -52,14 +56,18 @@ export default function CommunicationDrawer() {
     if (activeTab === 'notifications') {
       setUnreadNotifications(0);
     }
-  }, [activeTab, isOpen, setUnreadChats, setUnreadNotifications]);
+    if (activeTab === 'invites') {
+      setUnreadInvites(0);
+    }
+  }, [activeTab, isOpen, setUnreadChats, setUnreadInvites, setUnreadNotifications]);
 
   const tabBadges = useMemo(
     () => ({
       notifications: unreadNotifications,
-      chats: unreadChats
+      chats: unreadChats,
+      invites: unreadInvites
     }),
-    [unreadChats, unreadNotifications]
+    [unreadChats, unreadInvites, unreadNotifications]
   );
 
   const handleTabChange = (tab: CommunicationTab) => {
@@ -119,13 +127,15 @@ export default function CommunicationDrawer() {
         <div className="flex min-h-0 flex-1 overflow-hidden">
           {activeTab === 'notifications' ? (
             <NotificationsPanel onMarkAllRead={() => setUnreadNotifications(0)} />
-          ) : (
+          ) : activeTab === 'chats' ? (
             <ChatPanel
               onSelectChat={() => {
                 setUnreadChats(0);
                 closeDrawer();
               }}
             />
+          ) : (
+            <InvitesPanel />
           )}
         </div>
       </SheetContent>

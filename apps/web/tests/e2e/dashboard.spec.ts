@@ -6,7 +6,7 @@ const appOrigin = 'http://127.0.0.1:3000';
 
 test.describe('Workspace Dashboard', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsDemo(page, 'user', appOrigin);
+    await loginAsDemo(page, 'admin', appOrigin);
   });
 
   test('dashboard page loads without errors', async ({ page }) => {

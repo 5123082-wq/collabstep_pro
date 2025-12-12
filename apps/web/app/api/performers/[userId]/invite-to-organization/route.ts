@@ -58,6 +58,31 @@ export async function POST(
         return jsonOk({ success: true });
 
     } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        const causeMessage =
+            typeof (error as { cause?: unknown })?.cause === 'object' && (error as { cause?: { message?: unknown } }).cause
+                ? String((error as { cause?: { message?: unknown } }).cause?.message ?? '')
+                : '';
+        const causeCode =
+            typeof (error as { cause?: unknown })?.cause === 'object' && (error as { cause?: { code?: unknown } }).cause
+                ? String((error as { cause?: { code?: unknown } }).cause?.code ?? '')
+                : '';
+        
+        // Graceful degradation: if database schema is missing the `role` column (migration not applied),
+        // return a clear error message instead of 500.
+        const isMissingRoleColumn =
+            message.includes('column "role" does not exist') ||
+            causeMessage.includes('column "role" does not exist') ||
+            (causeCode === '42703' && (message.toLowerCase().includes('role') || causeMessage.toLowerCase().includes('role')));
+        
+        if (isMissingRoleColumn) {
+            console.error('[Performers Catalog] Database schema missing `role` column. Migration required.');
+            return jsonError('DATABASE_SCHEMA_OUTDATED', {
+                status: 503,
+                details: 'Database migration required: the `organization_invite.role` column is missing. Please run database migrations.',
+            });
+        }
+        
         console.error('[Performers Catalog] Error inviting:', error);
         return jsonError('INTERNAL_ERROR', { status: 500 });
     }

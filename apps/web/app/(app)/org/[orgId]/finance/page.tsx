@@ -5,7 +5,7 @@ import { OrganizationFinanceClient } from './OrganizationFinanceClient';
 
 export default async function OrganizationFinancePage({ params }: { params: { orgId: string } }) {
   const user = await getCurrentUser();
-  if (!user) {
+  if (!user?.id) {
     return <div>Please log in</div>;
   }
 

@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { jsonError, jsonOk } from '@/lib/api/http';
-import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
+import { getProjectRole } from '@/lib/api/finance-access';
 import { flags } from '@/lib/flags';
 import {
   commentsRepository,
@@ -13,6 +13,34 @@ import {
   type TaskCommentNode
 } from '@collabverse/api';
 import { broadcastToProject } from '@/lib/websocket/event-broadcaster';
+import { getCurrentSession } from '@/lib/auth/session';
+import { decodeDemoSession, DEMO_SESSION_COOKIE, isDemoAdminEmail } from '@/lib/auth/demo-session';
+
+type AuthContext = {
+  userId: string;
+  email: string;
+  role: 'owner' | 'member';
+};
+
+async function getAuthFromRequest(req: NextRequest): Promise<AuthContext | null> {
+  // 1) Prefer NextAuth session (real users)
+  const session = await getCurrentSession();
+  const sessionUserId = session?.user?.id;
+  const sessionEmail = session?.user?.email;
+  if (sessionUserId && sessionEmail) {
+    const isAdmin = session?.user?.role === 'admin' || isDemoAdminEmail(sessionEmail);
+    return { userId: sessionUserId, email: sessionEmail, role: isAdmin ? 'owner' : 'member' };
+  }
+
+  // 2) Fallback to legacy/demo cookie
+  const sessionCookie = req.cookies.get(DEMO_SESSION_COOKIE);
+  const demoSession = decodeDemoSession(sessionCookie?.value ?? null);
+  if (!demoSession) {
+    return null;
+  }
+  const isAdmin = demoSession.role === 'admin' || isDemoAdminEmail(demoSession.email);
+  return { userId: demoSession.userId, email: demoSession.email, role: isAdmin ? 'owner' : 'member' };
+}
 
 function parseThreadId(threadId: string): { kind: 'project' | 'task'; id: string } | null {
   if (threadId.startsWith('project-')) {
@@ -43,7 +71,7 @@ export async function GET(
     return jsonError('FEATURE_DISABLED', { status: 404 });
   }
 
-  const auth = getAuthFromRequest(req);
+  const auth = await getAuthFromRequest(req);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }
@@ -57,8 +85,8 @@ export async function GET(
     if (parsed.kind === 'project') {
       const project = await projectsRepository.findById(parsed.id);
       if (!project) return jsonError('PROJECT_NOT_FOUND', { status: 404 });
-      const role = await getProjectRole(parsed.id, auth.userId);
-      if (role === 'viewer') return jsonError('ACCESS_DENIED', { status: 403 });
+      const hasAccess = await projectsRepository.hasAccess(parsed.id, auth.userId);
+      if (!hasAccess) return jsonError('ACCESS_DENIED', { status: 403 });
 
       const url = new URL(req.url);
       const page = Number(url.searchParams.get('page') ?? '1');
@@ -87,8 +115,8 @@ export async function GET(
     const tasks = tasksRepository.list();
     const task = tasks.find((t) => t.id === parsed.id);
     if (!task) return jsonError('TASK_NOT_FOUND', { status: 404 });
-    const role = await getProjectRole(task.projectId, auth.userId);
-    if (role === 'viewer') return jsonError('ACCESS_DENIED', { status: 403 });
+    const hasAccess = await projectsRepository.hasAccess(task.projectId, auth.userId);
+    if (!hasAccess) return jsonError('ACCESS_DENIED', { status: 403 });
     const commentsTree = commentsRepository.listByTask(task.projectId, parsed.id);
     const flat = flattenComments(commentsTree);
     const messages = await Promise.all(
@@ -123,7 +151,7 @@ export async function POST(
   if (!flags.PM_NAV_PROJECTS_AND_TASKS) {
     return jsonError('FEATURE_DISABLED', { status: 404 });
   }
-  const auth = getAuthFromRequest(req);
+  const auth = await getAuthFromRequest(req);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }
@@ -141,8 +169,8 @@ export async function POST(
     if (parsed.kind === 'project') {
       const project = await projectsRepository.findById(parsed.id);
       if (!project) return jsonError('PROJECT_NOT_FOUND', { status: 404 });
-      const role = await getProjectRole(parsed.id, auth.userId);
-      if (role === 'viewer') return jsonError('ACCESS_DENIED', { status: 403 });
+      const hasAccess = await projectsRepository.hasAccess(parsed.id, auth.userId);
+      if (!hasAccess) return jsonError('ACCESS_DENIED', { status: 403 });
 
       const message = projectChatRepository.create({
         projectId: parsed.id,
@@ -170,8 +198,8 @@ export async function POST(
     const tasks = tasksRepository.list();
     const task = tasks.find((t) => t.id === parsed.id);
     if (!task) return jsonError('TASK_NOT_FOUND', { status: 404 });
-    const role = await getProjectRole(task.projectId, auth.userId);
-    if (role === 'viewer') return jsonError('ACCESS_DENIED', { status: 403 });
+    const hasAccess = await projectsRepository.hasAccess(task.projectId, auth.userId);
+    if (!hasAccess) return jsonError('ACCESS_DENIED', { status: 403 });
 
     const created = commentsRepository.create({
       taskId: task.id,
@@ -206,7 +234,7 @@ export async function PATCH(
   if (!flags.PM_NAV_PROJECTS_AND_TASKS) {
     return jsonError('FEATURE_DISABLED', { status: 404 });
   }
-  const auth = getAuthFromRequest(req);
+  const auth = await getAuthFromRequest(req);
   if (!auth) return jsonError('UNAUTHORIZED', { status: 401 });
 
   const parsed = parseThreadId(params.threadId);
@@ -222,8 +250,9 @@ export async function PATCH(
     if (parsed.kind === 'project') {
       const project = await projectsRepository.findById(parsed.id);
       if (!project) return jsonError('PROJECT_NOT_FOUND', { status: 404 });
+      const hasAccess = await projectsRepository.hasAccess(parsed.id, auth.userId);
+      if (!hasAccess) return jsonError('ACCESS_DENIED', { status: 403 });
       const role = await getProjectRole(parsed.id, auth.userId);
-      if (role === 'viewer') return jsonError('ACCESS_DENIED', { status: 403 });
 
       const message = projectChatRepository.findById(params.messageId);
       if (!message || message.projectId !== parsed.id) return jsonError('MESSAGE_NOT_FOUND', { status: 404 });
@@ -247,8 +276,9 @@ export async function PATCH(
     const tasks = tasksRepository.list();
     const task = tasks.find((t) => t.id === parsed.id);
     if (!task) return jsonError('TASK_NOT_FOUND', { status: 404 });
+    const hasAccess = await projectsRepository.hasAccess(task.projectId, auth.userId);
+    if (!hasAccess) return jsonError('ACCESS_DENIED', { status: 403 });
     const role = await getProjectRole(task.projectId, auth.userId);
-    if (role === 'viewer') return jsonError('ACCESS_DENIED', { status: 403 });
 
     const comments = flattenComments(commentsRepository.listByTask(task.projectId, parsed.id));
     const comment = comments.find((c) => c.id === params.messageId);
@@ -284,7 +314,7 @@ export async function DELETE(
   if (!flags.PM_NAV_PROJECTS_AND_TASKS) {
     return jsonError('FEATURE_DISABLED', { status: 404 });
   }
-  const auth = getAuthFromRequest(req);
+  const auth = await getAuthFromRequest(req);
   if (!auth) return jsonError('UNAUTHORIZED', { status: 401 });
 
   const parsed = parseThreadId(params.threadId);
@@ -294,8 +324,9 @@ export async function DELETE(
     if (parsed.kind === 'project') {
       const project = await projectsRepository.findById(parsed.id);
       if (!project) return jsonError('PROJECT_NOT_FOUND', { status: 404 });
+      const hasAccess = await projectsRepository.hasAccess(parsed.id, auth.userId);
+      if (!hasAccess) return jsonError('ACCESS_DENIED', { status: 403 });
       const role = await getProjectRole(parsed.id, auth.userId);
-      if (role === 'viewer') return jsonError('ACCESS_DENIED', { status: 403 });
 
       const message = projectChatRepository.findById(params.messageId);
       if (!message || message.projectId !== parsed.id) return jsonError('MESSAGE_NOT_FOUND', { status: 404 });
@@ -311,8 +342,9 @@ export async function DELETE(
     const tasks = tasksRepository.list();
     const task = tasks.find((t) => t.id === parsed.id);
     if (!task) return jsonError('TASK_NOT_FOUND', { status: 404 });
+    const hasAccess = await projectsRepository.hasAccess(task.projectId, auth.userId);
+    if (!hasAccess) return jsonError('ACCESS_DENIED', { status: 403 });
     const role = await getProjectRole(task.projectId, auth.userId);
-    if (role === 'viewer') return jsonError('ACCESS_DENIED', { status: 403 });
 
     const comments = flattenComments(commentsRepository.listByTask(task.projectId, parsed.id));
     const comment = comments.find((c) => c.id === params.messageId);

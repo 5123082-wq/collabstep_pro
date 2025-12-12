@@ -18,6 +18,7 @@ describe('stage copy audit', () => {
     'node_modules',
     '.next',
     '.git',
+    '.ai-assistant',
     'coverage',
     'dist',
     '.turbo',

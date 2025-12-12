@@ -16,6 +16,7 @@ import HoverRail from '@/components/right-rail/HoverRail';
 import PlatformSettingsModal from '@/components/settings/PlatformSettingsModal';
 import UserProfileSettingsModal from '@/components/settings/UserProfileSettingsModal';
 import CreateTaskWithProjectModal from '@/components/pm/CreateTaskWithProjectModal';
+import CreateProjectModal from '@/components/pm/CreateProjectModal';
 import { CreateAIAgentModal } from '@/components/ai-hub';
 import { AIAssistantChat, AIAssistantButton } from '@/components/ai-assistant';
 import { flags } from '@/lib/flags';
@@ -25,6 +26,7 @@ import { getRolesForDemoAccount, setUserRoles } from '@/lib/auth/roles';
 import { toast } from '@/lib/ui/toast';
 import { useQueryToast } from '@/lib/ui/useQueryToast';
 import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
+import { useUnreadInvites } from '@/hooks/useUnreadInvites';
 
 const TOAST_MESSAGES: Record<string, { message: string; tone?: 'info' | 'success' | 'warning' }> = {
   'register-success': { message: 'Регистрация успешна', tone: 'success' },
@@ -69,6 +71,7 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
   const isAIAssistantEnabled = useFeatureFlag('FEATURE_AI_ASSISTANT');
   useQueryToast(TOAST_MESSAGES);
   useUnreadNotifications(session.userId);
+  useUnreadInvites(session.userId);
 
   // Устанавливаем mounted после монтирования для избежания проблем с гидратацией
   useEffect(() => {
@@ -111,6 +114,7 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
   useEffect(() => {
     const handleOpenModal = (event: Event) => {
       const customEvent = event as CustomEvent<{ component: string }>;
+      console.log('[AppLayoutClient] Opening modal:', customEvent.detail.component);
       setActiveModal(customEvent.detail.component);
       setCreateOpen(false); // Закрываем dropdown меню
     };
@@ -241,6 +245,12 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
               onSuccess={() => {
                 toast('AI Agent created', 'success');
               }}
+            />
+          )}
+          {activeModal === 'createProject' && (
+            <CreateProjectModal
+              isOpen={activeModal === 'createProject'}
+              onClose={() => setActiveModal(null)}
             />
           )}
           <ToastHub />

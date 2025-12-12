@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalTitle, ModalDescription, ModalClose } from '@/components/ui/modal';
 import { toast } from '@/lib/ui/toast';
 import CreateTaskModal from './CreateTaskModal';
@@ -35,7 +34,6 @@ type CreateTaskWithProjectModalProps = {
 };
 
 export default function CreateTaskWithProjectModal({ isOpen, onClose }: CreateTaskWithProjectModalProps) {
-  const router = useRouter();
   const [projects, setProjects] = useState<ProjectOption[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [showTaskModal, setShowTaskModal] = useState(false);
@@ -172,7 +170,12 @@ export default function CreateTaskWithProjectModal({ isOpen, onClose }: CreateTa
                 type="button"
                 onClick={() => {
                   onClose();
-                  router.push('/projects/create');
+                  // Открываем модальное окно создания проекта через событие
+                  window.dispatchEvent(
+                    new CustomEvent<{ component: string }>('open-create-modal', {
+                      detail: { component: 'createProject' }
+                    })
+                  );
                 }}
                 className="w-full rounded-xl border border-indigo-500/50 bg-indigo-500/10 px-4 py-2 text-sm font-semibold text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/20"
               >

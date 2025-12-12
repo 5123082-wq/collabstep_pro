@@ -1,13 +1,13 @@
 import { test, expect } from '@playwright/test';
-import { loginAsDemo } from './utils/auth';
+import { loginAsDemo, loginWithCredentials, registerUser } from './utils/auth';
 
 const appOrigin = 'http://127.0.0.1:3000';
 
 test.describe('admin panel', () => {
   test('admin can access admin panel', async ({ page }) => {
     await loginAsDemo(page, 'admin', appOrigin);
-    await page.goto(`${appOrigin}/app/admin`);
-    await page.waitForURL('**/app/admin', { waitUntil: 'networkidle' });
+    await page.goto(`${appOrigin}/admin`);
+    await page.waitForURL('**/admin', { waitUntil: 'networkidle' });
 
     // Проверяем заголовок
     await expect(page.getByRole('heading', { name: 'Панель администратора' })).toBeVisible();
@@ -15,7 +15,7 @@ test.describe('admin panel', () => {
 
   test('admin can navigate between admin sections', async ({ page }) => {
     await loginAsDemo(page, 'admin', appOrigin);
-    await page.goto(`${appOrigin}/app/admin`);
+    await page.goto(`${appOrigin}/admin`);
 
     // Проверяем, что видим все модули
     await expect(page.getByText('Управление Фичами')).toBeVisible();
@@ -28,17 +28,20 @@ test.describe('admin panel', () => {
   });
 
   test('non-admin cannot access admin panel', async ({ page }) => {
-    await loginAsDemo(page, 'user', appOrigin);
-    await page.goto(`${appOrigin}/app/admin`);
+    const uniqueEmail = `e2e-non-admin-${Date.now()}@example.dev`;
+    const password = 'devpass1!';
+    await registerUser(page, { name: 'E2E User', email: uniqueEmail, password }, appOrigin);
+    await loginWithCredentials(page, { email: uniqueEmail, password }, appOrigin);
+    await page.goto(`${appOrigin}/admin`);
 
     // Должен быть редирект с тостом
-    await page.waitForURL('**/app/dashboard**', { timeout: 5000 });
-    expect(page.url()).toContain('/app/dashboard');
+    await page.waitForURL('**/dashboard**', { timeout: 5000 });
+    expect(page.url()).toContain('/dashboard');
   });
 
   test('admin features page shows feature list', async ({ page }) => {
     await loginAsDemo(page, 'admin', appOrigin);
-    await page.goto(`${appOrigin}/app/admin/features`);
+    await page.goto(`${appOrigin}/admin/features`);
 
     await expect(page.getByRole('heading', { name: 'Управление Фичами' })).toBeVisible();
     // Проверяем наличие карточек фич
@@ -47,7 +50,7 @@ test.describe('admin panel', () => {
 
   test('admin users page shows user management', async ({ page }) => {
     await loginAsDemo(page, 'admin', appOrigin);
-    await page.goto(`${appOrigin}/app/admin/users`);
+    await page.goto(`${appOrigin}/admin/users`);
 
     await expect(page.getByRole('heading', { name: 'Управление пользователями' })).toBeVisible();
     // Проверяем наличие таблицы или сообщения о пустоте
@@ -57,7 +60,7 @@ test.describe('admin panel', () => {
 
   test('admin roles page shows role management', async ({ page }) => {
     await loginAsDemo(page, 'admin', appOrigin);
-    await page.goto(`${appOrigin}/app/admin/roles`);
+    await page.goto(`${appOrigin}/admin/roles`);
 
     await expect(page.getByRole('heading', { name: 'Роли и разрешения' })).toBeVisible();
     // Проверяем наличие карточек ролей
@@ -66,14 +69,14 @@ test.describe('admin panel', () => {
 
   test('admin audit page shows audit log', async ({ page }) => {
     await loginAsDemo(page, 'admin', appOrigin);
-    await page.goto(`${appOrigin}/app/admin/audit`);
+    await page.goto(`${appOrigin}/admin/audit`);
 
     await expect(page.getByRole('heading', { name: 'Журнал аудита' })).toBeVisible();
   });
 
   test('admin can toggle feature on features page', async ({ page }) => {
     await loginAsDemo(page, 'admin', appOrigin);
-    await page.goto(`${appOrigin}/app/admin/features`);
+    await page.goto(`${appOrigin}/admin/features`);
 
     // Ищем первую фичу с переключателем
     const toggleButton = page.getByRole('button', { name: /Включено|Отключено/ }).first();

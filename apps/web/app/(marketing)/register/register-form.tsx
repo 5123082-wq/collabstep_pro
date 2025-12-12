@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, type ChangeEvent, type FormEvent, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const MIN_PASSWORD_LENGTH = 6;
 
@@ -18,6 +18,12 @@ type FieldErrors = {
   name?: string;
   email?: string;
   password?: string;
+};
+
+type InvitePrefill = {
+  email: string;
+  organization: { id: string; name: string };
+  inviter: { id: string; name: string | null; email: string; avatarUrl: string | null } | null;
 };
 
 const initialState: FormState = {
@@ -48,8 +54,80 @@ function getPasswordStrength(password: string): { strength: 'weak' | 'medium' | 
 
 export default function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [state, setState] = useState(initialState);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+
+  const inviteToken = useMemo(() => {
+    const value = searchParams.get('inviteToken');
+    return typeof value === 'string' && value.trim() ? value.trim() : null;
+  }, [searchParams]);
+
+  const [invitePrefill, setInvitePrefill] = useState<InvitePrefill | null>(null);
+  const [invitePrefillLoading, setInvitePrefillLoading] = useState(false);
+  const [invitePrefillError, setInvitePrefillError] = useState<string | null>(null);
+
+  const isInviteFlow = !!inviteToken && !!invitePrefill;
+  const isEmailLocked = !!invitePrefill?.email;
+
+  useEffect(() => {
+    if (!inviteToken) {
+      setInvitePrefill(null);
+      setInvitePrefillError(null);
+      setInvitePrefillLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    setInvitePrefillLoading(true);
+    setInvitePrefillError(null);
+
+    void (async () => {
+      try {
+        const response = await fetch(`/api/invites/org/${encodeURIComponent(inviteToken)}/prefill`, {
+          signal: controller.signal
+        });
+        const data = (await response.json().catch(() => null)) as
+          | { ok: true; data: InvitePrefill }
+          | { ok: false; error: string; details?: string }
+          | null;
+
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        if (!response.ok || !data || !data.ok) {
+          setInvitePrefill(null);
+          setInvitePrefillError((data && !data.ok ? data.details || data.error : null) ?? 'Не удалось загрузить приглашение');
+          return;
+        }
+
+        setInvitePrefill(data.data);
+        setState((prev) => ({
+          ...prev,
+          email: data.data.email,
+          error: null
+        }));
+        setFieldErrors((prev) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { email: _email, ...rest } = prev;
+          return rest;
+        });
+      } catch (error) {
+        if (controller.signal.aborted) {
+          return;
+        }
+        setInvitePrefill(null);
+        setInvitePrefillError('Не удалось загрузить приглашение');
+      } finally {
+        if (!controller.signal.aborted) {
+          setInvitePrefillLoading(false);
+        }
+      }
+    })();
+
+    return () => controller.abort();
+  }, [inviteToken]);
 
   const passwordStrength = useMemo(() => {
     if (!state.password) return null;
@@ -88,6 +166,9 @@ export default function RegisterForm() {
   };
 
   const handleChange = (field: 'name' | 'email' | 'password') => (event: ChangeEvent<HTMLInputElement>) => {
+    if (field === 'email' && isEmailLocked) {
+      return;
+    }
     const value = event.target.value;
     setState((prev) => ({ ...prev, [field]: value, error: null }));
 
@@ -97,6 +178,9 @@ export default function RegisterForm() {
   };
 
   const handleBlur = (field: 'name' | 'email' | 'password') => () => {
+    if (field === 'email' && isEmailLocked) {
+      return;
+    }
     const value = state[field];
     const error = validateField(field, value);
     setFieldErrors((prev) => ({ ...prev, [field]: error }));
@@ -112,9 +196,17 @@ export default function RegisterForm() {
       return;
     }
 
+    if (inviteToken && !invitePrefill) {
+      setState((prev) => ({
+        ...prev,
+        error: invitePrefillError ?? 'Ссылка приглашения недействительна или устарела'
+      }));
+      return;
+    }
+
     // Валидация всех полей
     const nameError = validateField('name', state.name);
-    const emailError = validateField('email', state.email);
+    const emailError = isInviteFlow ? undefined : validateField('email', state.email);
     const passwordError = validateField('password', state.password);
 
     setFieldErrors({
@@ -140,11 +232,19 @@ export default function RegisterForm() {
           'Content-Type': 'application/json',
           Accept: 'application/json'
         },
-        body: JSON.stringify({
-          name: state.name.trim(),
-          email: state.email.trim(),
-          password: state.password
-        })
+        body: JSON.stringify(
+          isInviteFlow
+            ? {
+                name: state.name.trim(),
+                password: state.password,
+                inviteToken
+              }
+            : {
+                name: state.name.trim(),
+                email: state.email.trim(),
+                password: state.password
+              }
+        )
       });
 
       if (!response.ok) {
@@ -164,6 +264,27 @@ export default function RegisterForm() {
 
   return (
     <form className="mt-8 space-y-6" onSubmit={handleSubmit} noValidate>
+      {inviteToken ? (
+        <div className="rounded-xl border border-neutral-800 bg-neutral-900/30 px-4 py-3 text-sm text-neutral-200">
+          {invitePrefillLoading ? (
+            <div className="text-neutral-300">Загрузка приглашения…</div>
+          ) : invitePrefill ? (
+            <div className="space-y-1">
+              <div className="font-medium">
+                Вас пригласили в команду <span className="text-indigo-200">{invitePrefill.organization.name}</span>
+              </div>
+              <div className="text-xs text-neutral-400">
+                Пригласил: {invitePrefill.inviter?.name ?? invitePrefill.inviter?.email ?? 'Пользователь'}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <div className="font-medium text-rose-200">Не удалось загрузить приглашение</div>
+              {invitePrefillError ? <div className="text-xs text-neutral-400">{invitePrefillError}</div> : null}
+            </div>
+          )}
+        </div>
+      ) : null}
       <div>
         <label className="block text-sm text-neutral-300">
           Имя
@@ -205,10 +326,14 @@ export default function RegisterForm() {
               }`}
             placeholder="user@collabverse.dev"
             required
+            disabled={state.loading || invitePrefillLoading || isEmailLocked}
             aria-invalid={!!fieldErrors.email}
             aria-describedby={fieldErrors.email ? 'email-error' : undefined}
           />
         </label>
+        {isEmailLocked ? (
+          <p className="mt-1 text-xs text-neutral-400">Email закреплён за приглашением и не может быть изменён.</p>
+        ) : null}
         {fieldErrors.email && (
           <p id="email-error" role="alert" className="mt-1 text-xs text-rose-300">
             {fieldErrors.email}
@@ -300,7 +425,7 @@ export default function RegisterForm() {
 
       <button
         type="submit"
-        disabled={state.loading}
+        disabled={state.loading || invitePrefillLoading}
         className="w-full rounded-full bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300 disabled:cursor-not-allowed disabled:bg-indigo-500/60"
       >
         {state.loading ? 'Регистрация…' : 'Создать аккаунт'}

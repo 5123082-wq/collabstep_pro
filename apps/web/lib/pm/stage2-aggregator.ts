@@ -29,7 +29,7 @@ export type TaskMetrics = {
 };
 
 const STATUS_TO_FRONT: Record<string, Project['status']> = {
-  draft: 'DRAFT',
+  draft: 'ACTIVE', // legacy drafts now treated as active
   active: 'ACTIVE',
   on_hold: 'ON_HOLD',
   completed: 'COMPLETED',
@@ -37,7 +37,6 @@ const STATUS_TO_FRONT: Record<string, Project['status']> = {
 };
 
 const FRONT_TO_API_STATUS: Record<Project['status'], string> = {
-  DRAFT: 'draft',
   ACTIVE: 'active',
   ON_HOLD: 'on_hold',
   COMPLETED: 'completed',
@@ -249,6 +248,7 @@ export function transformProject(
     name: project.title,
     key: project.key,
     status: toFrontStatus(project.status),
+    visibility: project.visibility === 'public' ? 'public' : 'private',
     ownerId: project.ownerId,
     members: mapMembers(members, project.ownerId),
     workspaceId: project.workspaceId,
@@ -305,6 +305,7 @@ export async function transformProjectAsync(
     name: project.title,
     key: project.key,
     status: toFrontStatus(project.status),
+    visibility: project.visibility === 'public' ? 'public' : 'private',
     ownerId: project.ownerId,
     members: enrichedMembers,
     workspaceId: project.workspaceId,

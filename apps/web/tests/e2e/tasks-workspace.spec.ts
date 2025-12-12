@@ -26,7 +26,7 @@ async function dragCard(page: Page, source: Locator, targetColumn: Locator) {
 
 test.describe('project tasks workspace', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsDemo(page, 'user', appOrigin);
+    await loginAsDemo(page, 'admin', appOrigin);
   });
 
   test('kanban drag-and-drop and list hierarchy toggles', async ({ page }) => {

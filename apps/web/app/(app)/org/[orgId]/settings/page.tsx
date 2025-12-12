@@ -5,7 +5,7 @@ import { OrganizationSettingsClient } from './OrganizationSettingsClient';
 
 export default async function OrganizationSettingsPage({ params }: { params: { orgId: string } }) {
   const user = await getCurrentUser();
-  if (!user) {
+  if (!user?.id) {
     // Should redirect to login ideally
     return <div>Please log in</div>;
   }

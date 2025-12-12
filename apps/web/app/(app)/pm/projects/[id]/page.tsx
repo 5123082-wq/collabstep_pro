@@ -518,6 +518,9 @@ export default function PMProjectDetailPage() {
             }}
             onExpenseCreate={handleExpenseCreate}
             onMarketplacePublish={handleMarketplacePublish}
+            onVisibilityChange={(visibility) => {
+              setProject((prev) => (prev ? { ...prev, visibility } : prev));
+            }}
           />
 
           <ProjectTasksSection

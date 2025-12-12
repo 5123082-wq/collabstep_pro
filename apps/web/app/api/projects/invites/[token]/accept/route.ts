@@ -8,7 +8,7 @@ export async function POST(
     { params }: { params: { token: string } }
 ) {
     const user = await getCurrentUser();
-    if (!user?.id) {
+    if (!user?.id || !user.email) {
         return jsonError('UNAUTHORIZED', { status: 401 });
     }
 
@@ -21,6 +21,14 @@ export async function POST(
             return jsonError('NOT_FOUND', { status: 404, details: 'Invite not found or expired' });
         }
 
+        // Security: ensure the current user is the intended invitee.
+        const emailMatch =
+            invite.inviteeEmail && invite.inviteeEmail.toLowerCase() === user.email.toLowerCase();
+        const userMatch = invite.inviteeUserId && invite.inviteeUserId === user.id;
+        if (!emailMatch && !userMatch) {
+            return jsonError('FORBIDDEN', { status: 403 });
+        }
+
         // Transition status
         // If already accepted, return ok (idempotent)
         if (invite.status === 'accepted_by_user' || invite.status === 'pending_owner_approval') {
@@ -31,11 +39,7 @@ export async function POST(
         // Note: For now we skip straight to pending_owner_approval or accepted_by_user depending on logic
         // Plan says: accepted_by_user -> pending_owner_approval
         
-        await invitationsRepository.updateProjectInviteStatus(
-            invite.id, 
-            'pending_owner_approval',
-            user.id // Link user
-        );
+        await invitationsRepository.updateProjectInviteStatus(invite.id, 'pending_owner_approval', user.id);
 
         return jsonOk({ success: true, status: 'pending_owner_approval' });
 

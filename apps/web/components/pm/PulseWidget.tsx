@@ -14,13 +14,6 @@ type PulseWidgetProps = {
       ownerEmail?: string;
       projects: Array<{ id: string; key: string; title: string; status: string }>;
     }>;
-    draftProjects?: number;
-    draftProjectsByOwner?: Array<{
-      ownerId: string;
-      ownerName: string;
-      ownerEmail?: string;
-      projects: Array<{ id: string; key: string; title: string; status: string }>;
-    }>;
     openTasks: number;
     myOpenTasks: number;
     overdue: number;
@@ -43,8 +36,6 @@ export default function PulseWidget({ data }: PulseWidgetProps) {
   const pulseData = data || {
     activeProjects: 0,
     activeProjectsByOwner: [],
-    draftProjects: 0,
-    draftProjectsByOwner: [],
     openTasks: 0,
     myOpenTasks: 0,
     overdue: 0,
@@ -58,8 +49,6 @@ export default function PulseWidget({ data }: PulseWidgetProps) {
     trackEvent('pm_dashboard_drilldown', { widget: 'pulse', type, ...params });
     if (type === 'projects') {
       router.push('/pm/projects?status=ACTIVE');
-    } else if (type === 'drafts') {
-      router.push('/pm/projects?status=DRAFT');
     } else if (type === 'tasks') {
       // Показываем все доступные задачи, а не только из проектов пользователя
       router.push('/pm/tasks?scope=all');
@@ -95,7 +84,6 @@ export default function PulseWidget({ data }: PulseWidgetProps) {
   };
 
   const activeOwnersSubtitle = formatOwnerProjects(pulseData.activeProjectsByOwner);
-  const draftOwnersSubtitle = formatOwnerProjects(pulseData.draftProjectsByOwner);
 
   // Единая структура карточки
   const CardContent = ({
@@ -165,20 +153,6 @@ export default function PulseWidget({ data }: PulseWidgetProps) {
           value={pulseData.activeProjects}
           subtitle={activeOwnersSubtitle}
           onClick={() => handleDrilldown('projects')}
-        />
-
-        {/* Черновики проектов */}
-        <CardContent
-          title="Черновики"
-          value={pulseData.draftProjects ?? 0}
-          valueColor={(pulseData.draftProjects ?? 0) > 0 ? 'text-amber-400' : 'text-white'}
-          subtitle={draftOwnersSubtitle}
-          onClick={() => handleDrilldown('drafts')}
-          buttonClassName={cn(
-            (pulseData.draftProjects ?? 0) > 0
-              ? 'border-amber-500/50 bg-amber-500/10 hover:border-amber-500/60'
-              : 'border-neutral-800 bg-neutral-900/50 hover:border-indigo-500/40 hover:bg-neutral-900'
-          )}
         />
 
         {/* Открытые задачи */}

@@ -1,4 +1,4 @@
-export type ProjectStatus = 'DRAFT' | 'ACTIVE' | 'ON_HOLD' | 'COMPLETED' | 'ARCHIVED';
+export type ProjectStatus = 'ACTIVE' | 'ON_HOLD' | 'COMPLETED' | 'ARCHIVED';
 
 export interface ProjectMember {
   userId: string;
@@ -12,6 +12,7 @@ export interface Project {
   name: string;
   key: string;
   status: ProjectStatus;
+  visibility: 'private' | 'public';
   startDate?: string;
   dueDate?: string;
   ownerId: string;

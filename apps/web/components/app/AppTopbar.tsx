@@ -25,6 +25,7 @@ import {
   getOrgNavigation,
   extractOrgIdFromPath
 } from '@/lib/nav/navigation-utils';
+import { useUI } from '@/stores/ui';
 
 type QuickSuggestion = {
   id: string;
@@ -45,16 +46,28 @@ function resolveRoleLabel(role: DemoProfile['role']): string {
   return role === 'admin' ? 'Админ' : 'Пользователь';
 }
 
-function IconButton({ icon, label }: { icon: keyof typeof iconPaths; label: string }) {
+function IconButton({
+  icon,
+  label,
+  onClick,
+  badge
+}: {
+  icon: keyof typeof iconPaths;
+  label: string;
+  onClick?: () => void;
+  badge?: number;
+}) {
+  const showBadge = typeof badge === 'number' && badge > 0;
   return (
     <button
       type="button"
       className={clsx(
-        'group flex h-9 w-9 items-center justify-center rounded-full border transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
+        'group relative flex h-9 w-9 items-center justify-center rounded-full border transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
         'border-[color:var(--theme-control-border)] bg-[color:var(--theme-control-bg)] text-[color:var(--theme-control-foreground)]',
         'hover:border-[color:var(--theme-control-border-hover)] hover:text-[color:var(--theme-control-foreground-hover)]'
       )}
       aria-label={label}
+      onClick={onClick}
     >
       <svg
         aria-hidden="true"
@@ -68,6 +81,11 @@ function IconButton({ icon, label }: { icon: keyof typeof iconPaths; label: stri
       >
         <path d={iconPaths[icon]} fill="currentColor" />
       </svg>
+      {showBadge ? (
+        <span className="absolute -top-1 -right-1 rounded-full bg-indigo-500 px-1.5 py-[1px] text-[10px] font-semibold text-white shadow">
+          {badge}
+        </span>
+      ) : null}
     </button>
   );
 }
@@ -94,6 +112,10 @@ type AppTopbarProps = {
 export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings, onOpenProfileSettings, profile, onLogout, isLoggingOut, createButtonRef, centerModules, onAvatarChange }: AppTopbarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const openDrawer = useUI((state) => state.openDrawer);
+  const unreadNotifications = useUI((state) => state.unreadNotifications);
+  const unreadInvites = useUI((state) => state.unreadInvites);
+  const unreadTotal = unreadNotifications + unreadInvites;
   const [searchValue, setSearchValue] = useState('');
   const [isSearchFocused, setSearchFocused] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState(0);
@@ -392,6 +414,18 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
             </svg>
             {currentSubscriptionLabel}
           </button>
+          <IconButton
+            icon="bell"
+            label="Уведомления"
+            badge={unreadTotal}
+            onClick={() => {
+              if (unreadInvites > 0) {
+                openDrawer('invites');
+                return;
+              }
+              openDrawer('notifications');
+            }}
+          />
           <IconButton icon="wallet" label="Кошелёк" />
           <ThemeToggle />
           <AccountMenu 
@@ -405,6 +439,18 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
         </div>
         {/* Мобильная версия: поиск и меню пользователя */}
         <div className="flex items-center gap-[7.2px] md:hidden">
+          <IconButton
+            icon="bell"
+            label="Уведомления"
+            badge={unreadTotal}
+            onClick={() => {
+              if (unreadInvites > 0) {
+                openDrawer('invites');
+                return;
+              }
+              openDrawer('notifications');
+            }}
+          />
           <button
             type="button"
             onClick={onOpenPalette}

@@ -28,7 +28,10 @@ import type {
   PlatformUserControl,
   Notification,
   Organization,
-  OrganizationMember
+  OrganizationMember,
+  InviteThread,
+  InviteThreadParticipant,
+  InviteThreadMessage
 } from '../types';
 
 // Предсказуемые UUID для тестовых пользователей (для стабильности тестирования)
@@ -89,6 +92,9 @@ type GlobalMemory = {
   WORKSPACE_USERS: WorkspaceUser[];
   ORGANIZATIONS: Organization[];
   ORGANIZATION_MEMBERS: OrganizationMember[];
+  INVITE_THREADS: InviteThread[];
+  INVITE_THREAD_PARTICIPANTS: InviteThreadParticipant[];
+  INVITE_THREAD_MESSAGES: InviteThreadMessage[];
 };
 
 type GlobalMemoryScope = typeof globalThis & {
@@ -109,6 +115,15 @@ const getOrCreateGlobalMemory = (): GlobalMemory => {
     // Если глобальная память уже существует, убеждаемся, что WORKSPACE_USERS инициализирован
     if (!globalMemoryScope.__collabverseMemory__.WORKSPACE_USERS) {
       globalMemoryScope.__collabverseMemory__.WORKSPACE_USERS = [...WORKSPACE_USERS];
+    }
+    if (!globalMemoryScope.__collabverseMemory__.INVITE_THREADS) {
+      globalMemoryScope.__collabverseMemory__.INVITE_THREADS = [] as InviteThread[];
+    }
+    if (!globalMemoryScope.__collabverseMemory__.INVITE_THREAD_PARTICIPANTS) {
+      globalMemoryScope.__collabverseMemory__.INVITE_THREAD_PARTICIPANTS = [] as InviteThreadParticipant[];
+    }
+    if (!globalMemoryScope.__collabverseMemory__.INVITE_THREAD_MESSAGES) {
+      globalMemoryScope.__collabverseMemory__.INVITE_THREAD_MESSAGES = [] as InviteThreadMessage[];
     }
     return globalMemoryScope.__collabverseMemory__;
   }
@@ -137,7 +152,10 @@ const getOrCreateGlobalMemory = (): GlobalMemory => {
     PROJECT_CHAT_MESSAGES: [] as ProjectChatMessage[],
     WORKSPACE_USERS: [...WORKSPACE_USERS] as WorkspaceUser[],
     ORGANIZATIONS: [] as Organization[],
-    ORGANIZATION_MEMBERS: [] as OrganizationMember[]
+    ORGANIZATION_MEMBERS: [] as OrganizationMember[],
+    INVITE_THREADS: [] as InviteThread[],
+    INVITE_THREAD_PARTICIPANTS: [] as InviteThreadParticipant[],
+    INVITE_THREAD_MESSAGES: [] as InviteThreadMessage[]
   };
 
   globalMemoryScope.__collabverseMemory__ = mem;
@@ -446,6 +464,14 @@ export const memory = {
   ] as PlatformUserControl[],
   get NOTIFICATIONS() { return globalMemory.NOTIFICATIONS; },
   set NOTIFICATIONS(value: Notification[]) { globalMemory.NOTIFICATIONS = value; },
+  get INVITE_THREADS() { return globalMemory.INVITE_THREADS; },
+  set INVITE_THREADS(value: InviteThread[]) { globalMemory.INVITE_THREADS = value; },
+  get INVITE_THREAD_PARTICIPANTS() { return globalMemory.INVITE_THREAD_PARTICIPANTS; },
+  set INVITE_THREAD_PARTICIPANTS(value: InviteThreadParticipant[]) {
+    globalMemory.INVITE_THREAD_PARTICIPANTS = value;
+  },
+  get INVITE_THREAD_MESSAGES() { return globalMemory.INVITE_THREAD_MESSAGES; },
+  set INVITE_THREAD_MESSAGES(value: InviteThreadMessage[]) { globalMemory.INVITE_THREAD_MESSAGES = value; },
   get PROJECT_CHAT_MESSAGES() { return globalMemory.PROJECT_CHAT_MESSAGES; },
   set PROJECT_CHAT_MESSAGES(value: ProjectChatMessage[]) { globalMemory.PROJECT_CHAT_MESSAGES = value; },
   get ORGANIZATIONS() {
@@ -514,6 +540,12 @@ export const memory = {
   set ORGANIZATION_MEMBERS(value: OrganizationMember[]) { globalMemory.ORGANIZATION_MEMBERS = value; }
 };
 
+export function resetInvitesMemory(): void {
+  memory.INVITE_THREADS = [];
+  memory.INVITE_THREAD_PARTICIPANTS = [];
+  memory.INVITE_THREAD_MESSAGES = [];
+}
+
 export function resetFinanceMemory(): void {
   memory.EXPENSES = [];
   memory.EXPENSE_ATTACHMENTS = [];
@@ -523,6 +555,7 @@ export function resetFinanceMemory(): void {
   memory.EVENTS = [];
   memory.ORGANIZATIONS = [];
   memory.ORGANIZATION_MEMBERS = [];
+  resetInvitesMemory();
   const freshKeys = new Map<string, string>();
   memory.IDEMPOTENCY_KEYS = freshKeys;
   globalMemoryScope.__collabverseFinanceIdempotencyKeys__ = freshKeys;

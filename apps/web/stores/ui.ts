@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type Drawer = null | 'chats' | 'notifications' | 'document' | 'assistant' | 'rail-settings';
+export type Drawer = null | 'chats' | 'notifications' | 'invites' | 'document' | 'assistant' | 'rail-settings';
 export type Dialog = null | 'invite';
 
 type UIState = {
@@ -17,8 +17,10 @@ type UIState = {
 
   unreadChats: number;
   unreadNotifications: number;
+  unreadInvites: number;
   setUnreadChats: (value: number) => void;
   setUnreadNotifications: (value: number) => void;
+  setUnreadInvites: (value: number) => void;
 };
 
 export const useUI = create<UIState>((set) => ({
@@ -35,6 +37,8 @@ export const useUI = create<UIState>((set) => ({
 
   unreadChats: 0,
   unreadNotifications: 0,
+  unreadInvites: 0,
   setUnreadChats: (value) => set({ unreadChats: value }),
-  setUnreadNotifications: (value) => set({ unreadNotifications: value })
+  setUnreadNotifications: (value) => set({ unreadNotifications: value }),
+  setUnreadInvites: (value) => set({ unreadInvites: value })
 }));

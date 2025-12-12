@@ -2,10 +2,36 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { flags } from '@/lib/flags';
-import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
+import { getProjectRole } from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { projectsRepository, projectChatRepository, usersRepository } from '@collabverse/api';
 import { broadcastToProject } from '@/lib/websocket/event-broadcaster';
+import { getCurrentSession } from '@/lib/auth/session';
+import { decodeDemoSession, DEMO_SESSION_COOKIE, isDemoAdminEmail } from '@/lib/auth/demo-session';
+
+type AuthContext = {
+  userId: string;
+  email: string;
+  role: 'owner' | 'member';
+};
+
+async function getAuthFromRequest(req: NextRequest): Promise<AuthContext | null> {
+  const session = await getCurrentSession();
+  const sessionUserId = session?.user?.id;
+  const sessionEmail = session?.user?.email;
+  if (sessionUserId && sessionEmail) {
+    const isAdmin = session?.user?.role === 'admin' || isDemoAdminEmail(sessionEmail);
+    return { userId: sessionUserId, email: sessionEmail, role: isAdmin ? 'owner' : 'member' };
+  }
+
+  const sessionCookie = req.cookies.get(DEMO_SESSION_COOKIE);
+  const demoSession = decodeDemoSession(sessionCookie?.value ?? null);
+  if (!demoSession) {
+    return null;
+  }
+  const isAdmin = demoSession.role === 'admin' || isDemoAdminEmail(demoSession.email);
+  return { userId: demoSession.userId, email: demoSession.email, role: isAdmin ? 'owner' : 'member' };
+}
 
 export async function PATCH(
   req: NextRequest,
@@ -15,7 +41,7 @@ export async function PATCH(
     return jsonError('FEATURE_DISABLED', { status: 404 });
   }
 
-  const auth = getAuthFromRequest(req);
+  const auth = await getAuthFromRequest(req);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }
@@ -89,7 +115,7 @@ export async function DELETE(
     return jsonError('FEATURE_DISABLED', { status: 404 });
   }
 
-  const auth = getAuthFromRequest(req);
+  const auth = await getAuthFromRequest(req);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }

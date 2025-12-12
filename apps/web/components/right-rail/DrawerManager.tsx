@@ -10,7 +10,7 @@ const RailSettingsDrawer = lazy(() => import('./RailSettingsDrawer'));
 
 export function DrawerManager() {
   const drawer = useUI((state) => state.drawer);
-  const isCommunicationDrawer = drawer === 'chats' || drawer === 'notifications';
+  const isCommunicationDrawer = drawer === 'chats' || drawer === 'notifications' || drawer === 'invites';
 
   return (
     <Suspense fallback={null}>

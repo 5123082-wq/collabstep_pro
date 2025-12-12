@@ -13,6 +13,19 @@ const TABLE_PROJECT_CHAT_MESSAGES = 'pm_project_chat_messages';
 const tablesReady: { ensured: boolean } = { ensured: false };
 let hydrated = false;
 
+const ALLOWED_PROJECT_STATUSES: Project['status'][] = ['active', 'on_hold', 'completed', 'archived'];
+
+function normalizeProjectStatus(rawStatus: unknown): Project['status'] {
+  if (typeof rawStatus === 'string' && ALLOWED_PROJECT_STATUSES.includes(rawStatus as Project['status'])) {
+    return rawStatus as Project['status'];
+  }
+  return 'active';
+}
+
+function normalizeProjectVisibility(rawVisibility: unknown): Project['visibility'] {
+  return rawVisibility === 'public' ? 'public' : 'private';
+}
+
 export function isPmDbEnabled(): boolean {
   return process.env.USE_DB_STORAGE !== 'false' && Boolean(process.env.DATABASE_URL);
 }
@@ -42,6 +55,9 @@ export async function ensurePmTables(): Promise<void> {
       updated_at TIMESTAMPTZ DEFAULT NOW()
     );
   `);
+
+  // Ensure new columns are present for existing installations
+  await sql.query(`ALTER TABLE ${TABLE_PROJECTS} ADD COLUMN IF NOT EXISTS owner_number INTEGER`);
 
   await sql.query(`
     CREATE TABLE IF NOT EXISTS ${TABLE_PROJECT_MEMBERS} (
@@ -110,6 +126,7 @@ export async function ensurePmTables(): Promise<void> {
 }
 
 function mapProjectRow(row: Record<string, unknown>): Project {
+  const ownerNumber = row.owner_number !== null && row.owner_number !== undefined ? Number(row.owner_number) : undefined;
   const project: Project = {
     id: String(row.id),
     workspaceId: String(row.workspace_id),
@@ -117,8 +134,9 @@ function mapProjectRow(row: Record<string, unknown>): Project {
     title: String(row.title),
     description: String(row.description ?? ''),
     ownerId: String(row.owner_id),
-    status: row.status as Project['status'],
-    visibility: row.visibility as Project['visibility'],
+    ...(ownerNumber !== undefined && { ownerNumber }),
+    status: normalizeProjectStatus(row.status),
+    visibility: normalizeProjectVisibility(row.visibility),
     budgetPlanned: row.budget_planned !== null && row.budget_planned !== undefined ? Number(row.budget_planned) : null,
     budgetSpent: row.budget_spent !== null && row.budget_spent !== undefined ? Number(row.budget_spent) : null,
     workflowId: String(row.workflow_id ?? `wf-${row.id}`),
@@ -245,11 +263,11 @@ export async function persistProjectToPg(project: Project): Promise<void> {
   await ensurePmTables();
   await sql.query(`
     INSERT INTO ${TABLE_PROJECTS} (
-      id, workspace_id, key, title, description, owner_id, status, visibility,
+      id, workspace_id, key, title, description, owner_id, owner_number, status, visibility,
       budget_planned, budget_spent, workflow_id, archived, stage, deadline, created_at, updated_at
     )
     VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17
     )
     ON CONFLICT (id) DO UPDATE SET
       workspace_id = EXCLUDED.workspace_id,
@@ -257,6 +275,7 @@ export async function persistProjectToPg(project: Project): Promise<void> {
       title = EXCLUDED.title,
       description = EXCLUDED.description,
       owner_id = EXCLUDED.owner_id,
+      owner_number = EXCLUDED.owner_number,
       status = EXCLUDED.status,
       visibility = EXCLUDED.visibility,
       budget_planned = EXCLUDED.budget_planned,
@@ -267,11 +286,23 @@ export async function persistProjectToPg(project: Project): Promise<void> {
       deadline = EXCLUDED.deadline,
       updated_at = EXCLUDED.updated_at;
   `, [
-    project.id, project.workspaceId, project.key, project.title, project.description ?? '',
-    project.ownerId, project.status, project.visibility,
-    project.budgetPlanned ?? null, project.budgetSpent ?? null, project.workflowId ?? null,
-    project.archived ?? false, project.stage ?? null, project.deadline ?? null,
-    project.createdAt, project.updatedAt
+    project.id,
+    project.workspaceId,
+    project.key,
+    project.title,
+    project.description ?? '',
+    project.ownerId,
+    project.ownerNumber ?? null,
+    project.status,
+    project.visibility,
+    project.budgetPlanned ?? null,
+    project.budgetSpent ?? null,
+    project.workflowId ?? null,
+    project.archived ?? false,
+    project.stage ?? null,
+    project.deadline ?? null,
+    project.createdAt,
+    project.updatedAt
   ]);
 }
 
