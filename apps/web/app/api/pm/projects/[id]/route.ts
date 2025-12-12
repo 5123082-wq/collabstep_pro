@@ -124,8 +124,10 @@ export async function PATCH(
     isAdminUserId(auth.userId) ||
     isDemoAdminEmail(auth.email) ||
     isDemoAdminEmail(auth.userId);
+  const isOwner = apiProject.ownerId === auth.userId;
+  const canEdit = isAdmin || isOwner;
 
-  if (!isAdmin) {
+  if (!canEdit) {
     return jsonError('ACCESS_DENIED', { status: 403 });
   }
 

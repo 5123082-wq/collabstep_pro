@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import RegisterForm from './register-form';
 
@@ -20,7 +21,9 @@ export default function RegisterPage() {
         <h1 className="text-3xl font-bold">Регистрация</h1>
         <p className="text-neutral-300">Создайте аккаунт для доступа к Collabverse.</p>
       </header>
-      <RegisterForm />
+      <Suspense fallback={<div className="mt-8 text-center text-neutral-400">Загрузка формы...</div>}>
+        <RegisterForm />
+      </Suspense>
       <p className="mt-6 text-center text-sm text-neutral-400">
         Уже есть аккаунт?{' '}
         <Link

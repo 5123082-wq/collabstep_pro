@@ -42,7 +42,6 @@ type ProjectsOverviewPageClientProps = {
 };
 
 const STATUS_LABELS: Record<Project['status'], string> = {
-  DRAFT: 'Черновик',
   ACTIVE: 'Активен',
   ON_HOLD: 'Пауза',
   COMPLETED: 'Завершён',
@@ -50,7 +49,6 @@ const STATUS_LABELS: Record<Project['status'], string> = {
 };
 
 const STATUS_COLORS: Record<Project['status'], string> = {
-  DRAFT: 'bg-neutral-500 text-white',
   ACTIVE: 'bg-emerald-500 text-white',
   ON_HOLD: 'bg-amber-500 text-white',
   COMPLETED: 'bg-sky-500 text-white',
@@ -62,7 +60,6 @@ const STATUS_OPTIONS: Array<{ value: Project['status'] | ''; label: string }> = 
   { value: 'ACTIVE', label: 'Активные' },
   { value: 'ON_HOLD', label: 'На паузе' },
   { value: 'COMPLETED', label: 'Завершённые' },
-  { value: 'DRAFT', label: 'Черновики' },
   { value: 'ARCHIVED', label: 'Архив' }
 ];
 

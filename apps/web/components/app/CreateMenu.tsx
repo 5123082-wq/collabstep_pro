@@ -29,8 +29,8 @@ const CONTEXT_ACTIONS: Record<CreateContext, CreateAction[]> = {
       label: 'Проект',
       description: 'Создайте новый проект',
       roles: ['FOUNDER', 'PM', 'ADMIN'],
-      intent: 'route',
-      href: '/projects/create'
+      intent: 'modal',
+      modalComponent: 'createProject'
     }
   ],
   pm: [
@@ -39,8 +39,8 @@ const CONTEXT_ACTIONS: Record<CreateContext, CreateAction[]> = {
       label: 'Проект',
       description: 'Создайте новый проект в рабочем пространстве',
       roles: ['FOUNDER', 'PM', 'ADMIN'],
-      intent: 'route',
-      href: '/pm/projects/create'
+      intent: 'modal',
+      modalComponent: 'createProject'
     },
     {
       id: 'task',
@@ -210,6 +210,7 @@ export default function CreateMenu({ open, onClose, triggerRef }: CreateMenuProp
       router.push(action.href);
     } else if (action.intent === 'modal' && action.modalComponent) {
       // Эмитируем событие для открытия соответствующего модального окна
+      console.log('[CreateMenu] Dispatching open-create-modal event:', action.modalComponent);
       window.dispatchEvent(
         new CustomEvent<{ component: string }>('open-create-modal', {
           detail: { component: action.modalComponent }

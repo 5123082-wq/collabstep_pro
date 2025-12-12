@@ -6,7 +6,7 @@ const appOrigin = 'http://localhost:3000';
 
 test.describe('error boundaries and fallbacks', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsDemo(page, 'user', appOrigin);
+    await loginAsDemo(page, 'admin', appOrigin);
   });
 
   test('unknown project shows not-found page', async ({ page }) => {

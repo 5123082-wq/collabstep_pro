@@ -17,13 +17,6 @@ type DashboardData = {
       ownerEmail?: string;
       projects: Array<{ id: string; key: string; title: string; status: string }>;
     }>;
-    draftProjects?: number;
-    draftProjectsByOwner?: Array<{
-      ownerId: string;
-      ownerName: string;
-      ownerEmail?: string;
-      projects: Array<{ id: string; key: string; title: string; status: string }>;
-    }>;
     openTasks: number;
     myOpenTasks: number;
     overdue: number;
@@ -159,8 +152,6 @@ export default function PMDashboardPage() {
     pulse: data.pulse || {
       activeProjects: 0,
       activeProjectsByOwner: [],
-      draftProjects: 0,
-      draftProjectsByOwner: [],
       openTasks: 0,
       myOpenTasks: 0,
       overdue: 0,

@@ -258,6 +258,9 @@ export const organizationInvites = pgTable(
         inviteeEmail: text("invitee_email"),
         inviteeUserId: text("invitee_user_id")
             .references(() => users.id, { onDelete: "cascade" }),
+        // Role that will be assigned in the organization upon accepting the invite.
+        // IMPORTANT: for org-invites we use the org role enum and default to "member".
+        role: organizationRoleEnum("role").default("member").notNull(),
         token: text("token").notNull(),
         source: inviteSourceEnum("source").notNull(),
         status: inviteStatusEnum("status").default("pending").notNull(),

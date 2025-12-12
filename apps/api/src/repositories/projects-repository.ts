@@ -14,6 +14,19 @@ import {
 // Fire-and-forget hydration; repositories stay sync for serverless lambdas without blocking CJS builds
 void pmPgHydration;
 
+const ALLOWED_PROJECT_STATUSES: ProjectStatus[] = ['active', 'on_hold', 'completed', 'archived'];
+
+function normalizeProjectStatus(rawStatus: string | undefined | null): ProjectStatus {
+  if (ALLOWED_PROJECT_STATUSES.includes(rawStatus as ProjectStatus)) {
+    return rawStatus as ProjectStatus;
+  }
+  return 'active';
+}
+
+function normalizeProjectVisibility(rawVisibility: string | undefined | null): ProjectVisibility {
+  return rawVisibility === 'public' ? 'public' : 'private';
+}
+
 function cloneProject(project: Project): Project {
   return { ...project };
 }
@@ -37,7 +50,35 @@ function normalizeBudgetValue(value: unknown): number | null {
 }
 
 export class ProjectsRepository {
+  private normalizeProjectStorage(): void {
+    let changed = false;
+    for (const project of memory.PROJECTS) {
+      const normalizedStatus = normalizeProjectStatus(project.status);
+      const normalizedVisibility = normalizeProjectVisibility(project.visibility);
+      if (project.status !== normalizedStatus) {
+        project.status = normalizedStatus;
+        changed = true;
+      }
+      if (project.visibility !== normalizedVisibility) {
+        project.visibility = normalizedVisibility;
+        changed = true;
+      }
+      if (project.archived && project.status !== 'archived') {
+        project.archived = false;
+        changed = true;
+      }
+    }
+    if (changed && isPmDbEnabled()) {
+      for (const project of memory.PROJECTS) {
+        void persistProjectToPg(project).catch((error) =>
+          console.error('[ProjectsRepository] Failed to persist normalized project', error)
+        );
+      }
+    }
+  }
+
   list(options: { archived?: boolean | null; workspaceId?: string | null } = {}): Project[] {
+    this.normalizeProjectStorage();
     const { archived = null, workspaceId = null } = options;
     let items = memory.PROJECTS;
     if (typeof workspaceId === 'string' && workspaceId.trim()) {
@@ -51,6 +92,7 @@ export class ProjectsRepository {
   }
 
   async findById(id: string): Promise<Project | null> {
+    this.normalizeProjectStorage();
     // Сначала ищем в памяти
     const project = memory.PROJECTS.find((item) => item.id === id);
     if (project) {
@@ -74,6 +116,7 @@ export class ProjectsRepository {
             }
           }
           
+          this.normalizeProjectStorage();
           return cloneProject(dbProject);
         }
       } catch (error) {
@@ -165,21 +208,26 @@ export class ProjectsRepository {
       return true;
     }
 
-    // Public projects are accessible to everyone
+    const isOwner = project.ownerId === userId;
+    const isProjectMember = this.getMember(projectId, userId) !== null;
+
+    // Public projects: NOT globally visible; доступ только владельцу и явным участникам проекта.
+    // (Важно: в demo-режиме новые пользователи могут автоматически попадать в общий workspace.)
     if (project.visibility === 'public') {
-      return true;
+      return isOwner || isProjectMember;
     }
-    // Private projects are only accessible to members
+
+    // Private projects: only owner + explicit project members.
     if (project.visibility === 'private') {
-      const isOwner = project.ownerId === userId;
-      const isMember = this.getMember(projectId, userId) !== null;
-      const hasAccess = isOwner || isMember;
-      // Логирование для отладки
+      const hasAccess = isOwner || isProjectMember;
       if (!hasAccess) {
-        console.log(`[ProjectsRepository] Access denied: projectId=${projectId}, userId=${userId}, ownerId=${project.ownerId}, isOwner=${isOwner}, isMember=${isMember}`);
+        console.log(
+          `[ProjectsRepository] Access denied: projectId=${projectId}, userId=${userId}, ownerId=${project.ownerId}, isOwner=${isOwner}, isMember=${isProjectMember}`
+        );
       }
       return hasAccess;
     }
+
     return false;
   }
 
@@ -230,13 +278,26 @@ export class ProjectsRepository {
     return key;
   }
 
+  /**
+   * Returns the next sequential project number for the given owner.
+   * Numbers are monotonically increasing and are not reused after deletion.
+   */
+  private getNextOwnerProjectNumber(ownerId: string): number {
+    const ownerProjects = memory.PROJECTS.filter((project) => project.ownerId === ownerId);
+    if (ownerProjects.length === 0) {
+      return 1;
+    }
+    const maxNumber = Math.max(...ownerProjects.map((project) => project.ownerNumber ?? 0));
+    return maxNumber + 1;
+  }
+
   create(payload: {
     title: string;
     description?: string;
     ownerId: string;
     workspaceId: string;
     key?: string; // Optional project key
-    status?: ProjectStatus; // Optional status, defaults to 'draft'
+    status?: ProjectStatus; // Optional status, now always normalized to active
     stage?: ProjectStage;
     deadline?: string;
     type?: ProjectType;
@@ -245,21 +306,23 @@ export class ProjectsRepository {
     budgetPlanned?: number | string | null;
     budgetSpent?: number | string | null;
   }): Project {
+    this.normalizeProjectStorage();
     const now = new Date().toISOString();
     const id = crypto.randomUUID();
     const workflowId = payload.workflowId ?? `wf-${id}`;
     const allowedTypes: ProjectType[] = ['product', 'marketing', 'operations', 'service', 'internal'];
     const type = payload.type && allowedTypes.includes(payload.type) ? payload.type : undefined;
 
-    const visibility: ProjectVisibility = payload.visibility === 'public' ? 'public' : 'private';
-    const status: ProjectStatus = payload.status ?? 'draft';
+    const visibility: ProjectVisibility = 'private';
+    const status: ProjectStatus = 'active';
     const key = this.generateProjectKey(payload.workspaceId, payload.key, payload.title);
+    const ownerNumber = this.getNextOwnerProjectNumber(payload.ownerId);
 
     const budgetPlanned = normalizeBudgetValue(payload.budgetPlanned);
     const budgetSpent = normalizeBudgetValue(payload.budgetSpent);
 
     // Determine archived based on status for backward compatibility
-    const archived = status === 'archived';
+    const archived = false;
 
     const project: Project = {
       id,
@@ -268,6 +331,7 @@ export class ProjectsRepository {
       title: payload.title,
       description: payload.description ?? '',
       ownerId: payload.ownerId,
+      ownerNumber,
       status,
       visibility,
       budgetPlanned,
@@ -318,6 +382,7 @@ export class ProjectsRepository {
     if (idx === -1) {
       return null;
     }
+    this.normalizeProjectStorage();
     const current = memory.PROJECTS[idx];
     if (!current) {
       return null;
@@ -347,8 +412,8 @@ export class ProjectsRepository {
       next.type = patch.type as ProjectType;
     }
 
-    if (patch.status && ['draft', 'active', 'on_hold', 'completed', 'archived'].includes(patch.status)) {
-      next.status = patch.status as ProjectStatus;
+    if (patch.status && ALLOWED_PROJECT_STATUSES.includes(patch.status as ProjectStatus)) {
+      next.status = normalizeProjectStatus(patch.status);
       // Update archived for backward compatibility
       next.archived = patch.status === 'archived';
     }

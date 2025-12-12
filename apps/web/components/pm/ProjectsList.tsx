@@ -76,7 +76,6 @@ function Pagination({ currentPage, totalPages, onChange }: PaginationProps) {
 const STATUS_OPTIONS: Array<{ value: Project['status'] | ''; label: string }> = [
   { value: '', label: 'Все статусы' },
   { value: 'ACTIVE', label: 'Активен' },
-  { value: 'DRAFT', label: 'Черновик' },
   { value: 'ON_HOLD', label: 'Приостановлен' },
   { value: 'COMPLETED', label: 'Завершён' },
   { value: 'ARCHIVED', label: 'Архив' }

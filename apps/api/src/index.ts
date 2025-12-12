@@ -66,6 +66,7 @@ export {
 } from './services/finance-service';
 export { projectBudgetsRepository } from './repositories/project-budgets-repository';
 export { resetFinanceMemory } from './data/memory';
+export { resetInvitesMemory } from './data/memory';
 export {
   getExpenseStore,
   resetExpenseStore,
@@ -105,6 +106,14 @@ export {
   type CreateNotificationInput,
   type ListNotificationsOptions
 } from './repositories/notifications-repository';
+export {
+  InviteThreadsRepository,
+  inviteThreadsRepository,
+  type CreateInviteThreadInput,
+  type EnsureInviteThreadForInviteInput,
+  type CreateInviteThreadMessageInput,
+  type ListInviteThreadMessagesOptions
+} from './repositories/invite-threads-repository';
 export {
   ProjectChatRepository,
   projectChatRepository,

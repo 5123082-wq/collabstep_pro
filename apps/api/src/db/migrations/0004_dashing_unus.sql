@@ -1,0 +1,1 @@
+ALTER TABLE "organization_invite" ADD COLUMN "role" "organization_role" DEFAULT 'member' NOT NULL;

@@ -51,11 +51,9 @@ function applyPagination<T>(items: T[], page: number, pageSize: number) {
   return { items: paginated, pagination: { page, pageSize, total, totalPages } };
 }
 
-function filterTasksByAccess(tasks: ReturnType<typeof tasksRepository.list>, userId: string) {
-  // Фильтруем задачи по доступу к проектам
-  return tasks.filter((task) => {
-    return projectsRepository.hasAccess(task.projectId, userId);
-  });
+function filterTasksByAccess(tasks: ReturnType<typeof tasksRepository.list>, accessibleProjectIds: Set<string>) {
+  // Фильтруем задачи только по проектам, к которым уже подтвержден доступ
+  return tasks.filter((task) => accessibleProjectIds.has(task.projectId));
 }
 
 function applyTaskFilters(
@@ -153,7 +151,8 @@ export async function GET(request: Request) {
 
   // Получаем все задачи и фильтруем их по доступу к проектам
   const allTasks = tasksRepository.list();
-  const accessibleTasks = filterTasksByAccess(allTasks, auth.userId);
+  const accessibleProjectIds = new Set(accessibleProjects.map((project) => project.id));
+  const accessibleTasks = filterTasksByAccess(allTasks, accessibleProjectIds);
 
   // Группируем доступные задачи по проектам
   const tasksByProject = new Map<string, ReturnType<typeof tasksRepository.list>>();

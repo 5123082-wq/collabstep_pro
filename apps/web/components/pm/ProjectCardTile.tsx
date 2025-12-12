@@ -11,7 +11,6 @@ type ProjectCardTileProps = {
 };
 
 const STATUS_COLORS: Record<Project['status'], string> = {
-  DRAFT: 'bg-neutral-500',
   ACTIVE: 'bg-emerald-500',
   ON_HOLD: 'bg-amber-500',
   COMPLETED: 'bg-indigo-500',
@@ -19,7 +18,6 @@ const STATUS_COLORS: Record<Project['status'], string> = {
 };
 
 const STATUS_LABELS: Record<Project['status'], string> = {
-  DRAFT: 'Черновик',
   ACTIVE: 'Активен',
   ON_HOLD: 'Приостановлен',
   COMPLETED: 'Завершён',
@@ -61,8 +59,8 @@ function UserAvatar({
 }
 
 export default function ProjectCardTile({ project, onOpenProject }: ProjectCardTileProps) {
-  const statusColor = STATUS_COLORS[project.status];
-  const statusLabel = STATUS_LABELS[project.status];
+  const statusColor = STATUS_COLORS[project.status] ?? 'bg-neutral-700';
+  const statusLabel = STATUS_LABELS[project.status] ?? 'Статус';
   const progress = project.metrics?.progressPct || 0;
   const totalTasks = project.metrics?.total || 0;
   const inProgress = project.metrics?.inProgress || 0;

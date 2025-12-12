@@ -101,15 +101,13 @@ export async function POST(request: Request) {
     if (!title) {
       return jsonError('INVALID_REQUEST', { status: 400 });
     }
-    const visibility = body.visibility === 'public' ? 'public' : 'private';
-    const status = typeof body.status === 'string' ? body.status.toLowerCase() : 'draft';
-    const allowedStatuses = ['draft', 'active', 'on_hold', 'completed', 'archived'] as const;
-    const normalizedStatus = allowedStatuses.includes(status as (typeof allowedStatuses)[number])
-      ? (status as (typeof allowedStatuses)[number])
-      : 'draft';
+    const visibility = 'private';
+    const normalizedStatus = 'active';
     const workspaceId = body.workspaceId || DEFAULT_WORKSPACE_ID;
     const organizationId = body.organizationId;
-    console.log(`[Projects API POST] Creating project: title=${title}, ownerId=${auth.userId}, workspaceId=${workspaceId}, organizationId=${organizationId}, status=${status}, visibility=${visibility}`);
+    console.log(
+      `[Projects API POST] Creating project: title=${title}, ownerId=${auth.userId}, workspaceId=${workspaceId}, organizationId=${organizationId}, status=${normalizedStatus}, visibility=${visibility}`
+    );
 
     const project = projectsRepository.create({
       title,

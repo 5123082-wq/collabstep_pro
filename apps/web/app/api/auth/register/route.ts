@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDemoAccount } from '@/lib/auth/demo-session';
 import { ensureDemoAccountsInitialized } from '@/lib/auth/init-demo-accounts';
-import { usersRepository } from '@collabverse/api';
+import { invitationsRepository, usersRepository } from '@collabverse/api';
 import { hashPassword, verifyPassword } from '@collabverse/api/utils/password';
 
 const INVALID_MESSAGE = 'Заполните все поля корректно';
@@ -31,15 +31,41 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const name = sanitizeString(payload.name);
+  const inviteToken = sanitizeString(payload.inviteToken);
   const email = sanitizeString(payload.email);
   const password = typeof payload.password === 'string' ? payload.password : '';
   const title = sanitizeString(payload.title);
 
-  if (!name || !email || !isValidEmail(email) || !validatePassword(password)) {
+  const isInviteFlow = !!inviteToken;
+  let inviteEmailLower: string | null = null;
+  let inviteId: string | null = null;
+
+  if (isInviteFlow) {
+    try {
+      const invite = await invitationsRepository.findOrganizationInviteByToken(inviteToken);
+      if (!invite) {
+        return NextResponse.json({ error: 'Приглашение не найдено' }, { status: 404 });
+      }
+      if (invite.status !== 'pending') {
+        return NextResponse.json({ error: 'Приглашение больше не активно' }, { status: 400 });
+      }
+      if (!invite.inviteeEmail) {
+        return NextResponse.json({ error: INVALID_MESSAGE }, { status: 400 });
+      }
+      inviteEmailLower = invite.inviteeEmail.trim().toLowerCase();
+      inviteId = invite.id;
+    } catch (error) {
+      console.error('[Register] Error resolving inviteToken:', error);
+      return NextResponse.json({ error: 'Не удалось проверить приглашение' }, { status: 500 });
+    }
+  }
+
+  const effectiveEmail = isInviteFlow ? inviteEmailLower ?? '' : email;
+  if (!name || !effectiveEmail || !isValidEmail(effectiveEmail) || !validatePassword(password)) {
     return NextResponse.json({ error: INVALID_MESSAGE }, { status: 400 });
   }
 
-  const emailLower = email.toLowerCase();
+  const emailLower = effectiveEmail.toLowerCase();
 
   // Проверяем, существует ли пользователь
   const existingUser = await usersRepository.findByEmail(emailLower);
@@ -79,12 +105,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // Создаём нового пользователя с хэшированным паролем
   // Все новые пользователи получают роль 'user' (не admin)
   const passwordHash = hashPassword(password);
-  await usersRepository.create({
+  const createdUser = await usersRepository.create({
     name,
     email: emailLower,
     passwordHash,
     ...(title && { title })
   });
+
+  // При регистрации по приглашению: привязываем инвайт к новому userId, но не принимаем автоматически.
+  if (isInviteFlow && inviteId) {
+    try {
+      await invitationsRepository.updateOrganizationInviteStatus(inviteId, 'pending', createdUser.id);
+    } catch (error) {
+      console.error('[Register] Error linking invite to user:', error);
+      // Non-fatal: user is created; invite will still be visible by email match (until linked elsewhere).
+    }
+  }
 
   // Не создаем сессию - пользователь должен войти вручную
   return NextResponse.json({ redirect: '/login?toast=register-success' });

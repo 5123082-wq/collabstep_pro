@@ -8,7 +8,6 @@ type ProjectHeaderProps = {
 };
 
 const STATUS_COLORS: Record<Project['status'], string> = {
-  DRAFT: 'bg-neutral-500',
   ACTIVE: 'bg-emerald-500',
   ON_HOLD: 'bg-amber-500',
   COMPLETED: 'bg-indigo-500',
@@ -16,16 +15,27 @@ const STATUS_COLORS: Record<Project['status'], string> = {
 };
 
 const STATUS_LABELS: Record<Project['status'], string> = {
-  DRAFT: 'Черновик',
   ACTIVE: 'Активен',
   ON_HOLD: 'Приостановлен',
   COMPLETED: 'Завершён',
   ARCHIVED: 'Архив'
 };
 
+const VISIBILITY_LABELS: Record<Project['visibility'], string> = {
+  private: 'Приватный',
+  public: 'Публичный'
+};
+
+const VISIBILITY_COLORS: Record<Project['visibility'], string> = {
+  private: 'bg-neutral-700 text-white',
+  public: 'bg-emerald-600 text-white'
+};
+
 export default function ProjectHeader({ project }: ProjectHeaderProps) {
-  const statusColor = STATUS_COLORS[project.status];
-  const statusLabel = STATUS_LABELS[project.status];
+  const statusColor = STATUS_COLORS[project.status] ?? 'bg-neutral-700';
+  const statusLabel = STATUS_LABELS[project.status] ?? 'Статус';
+  const visibilityColor = VISIBILITY_COLORS[project.visibility] ?? 'bg-neutral-700 text-white';
+  const visibilityLabel = VISIBILITY_LABELS[project.visibility] ?? 'Приватность';
 
   return (
     <header className="space-y-4">
@@ -40,6 +50,14 @@ export default function ProjectHeader({ project }: ProjectHeaderProps) {
               )}
             >
               {statusLabel}
+            </span>
+            <span
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wider',
+                visibilityColor
+              )}
+            >
+              {visibilityLabel}
             </span>
             <h1 className="text-xl font-semibold text-white">{project.name}</h1>
           </div>

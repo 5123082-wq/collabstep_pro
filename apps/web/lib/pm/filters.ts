@@ -14,6 +14,8 @@ export type ProjectListFilters = {
   scope?: ProjectScope;
 };
 
+const ALLOWED_STATUSES: ProjectStatus[] = ['ACTIVE', 'ON_HOLD', 'COMPLETED', 'ARCHIVED'];
+
 export const DEFAULT_PROJECT_FILTERS: ProjectListFilters = {
   page: 1,
   pageSize: 20,
@@ -23,7 +25,8 @@ export const DEFAULT_PROJECT_FILTERS: ProjectListFilters = {
 };
 
 export function parseProjectFilters(searchParams: URLSearchParams): ProjectListFilters {
-  const status = searchParams.get('status') as ProjectStatus | null;
+  const statusParam = searchParams.get('status');
+  const status = ALLOWED_STATUSES.includes(statusParam as ProjectStatus) ? (statusParam as ProjectStatus) : null;
   const ownerId = searchParams.get('ownerId') || undefined;
   const memberId = searchParams.get('memberId') || undefined;
   const q = searchParams.get('q') || undefined;

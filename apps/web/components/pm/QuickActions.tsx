@@ -14,6 +14,7 @@ type QuickActionsProps = {
   onExpenseCreate?: () => void;
   onMarketplacePublish?: () => void;
   onArchive?: () => void;
+  onVisibilityChange?: (visibility: Project['visibility']) => void;
 };
 
 export default function QuickActions({
@@ -22,10 +23,12 @@ export default function QuickActions({
   onInvite,
   onExpenseCreate,
   onMarketplacePublish,
-  onArchive
+  onArchive,
+  onVisibilityChange
 }: QuickActionsProps) {
   const router = useRouter();
   const [archiving, setArchiving] = useState(false);
+  const [updatingVisibility, setUpdatingVisibility] = useState(false);
   const handleTaskCreate = () => {
     trackEvent('pm_project_action', {
       workspaceId: 'current',
@@ -107,6 +110,45 @@ export default function QuickActions({
     }
   };
 
+  const handleVisibilityToggle = async () => {
+    const targetVisibility: Project['visibility'] =
+      project.visibility === 'public' ? 'private' : 'public';
+
+    if (
+      targetVisibility === 'public' &&
+      !confirm('Сделать проект публичным? Его смогут видеть участники организации.')
+    ) {
+      return;
+    }
+
+    try {
+      setUpdatingVisibility(true);
+      const response = await fetch(`/api/pm/projects/${project.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ visibility: targetVisibility })
+      });
+
+      if (!response.ok) {
+        throw new Error('Не удалось изменить видимость проекта');
+      }
+
+      trackEvent('pm_project_visibility_changed', {
+        workspaceId: 'current',
+        projectId: project.id,
+        userId: 'current',
+        visibility: targetVisibility,
+        source: 'quick_actions'
+      });
+
+      onVisibilityChange?.(targetVisibility);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Произошла ошибка при обновлении видимости');
+    } finally {
+      setUpdatingVisibility(false);
+    }
+  };
+
   return (
     <div className="flex flex-wrap gap-3">
       <button
@@ -134,6 +176,15 @@ export default function QuickActions({
       >
         <DollarSign className="h-4 w-4" />
         Создать трату
+      </button>
+
+      <button
+        type="button"
+        onClick={handleVisibilityToggle}
+        disabled={updatingVisibility}
+        className="flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900/70 px-4 py-2 text-sm font-medium text-white transition hover:border-indigo-500/40 hover:bg-indigo-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {project.visibility === 'public' ? 'Сделать приватным' : 'Опубликовать'}
       </button>
 
       <button

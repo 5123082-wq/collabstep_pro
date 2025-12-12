@@ -56,7 +56,7 @@ export const PM_MENU_SECTION: LeftMenuSection = {
   id: 'pm',
   label: 'Проекты и задачи',
   icon: 'projects',
-  href: PM_HUB_PATH,
+  href: `${PM_HUB_PATH}/projects`,
   children: [
     { id: 'pm-projects', label: 'Проекты', href: `${PM_HUB_PATH}/projects` },
     { id: 'pm-tasks', label: 'Задачи', href: `${PM_HUB_PATH}/tasks` },

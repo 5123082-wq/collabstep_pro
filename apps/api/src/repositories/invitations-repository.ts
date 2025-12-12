@@ -1,5 +1,5 @@
 
-import { eq, and } from 'drizzle-orm';
+import { eq, and, or, desc, inArray } from 'drizzle-orm';
 import { db } from '../db/config';
 import {
     organizationInvites,
@@ -15,6 +15,9 @@ export type ProjectInvite = typeof projectInvites.$inferSelect;
 export type NewProjectInvite = typeof projectInvites.$inferInsert;
 type ProjectMember = typeof projectMembers.$inferSelect;
 
+// For organization invites we only use these statuses (project invites have more states).
+export type OrganizationInviteStatus = 'pending' | 'accepted' | 'rejected';
+
 export class InvitationsRepository {
 
     // --- Organization Invites ---
@@ -25,12 +28,40 @@ export class InvitationsRepository {
         return created;
     }
 
+    async findOrganizationInviteById(id: string): Promise<OrganizationInvite | null> {
+        const [invite] = await db
+            .select()
+            .from(organizationInvites)
+            .where(eq(organizationInvites.id, id));
+        return invite || null;
+    }
+
     async findOrganizationInviteByToken(token: string): Promise<OrganizationInvite | null> {
         const [invite] = await db
             .select()
             .from(organizationInvites)
             .where(eq(organizationInvites.token, token));
         return invite || null;
+    }
+
+    async listOrganizationInvitesForInvitee(userId: string, email?: string): Promise<OrganizationInvite[]> {
+        const conditions = [];
+        if (userId) {
+            conditions.push(eq(organizationInvites.inviteeUserId, userId));
+        }
+        const normalizedEmail = email?.trim().toLowerCase();
+        if (normalizedEmail) {
+            conditions.push(eq(organizationInvites.inviteeEmail, normalizedEmail));
+        }
+        if (conditions.length === 0) {
+            return [];
+        }
+
+        return db
+            .select()
+            .from(organizationInvites)
+            .where(or(...conditions))
+            .orderBy(desc(organizationInvites.createdAt));
     }
 
     async listPendingOrganizationInvites(organizationId: string): Promise<OrganizationInvite[]> {
@@ -45,7 +76,7 @@ export class InvitationsRepository {
 
     async updateOrganizationInviteStatus(
         id: string,
-        status: OrganizationInvite['status'],
+        status: OrganizationInviteStatus,
         inviteeUserId?: string // Optional: link user when accepting
     ): Promise<OrganizationInvite | null> {
         const updateData: Partial<OrganizationInvite> = {
@@ -96,7 +127,6 @@ export class InvitationsRepository {
      * Useful for checking access rights (preview vs full).
      */
     async findActiveProjectInviteForUser(projectId: string, userId: string): Promise<ProjectInvite | null> {
-        // statuses that grant at least preview access
         const activeStatuses: ProjectInvite['status'][] = [
             'invited',
             'previewing',
@@ -105,21 +135,45 @@ export class InvitationsRepository {
             'approved'
         ];
 
-        // Note: Drizzle inArray requires non-empty array
         const [invite] = await db
             .select()
             .from(projectInvites)
             .where(and(
                 eq(projectInvites.projectId, projectId),
                 eq(projectInvites.inviteeUserId, userId),
-                // We could filter by status here, but logic might be complex with array
-                // Let's filter in JS or simpler query
-            ));
+                inArray(projectInvites.status, activeStatuses)
+            ))
+            .orderBy(desc(projectInvites.createdAt))
+            .limit(1);
 
-        if (invite && activeStatuses.includes(invite.status)) {
-            return invite;
+        return invite ?? null;
+    }
+
+    async findActiveProjectInviteForEmail(projectId: string, email: string): Promise<ProjectInvite | null> {
+        const normalizedEmail = email.trim().toLowerCase();
+        if (!normalizedEmail) {
+            return null;
         }
-        return null;
+        const activeStatuses: ProjectInvite['status'][] = [
+            'invited',
+            'previewing',
+            'accepted_by_user',
+            'pending_owner_approval',
+            'approved'
+        ];
+
+        const [invite] = await db
+            .select()
+            .from(projectInvites)
+            .where(and(
+                eq(projectInvites.projectId, projectId),
+                eq(projectInvites.inviteeEmail, normalizedEmail),
+                inArray(projectInvites.status, activeStatuses)
+            ))
+            .orderBy(desc(projectInvites.createdAt))
+            .limit(1);
+
+        return invite ?? null;
     }
 
     async listPendingProjectInvites(projectId: string): Promise<ProjectInvite[]> {

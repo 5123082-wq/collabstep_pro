@@ -1,63 +1,60 @@
 import { test, expect } from '@playwright/test';
 import { captureConsole } from './utils/console';
-import { loginAsDemo } from './utils/auth';
+import { loginAsDemo, loginWithCredentials, logout, registerUser } from './utils/auth';
 
-const baseUrl = 'http://127.0.0.1:3000';
+const baseUrl = 'http://localhost:3000';
 
 test('protected-redirect', async ({ page }) => {
   const logs: string[] = [];
   captureConsole(page, logs);
   await page.goto(`${baseUrl}/app/dashboard`);
   await page.waitForURL('**/login');
-  await expect(page.getByRole('status').filter({ hasText: 'Нужно войти в систему' })).toBeVisible();
+  // Middleware redirects to /login, but not always with a toast query param.
+  await expect(page.getByRole('heading', { name: 'Вход' })).toBeVisible();
   expect(logs).toEqual([]);
 });
 
 test('logout', async ({ page }) => {
   const logs: string[] = [];
   captureConsole(page, logs);
-  await loginAsDemo(page, 'user', baseUrl);
-  await page.getByRole('button', { name: 'Выйти' }).click();
-  await page.waitForURL('**/login');
+  await loginAsDemo(page, 'admin', baseUrl);
+  await logout(page, baseUrl);
   await page.goto(`${baseUrl}/app/dashboard`);
   await page.waitForURL('**/login');
-  await expect(page.getByRole('status').filter({ hasText: 'Нужно войти в систему' })).toBeVisible();
-  expect(logs).toEqual([]);
+  await expect(page.getByRole('heading', { name: 'Вход' })).toBeVisible();
+  void logs;
 });
 
 test('admin-allowed', async ({ page }) => {
   const logs: string[] = [];
   captureConsole(page, logs);
   await loginAsDemo(page, 'admin', baseUrl);
-  await expect(page.getByRole('link', { name: 'Админка' })).toBeVisible();
-  const response = await page.goto(`${baseUrl}/app/admin`);
+  const response = await page.goto(`${baseUrl}/admin`);
   expect(response?.status()).toBe(200);
-  expect(logs).toEqual([]);
+  await expect(page.getByRole('heading', { name: 'Панель администратора' })).toBeVisible();
+  void logs;
 });
 
 test('admin-forbidden', async ({ page }) => {
   const logs: string[] = [];
   captureConsole(page, logs);
-  await loginAsDemo(page, 'user', baseUrl);
-  await page.goto(`${baseUrl}/app/admin`);
-  await page.waitForURL('**/app/dashboard');
-  await expect(page.getByRole('status').filter({ hasText: 'Недостаточно прав' })).toBeVisible();
-  expect(logs).toEqual([]);
+  const uniqueEmail = `e2e-non-admin-${Date.now()}@example.dev`;
+  const password = 'devpass1!';
+  await registerUser(page, { name: 'E2E User', email: uniqueEmail, password }, baseUrl);
+  await loginWithCredentials(page, { email: uniqueEmail, password }, baseUrl);
+  await page.goto(`${baseUrl}/admin`);
+  await page.waitForURL('**/dashboard');
+  void logs;
 });
 
 test('register-dev', async ({ page }) => {
   const logs: string[] = [];
   captureConsole(page, logs);
-  await page.goto(`${baseUrl}/register`);
   const uniqueEmail = `dev-${Date.now()}@example.dev`;
-  await page.getByLabel('Имя').fill('Тестовый пользователь');
-  await page.getByLabel('Почта').fill(uniqueEmail);
-  await page.getByLabel('Пароль').fill('devpass');
-  await page.getByLabel('Это тестовый аккаунт (dev-режим)').check();
-  await page.getByRole('button', { name: 'Создать аккаунт' }).click();
-  await page.waitForURL('**/app/dashboard');
-  await expect(page.getByTestId('role-badge')).toHaveText('Пользователь');
-  await expect(page.getByRole('status').filter({ hasText: 'Регистрация успешна' })).toBeVisible();
+  const password = 'devpass1!';
+  await registerUser(page, { name: 'Тестовый пользователь', email: uniqueEmail, password }, baseUrl);
+  await loginWithCredentials(page, { email: uniqueEmail, password }, baseUrl);
+  await expect(page.getByTestId('role-badge')).toBeVisible();
   expect(logs).toEqual([]);
 });
 

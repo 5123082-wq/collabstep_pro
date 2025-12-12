@@ -575,4 +575,14 @@ export function resetFinanceService(): void {
   financeServiceSingleton = null;
 }
 
-export const financeService = getFinanceService();
+// Ленивая инициализация для обеспечения правильного порядка инициализации bootstrap
+let _financeService: FinanceService | null = null;
+export const financeService = new Proxy({} as FinanceService, {
+  get(_target, prop) {
+    if (!_financeService) {
+      _financeService = getFinanceService();
+    }
+    const value = _financeService[prop as keyof FinanceService];
+    return typeof value === 'function' ? value.bind(_financeService) : value;
+  }
+});

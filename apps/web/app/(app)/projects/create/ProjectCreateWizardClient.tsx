@@ -8,7 +8,7 @@ import { trackEvent } from '@/lib/telemetry';
 import { cn } from '@/lib/utils';
 import ProjectTemplateSelectorModal, { type ProjectTemplate } from '@/components/pm/ProjectTemplateSelectorModal';
 
-type WizardStep = 'details' | 'visibility' | 'confirm';
+type WizardStep = 'details' | 'confirm';
 
 type ProjectCreateWizardClientProps = {
   currentUserId: string;
@@ -22,12 +22,13 @@ export default function ProjectCreateWizardClient({ currentUserId }: ProjectCrea
   const [name, setName] = useState('');
   const [key, setKey] = useState('');
   const [description, setDescription] = useState('');
-  const [visibility, setVisibility] = useState<'private' | 'public'>('private');
-  const [status, setStatus] = useState<'draft' | 'active'>('draft');
   const [submitting, setSubmitting] = useState(false);
   const [touched, setTouched] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<ProjectTemplate | null>(null);
+
+  const visibility = 'private' as const;
+  const status = 'active' as const;
 
   useEffect(() => {
     fetch('/api/organizations')
@@ -50,19 +51,17 @@ export default function ProjectCreateWizardClient({ currentUserId }: ProjectCrea
       toast('Введите название проекта (не менее 3 символов)', 'warning');
       return;
     }
-    setStep('visibility');
+    setStep('confirm');
   };
 
   const handleBack = () => {
-    setStep((prev) => (prev === 'confirm' ? 'visibility' : 'details'));
+    setStep('details');
   };
 
   const resetState = useCallback(() => {
     setName('');
     setKey('');
     setDescription('');
-    setVisibility('private');
-    setStatus('draft');
     setStep('details');
     setSubmitting(false);
     setTouched(false);
@@ -145,8 +144,8 @@ export default function ProjectCreateWizardClient({ currentUserId }: ProjectCrea
         <p className="text-sm uppercase tracking-wide text-indigo-300">Мастер создания</p>
         <h1 className="text-xl font-semibold text-white">Новый проект</h1>
         <p className="text-sm text-neutral-400">
-          Заполните основные данные, выберите видимость и статус — проект появится в списке и станет
-          доступен вашей команде.
+          Заполните основные данные — проект сразу создастся активным и приватным. Публикацию можно
+          включить позже в настройках проекта.
         </p>
       </header>
 
@@ -262,74 +261,6 @@ export default function ProjectCreateWizardClient({ currentUserId }: ProjectCrea
           </section>
         )}
 
-        {step === 'visibility' && (
-          <section className="space-y-6">
-            <div className="space-y-4 rounded-2xl border border-neutral-900 bg-neutral-950/70 p-6">
-              <h2 className="text-lg font-semibold text-white">Доступ и статус</h2>
-              <p className="text-sm text-neutral-400">
-                Определите видимость проекта и стартовый статус. Вы сможете изменить их в настройках
-                позже.
-              </p>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <button
-                  type="button"
-                  onClick={() => setVisibility('private')}
-                  className={cn(
-                    'flex flex-col gap-2 rounded-xl border px-4 py-4 text-left transition',
-                    visibility === 'private'
-                      ? 'border-indigo-500/60 bg-indigo-500/10 text-indigo-100'
-                      : 'border-neutral-900 bg-neutral-950/60 text-neutral-200 hover:border-indigo-500/40 hover:text-white'
-                  )}
-                >
-                  <span className="text-sm font-semibold uppercase tracking-wide">Приватный</span>
-                  <span className="text-xs text-neutral-400">
-                    Видят только участники и владелец. Идеально для внутренних команд.
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setVisibility('public')}
-                  className={cn(
-                    'flex flex-col gap-2 rounded-xl border px-4 py-4 text-left transition',
-                    visibility === 'public'
-                      ? 'border-emerald-500/60 bg-emerald-500/10 text-emerald-100'
-                      : 'border-neutral-900 bg-neutral-950/60 text-neutral-200 hover:border-emerald-500/40 hover:text-white'
-                  )}
-                >
-                  <span className="text-sm font-semibold uppercase tracking-wide">Публичный</span>
-                  <span className="text-xs text-neutral-400">
-                    Доступен всей организации. Используйте для витрины или кросс-командных инициатив.
-                  </span>
-                </button>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                {[
-                  { id: 'draft', label: 'Черновик', description: 'Отрабатываем контент и планы.' },
-                  { id: 'active', label: 'Активный', description: 'Проект в работе.' }
-                ].map(({ id, label, description }) => (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => setStatus(id as typeof status)}
-                    className={cn(
-                      'flex-1 min-w-[140px] rounded-xl border px-4 py-3 text-left text-sm transition',
-                      status === id
-                        ? 'border-indigo-500/60 bg-indigo-500/15 text-indigo-100'
-                        : 'border-neutral-900 bg-neutral-950/60 text-neutral-200 hover:border-indigo-500/40 hover:text-white'
-                    )}
-                  >
-                    <span className="font-semibold uppercase tracking-wide">{label}</span>
-                    <span className="mt-1 block text-xs text-neutral-400">{description}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
-
         {step === 'confirm' && (
           <section className="space-y-4">
             <div className="rounded-2xl border border-neutral-900 bg-neutral-950/70 p-6 text-sm text-neutral-200">
@@ -345,15 +276,11 @@ export default function ProjectCreateWizardClient({ currentUserId }: ProjectCrea
                 </li>
                 <li>
                   <span className="text-neutral-500">Видимость:</span>{' '}
-                  <strong className="text-white">
-                    {visibility === 'private' ? 'Приватный' : 'Публичный'}
-                  </strong>
+                  <strong className="text-white">Приватный</strong>
                 </li>
                 <li>
                   <span className="text-neutral-500">Статус:</span>{' '}
-                  <strong className="text-white">
-                    {status === 'draft' ? 'Черновик' : 'Активный'}
-                  </strong>
+                  <strong className="text-white">Активный</strong>
                 </li>
               </ul>
             </div>
@@ -375,22 +302,12 @@ export default function ProjectCreateWizardClient({ currentUserId }: ProjectCrea
             <span
               className={cn(
                 'inline-flex h-7 w-7 items-center justify-center rounded-full border',
-                step === 'visibility'
-                  ? 'border-indigo-500/60 text-indigo-100'
-                  : 'border-neutral-800 text-neutral-400'
-              )}
-            >
-              2
-            </span>
-            <span
-              className={cn(
-                'inline-flex h-7 w-7 items-center justify-center rounded-full border',
                 step === 'confirm'
                   ? 'border-indigo-500/60 text-indigo-100'
                   : 'border-neutral-800 text-neutral-400'
               )}
             >
-              3
+              2
             </span>
           </div>
 
@@ -412,14 +329,6 @@ export default function ProjectCreateWizardClient({ currentUserId }: ProjectCrea
                 className="rounded-xl border border-indigo-500/50 bg-indigo-500/15 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/25"
               >
                 Далее
-              </button>
-            ) : step === 'visibility' ? (
-              <button
-                type="button"
-                onClick={() => setStep('confirm')}
-                className="rounded-xl border border-indigo-500/50 bg-indigo-500/15 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/25"
-              >
-                К подтверждению
               </button>
             ) : (
               <button

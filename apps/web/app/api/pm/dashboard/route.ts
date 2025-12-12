@@ -32,15 +32,13 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
     projectIds: userProjects.map(p => ({ id: p.id, title: p.title, ownerId: p.ownerId }))
   });
 
-  // Filter active projects (only 'active' status, not 'draft')
+  // Filter active projects (все, кроме архивных)
   const activeProjects = userProjects.filter(
-    (project) => project.status === 'active' && !project.archived
+    (project) => project.status !== 'archived' && !project.archived
   );
 
-  // Filter draft projects (status === 'draft' and not archived)
-  const draftProjects = userProjects.filter(
-    (project) => project.status === 'draft' && !project.archived
-  );
+  // Черновиков больше нет, оставляем пустой массив для совместимости ответа
+  const draftProjects: typeof userProjects = [];
 
   // Resolve owners to display human-friendly names/emails in the widget
   const ownerIds = Array.from(new Set(userProjects.map((project) => project.ownerId).filter(Boolean)));

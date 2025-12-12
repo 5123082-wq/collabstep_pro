@@ -8,7 +8,7 @@ export type ProjectType =
   | 'operations'
   | 'service'
   | 'internal';
-export type ProjectStatus = 'draft' | 'active' | 'on_hold' | 'completed' | 'archived';
+export type ProjectStatus = 'active' | 'on_hold' | 'completed' | 'archived';
 export type TaskStatus = 'new' | 'in_progress' | 'review' | 'done' | 'blocked';
 export type ExpenseStatus = 'draft' | 'pending' | 'approved' | 'payable' | 'closed';
 
@@ -32,7 +32,8 @@ export interface Project {
   title: string;
   description?: string;
   ownerId: ID;
-  status: ProjectStatus; // Lifecycle status: draft, active, on_hold, completed, archived
+  ownerNumber?: number; // Sequential number per owner (non-reused)
+  status: ProjectStatus; // Lifecycle status: active, on_hold, completed, archived
   deadline?: string;
   stage?: ProjectStage;
   type?: ProjectType;
@@ -435,6 +436,40 @@ export interface Notification {
   status: NotificationStatus;
   createdAt: string;
   readAt?: string;
+}
+
+// --- Invites via messaging (Org Invite Threads) ---
+// Memory-first MVP types to support chat-like threads around organization invites.
+
+export type InviteThreadParticipantRole = 'admin' | 'member';
+
+export interface InviteThread {
+  id: ID;
+  orgInviteId: ID;
+  organizationId: ID;
+  createdByUserId: ID;
+  inviteeUserId?: ID;
+  inviteeEmail?: string;
+  previewProjectIds?: ID[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InviteThreadParticipant {
+  id: ID;
+  threadId: ID;
+  userId?: ID;
+  email?: string;
+  role: InviteThreadParticipantRole;
+  createdAt: string;
+}
+
+export interface InviteThreadMessage {
+  id: ID;
+  threadId: ID;
+  authorId: ID;
+  body: string;
+  createdAt: string;
 }
 
 export interface Organization {

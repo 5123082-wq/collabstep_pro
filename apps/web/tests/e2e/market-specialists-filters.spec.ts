@@ -6,7 +6,7 @@ const appOrigin = 'http://localhost:3000';
 
 test.describe('marketplace specialists', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsDemo(page, 'user', appOrigin);
+    await loginAsDemo(page, 'admin', appOrigin);
   });
 
   test('фильтры синхронизируются с URL и открывается визитка', async ({ page }) => {

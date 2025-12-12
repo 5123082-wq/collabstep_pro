@@ -39,7 +39,17 @@ export function resolveExpenseStoreDriver(): ExpenseStoreDriver {
 function instantiateDbStore(logger: Logger): ExpenseStore {
   const dependencies = dependenciesFactory?.();
   if (!dependencies) {
-    logger.warn('[ExpenseStoreFactory] DB dependencies unavailable, falling back to in-memory store');
+    // В development окружении это нормально - используем in-memory store как fallback
+    // Предупреждение только в production/staging, где ожидается использование БД
+    const nodeEnv = (process.env.NODE_ENV ?? '').toLowerCase();
+    const vercelEnv = (process.env.VERCEL_ENV ?? '').toLowerCase();
+    const isProduction = nodeEnv === 'production' || vercelEnv === 'production' || vercelEnv === 'staging';
+    
+    if (isProduction) {
+      logger.warn('[ExpenseStoreFactory] DB dependencies unavailable, falling back to in-memory store');
+    } else {
+      logger.info('[ExpenseStoreFactory] DB dependencies unavailable, falling back to in-memory store');
+    }
     return new MemoryExpenseStore();
   }
   return new DbExpenseStore(dependencies);

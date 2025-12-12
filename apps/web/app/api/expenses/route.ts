@@ -13,8 +13,11 @@ import {
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { assertProjectAccess, getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
 
-const expenseStore = getExpenseStore();
-const financeService = createFinanceService(expenseStore);
+// Ленивая инициализация для обеспечения правильного порядка инициализации bootstrap
+function getFinanceService() {
+  const expenseStore = getExpenseStore();
+  return createFinanceService(expenseStore);
+}
 
 function parsePagination(url: URL) {
   const page = Math.max(1, Number(url.searchParams.get('page') ?? '1') || 1);
@@ -172,6 +175,7 @@ export async function GET(request: Request) {
     serviceFilters.search = filters.search;
   }
 
+  const financeService = getFinanceService();
   const { items } = await financeService.listExpenses(serviceFilters);
 
   const filtered = filterByAccess(items, accessMap, auth.userId);
@@ -225,6 +229,7 @@ export async function POST(request: Request) {
       expensePayload.attachments = attachments;
     }
 
+    const financeService = getFinanceService();
     const expense = await financeService.createExpense(expensePayload, {
       actorId: auth.userId,
       idempotencyKey

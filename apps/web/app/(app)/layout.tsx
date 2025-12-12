@@ -13,7 +13,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   // Use NextAuth session if available, otherwise fall back to demo session
   let session: DemoSession | null = null;
 
-  if (nextAuthSession?.user) {
+  if (nextAuthSession?.user && nextAuthSession.user.id) {
     // Convert NextAuth session to DemoSession format
     session = {
       userId: nextAuthSession.user.id,
