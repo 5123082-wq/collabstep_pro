@@ -13,10 +13,10 @@ const routeActions: Record<string, { title: string; actions: { label: string; me
       { label: 'Созвон с командой', message: 'TODO: Созвон' }
     ]
   },
-  '/projects': {
+  '/pm/projects': {
     title: 'Проекты',
     actions: [
-      { label: 'Открыть обзор проектов', message: 'Открываем новую страницу проектов' },
+      { label: 'Открыть обзор проектов', message: 'Открываем страницу проектов' },
       { label: 'Создать проект', message: 'Используйте меню создания, чтобы запустить инициативу' }
     ]
   },

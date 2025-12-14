@@ -1,15 +1,18 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Loader2, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Bell, Loader2, MessageSquare, UserPlus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useChatsModal } from '@/stores/chatsModal';
+import { useUI } from '@/stores/ui';
 import { formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import type { Project, Task, ProjectChatMessage } from '@collabverse/api';
+import NotificationsPanel from '@/components/right-rail/NotificationsPanel';
+import InvitesPanel from '@/components/right-rail/InvitesPanel';
 
 type Thread = {
   id: string;
@@ -38,8 +41,27 @@ type ApiMessage = ProjectChatMessage & {
   } | null;
 };
 
+type CommunicationTab = 'chats' | 'notifications' | 'invites';
+
+type TabDefinition = {
+  id: CommunicationTab;
+  label: string;
+  icon: typeof MessageSquare;
+};
+
+const COMM_TABS: TabDefinition[] = [
+  { id: 'chats', label: 'Чаты', icon: MessageSquare },
+  { id: 'notifications', label: 'Уведомления', icon: Bell },
+  { id: 'invites', label: 'Приглашения', icon: UserPlus }
+];
+
+function normalizeTab(value: unknown): CommunicationTab | null {
+  return value === 'chats' || value === 'notifications' || value === 'invites' ? value : null;
+}
+
 export function AllChatsModal() {
   const { isOpen, close, activeThreadId, setActiveThread, open } = useChatsModal();
+  const [activeTab, setActiveTab] = useState<CommunicationTab>('chats');
   const [state, setState] = useState<'ready' | 'loading' | 'error'>('ready');
   const [query, setQuery] = useState('');
   const [threads, setThreads] = useState<Thread[]>([]);
@@ -51,6 +73,22 @@ export function AllChatsModal() {
   const [isEditingLoading, setIsEditingLoading] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
+
+  const unreadChats = useUI((s) => s.unreadChats);
+  const unreadNotifications = useUI((s) => s.unreadNotifications);
+  const unreadInvites = useUI((s) => s.unreadInvites);
+  const setUnreadChats = useUI((s) => s.setUnreadChats);
+  const setUnreadNotifications = useUI((s) => s.setUnreadNotifications);
+  const setUnreadInvites = useUI((s) => s.setUnreadInvites);
+
+  const tabBadges = useMemo(
+    () => ({
+      chats: unreadChats,
+      notifications: unreadNotifications,
+      invites: unreadInvites
+    }),
+    [unreadChats, unreadInvites, unreadNotifications]
+  );
 
   const normalizeMessages = (items: Message[]): Message[] => {
     const byId = new Map<string, Message>();
@@ -73,15 +111,30 @@ export function AllChatsModal() {
 
   useEffect(() => {
     const handleCommand = (event: Event) => {
-      const detail = (event as CustomEvent<{ id?: string; payload?: { command?: string; threadId?: string } }>).detail;
+      const detail = (
+        event as CustomEvent<{ id?: string; payload?: { command?: string; threadId?: string; tab?: unknown } }>
+      ).detail;
       if (!detail) return;
-      if (detail.id === 'chats' || detail.payload?.command === 'open-chats-modal') {
-        open(detail.payload?.threadId ?? null);
-      }
+
+      const isOpenRequest = detail.id === 'chats' || detail.id === 'notifications' || detail.id === 'invites';
+      if (!isOpenRequest && detail.payload?.command !== 'open-chats-modal') return;
+
+      const tabFromPayload = normalizeTab(detail.payload?.tab);
+      const tabFromId = normalizeTab(detail.id);
+      const nextTab: CommunicationTab = tabFromPayload ?? tabFromId ?? 'chats';
+      setActiveTab(nextTab);
+      open(detail.payload?.threadId ?? null);
     };
     window.addEventListener('rail:command', handleCommand as EventListener);
     return () => window.removeEventListener('rail:command', handleCommand as EventListener);
   }, [open]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (activeTab === 'chats') setUnreadChats(0);
+    if (activeTab === 'notifications') setUnreadNotifications(0);
+    if (activeTab === 'invites') setUnreadInvites(0);
+  }, [activeTab, isOpen, setUnreadChats, setUnreadInvites, setUnreadNotifications]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -333,19 +386,59 @@ export function AllChatsModal() {
 
   if (!isOpen) return null;
 
+  const title =
+    activeTab === 'chats' ? 'Все чаты' : activeTab === 'notifications' ? 'Уведомления' : 'Приглашения';
+
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 px-4 py-6">
       <div className="w-full max-w-[1200px] rounded-3xl border border-neutral-800/80 bg-neutral-950/90 shadow-2xl backdrop-blur">
         <header className="flex items-center justify-between gap-3 border-b border-neutral-800/70 px-6 py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-neutral-800/70 bg-neutral-900/70 text-indigo-300">
-              <MessageSquare className="h-5 w-5" aria-hidden="true" />
+              {activeTab === 'chats' ? (
+                <MessageSquare className="h-5 w-5" aria-hidden="true" />
+              ) : activeTab === 'notifications' ? (
+                <Bell className="h-5 w-5" aria-hidden="true" />
+              ) : (
+                <UserPlus className="h-5 w-5" aria-hidden="true" />
+              )}
             </div>
             <div>
-              <div className="text-lg font-semibold text-white">Все чаты</div>
-              <div className="text-xs text-neutral-400">Быстрое переключение между переписками</div>
+              <div className="text-lg font-semibold text-white">{title}</div>
+              <div className="text-xs text-neutral-400">Коммуникации</div>
             </div>
           </div>
+          <nav className="hidden flex-1 items-center justify-center md:flex" aria-label="Разделы коммуникаций">
+            <div className="inline-flex rounded-full bg-neutral-900/70 p-1">
+              {COMM_TABS.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = tab.id === activeTab;
+                const badge = tabBadges[tab.id];
+                const showBadge = !isActive && typeof badge === 'number' && badge > 0;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id)}
+                    className={cn(
+                      'relative flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                      isActive
+                        ? 'bg-indigo-500 text-white shadow'
+                        : 'text-neutral-300 hover:bg-neutral-800/70 hover:text-white'
+                    )}
+                  >
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                    {tab.label}
+                    {showBadge ? (
+                      <span className="absolute -top-1 -right-1 rounded-full bg-indigo-500/20 px-1.5 py-[2px] text-xs font-semibold text-indigo-200">
+                        {badge}
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={close} className="text-neutral-300 hover:text-white">
               Закрыть
@@ -353,6 +446,7 @@ export function AllChatsModal() {
           </div>
         </header>
 
+        {activeTab === 'chats' ? (
         <div className="flex h-[calc(100vh-200px)] min-h-[520px] flex-col gap-4 px-4 py-4 lg:flex-row">
           <section className="flex h-full min-h-0 w-full flex-col rounded-2xl border border-neutral-800/70 bg-neutral-950/80 p-3 overflow-hidden lg:w-[360px] lg:flex-shrink-0">
             <div className="flex items-center gap-2 pb-3 flex-shrink-0">
@@ -562,6 +656,17 @@ export function AllChatsModal() {
             </div>
           </section>
         </div>
+        ) : (
+          <div className="h-[calc(100vh-200px)] min-h-[520px] px-4 py-4">
+            <section className="flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-neutral-800/70 bg-neutral-950/80">
+              {activeTab === 'notifications' ? (
+                <NotificationsPanel onMarkAllRead={() => setUnreadNotifications(0)} />
+              ) : (
+                <InvitesPanel />
+              )}
+            </section>
+          </div>
+        )}
       </div>
     </div>
   );

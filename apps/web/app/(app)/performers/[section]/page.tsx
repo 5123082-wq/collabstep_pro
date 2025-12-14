@@ -51,7 +51,7 @@ const SECTION_CONFIG = {
               Каталог экспертов с фильтрами и карточками компетенций.
             </p>
           </header>
-          <SpecialistsCatalog data={items} error={error} />
+          <SpecialistsCatalog data={items} error={error} basePath="/performers/specialists" />
         </div>
       );
     }
@@ -81,7 +81,7 @@ const SECTION_CONFIG = {
               Актуальные запросы на специалистов и консультантов.
             </p>
           </header>
-          <VacanciesCatalog data={items} error={error} />
+          <VacanciesCatalog data={items} error={error} basePath="/performers/vacancies" />
         </div>
       );
     }

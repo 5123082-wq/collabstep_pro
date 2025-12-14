@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { Vacancy } from '@/lib/schemas/marketplace-vacancy';
 import {
   applyVacancyFilters,
@@ -186,9 +186,11 @@ function VacancyCard({ vacancy }: { vacancy: Vacancy }) {
   );
 }
 
-export default function VacanciesCatalog({ data, error }: VacanciesCatalogProps) {
+type VacanciesCatalogPropsWithPath = VacanciesCatalogProps & { basePath?: string };
+
+export default function VacanciesCatalog({ data, error, basePath }: VacanciesCatalogPropsWithPath) {
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = basePath ?? '/performers/vacancies';
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const urlFilters = useMemo(() => parseVacancyFilters(searchParams), [searchParams]);

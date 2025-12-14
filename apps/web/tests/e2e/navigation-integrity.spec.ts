@@ -35,12 +35,27 @@ test.describe('app navigation integrity', () => {
     captureConsole(page, logs);
     await loginAsDemo(page, 'admin', appOrigin);
 
+    // Создаём проект, чтобы ссылка гарантированно была в списке
+    const projectRes = await page.request.post(`${appOrigin}/api/pm/projects`, {
+      data: { title: 'E2E Navigation Project' }
+    });
+    if (projectRes.status() >= 400) {
+      const body = await projectRes.text();
+      throw new Error(`Не удалось создать проект для navigation-integrity: ${projectRes.status()} ${body}`);
+    }
+    const projectJson = await projectRes.json();
+    const projectId = projectJson?.data?.project?.id ?? projectJson?.project?.id;
+    if (!projectId) {
+      throw new Error('API не вернул id созданного проекта для navigation-integrity');
+    }
+
     const sidebar = page.locator('aside').first();
     const initialBox = await sidebar.boundingBox();
     expect(initialBox?.width).toBeTruthy();
 
-    await page.goto(`${appOrigin}/project/modules`);
-    await expect(page).toHaveURL(`${appOrigin}/project/modules`);
+    // Переходим сразу в созданный проект, чтобы избежать гонок с рендером списка
+    await page.goto(`${appOrigin}/pm/projects/${projectId}`);
+    await page.waitForURL(`**/pm/projects/${projectId}`);
 
     const workspaceSidebar = page.locator('aside').first();
     const workspaceBox = await workspaceSidebar.boundingBox();
@@ -65,7 +80,7 @@ test.describe('app navigation integrity', () => {
     expect(initialBox?.width).toBeTruthy();
 
     await page.getByRole('button', { name: 'Создать' }).click();
-    await expect(page.getByRole('dialog', { name: 'Меню создания' })).toBeVisible();
+    await expect(page.getByRole('menu', { name: 'Меню создания' })).toBeVisible();
     const withCreateBox = await sidebar.boundingBox();
     expect(withCreateBox?.width).toBeCloseTo(initialBox!.width!, 1);
     await page.keyboard.press('Escape');

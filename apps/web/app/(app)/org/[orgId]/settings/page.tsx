@@ -14,7 +14,7 @@ export default async function OrganizationSettingsPage({ params }: { params: { o
   
   // Verify access and get org
   const member = await organizationsRepository.findMember(orgId, user.id);
-  if (!member || !['owner', 'admin'].includes(member.role)) {
+  if (!member || member.status !== 'active' || !['owner', 'admin'].includes(member.role)) {
     // Or return forbidden UI
     return <div>Access Denied</div>;
   }

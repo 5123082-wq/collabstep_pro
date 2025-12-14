@@ -4,73 +4,48 @@ const sellers: MarketplaceSeller[] = [
   {
     id: 'studio-nova',
     name: 'Studio Nova',
-    avatarUrl: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=facearea&w=160&h=160&q=80',
+    avatarUrl: '/placeholders/avatar-1.svg',
     portfolioCount: 24
   },
   {
     id: 'pixel-foundry',
     name: 'Pixel Foundry',
-    avatarUrl: 'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=facearea&w=160&h=160&q=80',
+    avatarUrl: '/placeholders/avatar-2.svg',
     portfolioCount: 31
   },
   {
     id: 'orbit-labs',
     name: 'Orbit Labs',
-    avatarUrl: 'https://images.unsplash.com/photo-1529665253569-6d01c0eaf7b6?auto=format&fit=facearea&w=160&h=160&q=80',
+    avatarUrl: '/placeholders/avatar-3.svg',
     portfolioCount: 18
   },
   {
     id: 'north-dsgn',
     name: 'North DSGN',
-    avatarUrl: 'https://images.unsplash.com/photo-1545239351-1141bd82e8a6?auto=format&fit=facearea&w=160&h=160&q=80',
+    avatarUrl: '/placeholders/avatar-1.svg',
     portfolioCount: 27
   },
   {
     id: 'vector-squad',
     name: 'Vector Squad',
-    avatarUrl: 'https://images.unsplash.com/photo-1504593811423-6dd665756598?auto=format&fit=facearea&w=160&h=160&q=80',
+    avatarUrl: '/placeholders/avatar-2.svg',
     portfolioCount: 15
   },
   {
     id: 'boldline',
     name: 'Boldline',
-    avatarUrl: 'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?auto=format&fit=facearea&w=160&h=160&q=80',
+    avatarUrl: '/placeholders/avatar-3.svg',
     portfolioCount: 22
   }
 ];
 
 const templateGallery = {
-  neon: [
-    'https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=960&q=80',
-    'https://images.unsplash.com/photo-1483478550801-ceba5fe50e8e?auto=format&fit=crop&w=960&q=80',
-    'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=960&q=80',
-    'https://images.unsplash.com/photo-1505731132164-cca90383e1af?auto=format&fit=crop&w=960&q=80'
-  ],
-  desert: [
-    'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=960&q=80',
-    'https://images.unsplash.com/photo-1587613864521-530370d59cb2?auto=format&fit=crop&w=960&q=80',
-    'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=960&q=80'
-  ],
-  orbit: [
-    'https://images.unsplash.com/photo-1523475472560-d2df97ec485c?auto=format&fit=crop&w=960&q=80',
-    'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=960&q=80',
-    'https://images.unsplash.com/photo-1523475472560-d2df97ec485c?auto=format&fit=crop&w=960&q=80'
-  ],
-  ocean: [
-    'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=960&q=80',
-    'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=960&q=80',
-    'https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?auto=format&fit=crop&w=960&q=80'
-  ],
-  dawn: [
-    'https://images.unsplash.com/photo-1525182008055-f88b95ff7980?auto=format&fit=crop&w=960&q=80',
-    'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=960&q=80',
-    'https://images.unsplash.com/photo-1454165205744-3b78555e5572?auto=format&fit=crop&w=960&q=80'
-  ],
-  skyline: [
-    'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=960&q=80',
-    'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=960&q=80',
-    'https://images.unsplash.com/photo-1545239351-1141bd82e8a6?auto=format&fit=crop&w=960&q=80'
-  ]
+  neon: ['/placeholders/gallery-1.svg', '/placeholders/gallery-2.svg', '/placeholders/gallery-3.svg'],
+  desert: ['/placeholders/gallery-2.svg', '/placeholders/gallery-3.svg', '/placeholders/gallery-1.svg'],
+  orbit: ['/placeholders/gallery-3.svg', '/placeholders/gallery-1.svg', '/placeholders/gallery-2.svg'],
+  ocean: ['/placeholders/gallery-2.svg', '/placeholders/gallery-1.svg', '/placeholders/gallery-3.svg'],
+  dawn: ['/placeholders/gallery-1.svg', '/placeholders/gallery-3.svg', '/placeholders/gallery-2.svg'],
+  skyline: ['/placeholders/gallery-3.svg', '/placeholders/gallery-2.svg', '/placeholders/gallery-1.svg']
 } as const satisfies Record<string, readonly string[]>;
 
 const getSeller = (index: number) => sellers[index]!;

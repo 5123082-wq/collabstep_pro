@@ -3,7 +3,8 @@ import {
   tasksRepository,
   notificationsRepository,
   resetFinanceMemory,
-  memory
+  memory,
+  TEST_ADMIN_USER_ID
 } from '@collabverse/api';
 import { GET as getNotifications } from '@/app/api/notifications/route';
 import { PATCH as markRead } from '@/app/api/notifications/[id]/route';
@@ -11,9 +12,10 @@ import { POST as markAllRead } from '@/app/api/notifications/mark-all-read/route
 import { NextRequest } from 'next/server';
 
 describe('Notifications API', () => {
-  const userId = 'admin.demo@collabverse.test';
+  const userId = TEST_ADMIN_USER_ID;
+  const email = 'admin.demo@collabverse.test';
   const session = encodeDemoSession({
-    email: userId,
+    email,
     userId,
     role: 'admin',
     issuedAt: Date.now()

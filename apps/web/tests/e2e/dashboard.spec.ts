@@ -63,7 +63,7 @@ test.describe('Workspace Dashboard', () => {
   });
 
   test('navigation to dashboard works from sidebar', async ({ page }) => {
-    await page.goto(`${appOrigin}/app/marketplace/templates`);
+    await page.goto(`${appOrigin}/marketplace/templates`);
     await page.waitForLoadState('networkidle');
     
     // Ищем ссылку на dashboard в сайдбаре
@@ -76,4 +76,3 @@ test.describe('Workspace Dashboard', () => {
     }
   });
 });
-

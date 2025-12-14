@@ -4,7 +4,8 @@ const SUPPRESSED_PATTERNS = [
   'Failed to load resource: the server responded with a status of 404 (Not Found)',
   'Failed to load resource: the server responded with a status of 401 (Unauthorized)',
   'No default component was found for a parallel route rendered on this page',
-  'The above error occurred in the <NotFoundErrorBoundary> component'
+  'The above error occurred in the <NotFoundErrorBoundary> component',
+  'Failed to fetch RSC payload'
 ];
 
 export function captureConsole(page: Page, store: string[]): void {

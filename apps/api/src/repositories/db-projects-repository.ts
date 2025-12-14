@@ -1,4 +1,4 @@
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, inArray } from 'drizzle-orm';
 import { db } from '../db/config';
 import {
     projects,
@@ -85,6 +85,30 @@ export class DbProjectsRepository {
                 eq(projectMembers.userId, userId)
             ));
         return member || null;
+    }
+
+    async removeUserFromOrganizationProjects(organizationId: string, userId: string): Promise<void> {
+        if (!organizationId || !userId) {
+            return;
+        }
+
+        const rows = await db
+            .select({ projectId: projects.id })
+            .from(projects)
+            .where(eq(projects.organizationId, organizationId));
+
+        const projectIds = rows.map((row) => row.projectId).filter((id): id is string => typeof id === 'string' && Boolean(id));
+        if (projectIds.length === 0) {
+            return;
+        }
+
+        await db
+            .update(projectMembers)
+            .set({ status: 'removed', updatedAt: new Date() })
+            .where(and(
+                eq(projectMembers.userId, userId),
+                inArray(projectMembers.projectId, projectIds)
+            ));
     }
 }
 

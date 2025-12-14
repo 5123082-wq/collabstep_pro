@@ -17,7 +17,7 @@ export async function GET(
     try {
         // Check membership
         const member = await organizationsRepository.findMember(orgId, user.id);
-        if (!member) {
+            if (!member || member.status !== 'active') {
             return jsonError('FORBIDDEN', { status: 403 });
         }
 
@@ -50,7 +50,7 @@ export async function PATCH(
 
         // Check permissions (only owner or admin can update)
         const member = await organizationsRepository.findMember(orgId, user.id);
-        if (!member || !['owner', 'admin'].includes(member.role)) {
+        if (!member || member.status !== 'active' || !['owner', 'admin'].includes(member.role)) {
             return jsonError('FORBIDDEN', { status: 403 });
         }
 

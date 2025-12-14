@@ -109,7 +109,6 @@ function resolveContext(pathname: string | null): CreateContext {
   // Проверяем PM ПЕРЕД projects, так как /pm/projects должен быть в контексте pm
   // Также проверяем /pm (без слэша) для дашборда
   if (pathname.startsWith('/pm')) return 'pm';
-  if (pathname.startsWith('/projects') || pathname.startsWith('/project')) return 'projects';
   if (pathname.startsWith('/market/')) return 'marketplace';
   if (pathname.startsWith('/finance')) return 'finance';
   if (pathname.startsWith('/community')) return 'community';

@@ -3,16 +3,18 @@ import {
   projectsRepository,
   filesRepository,
   attachmentsRepository,
-  resetFinanceMemory
+  resetFinanceMemory,
+  TEST_ADMIN_USER_ID
 } from '@collabverse/api';
 import { GET as getProjectFiles, POST as uploadFile } from '@/app/api/pm/projects/[id]/files/route';
 import { NextRequest } from 'next/server';
 
 describe('Project Files API', () => {
   let projectId: string;
-  const userId = 'admin.demo@collabverse.test';
+  const adminEmail = 'admin.demo@collabverse.test';
+  const userId = TEST_ADMIN_USER_ID;
   const session = encodeDemoSession({
-    email: userId,
+    email: adminEmail,
     userId,
     role: 'admin',
     issuedAt: Date.now()

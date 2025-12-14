@@ -144,6 +144,24 @@ export async function GET(
   }
 }
 
+async function extractMessageBody(req: NextRequest): Promise<string> {
+  try {
+    const raw = await req.text();
+    if (!raw) return '';
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed.body === 'string') {
+        return parsed.body;
+      }
+    } catch {
+      // raw не является JSON — используем его напрямую
+    }
+    return raw;
+  } catch {
+    return '';
+  }
+}
+
 export async function POST(
   req: NextRequest,
   { params }: { params: { threadId: string } }
@@ -160,9 +178,8 @@ export async function POST(
   if (!parsed) return jsonError('THREAD_NOT_FOUND', { status: 404 });
 
   try {
-    const body = await req.json();
-    const { body: messageBody } = body;
-    if (!messageBody || typeof messageBody !== 'string' || messageBody.trim().length === 0) {
+    const messageBody = (await extractMessageBody(req)).trim();
+    if (!messageBody || messageBody.length === 0) {
       return jsonError('Message body must not be empty', { status: 400 });
     }
 
@@ -241,9 +258,8 @@ export async function PATCH(
   if (!parsed) return jsonError('THREAD_NOT_FOUND', { status: 404 });
 
   try {
-    const body = await req.json();
-    const { body: messageBody } = body;
-    if (!messageBody || typeof messageBody !== 'string' || messageBody.trim().length === 0) {
+    const messageBody = (await extractMessageBody(req)).trim();
+    if (!messageBody || messageBody.length === 0) {
       return jsonError('Message body must not be empty', { status: 400 });
     }
 

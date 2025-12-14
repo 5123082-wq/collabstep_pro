@@ -13,7 +13,7 @@ export default async function OrganizationFinancePage({ params }: { params: { or
   
   // Verify access and get org
   const member = await organizationsRepository.findMember(orgId, user.id);
-  if (!member || !['owner', 'admin'].includes(member.role)) {
+  if (!member || member.status !== 'active' || !['owner', 'admin'].includes(member.role)) {
     return <div>Access Denied. Only Owners and Admins can view finances.</div>;
   }
 

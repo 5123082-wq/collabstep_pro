@@ -11,8 +11,8 @@ test.describe('demo admin smoke workflow', () => {
 
     await loginAsDemo(page, 'admin', appOrigin);
 
-    await page.goto(`${appOrigin}/app/projects/create`);
-    await page.waitForURL('**/app/projects/create', { waitUntil: 'load' });
+    await page.goto(`${appOrigin}/pm/projects/create`);
+    await page.waitForURL('**/pm/projects/create', { waitUntil: 'load' });
 
     const projectName = `Admin Smoke Project ${Date.now()}`;
     await page.getByLabel('Название проекта').fill(projectName);

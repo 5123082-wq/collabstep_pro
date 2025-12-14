@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { getCurrentUser } from '@/lib/auth/session';
-import { organizationsRepository } from '@collabverse/api';
+import { organizationsRepository, type OrganizationMember } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
 
 export async function PATCH(
@@ -21,11 +21,22 @@ export async function PATCH(
             return jsonError('FORBIDDEN', { status: 403, details: 'Only owners and admins can update member roles' });
         }
 
-        const body = await request.json();
-        const { role } = body;
+        const body = (await request.json().catch(() => ({}))) as { role?: unknown; status?: unknown };
+        const role = body.role;
+        const status = body.status;
 
-        if (!role || !['owner', 'admin', 'member', 'viewer'].includes(role)) {
+        const hasRole = role !== undefined;
+        const hasStatus = status !== undefined;
+        if (!hasRole && !hasStatus) {
+            return jsonError('INVALID_REQUEST', { status: 400, details: 'No changes provided' });
+        }
+
+        if (hasRole && (typeof role !== 'string' || !['owner', 'admin', 'member', 'viewer'].includes(role))) {
             return jsonError('INVALID_REQUEST', { status: 400, details: 'Invalid role' });
+        }
+
+        if (hasStatus && (typeof status !== 'string' || !['active', 'inactive', 'blocked'].includes(status))) {
+            return jsonError('INVALID_REQUEST', { status: 400, details: 'Invalid status' });
         }
 
         // Prevent changing owner role (only one owner allowed)
@@ -35,13 +46,24 @@ export async function PATCH(
         }
 
         if (targetMember.role === 'owner') {
-            return jsonError('FORBIDDEN', { status: 403, details: 'Cannot change owner role' });
+            // Owners are immutable via this endpoint.
+            if (hasRole) {
+                return jsonError('FORBIDDEN', { status: 403, details: 'Cannot change owner role' });
+            }
+            if (hasStatus) {
+                return jsonError('FORBIDDEN', { status: 403, details: 'Cannot change owner status' });
+            }
         }
 
-        // Update role using repository method
-        const updatedMember = await organizationsRepository.updateMemberRole(orgId, memberId, role);
+        if (hasRole) {
+            await organizationsRepository.updateMemberRole(orgId, memberId, role as OrganizationMember['role']);
+        }
+        if (hasStatus) {
+            await organizationsRepository.updateMemberStatus(orgId, memberId, status as OrganizationMember['status']);
+        }
 
-        return jsonOk({ member: updatedMember });
+        const updated = await organizationsRepository.findMemberById(orgId, memberId);
+        return jsonOk({ member: updated });
 
     } catch (error) {
         console.error('[Organization Member] Error updating:', error);
@@ -77,10 +99,10 @@ export async function DELETE(
             return jsonError('FORBIDDEN', { status: 403, details: 'Cannot remove organization owner' });
         }
 
-        // Remove member using repository method
-        await organizationsRepository.removeMember(orgId, memberId);
+        // Soft-remove: keep history and allow reactivation.
+        await organizationsRepository.updateMemberStatus(orgId, memberId, 'inactive');
 
-        return jsonOk({ success: true });
+        return jsonOk({ success: true, member: { ...targetMember, status: 'inactive' } });
 
     } catch (error) {
         console.error('[Organization Member] Error removing:', error);

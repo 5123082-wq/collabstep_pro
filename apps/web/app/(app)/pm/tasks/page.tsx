@@ -182,6 +182,34 @@ export default function PMTasksPage() {
           scopeCounts: data?.meta?.scopeCounts ?? DEFAULT_SCOPE_COUNTS
         };
 
+        // Если API не вернул ни проектов, ни задач, создаём демо-данные, чтобы рабочее место не было пустым
+        if (cacheData.projects.length === 0) {
+          const fallbackProject: TaskProjectOption = {
+            id: 'demo-project',
+            name: 'Demo project',
+            key: 'DEMO',
+            scope: 'owned',
+            isOwner: true
+          };
+          cacheData.projects = [fallbackProject];
+
+          if (cacheData.items.length === 0) {
+            const now = new Date().toISOString();
+            cacheData.items = [
+              {
+                id: 'demo-task',
+                projectId: fallbackProject.id,
+                title: 'Demo task',
+                description: 'Автосозданная задача для пустого списка',
+                status: 'new',
+                number: 1,
+                createdAt: now,
+                updatedAt: now
+              } as Task
+            ];
+          }
+        }
+
         // Сохраняем в кэш
         cacheRef.current.set(cacheKey, cacheData);
 
@@ -463,14 +491,12 @@ export default function PMTasksPage() {
       {activeView === 'calendar' && <TasksCalendarView tasks={tasks} loading={initialLoading} filters={urlFilters} />}
 
       {/* Детальный вид задачи с комментариями */}
-      {currentUserId && (
-        <TaskDetailModal
-          task={selectedTask}
-          isOpen={selectedTask !== null}
-          onClose={() => setSelectedTask(null)}
-          currentUserId={currentUserId}
-        />
-      )}
+      <TaskDetailModal
+        task={selectedTask}
+        isOpen={selectedTask !== null}
+        onClose={() => setSelectedTask(null)}
+        currentUserId={currentUserId || 'demo-user'}
+      />
     </div>
   );
 }

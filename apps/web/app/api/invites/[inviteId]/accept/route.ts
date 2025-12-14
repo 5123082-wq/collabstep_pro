@@ -12,9 +12,17 @@ export async function POST(
     return jsonError('UNAUTHORIZED', { status: 401 });
   }
 
+  // Validate inviteId parameter
+  const inviteId = params?.inviteId;
+  if (!inviteId || typeof inviteId !== 'string' || inviteId.trim() === '') {
+    console.error('[Invites] Invalid inviteId parameter:', inviteId);
+    return jsonError('INVALID_REQUEST', { status: 400, details: 'Invalid invite ID' });
+  }
+
   try {
-    const invite = await invitationsRepository.findOrganizationInviteById(params.inviteId);
+    const invite = await invitationsRepository.findOrganizationInviteById(inviteId.trim());
     if (!invite) {
+      console.error('[Invites] Invite not found:', inviteId);
       return jsonError('NOT_FOUND', { status: 404 });
     }
 
@@ -22,10 +30,22 @@ export async function POST(
     const emailMatch = invite.inviteeEmail?.toLowerCase() === user.email.toLowerCase();
     const userMatch = invite.inviteeUserId === user.id;
     if (!userMatch && !emailMatch) {
+      console.error('[Invites] Access denied:', {
+        inviteId,
+        inviteeEmail: invite.inviteeEmail,
+        inviteeUserId: invite.inviteeUserId,
+        userEmail: user.email,
+        userId: user.id,
+      });
       return jsonError('FORBIDDEN', { status: 403 });
     }
 
     if (invite.status !== 'pending') {
+      console.error('[Invites] Invite is not pending:', {
+        inviteId,
+        status: invite.status,
+        userEmail: user.email,
+      });
       return jsonError('INVALID_REQUEST', { status: 400, details: `Invite is ${invite.status}` });
     }
 
@@ -44,6 +64,14 @@ export async function POST(
         userId: user.id,
         role: invite.role ?? 'member',
         status: 'active',
+      });
+    } else if (member.status === 'inactive') {
+      // Reactivate existing member (role is preserved by policy).
+      await organizationsRepository.updateMemberStatus(organizationId, member.id, 'active');
+    } else if (member.status === 'blocked') {
+      return jsonError('FORBIDDEN', {
+        status: 403,
+        details: 'Your access to this organization is blocked. Please contact an organization admin.'
       });
     }
 

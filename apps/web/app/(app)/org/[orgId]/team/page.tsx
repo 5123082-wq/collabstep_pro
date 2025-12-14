@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import AppSection from '@/components/app/AppSection';
 import { TeamMembersList } from '@/components/organizations/TeamMembersList';
 import { InviteMemberModal } from '@/components/organizations/InviteMemberModal';
@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 
 export default function OrgTeamPage() {
   const params = useParams();
+  const router = useRouter();
   const orgId = params?.orgId as string | undefined;
 
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -18,6 +19,7 @@ export default function OrgTeamPage() {
   const [currentUserRole, setCurrentUserRole] = useState<OrganizationRole | undefined>();
   const [isLoading, setIsLoading] = useState(true);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const canInvite = currentUserRole === 'owner' || currentUserRole === 'admin';
 
   // Fetch current user
   useEffect(() => {
@@ -47,6 +49,16 @@ export default function OrgTeamPage() {
     try {
       const res = await fetch(`/api/organizations/${orgId}/members`);
 
+      if (res.status === 401) {
+        router.replace('/login?toast=auth-required');
+        return;
+      }
+
+      if (res.status === 403) {
+        router.replace('/org/team?toast=forbidden');
+        return;
+      }
+
       if (!res.ok) {
         throw new Error('Failed to fetch members');
       }
@@ -70,7 +82,7 @@ export default function OrgTeamPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [orgId, currentUserId]);
+  }, [orgId, currentUserId, router]);
 
   useEffect(() => {
     void fetchMembers();
@@ -118,16 +130,43 @@ export default function OrgTeamPage() {
         throw new Error('Failed to remove member');
       }
 
-      // Update local state
-      setMembers((prev) => prev.filter((m) => m.id !== memberId));
+      // Soft-remove: keep row and mark inactive for history/reactivation.
+      setMembers((prev) => prev.map((m) => (m.id === memberId ? { ...m, status: 'inactive' } : m)));
 
-      toast.success('Участник удалён', {
-        description: 'Участник успешно удалён из команды',
+      toast.success('Участник отключён', {
+        description: 'Участник переведён в статус inactive и потерял доступ к данным организации',
       });
     } catch (error) {
       console.error('Error removing member:', error);
       toast.error('Ошибка', {
         description: 'Не удалось удалить участника',
+      });
+    }
+  };
+
+  const handleStatusChange = async (memberId: string, newStatus: 'active' | 'inactive' | 'blocked') => {
+    if (!orgId) return;
+
+    try {
+      const res = await fetch(`/api/organizations/${orgId}/members/${memberId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to update status');
+      }
+
+      setMembers((prev) => prev.map((m) => (m.id === memberId ? { ...m, status: newStatus } : m)));
+
+      toast.success('Статус обновлён', {
+        description: `Статус участника изменён на ${newStatus}`,
+      });
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast.error('Ошибка', {
+        description: 'Не удалось изменить статус участника',
       });
     }
   };
@@ -151,12 +190,16 @@ export default function OrgTeamPage() {
       <AppSection
         title="Команда"
         description="Управляйте ролями, доступами и составом участников организации"
-        actions={[
-          {
-            label: 'Пригласить в команду',
-            onClick: () => setIsInviteModalOpen(true),
-          },
-        ]}
+        actions={
+          canInvite
+            ? [
+                {
+                  label: 'Пригласить в команду',
+                  onClick: () => setIsInviteModalOpen(true),
+                },
+              ]
+            : []
+        }
         hideStateToggles={true}
       >
         <TeamMembersList
@@ -165,6 +208,7 @@ export default function OrgTeamPage() {
           isLoading={isLoading}
           onRoleChange={handleRoleChange}
           onRemove={handleRemoveMember}
+          onStatusChange={handleStatusChange}
         />
       </AppSection>
 

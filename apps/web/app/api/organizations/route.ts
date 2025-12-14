@@ -1,29 +1,12 @@
 import { NextRequest } from 'next/server';
-import { getCurrentSession } from '@/lib/auth/session';
-import { decodeDemoSession, DEMO_SESSION_COOKIE } from '@/lib/auth/demo-session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { organizationsRepository } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
 type NewOrganizationInput = Parameters<typeof organizationsRepository.create>[0];
 
-async function getUserId(request: NextRequest): Promise<string | null> {
-    // 1. Try NextAuth session (DB/OAuth)
-    const session = await getCurrentSession();
-    if (session?.user?.id) {
-        return session.user.id;
-    }
-
-    // 2. Fallback to legacy/demo session
-    const sessionCookie = request.cookies.get(DEMO_SESSION_COOKIE);
-    const demoSession = decodeDemoSession(sessionCookie?.value ?? null);
-    if (demoSession?.userId) {
-        return demoSession.userId;
-    }
-
-    return null;
-}
-
-export async function GET(request: NextRequest) {
-    const userId = await getUserId(request);
+export async function GET() {
+    const user = await getCurrentUser();
+    const userId = user?.id ?? null;
     if (!userId) {
         return jsonError('UNAUTHORIZED', { status: 401 });
     }
@@ -38,11 +21,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-    const userId = await getUserId(request);
+    const user = await getCurrentUser();
+    const userId = user?.id ?? null;
     
     if (!userId) {
         console.error('[Organizations] Unauthorized access attempt');
-        console.error('[Organizations] Cookies:', request.cookies.getAll());
         return jsonError('UNAUTHORIZED', { status: 401, details: 'No user session found. Please log in first.' });
     }
 

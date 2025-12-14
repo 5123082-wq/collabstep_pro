@@ -8,7 +8,7 @@ export const defaultRailConfig: QuickAction[] = [
     label: 'Новый проект',
     icon: PlusCircle,
     intent: 'route',
-    payload: { to: '/projects/create' },
+    payload: { to: '/pm/projects/create' },
     section: 'actions'
   },
   {
@@ -43,8 +43,8 @@ export const defaultRailConfig: QuickAction[] = [
     id: 'notifications',
     label: 'Уведомления',
     icon: Bell,
-    intent: 'sheet',
-    payload: { sheet: 'notifications' },
+    intent: 'command',
+    payload: { command: 'open-chats-modal', tab: 'notifications' },
     section: 'communication',
     badgeSelector: (state) => {
       const casted = state as { ui?: { unreadNotifications?: number } };

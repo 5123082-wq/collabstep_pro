@@ -30,6 +30,13 @@ test.describe('Org invites via messaging', () => {
     const orgCreateJson = (await orgCreate.json()) as { ok: true; data: { organization: { id: string; name: string } } };
     const orgId = orgCreateJson.data.organization.id;
 
+    // Owner (admin) should see full org navigation (team/settings/finance).
+    await page.goto(`${appOrigin}/org/${orgId}/team`);
+    const ownerOrgNav = page.getByRole('navigation', { name: 'Навигация по разделам организации' });
+    await expect(ownerOrgNav.getByRole('link', { name: 'Команда' })).toBeVisible();
+    await expect(ownerOrgNav.getByRole('link', { name: 'Настройки' })).toBeVisible();
+    await expect(ownerOrgNav.getByRole('link', { name: 'Финансы' })).toBeVisible();
+
     const inviteeEmail = `e2e-invitee-${Date.now()}@example.dev`;
     const inviteePassword = 'devpass1!';
 
@@ -45,9 +52,9 @@ test.describe('Org invites via messaging', () => {
     });
     expect(inviteCreate.ok()).toBe(true);
 
-    // Invitee accepts from CommunicationDrawer → Invites tab.
+    // Invitee accepts from Communications modal (AllChatsModal) → Invites tab.
     await inviteePage.goto(`${appOrigin}/app/dashboard`);
-    await inviteePage.getByRole('button', { name: 'Уведомления' }).click();
+    await inviteePage.getByRole('button', { name: 'Уведомления' }).first().click();
     await inviteePage.getByRole('button', { name: 'Приглашения' }).click();
     await expect(inviteePage.getByText(orgName).first()).toBeVisible();
 
@@ -58,6 +65,27 @@ test.describe('Org invites via messaging', () => {
     // Verify membership on org team page.
     await inviteePage.goto(`${appOrigin}/org/${orgId}/team`);
     await expect(inviteePage.getByText(inviteeEmail).first()).toBeVisible({ timeout: 10000 });
+
+    // Member should see only "Команда" tab in org navigation.
+    const memberOrgNav = inviteePage.getByRole('navigation', { name: 'Навигация по разделам организации' });
+    await expect(memberOrgNav.getByRole('link', { name: 'Команда' })).toBeVisible();
+    await expect(memberOrgNav.getByRole('link', { name: 'Настройки' })).toHaveCount(0);
+    await expect(memberOrgNav.getByRole('link', { name: 'Финансы' })).toHaveCount(0);
+
+    // Direct access to settings should be denied for member.
+    await inviteePage.goto(`${appOrigin}/org/${orgId}/settings`);
+    await expect(inviteePage.getByText('Access Denied')).toBeVisible();
+
+    // Leave org and ensure access is cut off (org-only scope).
+    const leaveRes = await inviteePage.request.post(`${appOrigin}/api/organizations/${orgId}/leave`);
+    expect(leaveRes.ok()).toBe(true);
+
+    const membersRes = await inviteePage.request.get(`${appOrigin}/api/organizations/${orgId}/members`);
+    expect(membersRes.status()).toBe(403);
+
+    // After leaving, team page should redirect away (no active membership).
+    await inviteePage.goto(`${appOrigin}/org/${orgId}/team`);
+    await inviteePage.waitForURL('**/org/team**');
 
     await inviteeContext.close();
     expect(logs).toEqual([]);
@@ -108,7 +136,7 @@ test.describe('Org invites via messaging', () => {
 
     await loginWithCredentials(inviteePage, { email: inviteeEmail, password: inviteePassword }, appOrigin);
 
-    await inviteePage.getByRole('button', { name: 'Уведомления' }).click();
+    await inviteePage.getByRole('button', { name: 'Уведомления' }).first().click();
     await inviteePage.getByRole('button', { name: 'Приглашения' }).click();
     await expect(inviteePage.getByText(orgName).first()).toBeVisible();
     await inviteePage.getByRole('button', { name: new RegExp(orgName) }).first().click();

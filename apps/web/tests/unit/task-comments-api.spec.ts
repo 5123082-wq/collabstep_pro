@@ -3,7 +3,8 @@ import {
   tasksRepository,
   commentsRepository,
   projectsRepository,
-  resetFinanceMemory
+  resetFinanceMemory,
+  TEST_ADMIN_USER_ID
 } from '@collabverse/api';
 import { GET as getComments, POST as createComment } from '@/app/api/pm/tasks/[id]/comments/route';
 import { PATCH as updateComment, DELETE as deleteComment } from '@/app/api/pm/tasks/[id]/comments/[commentId]/route';
@@ -12,9 +13,11 @@ import { NextRequest } from 'next/server';
 describe('Task Comments API', () => {
   let projectId: string;
   let taskId: string;
+  const adminEmail = 'admin.demo@collabverse.test';
+  const adminUserId = TEST_ADMIN_USER_ID;
   const session = encodeDemoSession({
-    email: 'admin.demo@collabverse.test',
-    userId: 'admin.demo@collabverse.test',
+    email: adminEmail,
+    userId: adminUserId,
     role: 'admin',
     issuedAt: Date.now()
   });
@@ -30,7 +33,7 @@ describe('Task Comments API', () => {
     const project = projectsRepository.create({
       title: 'Test Project',
       description: 'Test Description',
-      ownerId: 'admin.demo@collabverse.test',
+      ownerId: adminUserId,
       workspaceId: 'workspace-id',
       status: 'active'
     });
@@ -69,7 +72,7 @@ describe('Task Comments API', () => {
       commentsRepository.create({
         projectId,
         taskId,
-        authorId: 'admin.demo@collabverse.test',
+        authorId: adminUserId,
         body: 'Test comment'
       });
 
@@ -129,7 +132,7 @@ describe('Task Comments API', () => {
       expect(response.status).toBe(200);
       const data = await response.json();
       expect(data.data.comment.body).toBe('New comment');
-      expect(data.data.comment.authorId).toBe('admin.demo@collabverse.test');
+      expect(data.data.comment.authorId).toBe(adminUserId);
     });
 
     it('should create a reply comment with parentId', async () => {
@@ -137,7 +140,7 @@ describe('Task Comments API', () => {
       const parent = commentsRepository.create({
         projectId,
         taskId,
-        authorId: 'admin.demo@collabverse.test',
+        authorId: adminUserId,
         body: 'Parent comment'
       });
 
@@ -204,7 +207,7 @@ describe('Task Comments API', () => {
       const comment = commentsRepository.create({
         projectId,
         taskId,
-        authorId: 'admin.demo@collabverse.test',
+        authorId: adminUserId,
         body: 'Original comment'
       });
 
@@ -268,7 +271,7 @@ describe('Task Comments API', () => {
       const comment = commentsRepository.create({
         projectId,
         taskId,
-        authorId: 'admin.demo@collabverse.test',
+        authorId: adminUserId,
         body: 'Comment to delete'
       });
 
@@ -291,14 +294,14 @@ describe('Task Comments API', () => {
       const parent = commentsRepository.create({
         projectId,
         taskId,
-        authorId: 'admin.demo@collabverse.test',
+        authorId: adminUserId,
         body: 'Parent comment'
       });
 
       const child = commentsRepository.create({
         projectId,
         taskId,
-        authorId: 'admin.demo@collabverse.test',
+        authorId: adminUserId,
         body: 'Child comment',
         parentId: parent.id
       });

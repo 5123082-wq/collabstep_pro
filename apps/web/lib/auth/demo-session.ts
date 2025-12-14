@@ -28,9 +28,16 @@ export function decodeDemoSession(value: string | undefined | null): DemoSession
       return null;
     }
 
-    // Обратная совместимость: если userId отсутствует, используем email как userId
-    // Это нужно для старых сессий, которые были созданы до введения userId
-    const userId = parsed.userId || parsed.email;
+    // ВАЖНО: `userId` должен быть canonical id (UUID/строковый id пользователя).
+    // Старые демо-сессии, где `userId` отсутствует (или где в нём лежит email),
+    // считаем невалидными и требуем повторного входа.
+    if (typeof parsed.userId !== 'string' || !parsed.userId.trim()) {
+      return null;
+    }
+    const userId = parsed.userId.trim();
+    if (userId.includes('@')) {
+      return null;
+    }
 
     return {
       email: parsed.email,

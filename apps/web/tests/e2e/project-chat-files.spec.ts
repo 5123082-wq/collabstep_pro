@@ -1,8 +1,32 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { captureConsole } from './utils/console';
 import { loginAsDemo } from './utils/auth';
 
 const appOrigin = 'http://127.0.0.1:3000';
+
+async function createProject(page: Page, title: string) {
+  const res = await page.request.post(`${appOrigin}/api/pm/projects`, {
+    data: { title }
+  });
+  if (res.status() >= 400) {
+    const body = await res.text();
+    throw new Error(`Создание проекта не удалось: ${res.status()} ${body}`);
+  }
+  const json = await res.json();
+  return json?.data?.project?.id ?? json?.project?.id;
+}
+
+async function openProjectPage(page: Page, projectId: string) {
+  await page.goto(`${appOrigin}/pm/projects`);
+  const projectCard = page.locator('[data-project-card]').first();
+  if (await projectCard.count()) {
+    await projectCard.click();
+    return;
+  }
+
+  // Фолбэк: если карточки не появились (пустой список), идём напрямую в карточку проекта
+  await page.goto(`${appOrigin}/pm/projects/${projectId}`);
+}
 
 test.describe('Project Chat and Files', () => {
   test.beforeEach(async ({ page }) => {
@@ -14,76 +38,53 @@ test.describe('Project Chat and Files', () => {
       const logs: string[] = [];
       captureConsole(page, logs);
 
-      // Переходим на страницу проектов
-      await page.goto(`${appOrigin}/pm/projects`);
-      await page.waitForLoadState('networkidle');
+      const projectId = await createProject(page, 'E2E Project Chat');
+      await openProjectPage(page, projectId);
+      const chatTab = page.getByRole('button', { name: 'Чат', exact: true }).first();
+      await expect(chatTab).toBeVisible({ timeout: 10000 });
+      await chatTab.click();
 
-      // Находим первый проект и кликаем на него
-      const firstProject = page.locator('[data-project-card]').first();
-      if (await firstProject.count() > 0) {
-        await firstProject.click();
-        await page.waitForLoadState('networkidle');
+      // Ждем загрузки чата
+      const messageInput = page
+        .locator('input[placeholder*="Введите сообщение"], input[placeholder*="Напишите сообщение"]')
+        .first();
+      await expect(messageInput).toBeVisible({ timeout: 10000 });
 
-        // Переходим на вкладку "Чат"
-        const chatTab = page.getByRole('button', { name: 'Чат' });
-        if (await chatTab.count() > 0) {
-          await chatTab.click();
-          await page.waitForLoadState('networkidle');
+      // Вводим сообщение
+      await messageInput.fill('Тестовое сообщение в чате проекта');
 
-          // Ждем загрузки чата
-          await page.waitForSelector('textarea[placeholder*="Введите сообщение"]', { timeout: 5000 });
+      // Отправляем сообщение
+      const sendButton = page.getByRole('button', { name: 'Отправить' }).first();
+      await sendButton.click();
 
-          // Вводим сообщение
-          const messageTextarea = page.locator('textarea[placeholder*="Введите сообщение"]').first();
-          await messageTextarea.fill('Тестовое сообщение в чате проекта');
+      // Проверяем, что сообщение появилось
+      await expect(page.locator('text=Тестовое сообщение в чате проекта')).toBeVisible({ timeout: 5000 });
 
-          // Отправляем сообщение
-          const sendButton = page.getByRole('button', { name: 'Отправить' }).first();
-          await sendButton.click();
-
-          // Проверяем, что сообщение появилось
-          await expect(page.locator('text=Тестовое сообщение в чате проекта')).toBeVisible({ timeout: 5000 });
-
-          expect(logs).toEqual([]);
-        } else {
-          test.skip();
-        }
-      } else {
-        test.skip();
-      }
+      expect(logs).toEqual([]);
     });
 
     test('should display chat messages history', async ({ page }) => {
       const logs: string[] = [];
       captureConsole(page, logs);
 
-      await page.goto(`${appOrigin}/pm/projects`);
-      await page.waitForLoadState('networkidle');
+      const projectId = await createProject(page, 'E2E Project Chat History');
+      await openProjectPage(page, projectId);
 
-      const firstProject = page.locator('[data-project-card]').first();
-      if (await firstProject.count() > 0) {
-        await firstProject.click();
-        await page.waitForLoadState('networkidle');
+      const chatTab = page.getByRole('button', { name: 'Чат', exact: true }).first();
+      await expect(chatTab).toBeVisible({ timeout: 10000 });
+      await chatTab.click();
 
-        const chatTab = page.getByRole('button', { name: 'Чат' });
-        if (await chatTab.count() > 0) {
-          await chatTab.click();
-          await page.waitForLoadState('networkidle');
+      // Проверяем, что чат загружается
+      const messageInput = page
+        .locator('input[placeholder*="Введите сообщение"], input[placeholder*="Напишите сообщение"]')
+        .first();
+      await expect(messageInput).toBeVisible({ timeout: 10000 });
 
-          // Проверяем, что чат загружается
-          await page.waitForSelector('textarea[placeholder*="Введите сообщение"]', { timeout: 5000 });
+      // Проверяем наличие области сообщений
+      const messagesArea = page.locator('[class*="overflow-y-auto"]').first();
+      await expect(messagesArea).toBeVisible();
 
-          // Проверяем наличие области сообщений
-          const messagesArea = page.locator('[class*="overflow-y-auto"]').first();
-          await expect(messagesArea).toBeVisible();
-
-          expect(logs).toEqual([]);
-        } else {
-          test.skip();
-        }
-      } else {
-        test.skip();
-      }
+      expect(logs).toEqual([]);
     });
   });
 
@@ -92,121 +93,80 @@ test.describe('Project Chat and Files', () => {
       const logs: string[] = [];
       captureConsole(page, logs);
 
-      await page.goto(`${appOrigin}/pm/projects`);
-      await page.waitForLoadState('networkidle');
+      const projectId = await createProject(page, 'E2E Project Files');
+      await openProjectPage(page, projectId);
 
-      const firstProject = page.locator('[data-project-card]').first();
-      if (await firstProject.count() > 0) {
-        await firstProject.click();
-        await page.waitForLoadState('networkidle');
+      // Переходим на вкладку "Файлы"
+      const filesTab = page.getByRole('button', { name: 'Файлы' });
+      await filesTab.click();
 
-        // Переходим на вкладку "Файлы"
-        const filesTab = page.getByRole('button', { name: 'Файлы' });
-        if (await filesTab.count() > 0) {
-          await filesTab.click();
-          await page.waitForLoadState('networkidle');
+      // Проверяем, что файловый каталог загружается
+      await page.waitForSelector('text=Файлы проекта', { timeout: 5000 });
 
-          // Проверяем, что файловый каталог загружается
-          await page.waitForSelector('text=Файлы проекта', { timeout: 5000 });
+      // Проверяем наличие фильтров
+      const filters = page.locator('button:has-text("Все"), button:has-text("Задачи"), button:has-text("Комментарии")');
+      await expect(filters.first()).toBeVisible();
 
-          // Проверяем наличие фильтров
-          const filters = page.locator('button:has-text("Все"), button:has-text("Задачи"), button:has-text("Комментарии")');
-          await expect(filters.first()).toBeVisible();
-
-          expect(logs).toEqual([]);
-        } else {
-          test.skip();
-        }
-      } else {
-        test.skip();
-      }
+      expect(logs).toEqual([]);
     });
 
     test('should filter files by source', async ({ page }) => {
       const logs: string[] = [];
       captureConsole(page, logs);
 
-      await page.goto(`${appOrigin}/pm/projects`);
-      await page.waitForLoadState('networkidle');
+      const projectId = await createProject(page, 'E2E Project Files Filter');
+      await openProjectPage(page, projectId);
 
-      const firstProject = page.locator('[data-project-card]').first();
-      if (await firstProject.count() > 0) {
-        await firstProject.click();
-        await page.waitForLoadState('networkidle');
+      const filesTab = page.getByRole('button', { name: 'Файлы' });
+      await filesTab.click();
+      await page.waitForSelector('text=Файлы проекта', { timeout: 5000 });
 
-        const filesTab = page.getByRole('button', { name: 'Файлы' });
-        if (await filesTab.count() > 0) {
-          await filesTab.click();
-          await page.waitForLoadState('networkidle');
+      // Кликаем на фильтр "Проект"
+      const projectFilter = page.getByRole('button', { name: 'Проект', exact: true }).first();
+      if (await projectFilter.count() > 0) {
+        await projectFilter.click();
 
-          await page.waitForSelector('text=Файлы проекта', { timeout: 5000 });
-
-          // Кликаем на фильтр "Проект"
-          const projectFilter = page.getByRole('button', { name: 'Проект' });
-          if (await projectFilter.count() > 0) {
-            await projectFilter.click();
-            await page.waitForLoadState('networkidle');
-
-            // Проверяем, что фильтр применен (можно проверить активное состояние)
-            await expect(projectFilter).toHaveClass(/bg-indigo-500/);
-          }
-
-          expect(logs).toEqual([]);
-        } else {
-          test.skip();
-        }
-      } else {
-        test.skip();
+        // Проверяем, что фильтр применен (можно проверить активное состояние)
+        await expect(projectFilter).toHaveClass(/bg-indigo-500/);
       }
+
+      expect(logs).toEqual([]);
     });
 
     test('should upload a file to project', async ({ page }) => {
       const logs: string[] = [];
       captureConsole(page, logs);
 
-      await page.goto(`${appOrigin}/pm/projects`);
-      await page.waitForLoadState('networkidle');
+      const projectId = await createProject(page, 'E2E Project File Upload');
+      await openProjectPage(page, projectId);
 
-      const firstProject = page.locator('[data-project-card]').first();
-      if (await firstProject.count() > 0) {
-        await firstProject.click();
-        await page.waitForLoadState('networkidle');
+      const filesTab = page.getByRole('button', { name: 'Файлы' });
+      await filesTab.click();
 
-        const filesTab = page.getByRole('button', { name: 'Файлы' });
-        if (await filesTab.count() > 0) {
-          await filesTab.click();
-          await page.waitForLoadState('networkidle');
+      await page.waitForSelector('text=Файлы проекта', { timeout: 5000 });
 
-          await page.waitForSelector('text=Файлы проекта', { timeout: 5000 });
+      // Находим кнопку загрузки файла
+      const uploadButton = page.getByRole('button', { name: /Загрузить файл/i });
+      if (await uploadButton.count() > 0) {
+        // Создаем тестовый файл и загружаем его
+        const fileInput = page.getByLabel('📎 Загрузить файл');
+        
+        // Создаем временный файл для загрузки
+        const fileContent = 'Test file content for E2E test';
 
-          // Находим кнопку загрузки файла
-          const uploadButton = page.getByRole('button', { name: /Загрузить файл/i });
-          if (await uploadButton.count() > 0) {
-            // Создаем тестовый файл и загружаем его
-            const fileInput = page.locator('input[type="file"]');
-            
-            // Создаем временный файл для загрузки
-            const fileContent = 'Test file content for E2E test';
+        // Загружаем файл через input
+        await fileInput.setInputFiles({
+          name: 'test-e2e.txt',
+          mimeType: 'text/plain',
+          buffer: Buffer.from(fileContent)
+        });
 
-            // Загружаем файл через input
-            await fileInput.setInputFiles({
-              name: 'test-e2e.txt',
-              mimeType: 'text/plain',
-              buffer: Buffer.from(fileContent)
-            });
+        // Ждем загрузки файла
+        await page.waitForTimeout(2000);
 
-            // Ждем загрузки файла
-            await page.waitForTimeout(2000);
-
-            // Проверяем, что файл появился в списке (если есть файлы)
-            // Это может не сработать, если нет файлов, поэтому просто проверяем отсутствие ошибок
-            expect(logs).toEqual([]);
-          } else {
-            test.skip();
-          }
-        } else {
-          test.skip();
-        }
+        // Проверяем, что файл появился в списке (если есть файлы)
+        // Это может не сработать, если нет файлов, поэтому просто проверяем отсутствие ошибок
+        expect(logs).toEqual([]);
       } else {
         test.skip();
       }
