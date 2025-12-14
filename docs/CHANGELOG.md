@@ -51,8 +51,8 @@
 - `apps/web/components/pm/ProjectAIAgents.tsx`
 - `apps/web/tests/unit/ai-service.spec.ts`
 - `apps/web/tests/e2e/ai-assistant.spec.ts`
-- `docs/AI_SETUP_GUIDE.md` — подробное руководство по настройке OpenAI
-- `AI_QUICK_START.md` — быстрая инструкция по настройке
+- `docs/ai/AI_KEYS_SETUP.md` — подробное руководство по настройке OpenAI
+- `docs/ai/AI_QUICK_START.md` — быстрая инструкция по настройке
 
 **Обновлено:**
 - `apps/web/package.json` — добавлена зависимость `openai@4.68.0`
@@ -73,7 +73,7 @@
    NEXT_PUBLIC_FEATURE_AI_V1=true
    ```
 
-**Документация:** [docs/AI_SETUP_GUIDE.md](AI_SETUP_GUIDE.md)
+**Документация:** [docs/ai/AI_KEYS_SETUP.md](ai/AI_KEYS_SETUP.md)
 
 ---
 
