@@ -1,7 +1,6 @@
 import '@/styles/globals.css';
 import '@/styles/layout.css';
 import '@/styles/dashboard.css';
-import { Inter } from 'next/font/google';
 import dynamic from 'next/dynamic';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
@@ -18,12 +17,6 @@ const SpeedInsights =
       })
     : null;
 
-const inter = Inter({
-  subsets: ['latin', 'cyrillic'],
-  variable: '--font-sans',
-  display: 'swap'
-});
-
 export const metadata: Metadata = {
   title: 'Collabverse',
   description: 'Платформа совместной работы. Этап 0.'
@@ -33,7 +26,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="ru"
-      className={inter.variable}
       suppressHydrationWarning
     >
       <head>

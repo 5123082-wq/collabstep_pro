@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { getCurrentUser } from '@/lib/auth/session';
-import { organizationsRepository, invitationsRepository } from '@collabverse/api';
+import { organizationsRepository, invitationsRepository, usersRepository } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { nanoid } from 'nanoid';
 
@@ -13,7 +13,11 @@ export async function POST(
         return jsonError('UNAUTHORIZED', { status: 401 });
     }
 
-    const { userId: inviteeUserId } = params;
+    const { userId: inviteeUserIdRaw } = params;
+    const inviteeUserIdTrimmed = typeof inviteeUserIdRaw === 'string' ? inviteeUserIdRaw.trim() : '';
+    if (!inviteeUserIdTrimmed) {
+        return jsonError('INVALID_REQUEST', { status: 400, details: 'Invitee userId required' });
+    }
 
     try {
         const body = await request.json();
@@ -21,6 +25,17 @@ export async function POST(
 
         if (!organizationId) {
             return jsonError('INVALID_REQUEST', { status: 400, details: 'Organization ID required' });
+        }
+
+        // Hard guard: do not allow email to be passed as "userId" in this route.
+        // If someone accidentally sends email here, try to resolve to canonical id; otherwise reject.
+        const inviteeUser =
+            inviteeUserIdTrimmed.includes('@')
+                ? await usersRepository.findByEmail(inviteeUserIdTrimmed.toLowerCase())
+                : await usersRepository.findById(inviteeUserIdTrimmed);
+        const inviteeUserId = inviteeUser?.id ?? null;
+        if (!inviteeUserId) {
+            return jsonError('INVALID_REQUEST', { status: 400, details: 'Invitee user not found' });
         }
 
         // Check if inviter is admin/owner of organization

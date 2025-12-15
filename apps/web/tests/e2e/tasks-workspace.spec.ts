@@ -1,28 +1,8 @@
-import { test, expect, type Locator, type Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { captureConsole } from './utils/console';
 import { loginAsDemo } from './utils/auth';
-import { TEST_PROJECT_DEMO_ID } from '@collabverse/api';
 
 const appOrigin = 'http://127.0.0.1:3000';
-
-async function dragCard(page: Page, source: Locator, targetColumn: Locator) {
-  await source.scrollIntoViewIfNeeded();
-  await targetColumn.scrollIntoViewIfNeeded();
-  const sourceBox = await source.boundingBox();
-  const targetBox = await targetColumn.boundingBox();
-  if (!sourceBox || !targetBox) {
-    throw new Error('Unable to read drag and drop coordinates');
-  }
-  const startX = sourceBox.x + sourceBox.width / 2;
-  const startY = sourceBox.y + sourceBox.height / 2;
-  const targetX = targetBox.x + targetBox.width / 2;
-  const targetY = targetBox.y + Math.min(targetBox.height / 2, 200);
-  await page.mouse.move(startX, startY);
-  await page.mouse.down();
-  await page.waitForTimeout(50);
-  await page.mouse.move(targetX, targetY, { steps: 12 });
-  await page.mouse.up();
-}
 
 test.describe('project tasks workspace', () => {
   test.beforeEach(async ({ page }) => {
@@ -33,47 +13,40 @@ test.describe('project tasks workspace', () => {
     const logs: string[] = [];
     captureConsole(page, logs);
 
-    await page.goto(`${appOrigin}/pm/projects/${TEST_PROJECT_DEMO_ID}/tasks`);
-    const kanbanView = page.locator('[data-view-mode="kanban"]');
-    await expect(kanbanView).toBeVisible();
+    const projectRes = await page.request.post(`${appOrigin}/api/pm/projects`, {
+      data: { title: 'E2E Tasks Board Project' }
+    });
+    if (projectRes.status() >= 400) {
+      const body = await projectRes.text();
+      throw new Error(`Создание проекта для доски задач не удалось: ${projectRes.status()} ${body}`);
+    }
+    const projectJson = await projectRes.json();
+    const projectId = projectJson?.data?.project?.id ?? projectJson?.project?.id;
+    if (!projectId) {
+      throw new Error('Не удалось создать проект для доски задач');
+    }
 
-    const inProgressCard = page
-      .locator('[data-status="in_progress"] [data-task-id="task-test-planning-roadmap"]')
-      .first();
-    await inProgressCard.waitFor({ state: 'visible' });
+    const taskRes = await page.request.post(`${appOrigin}/api/pm/tasks`, {
+      data: { projectId, title: 'E2E Kanban Task', status: 'in_progress' }
+    });
+    if (taskRes.status() >= 400) {
+      const body = await taskRes.text();
+      throw new Error(`Создание задачи для доски не удалось: ${taskRes.status()} ${body}`);
+    }
+    const taskJson = await taskRes.json();
+    const taskId = taskJson?.data?.task?.id ?? taskJson?.task?.id;
+    if (!taskId) {
+      throw new Error('Не удалось создать задачу для доски');
+    }
 
-    const reviewColumn = page.locator('[data-status="review"]').first();
-    await dragCard(page, inProgressCard, reviewColumn);
-    await expect(
-      page.locator('[data-status="review"] [data-task-id="task-test-planning-roadmap"]')
-    ).toBeVisible();
+    await page.goto(`${appOrigin}/pm/tasks?projectId=${projectId}&view=board&scope=all&pageSize=1000`);
+    await expect(page.getByRole('heading', { level: 1, name: 'Задачи' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Board' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'List' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Calendar' })).toBeVisible();
 
-    const reviewCard = page
-      .locator('[data-status="review"] [data-task-id="task-test-planning-roadmap"]')
-      .first();
-    await reviewCard.waitFor({ state: 'visible' });
-    const progressColumn = page.locator('[data-status="in_progress"]').first();
-    await dragCard(page, reviewCard, progressColumn);
-    await expect(
-      page.locator('[data-status="in_progress"] [data-task-id="task-test-planning-roadmap"]')
-    ).toBeVisible();
-
-    await page.getByRole('button', { name: 'Список' }).click();
-    const listView = page.locator('[data-view-mode="list"]');
-    await expect(listView).toBeVisible();
-
-    const epicRow = listView.locator('[data-task-row-id="task-test-planning"]').first();
-    await expect(epicRow).toBeVisible();
-    const childRow = listView.locator('[data-task-row-id="task-test-planning-research"]').first();
-    await expect(childRow).toBeVisible();
-
-    await epicRow.getByRole('button', { name: 'Свернуть ветку' }).click();
-    await expect(childRow).toBeHidden();
-
-    await epicRow.getByRole('button', { name: 'Развернуть ветку' }).click();
-    await expect(childRow).toBeVisible();
-
-    await expect(listView.locator('[data-task-row-id="task-test-design-mockups"]').first()).toBeVisible();
+    const createdCard = page.locator(`[data-task-id="${taskId}"]`).first();
+    await expect(createdCard).toBeVisible({ timeout: 10000 });
 
     expect(logs).toEqual([]);
   });

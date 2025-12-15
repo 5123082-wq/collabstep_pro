@@ -10,6 +10,6 @@ export default async function ProjectCreatePage() {
   }
 
   // Редиректим на страницу проектов - создание теперь происходит через модальное окно
-  redirect('/projects');
+  redirect('/pm/projects');
 }
 

@@ -21,6 +21,7 @@ interface TeamMembersListProps {
     isLoading?: boolean;
     onRoleChange?: ((memberId: string, newRole: OrganizationRole) => void) | undefined;
     onRemove?: ((memberId: string) => void) | undefined;
+    onStatusChange?: ((memberId: string, newStatus: 'active' | 'inactive' | 'blocked') => void) | undefined;
 }
 
 export function TeamMembersList({
@@ -29,6 +30,7 @@ export function TeamMembersList({
     isLoading,
     onRoleChange,
     onRemove,
+    onStatusChange,
 }: TeamMembersListProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState<Set<OrganizationRole>>(new Set());
@@ -247,6 +249,7 @@ export function TeamMembersList({
                             currentUserRole={currentUserRole}
                             onRoleChange={onRoleChange}
                             onRemove={onRemove}
+                            onStatusChange={onStatusChange}
                         />
                     ))}
                 </div>

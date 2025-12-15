@@ -2,16 +2,21 @@ import { encodeDemoSession } from '@/lib/auth/demo-session';
 import {
   projectsRepository,
   projectChatRepository,
-  resetFinanceMemory
+  resetFinanceMemory,
+  TEST_ADMIN_USER_ID,
+  usersRepository
 } from '@collabverse/api';
 import { GET as getChatMessages, POST as createChatMessage } from '@/app/api/pm/projects/[id]/chat/route';
 import { NextRequest } from 'next/server';
 
 describe('Project Chat API', () => {
   let projectId: string;
-  const userId = 'admin.demo@collabverse.test';
+  const adminEmail = 'admin.demo@collabverse.test';
+  const userId = TEST_ADMIN_USER_ID;
+  const viewerEmail = 'viewer@example.com';
+  const viewerUserId = 'viewer-user-id-1';
   const session = encodeDemoSession({
-    email: userId,
+    email: adminEmail,
     userId,
     role: 'admin',
     issuedAt: Date.now()
@@ -21,7 +26,7 @@ describe('Project Chat API', () => {
     'content-type': 'application/json'
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     resetFinanceMemory();
 
     // Создаем проект для тестов
@@ -33,6 +38,13 @@ describe('Project Chat API', () => {
       status: 'active'
     });
     projectId = project.id;
+
+    // Ensure viewer user exists so getCurrentUser can resolve it by email
+    await usersRepository.create({
+      id: viewerUserId,
+      email: viewerEmail,
+      name: 'Viewer',
+    });
   });
 
   describe('GET /api/pm/projects/[id]/chat', () => {
@@ -126,8 +138,8 @@ describe('Project Chat API', () => {
     it('should return 403 if user is viewer', async () => {
       // Создаем сессию для viewer
       const viewerSession = encodeDemoSession({
-        email: 'viewer@example.com',
-        userId: 'viewer@example.com',
+        email: viewerEmail,
+        userId: viewerUserId,
         role: 'user',
         issuedAt: Date.now()
       });

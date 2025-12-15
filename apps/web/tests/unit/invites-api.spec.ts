@@ -27,6 +27,7 @@ jest.mock('@collabverse/api', () => {
       findById: jest.fn(),
       findMember: jest.fn(),
       addMember: jest.fn(),
+      updateMemberStatus: jest.fn(),
     },
     usersRepository: {
       findById: jest.fn(),
@@ -129,6 +130,88 @@ describe('Invites API (org invites via messaging)', () => {
     expect(response.status).toBe(200);
     const payload = await response.json();
     expect(payload.data.success).toBe(true);
+  });
+
+  it('POST /api/invites/[id]/accept reactivates inactive member (role preserved)', async () => {
+    (invitationsRepository.findOrganizationInviteById as jest.Mock).mockResolvedValue({
+      id: 'inv-5',
+      organizationId: 'org-5',
+      inviterId: 'inviter-5',
+      inviteeEmail: currentUser.email,
+      inviteeUserId: currentUser.id,
+      token: 'tok5',
+      source: 'email',
+      status: 'pending',
+      role: 'viewer', // should NOT override existing role on reactivate
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    (invitationsRepository.updateOrganizationInviteStatus as jest.Mock).mockResolvedValue({
+      id: 'inv-5',
+      organizationId: 'org-5',
+      inviterId: 'inviter-5',
+      inviteeEmail: currentUser.email,
+      inviteeUserId: currentUser.id,
+      token: 'tok5',
+      source: 'email',
+      status: 'accepted',
+      role: 'viewer',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    (organizationsRepository.findMember as jest.Mock).mockResolvedValue({
+      id: 'mem-5',
+      organizationId: 'org-5',
+      userId: currentUser.id,
+      role: 'admin',
+      status: 'inactive',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const response = await acceptInvite(new NextRequest('http://localhost/api/invites/inv-5/accept', { method: 'POST' }), {
+      params: { inviteId: 'inv-5' },
+    });
+
+    expect(response.status).toBe(200);
+    expect(organizationsRepository.updateMemberStatus).toHaveBeenCalledWith('org-5', 'mem-5', 'active');
+    expect(organizationsRepository.addMember).not.toHaveBeenCalled();
+  });
+
+  it('POST /api/invites/[id]/accept does not reactivate blocked member', async () => {
+    (invitationsRepository.findOrganizationInviteById as jest.Mock).mockResolvedValue({
+      id: 'inv-6',
+      organizationId: 'org-6',
+      inviterId: 'inviter-6',
+      inviteeEmail: currentUser.email,
+      inviteeUserId: currentUser.id,
+      token: 'tok6',
+      source: 'email',
+      status: 'pending',
+      role: 'member',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    (organizationsRepository.findMember as jest.Mock).mockResolvedValue({
+      id: 'mem-6',
+      organizationId: 'org-6',
+      userId: currentUser.id,
+      role: 'member',
+      status: 'blocked',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const response = await acceptInvite(new NextRequest('http://localhost/api/invites/inv-6/accept', { method: 'POST' }), {
+      params: { inviteId: 'inv-6' },
+    });
+
+    expect(response.status).toBe(403);
+    expect(organizationsRepository.updateMemberStatus).not.toHaveBeenCalled();
+    expect(organizationsRepository.addMember).not.toHaveBeenCalled();
   });
 
   it('POST /api/invites/threads/[threadId]/messages can list and create messages for participant', async () => {

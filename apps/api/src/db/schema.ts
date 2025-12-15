@@ -6,6 +6,7 @@ import {
     integer,
     boolean,
     index,
+    uniqueIndex,
     pgEnum,
     jsonb,
     bigint,
@@ -191,7 +192,7 @@ export const organizationMembers = pgTable(
         updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow(),
     },
     (table) => ({
-        orgUserIdx: index("organization_member_org_user_idx").on(table.organizationId, table.userId), // Should be unique ideally
+        orgUserIdx: uniqueIndex("organization_member_org_user_idx").on(table.organizationId, table.userId),
         userIdIdx: index("organization_member_user_id_idx").on(table.userId),
     })
 );

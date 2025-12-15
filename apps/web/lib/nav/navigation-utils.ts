@@ -1,6 +1,7 @@
 import { leftMenuConfig } from '@/components/app/LeftMenu.config';
 import type { NavigationItem } from '@/components/app/SectionNavigationBar';
 import type { SectionHeaderMenuItem } from '@/components/common/SectionHeader';
+import type { OrganizationMember } from '@collabverse/api';
 
 /**
  * Универсальная утилита для получения навигации из LeftMenu.config
@@ -162,6 +163,53 @@ export function getOrgNavigation(orgId: string | null): NavigationItem[] {
       href: `/org/${orgId}/team`,
       description: 'Управление командой'
     },
+    {
+      id: 'settings',
+      label: 'Настройки',
+      href: `/org/${orgId}/settings`,
+      description: 'Настройки организации'
+    },
+    {
+      id: 'finance',
+      label: 'Финансы',
+      href: `/org/${orgId}/finance`,
+      description: 'Финансы организации'
+    }
+  ];
+}
+
+type OrgMembership = Pick<OrganizationMember, 'role' | 'status'>;
+
+export function getOrgNavigationWithRbac(
+  orgId: string | null,
+  membership: OrgMembership | null | undefined
+): NavigationItem[] {
+  if (!orgId) {
+    return [];
+  }
+
+  // Don't render org tabs until we know membership for sure.
+  // This prevents leaking admin-only tabs to non-members during client-side loading.
+  if (!membership || membership.status !== 'active') {
+    return [];
+  }
+
+  const base: NavigationItem[] = [
+    {
+      id: 'team',
+      label: 'Команда',
+      href: `/org/${orgId}/team`,
+      description: 'Управление командой'
+    }
+  ];
+
+  const canManage = membership.role === 'owner' || membership.role === 'admin';
+  if (!canManage) {
+    return base;
+  }
+
+  return [
+    ...base,
     {
       id: 'settings',
       label: 'Настройки',

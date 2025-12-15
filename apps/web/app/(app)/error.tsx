@@ -17,7 +17,7 @@ export default function AppShellError({ reset }: RouteErrorProps) {
           reset={reset}
           links={[
             { href: '/dashboard', label: 'Перейти в дэшборд' },
-            { href: '/projects', label: 'К проектам' }
+            { href: '/pm/projects', label: 'К проектам' }
           ]}
         />
       </div>

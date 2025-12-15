@@ -34,9 +34,10 @@ interface TeamMemberCardProps {
     currentUserRole?: OrganizationRole | undefined;
     onRoleChange?: ((memberId: string, newRole: OrganizationRole) => void) | undefined;
     onRemove?: ((memberId: string) => void) | undefined;
+    onStatusChange?: ((memberId: string, newStatus: 'active' | 'inactive' | 'blocked') => void) | undefined;
 }
 
-export function TeamMemberCard({ member, currentUserRole, onRoleChange, onRemove }: TeamMemberCardProps) {
+export function TeamMemberCard({ member, currentUserRole, onRoleChange, onRemove, onStatusChange }: TeamMemberCardProps) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const canManage = currentUserRole === 'owner' || currentUserRole === 'admin';
@@ -69,6 +70,15 @@ export function TeamMemberCard({ member, currentUserRole, onRoleChange, onRemove
         if (onRemove && confirm(`Удалить ${userName} из команды?`)) {
             onRemove(member.id);
         }
+        setIsMenuOpen(false);
+    };
+
+    const handleActivate = () => {
+        if (!onStatusChange) {
+            setIsMenuOpen(false);
+            return;
+        }
+        onStatusChange(member.id, 'active');
         setIsMenuOpen(false);
     };
 
@@ -121,6 +131,15 @@ export function TeamMemberCard({ member, currentUserRole, onRoleChange, onRemove
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-48">
+                                    {canManage && member.status !== 'active' ? (
+                                        <>
+                                            <DropdownMenuItem onClick={handleActivate}>
+                                                <Shield className="mr-2 h-4 w-4" />
+                                                {member.status === 'inactive' ? 'Вернуть в команду' : 'Разблокировать'}
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                        </>
+                                    ) : null}
                                     {canChangeRole && (
                                         <>
                                             <div className="px-2 py-1.5 text-xs font-semibold text-[color:var(--text-tertiary)]">

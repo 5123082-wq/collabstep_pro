@@ -79,6 +79,7 @@ export default function InvitesPanel() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [messageDraft, setMessageDraft] = useState('');
   const [sending, setSending] = useState(false);
+  const [postAcceptOrgId, setPostAcceptOrgId] = useState<string | null>(null);
 
   const activeInvite = useMemo(
     () => (activeInviteId ? invites.find((item) => item.invite.id === activeInviteId) ?? null : null),
@@ -163,6 +164,9 @@ export default function InvitesPanel() {
 
       const nextInvite = data.data?.invite ?? invite;
       setInvites((prev) => prev.map((item) => (item.invite.id === invite.id ? { ...item, invite: nextInvite } : item)));
+      // Use organizationId from the invite directly, fallback to organization?.id, then to postAcceptOrgId
+      const orgId = (nextInvite as { organizationId?: string }).organizationId ?? activeInvite.organization?.id ?? null;
+      setPostAcceptOrgId(orgId && orgId.trim() !== '' ? orgId : null);
     } catch (error) {
       // noop (keep UI stable)
     }
@@ -293,6 +297,9 @@ export default function InvitesPanel() {
   }
 
   const canRespond = activeInvite.invite.status === 'pending';
+  // Get organizationId from invite directly, fallback to organization?.id, then to postAcceptOrgId
+  const inviteOrgId = (activeInvite.invite as { organizationId?: string }).organizationId ?? activeInvite.organization?.id ?? postAcceptOrgId;
+  const acceptedOrgId = activeInvite.invite.status === 'accepted' && inviteOrgId && inviteOrgId.trim() !== '' ? inviteOrgId : null;
 
   return (
     <div className="flex h-full flex-1 flex-col overflow-hidden">
@@ -346,6 +353,21 @@ export default function InvitesPanel() {
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        {acceptedOrgId ? (
+          <div className="border-b border-[color:var(--surface-border-subtle)] px-6 py-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-indigo-500/20 bg-indigo-500/10 px-4 py-3">
+              <div className="text-sm text-[color:var(--text-primary)]">
+                Приглашение принято. Вы можете перейти к настройке команды.
+              </div>
+              <Link
+                href={`/org/${acceptedOrgId}/team`}
+                className="rounded-xl border border-transparent bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+              >
+                Перейти в команду
+              </Link>
+            </div>
+          </div>
+        ) : null}
         <div className="border-b border-[color:var(--surface-border-subtle)] px-6 py-4">
           <div className="text-xs font-semibold uppercase tracking-wide text-[color:var(--text-tertiary)]">Контекст</div>
           {activeInvite.previewProjects && activeInvite.previewProjects.length > 0 ? (

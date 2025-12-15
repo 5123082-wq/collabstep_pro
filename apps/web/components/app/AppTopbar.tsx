@@ -22,10 +22,11 @@ import {
   getDocsNavigation,
   getSupportNavigation,
   getAdminNavigation,
-  getOrgNavigation,
+  getOrgNavigationWithRbac,
   extractOrgIdFromPath
 } from '@/lib/nav/navigation-utils';
 import { useUI } from '@/stores/ui';
+import type { OrganizationMember } from '@collabverse/api';
 
 type QuickSuggestion = {
   id: string;
@@ -112,7 +113,6 @@ type AppTopbarProps = {
 export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings, onOpenProfileSettings, profile, onLogout, isLoggingOut, createButtonRef, centerModules, onAvatarChange }: AppTopbarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const openDrawer = useUI((state) => state.openDrawer);
   const unreadNotifications = useUI((state) => state.unreadNotifications);
   const unreadInvites = useUI((state) => state.unreadInvites);
   const unreadTotal = unreadNotifications + unreadInvites;
@@ -144,6 +144,15 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
       window.removeEventListener('cv-user-type-change', handleUserTypeChange);
       window.removeEventListener('storage', updateUserType);
     };
+  }, []);
+
+  const openCommunications = useCallback((tab: 'notifications' | 'invites') => {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(
+      new CustomEvent('rail:command', {
+        detail: { id: tab, payload: { command: 'open-chats-modal', tab } }
+      })
+    );
   }, []);
 
   const suggestions: QuickSuggestion[] = useMemo(() => {
@@ -287,9 +296,55 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
   const isDocsSection = pathname?.startsWith('/docs') ?? false;
   const isOrgSection = pathname?.startsWith('/org') ?? false;
   const orgId = isOrgSection ? extractOrgIdFromPath(pathname) : null;
-  const orgNavigation = isOrgSection ? getOrgNavigation(orgId) : [];
+  type OrgMembership = Pick<OrganizationMember, 'role' | 'status'>;
+  const [orgMembership, setOrgMembership] = useState<OrgMembership | null | undefined>(undefined);
   const isSupportSection = pathname?.startsWith('/support') ?? false;
   const isAdminSection = pathname?.startsWith('/admin') ?? false;
+
+  useEffect(() => {
+    if (!isOrgSection || !orgId) {
+      setOrgMembership(undefined);
+      return;
+    }
+
+    const controller = new AbortController();
+    setOrgMembership(undefined);
+
+    void (async () => {
+      try {
+        const res = await fetch(`/api/organizations/${orgId}/membership`, {
+          signal: controller.signal
+        });
+
+        if (!res.ok) {
+          setOrgMembership(null);
+          return;
+        }
+
+        const payload = (await res.json()) as
+          | { ok: true; data: { member: OrgMembership | null } }
+          | { ok: false; error: string };
+
+        if (!payload.ok) {
+          setOrgMembership(null);
+          return;
+        }
+
+        setOrgMembership(payload.data.member);
+      } catch (error) {
+        if ((error as { name?: string } | null)?.name === 'AbortError') {
+          return;
+        }
+        setOrgMembership(null);
+      }
+    })();
+
+    return () => {
+      controller.abort();
+    };
+  }, [isOrgSection, orgId]);
+
+  const orgNavigation = isOrgSection ? getOrgNavigationWithRbac(orgId, orgMembership) : [];
 
   return (
     <header className="sticky top-0 z-40 border-b border-neutral-900/40 bg-white/10 dark:bg-neutral-950/40 backdrop-blur-md">
@@ -419,11 +474,7 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
             label="Уведомления"
             badge={unreadTotal}
             onClick={() => {
-              if (unreadInvites > 0) {
-                openDrawer('invites');
-                return;
-              }
-              openDrawer('notifications');
+              openCommunications(unreadInvites > 0 ? 'invites' : 'notifications');
             }}
           />
           <IconButton icon="wallet" label="Кошелёк" />
@@ -444,11 +495,7 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
             label="Уведомления"
             badge={unreadTotal}
             onClick={() => {
-              if (unreadInvites > 0) {
-                openDrawer('invites');
-                return;
-              }
-              openDrawer('notifications');
+              openCommunications(unreadInvites > 0 ? 'invites' : 'notifications');
             }}
           />
           <button

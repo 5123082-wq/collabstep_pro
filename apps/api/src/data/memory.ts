@@ -100,6 +100,7 @@ type GlobalMemory = {
 type GlobalMemoryScope = typeof globalThis & {
   __collabverseFinanceIdempotencyKeys__?: Map<string, string>;
   __collabverseMemory__?: GlobalMemory;
+  __collabverseOrganizationMembersNormalized__?: boolean;
 };
 
 const globalMemoryScope = globalThis as GlobalMemoryScope;
@@ -163,6 +164,92 @@ const getOrCreateGlobalMemory = (): GlobalMemory => {
 };
 
 const globalMemory = getOrCreateGlobalMemory();
+
+function isEmailLike(value: string): boolean {
+  return typeof value === 'string' && value.includes('@');
+}
+
+function normalizeEmail(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function statusRank(status: OrganizationMember['status']): number {
+  if (status === 'active') return 3;
+  if (status === 'inactive') return 2;
+  return 1; // blocked or unknown
+}
+
+function roleRank(role: OrganizationMember['role']): number {
+  if (role === 'owner') return 4;
+  if (role === 'admin') return 3;
+  if (role === 'member') return 2;
+  return 1; // viewer or unknown
+}
+
+function memberTimestamp(member: OrganizationMember): number {
+  const updatedAt = member.updatedAt instanceof Date ? member.updatedAt.getTime() : new Date(member.updatedAt).getTime();
+  const createdAt = member.createdAt instanceof Date ? member.createdAt.getTime() : new Date(member.createdAt).getTime();
+  // Prefer updatedAt when it is valid, otherwise fallback to createdAt.
+  return Number.isFinite(updatedAt) ? updatedAt : createdAt;
+}
+
+function pickBestOrganizationMember(a: OrganizationMember, b: OrganizationMember): OrganizationMember {
+  const byStatus = statusRank(b.status) - statusRank(a.status);
+  if (byStatus !== 0) return byStatus > 0 ? b : a;
+
+  const byRole = roleRank(b.role) - roleRank(a.role);
+  if (byRole !== 0) return byRole > 0 ? b : a;
+
+  const byTime = memberTimestamp(b) - memberTimestamp(a);
+  if (byTime !== 0) return byTime > 0 ? b : a;
+
+  // Final deterministic tie-breaker: keep the one with "smaller" id (stable across runs).
+  return a.id.localeCompare(b.id) <= 0 ? a : b;
+}
+
+function normalizeOrganizationMembersInMemory(mem: GlobalMemory): void {
+  if (globalMemoryScope.__collabverseOrganizationMembersNormalized__) {
+    return;
+  }
+
+  const usersByEmail = new Map<string, WorkspaceUser>();
+  for (const user of mem.WORKSPACE_USERS ?? []) {
+    if (user?.email) {
+      usersByEmail.set(normalizeEmail(user.email), user);
+    }
+  }
+
+  const normalizedMembers = (mem.ORGANIZATION_MEMBERS ?? []).map((member) => {
+    if (!member?.userId || !isEmailLike(member.userId)) {
+      return member;
+    }
+
+    const resolved = usersByEmail.get(normalizeEmail(member.userId));
+    if (!resolved?.id) {
+      return member;
+    }
+
+    return { ...member, userId: resolved.id };
+  });
+
+  // Deduplicate by (organizationId, userId) after normalization using the "best membership" rules:
+  // status: active > inactive > blocked
+  // role: owner > admin > member > viewer
+  // freshness: updatedAt > createdAt
+  const bestByKey = new Map<string, OrganizationMember>();
+  for (const member of normalizedMembers) {
+    const key = `${member.organizationId}::${member.userId}`;
+    const existing = bestByKey.get(key);
+    if (!existing) {
+      bestByKey.set(key, member);
+      continue;
+    }
+    bestByKey.set(key, pickBestOrganizationMember(existing, member));
+  }
+
+  mem.ORGANIZATION_MEMBERS = Array.from(bestByKey.values());
+  globalMemoryScope.__collabverseOrganizationMembersNormalized__ = true;
+}
 
 export const memory = {
   get WORKSPACE_USERS() {
@@ -535,9 +622,13 @@ export const memory = {
         }
       ];
     }
+    normalizeOrganizationMembersInMemory(globalMemory);
     return globalMemory.ORGANIZATION_MEMBERS;
   },
-  set ORGANIZATION_MEMBERS(value: OrganizationMember[]) { globalMemory.ORGANIZATION_MEMBERS = value; }
+  set ORGANIZATION_MEMBERS(value: OrganizationMember[]) {
+    globalMemory.ORGANIZATION_MEMBERS = value;
+    globalMemoryScope.__collabverseOrganizationMembersNormalized__ = false;
+  }
 };
 
 export function resetInvitesMemory(): void {
@@ -556,6 +647,7 @@ export function resetFinanceMemory(): void {
   memory.ORGANIZATIONS = [];
   memory.ORGANIZATION_MEMBERS = [];
   resetInvitesMemory();
+  globalMemoryScope.__collabverseOrganizationMembersNormalized__ = false;
   const freshKeys = new Map<string, string>();
   memory.IDEMPOTENCY_KEYS = freshKeys;
   globalMemoryScope.__collabverseFinanceIdempotencyKeys__ = freshKeys;

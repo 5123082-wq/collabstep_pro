@@ -1,16 +1,21 @@
-import { eq, and, or } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { db } from '../db/config';
 import {
     organizations,
     organizationMembers
 } from '../db/schema';
-import { usersRepository } from './users-repository';
 import type { Organization, OrganizationMember } from '../types';
-import type { OrganizationsRepository, NewOrganization, NewOrganizationMember } from './organizations-repository.interface';
+import type { OrganizationMembership, OrganizationsRepository, NewOrganization, NewOrganizationMember } from './organizations-repository.interface';
 import { memory } from '../data/memory';
 
 // Export types from interface for convenience
-export type { Organization, OrganizationMember, NewOrganization, NewOrganizationMember };
+export type { Organization, OrganizationMember, NewOrganization, NewOrganizationMember, OrganizationMembership };
+
+function statusRank(status: OrganizationMember['status']): number {
+    if (status === 'active') return 3;
+    if (status === 'inactive') return 2;
+    return 1; // blocked or unknown
+}
 
 export class OrganizationsDbRepository implements OrganizationsRepository {
 
@@ -54,26 +59,10 @@ export class OrganizationsDbRepository implements OrganizationsRepository {
     }
 
     async listForUser(userId: string): Promise<Organization[]> {
-        // Handle case where userId might be an email (for backward compatibility with old sessions)
-        // Try to resolve to actual user ID if userId looks like an email
-        const possibleUserIds = [userId];
+        const normalizedUserId = userId.trim();
+        if (!normalizedUserId) return [];
 
-        // If userId contains @, it might be an email - try to find the user
-        if (userId.includes('@')) {
-            const user = await usersRepository.findByEmail(userId);
-            if (user) {
-                possibleUserIds.push(user.id);
-            }
-        } else {
-            // If userId is an ID, also check if there's a user with this ID that has a different email
-            // This handles cases where organization was created with email as ownerId
-            const user = await usersRepository.findById(userId);
-            if (user) {
-                possibleUserIds.push(user.email);
-            }
-        }
-
-        // Get organizations where user is a member (check all possible userIds)
+        // Get organizations where user is a member (canonical userId only)
         const memberOrgs = await db
             .select({ org: organizations })
             .from(organizations)
@@ -82,15 +71,15 @@ export class OrganizationsDbRepository implements OrganizationsRepository {
                 eq(organizations.id, organizationMembers.organizationId)
             )
             .where(and(
-                or(...possibleUserIds.map(id => eq(organizationMembers.userId, id))),
+                eq(organizationMembers.userId, normalizedUserId),
                 eq(organizationMembers.status, 'active')
             ));
 
-        // Also get organizations where user is the owner (check all possible userIds)
+        // Also get organizations where user is the owner (canonical userId only)
         const ownerOrgs = await db
             .select()
             .from(organizations)
-            .where(or(...possibleUserIds.map(id => eq(organizations.ownerId, id))));
+            .where(eq(organizations.ownerId, normalizedUserId));
 
         // Combine and deduplicate by organization ID
         const orgMap = new Map<string, Organization>();
@@ -107,6 +96,35 @@ export class OrganizationsDbRepository implements OrganizationsRepository {
         return Array.from(orgMap.values()).sort((a, b) => {
             const dateA = a.createdAt?.getTime() ?? 0;
             const dateB = b.createdAt?.getTime() ?? 0;
+            return dateB - dateA;
+        });
+    }
+
+    async listMembershipsForUser(userId: string): Promise<OrganizationMembership[]> {
+        const normalizedUserId = userId.trim();
+        if (!normalizedUserId) return [];
+
+        const rows = await db
+            .select({ org: organizations, member: organizationMembers })
+            .from(organizationMembers)
+            .innerJoin(
+                organizations,
+                eq(organizations.id, organizationMembers.organizationId)
+            )
+            .where(eq(organizationMembers.userId, normalizedUserId));
+
+        const result = rows.map((row) => {
+            const org = row.org as unknown as Organization;
+            const member = row.member as unknown as OrganizationMember;
+            return { organization: org, member } satisfies OrganizationMembership;
+        });
+
+        return result.sort((a, b) => {
+            // Active first; then newest orgs first
+            const byStatus = statusRank(b.member.status) - statusRank(a.member.status);
+            if (byStatus !== 0) return byStatus;
+            const dateA = a.organization.createdAt?.getTime?.() ?? 0;
+            const dateB = b.organization.createdAt?.getTime?.() ?? 0;
             return dateB - dateA;
         });
     }
@@ -185,6 +203,22 @@ export class OrganizationsDbRepository implements OrganizationsRepository {
         return (updated as unknown as OrganizationMember) || null;
     }
 
+    async updateMemberStatus(
+        organizationId: string,
+        memberId: string,
+        status: OrganizationMember['status']
+    ): Promise<OrganizationMember | null> {
+        const [updated] = await db
+            .update(organizationMembers)
+            .set({ status, updatedAt: new Date() })
+            .where(and(
+                eq(organizationMembers.id, memberId),
+                eq(organizationMembers.organizationId, organizationId)
+            ))
+            .returning();
+        return (updated as unknown as OrganizationMember) || null;
+    }
+
     async removeMember(organizationId: string, memberId: string): Promise<void> {
         await db
             .delete(organizationMembers)
@@ -235,28 +269,17 @@ export class OrganizationsMemoryRepository implements OrganizationsRepository {
     }
 
     async listForUser(userId: string): Promise<Organization[]> {
-        const possibleUserIds = [userId];
-
-        if (userId.includes('@')) {
-            const user = await usersRepository.findByEmail(userId);
-            if (user) {
-                possibleUserIds.push(user.id);
-            }
-        } else {
-            const user = await usersRepository.findById(userId);
-            if (user) {
-                possibleUserIds.push(user.email);
-            }
-        }
+        const normalizedUserId = userId.trim();
+        if (!normalizedUserId) return [];
 
         // Find organizations where user is a member
         const memberOrgs = memory.ORGANIZATIONS.filter(org => {
             const isMember = memory.ORGANIZATION_MEMBERS.some(m =>
                 m.organizationId === org.id &&
-                possibleUserIds.includes(m.userId) &&
+                m.userId === normalizedUserId &&
                 m.status === 'active'
             );
-            const isOwner = possibleUserIds.includes(org.ownerId);
+            const isOwner = org.ownerId === normalizedUserId;
             return isMember || isOwner;
         });
 
@@ -268,6 +291,29 @@ export class OrganizationsMemoryRepository implements OrganizationsRepository {
 
         return Array.from(orgMap.values()).sort((a, b) => {
             return b.createdAt.getTime() - a.createdAt.getTime();
+        });
+    }
+
+    async listMembershipsForUser(userId: string): Promise<OrganizationMembership[]> {
+        const normalizedUserId = userId.trim();
+        if (!normalizedUserId) return [];
+
+        const rows = memory.ORGANIZATION_MEMBERS
+            .filter((member) => member.userId === normalizedUserId)
+            .map((member) => {
+                const org = memory.ORGANIZATIONS.find((o) => o.id === member.organizationId);
+                if (!org) return null;
+                return {
+                    organization: { ...org },
+                    member: { ...member }
+                } satisfies OrganizationMembership;
+            })
+            .filter((item): item is OrganizationMembership => Boolean(item));
+
+        return rows.sort((a, b) => {
+            const byStatus = statusRank(b.member.status) - statusRank(a.member.status);
+            if (byStatus !== 0) return byStatus;
+            return b.organization.createdAt.getTime() - a.organization.createdAt.getTime();
         });
     }
 
@@ -335,6 +381,26 @@ export class OrganizationsMemoryRepository implements OrganizationsRepository {
         const updatedMember = {
             ...memory.ORGANIZATION_MEMBERS[index],
             role,
+            updatedAt: new Date()
+        };
+
+        memory.ORGANIZATION_MEMBERS[index] = updatedMember as OrganizationMember;
+        return { ...updatedMember } as OrganizationMember;
+    }
+
+    async updateMemberStatus(
+        organizationId: string,
+        memberId: string,
+        status: OrganizationMember['status']
+    ): Promise<OrganizationMember | null> {
+        const index = memory.ORGANIZATION_MEMBERS.findIndex(m =>
+            m.organizationId === organizationId && m.id === memberId
+        );
+        if (index === -1) return null;
+
+        const updatedMember = {
+            ...memory.ORGANIZATION_MEMBERS[index],
+            status,
             updatedAt: new Date()
         };
 

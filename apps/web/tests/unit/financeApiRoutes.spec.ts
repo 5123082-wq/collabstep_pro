@@ -2,16 +2,19 @@ import { encodeDemoSession } from '@/lib/auth/demo-session';
 import {
   financeService,
   projectsRepository,
-  resetFinanceMemory
+  resetFinanceMemory,
+  TEST_ADMIN_USER_ID
 } from '@collabverse/api';
 import { POST as createExpense, GET as listExpenses } from '@/app/api/expenses/route';
 import { PATCH as updateExpense } from '@/app/api/expenses/[id]/route';
 
 describe('Finance API routes', () => {
   let projectId: string;
+  const adminEmail = 'admin.demo@collabverse.test';
+  const adminUserId = TEST_ADMIN_USER_ID;
   const session = encodeDemoSession({
-    email: 'admin.demo@collabverse.test',
-    userId: 'admin.demo@collabverse.test',
+    email: adminEmail,
+    userId: adminUserId,
     role: 'admin',
     issuedAt: Date.now()
   });
@@ -27,7 +30,7 @@ describe('Finance API routes', () => {
     if (existingProjects.length === 0) {
       const project = projectsRepository.create({
         title: 'Test Project',
-        ownerId: 'admin.demo@collabverse.test',
+        ownerId: adminUserId,
         workspaceId: 'workspace',
         status: 'active'
       });
@@ -39,7 +42,7 @@ describe('Finance API routes', () => {
     await financeService.upsertBudget(
       projectId,
       { currency: 'USD', total: '2000', warnThreshold: 0.7 },
-      { actorId: 'admin.demo@collabverse.test' }
+      { actorId: adminUserId }
     );
   });
 

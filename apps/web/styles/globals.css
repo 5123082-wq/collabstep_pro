@@ -6,6 +6,8 @@
   color-scheme: dark;
   /* Единые отступы контента */
   --content-inline-padding: 1rem; /* 16px на мобильных - уменьшено для более компактного вида */
+  --font-sans: 'Inter', 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial',
+    sans-serif;
 }
 
 @media (min-width: 1024px) {

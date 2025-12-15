@@ -16,6 +16,14 @@ type AppSession = {
   expires: string;
 };
 
+function isEmailLike(value: unknown): value is string {
+  return typeof value === 'string' && value.includes('@');
+}
+
+function normalizeEmail(value: string): string {
+  return value.trim().toLowerCase();
+}
+
 export async function getCurrentSession() {
   // Check both NextAuth and demo sessions
   let nextAuthSession: Session | null = null;
@@ -58,18 +66,34 @@ export async function getCurrentUser() {
     return null;
   }
 
-  // If we have a user ID, fetch full user data from database
-  if (session.user.id) {
-    const user = await usersRepository.findById(session.user.id);
+  const sessionUserId = session.user.id;
+  const sessionEmail = session.user.email;
+
+  // Primary: canonical id (UUID/string id) -> usersRepository.findById
+  if (sessionUserId && !isEmailLike(sessionUserId)) {
+    const user = await usersRepository.findById(sessionUserId);
     if (user) {
-      return {
-        ...user,
-        role: session.user.role || 'user'
-      };
+      return { ...user, role: session.user.role || 'user' };
     }
   }
 
-  return session.user;
+  // Secondary: if session id is email-like OR DB lookup by id failed -> try resolve by email.
+  // This prevents legacy/demo sessions from leaking `id=email` into write paths.
+  if (typeof sessionEmail === 'string' && sessionEmail.trim()) {
+    const user = await usersRepository.findByEmail(normalizeEmail(sessionEmail));
+    if (user) {
+      return { ...user, role: session.user.role || 'user' };
+    }
+  } else if (sessionUserId && isEmailLike(sessionUserId)) {
+    const user = await usersRepository.findByEmail(normalizeEmail(sessionUserId));
+    if (user) {
+      return { ...user, role: session.user.role || 'user' };
+    }
+  }
+
+  // If we cannot resolve a canonical user record, treat it as unauthenticated
+  // to avoid creating records keyed by email.
+  return null;
 }
 
 export async function isAdmin() {

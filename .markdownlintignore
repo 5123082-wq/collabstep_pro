@@ -2,3 +2,12 @@ node_modules/
 apps/*/node_modules/
 docs/PLAN.md
 apps/web/docs/README_nav_ru.md
+docs/ai/
+docs/audit/
+docs/development/
+docs/archive/
+docs/research/
+test-results/
+FIX_WEBPACK_CHUNK_ERROR.md
+WEBPACK_ERROR_RESOLUTION.md
+TEST_REPORT.md

@@ -49,7 +49,7 @@ export type LeftMenuSection = {
   children?: LeftMenuChild[];
 };
 
-export const PROJECTS_HUB_PATH = '/projects';
+export const PROJECTS_HUB_PATH = '/pm/projects';
 export const PM_HUB_PATH = '/pm';
 export const MARKETING_HUB_PATH = '/marketing';
 export const PM_MENU_SECTION: LeftMenuSection = {

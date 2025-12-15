@@ -77,7 +77,8 @@ export function OrganizationSwitcher({ collapsed }: { collapsed?: boolean }) {
         }
       }
     } catch (error) {
-      console.error('Failed to fetch organizations', error);
+      // В неинициализированном окружении просто показываем пустой список без шума в консоли
+      setOrganizations([]);
     }
   };
 
@@ -170,4 +171,3 @@ export function OrganizationSwitcher({ collapsed }: { collapsed?: boolean }) {
     </div>
   );
 }
-

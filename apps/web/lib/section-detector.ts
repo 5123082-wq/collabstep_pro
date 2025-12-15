@@ -29,7 +29,7 @@ export function detectSectionFromPath(pathname: string): GlobalSectionId | null 
   if (normalized.startsWith('/dashboard') || normalized === '/') {
     return 'dashboard';
   }
-  if (normalized.startsWith('/projects') || normalized.startsWith('/project')) {
+  if (normalized.startsWith('/pm/projects') || normalized.startsWith('/pm/project')) {
     return 'projects';
   }
   if (normalized.startsWith('/market')) {

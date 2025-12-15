@@ -220,7 +220,7 @@ export async function GET(
     try {
         // Check access
         const member = await organizationsRepository.findMember(orgId, user.id);
-        if (!member || !['owner', 'admin'].includes(member.role)) {
+        if (!member || member.status !== 'active' || !['owner', 'admin'].includes(member.role)) {
             return jsonError('FORBIDDEN', { status: 403 });
         }
 

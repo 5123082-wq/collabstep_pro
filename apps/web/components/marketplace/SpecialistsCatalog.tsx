@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { Specialist } from '@/lib/schemas/marketplace-specialist';
 import {
   applySpecialistFilters,
@@ -199,9 +199,11 @@ function SpecialistCard({ specialist, onInvite }: { specialist: Specialist; onIn
   );
 }
 
-export default function SpecialistsCatalog({ data, error }: SpecialistsCatalogProps) {
+type SpecialistsCatalogPropsWithPath = SpecialistsCatalogProps & { basePath?: string };
+
+export default function SpecialistsCatalog({ data, error, basePath }: SpecialistsCatalogPropsWithPath) {
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = basePath ?? '/performers/specialists';
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const urlFilters = useMemo(() => parseSpecialistFilters(searchParams), [searchParams]);
