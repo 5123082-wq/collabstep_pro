@@ -1,14 +1,8 @@
 import dotenv from 'dotenv';
 import path from 'path';
 
-// Load root .env
-dotenv.config({ path: path.resolve(process.cwd(), '.env') });
-
-// Load apps/web/.env.local if DATABASE_URL is missing
-if (!process.env.DATABASE_URL && !process.env.POSTGRES_URL) {
-    console.log('Loading env from apps/web/.env.local...');
-    dotenv.config({ path: path.resolve(process.cwd(), 'apps/web/.env.local') });
-}
+// Load environment from apps/web/.env.local (единственный источник)
+dotenv.config({ path: path.resolve(process.cwd(), 'apps/web/.env.local') });
 
 if (!process.env.POSTGRES_URL && process.env.DATABASE_URL) {
     process.env.POSTGRES_URL = process.env.DATABASE_URL;

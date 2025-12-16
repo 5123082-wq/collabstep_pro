@@ -98,4 +98,3 @@ OPENAI_TEMPERATURE=0.7
 ---
 
 **Готово!** Полная документация: [AI_KEYS_SETUP.md](AI_KEYS_SETUP.md)
-

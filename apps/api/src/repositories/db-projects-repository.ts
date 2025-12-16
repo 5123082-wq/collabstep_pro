@@ -87,6 +87,17 @@ export class DbProjectsRepository {
         return member || null;
     }
 
+    /**
+     * Найти все проекты организации
+     */
+    async findByOrganization(organizationId: string): Promise<DbProject[]> {
+        return await db
+            .select()
+            .from(projects)
+            .where(eq(projects.organizationId, organizationId))
+            .orderBy(desc(projects.createdAt));
+    }
+
     async removeUserFromOrganizationProjects(organizationId: string, userId: string): Promise<void> {
         if (!organizationId || !userId) {
             return;

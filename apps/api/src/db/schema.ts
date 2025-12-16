@@ -165,12 +165,17 @@ export const organizations = pgTable(
         description: text("description"),
         type: organizationTypeEnum("type").default("closed").notNull(),
         isPublicInDirectory: boolean("is_public_in_directory").default(false).notNull(),
+        status: text("status").default("active").notNull(), // 'active' | 'archived' | 'deleted'
+        closedAt: timestamp("closed_at", { mode: "date" }),
+        closureReason: text("closure_reason"),
         createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
         updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow(),
     },
     (table) => ({
         ownerIdIdx: index("organization_owner_id_idx").on(table.ownerId),
         publicTypeIdx: index("organization_public_type_idx").on(table.type, table.isPublicInDirectory),
+        statusIdx: index("organization_status_idx").on(table.status),
+        closedAtIdx: index("organization_closed_at_idx").on(table.closedAt),
     })
 );
 
@@ -357,7 +362,7 @@ export const contracts = pgTable(
             .references(() => users.id), // The user performing the task
         organizationId: text("organization_id")
             .notNull()
-            .references(() => organizations.id), // The organization paying
+            .references(() => organizations.id, { onDelete: "no action" }), // The organization paying - no action to prevent accidental deletion
         amount: bigint("amount", { mode: "number" }).notNull(),
         currency: currencyEnum("currency").default("RUB").notNull(),
         status: contractStatusEnum("status").default("offer").notNull(),
@@ -368,5 +373,63 @@ export const contracts = pgTable(
         taskIdx: index("contract_task_idx").on(table.taskId),
         performerIdx: index("contract_performer_idx").on(table.performerId),
         orgIdx: index("contract_org_idx").on(table.organizationId),
+    })
+);
+
+// --- Organization Closure ---
+
+export const organizationArchives = pgTable(
+    "organization_archive",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        organizationId: text("organization_id")
+            .notNull()
+            .unique()
+            .references(() => organizations.id, { onDelete: "cascade" }),
+        organizationName: text("organization_name").notNull(),
+        ownerId: text("owner_id")
+            .notNull()
+            .references(() => users.id, { onDelete: "restrict" }),
+        closedAt: timestamp("closed_at", { mode: "date" }).notNull(),
+        expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
+        status: text("status").default("active").notNull(), // 'active' | 'expired' | 'deleted'
+        retentionDays: integer("retention_days").default(30).notNull(),
+        snapshot: jsonb("snapshot").notNull(), // { membersCount, projectsCount, documentsCount, totalStorageBytes }
+        createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+        updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow(),
+    },
+    (table) => ({
+        ownerIdx: index("organization_archive_owner_idx").on(table.ownerId),
+        expiresIdx: index("organization_archive_expires_idx").on(table.expiresAt),
+        statusIdx: index("organization_archive_status_idx").on(table.status),
+    })
+);
+
+export const archivedDocuments = pgTable(
+    "archived_document",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        archiveId: text("archive_id")
+            .notNull()
+            .references(() => organizationArchives.id, { onDelete: "cascade" }),
+        originalDocumentId: text("original_document_id").notNull(),
+        originalProjectId: text("original_project_id").notNull(),
+        projectName: text("project_name").notNull(),
+        title: text("title").notNull(),
+        type: text("type"),
+        fileId: text("file_id").notNull(),
+        fileUrl: text("file_url").notNull(),
+        fileSizeBytes: bigint("file_size_bytes", { mode: "number" }).notNull(),
+        metadata: jsonb("metadata"),
+        archivedAt: timestamp("archived_at", { mode: "date" }).defaultNow(),
+        expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
+    },
+    (table) => ({
+        archiveIdx: index("archived_document_archive_idx").on(table.archiveId),
+        expiresIdx: index("archived_document_expires_idx").on(table.expiresAt),
     })
 );

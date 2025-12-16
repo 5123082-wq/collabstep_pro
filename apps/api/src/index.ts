@@ -126,6 +126,29 @@ export { AIAgentsRepository, aiAgentsRepository } from './repositories/ai-agents
 export type { AIAgent, AIAgentType } from './types';
 export { invitationsRepository, type OrganizationInvite, type ProjectInvite } from './repositories/invitations-repository';
 export { organizationsRepository, type Organization, type OrganizationMember } from './repositories/organizations-repository';
+export type {
+  OrganizationStatus,
+  OrganizationArchive,
+  ArchivedDocument,
+  ClosureBlocker,
+  ClosureBlockerType,
+  ClosureBlockerSeverity,
+  ArchivableData,
+  ClosureCheckResult,
+  OrganizationClosurePreview,
+  OrganizationClosureResult,
+  ArchiveRetentionPeriod,
+} from './types';
+export type { OrganizationClosureChecker } from './services/closure/types';
+export {
+  closureCheckerRegistry,
+  ClosureCheckerRegistry,
+  ContractsClosureChecker,
+  DocumentsClosureChecker,
+  WalletClosureChecker,
+  ExpensesClosureChecker,
+  MarketingClosureChecker,
+} from './services/closure';
 export { performerProfilesRepository, type PerformerProfile } from './repositories/performer-profiles-repository';
 export { dbProjectsRepository, type DbProject } from './repositories/db-projects-repository';
 // WebSocket server exports are intentionally excluded from the main index
@@ -137,4 +160,9 @@ export { walletRepository, type WalletType, type Currency, type TransactionType 
 export { walletService, WalletService } from './services/wallet-service';
 export { contractService, ContractService } from './services/contract-service';
 export { contractsRepository, ContractsRepository, type ContractStatus } from './repositories/contracts-repository';
+export { organizationArchivesRepository, OrganizationArchivesRepository } from './repositories/organization-archives-repository';
+export { archivedDocumentsRepository, ArchivedDocumentsRepository } from './repositories/archived-documents-repository';
+export { organizationClosureService, OrganizationClosureService } from './services/closure/organization-closure-service';
+export { cleanupExpiredArchives } from './services/closure/archive-cleanup-job';
+export { sendExpiryNotifications } from './services/closure/archive-expiry-notifications';
 export { pmPgHydration } from './storage/pm-pg-bootstrap';

@@ -17,9 +17,8 @@ import { db } from '../apps/api/src/db/config';
 import { users, projects, projectMembers } from '../apps/api/src/db/schema';
 import { eq } from 'drizzle-orm';
 
-// Load env vars
+// Load environment from apps/web/.env.local (единственный источник)
 dotenv.config({ path: path.resolve(__dirname, '../apps/web/.env.local') });
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 if (!process.env.POSTGRES_URL && process.env.DATABASE_URL) {
   process.env.POSTGRES_URL = process.env.DATABASE_URL;

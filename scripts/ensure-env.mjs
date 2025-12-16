@@ -2,14 +2,20 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const rootDir = process.cwd();
-const envPath = path.join(rootDir, '.env');
+const envPath = path.join(rootDir, 'apps/web/.env.local');
 const examplePath = path.join(rootDir, '.env.example');
 
+// Ensure apps/web/.env.local exists
 if (!fs.existsSync(envPath)) {
+  console.log('📋 Creating apps/web/.env.local from .env.example...');
   if (fs.existsSync(examplePath)) {
     fs.copyFileSync(examplePath, envPath);
+    console.log('✅ apps/web/.env.local created from .env.example');
+    console.log('⚠️  Please update the values in apps/web/.env.local with your actual credentials!\n');
   } else {
     fs.writeFileSync(envPath, '', 'utf8');
+    console.warn('⚠️  No .env.example found. Created empty apps/web/.env.local');
+    console.warn('   Please add required environment variables.\n');
   }
 }
 
@@ -51,7 +57,12 @@ const updated = lines.map((line) => {
   }
 
   seen.add(key);
-  return `${key}=${requiredVars.get(key)}${''}`;
+  // Keep existing value if it's set, otherwise use default
+  const existingValue = match[2].trim();
+  if (existingValue && existingValue !== '') {
+    return `${key}=${existingValue}`;
+  }
+  return `${key}=${requiredVars.get(key)}`;
 });
 
 for (const [key, value] of requiredVars.entries()) {
@@ -93,7 +104,7 @@ if (authStorage === 'db' && !hasDbConnection) {
     '\n⚠️  WARNING: AUTH_STORAGE=db but POSTGRES_URL or DATABASE_URL is not set!'
   );
   console.warn('   The application will not be able to use database storage.');
-  console.warn('   Please set POSTGRES_URL in your .env file.\n');
+  console.warn('   Please set POSTGRES_URL in apps/web/.env.local file.\n');
 }
 
 // Suggest setting AUTH_STORAGE=db if database connection exists
@@ -102,6 +113,6 @@ if (hasDbConnection && authStorage !== 'db') {
     '\n💡 INFO: POSTGRES_URL is set but AUTH_STORAGE is not set to "db".'
   );
   console.warn(
-    '   For database authentication, set AUTH_STORAGE=db in your .env file.\n'
+    '   For database authentication, set AUTH_STORAGE=db in apps/web/.env.local file.\n'
   );
 }
