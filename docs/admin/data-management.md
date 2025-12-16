@@ -46,6 +46,7 @@ npx tsx scripts/clear-all-data.ts
 ```
 
 Скрипт выполнит:
+
 1. Получение текущей статистики
 2. Удаление всех данных
 3. Проверку результата
@@ -57,10 +58,12 @@ npx tsx scripts/clear-all-data.ts
 Получение статистики по проектам и задачам.
 
 **Требования:**
+
 - Авторизация: требуется
 - Роль: `admin`
 
 **Ответ:**
+
 ```json
 {
   "summary": {
@@ -95,10 +98,12 @@ npx tsx scripts/clear-all-data.ts
 Удаление проектов и задач из памяти.
 
 **Требования:**
+
 - Авторизация: требуется
 - Роль: `admin`
 
 **Тело запроса:**
+
 ```json
 {
   "confirm": true,
@@ -107,6 +112,7 @@ npx tsx scripts/clear-all-data.ts
 ```
 
 **Ответ:**
+
 ```json
 {
   "success": true,
@@ -136,6 +142,7 @@ npx tsx scripts/clear-all-data.ts
 ## Что удаляется
 
 При удалении проектов автоматически удаляются:
+
 - ✅ Все задачи проекта
 - ✅ Зависимости задач
 - ✅ Участники проекта
@@ -179,11 +186,13 @@ docs/
 const response = await fetch('/api/admin/data/clear', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ confirm: true })
+  body: JSON.stringify({ confirm: true }),
 });
 
 const result = await response.json();
-console.log(`Удалено: ${result.deleted.projects} проектов, ${result.deleted.tasks} задач`);
+console.log(
+  `Удалено: ${result.deleted.projects} проектов, ${result.deleted.tasks} задач`
+);
 ```
 
 ### Пример 2: Удаление данных пользователя
@@ -192,10 +201,10 @@ console.log(`Удалено: ${result.deleted.projects} проектов, ${resu
 const response = await fetch('/api/admin/data/clear', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ 
-    confirm: true, 
-    userId: 'user.demo@collabverse.test' 
-  })
+  body: JSON.stringify({
+    confirm: true,
+    userId: 'user.demo@collabverse.test',
+  }),
 });
 ```
 
@@ -214,6 +223,7 @@ console.log(`Всего задач: ${stats.summary.totalTasks}`);
 ### Ошибка: "Сервер недоступен"
 
 **Решение:** Убедитесь, что сервер Next.js запущен:
+
 ```bash
 pnpm dev
 ```
@@ -229,6 +239,7 @@ pnpm dev
 ### Данные не удаляются
 
 **Проверьте:**
+
 1. Сервер запущен и работает
 2. В консоли браузера нет ошибок
 3. API endpoints отвечают корректно
@@ -238,4 +249,3 @@ pnpm dev
 
 - [Админ-панель README](https://github.com/5123082-wq/collabstep_pro/blob/main/apps/web/app/%28app%29/admin/README.md)
 - [API Documentation](../getting-started/quick-start.md)
-

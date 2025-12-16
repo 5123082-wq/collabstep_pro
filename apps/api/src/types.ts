@@ -479,6 +479,9 @@ export interface Organization {
   description?: string;
   type: 'open' | 'closed';
   isPublicInDirectory: boolean;
+  status?: OrganizationStatus; // 'active' | 'archived' | 'deleted'
+  closedAt?: Date;
+  closureReason?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -491,4 +494,103 @@ export interface OrganizationMember {
   status: 'active' | 'inactive' | 'blocked';
   createdAt: Date;
   updatedAt: Date;
+}
+
+// Organization Closure Types
+export type OrganizationStatus = 'active' | 'archived' | 'deleted';
+
+export type ArchiveRetentionPeriod = 30 | 60 | 90;
+
+export interface OrganizationArchive {
+  id: ID;
+  organizationId: ID;
+  organizationName: string;
+  ownerId: ID;
+  closedAt: string;
+  expiresAt: string;
+  status: 'active' | 'expired' | 'deleted';
+  retentionDays: ArchiveRetentionPeriod;
+  snapshot: {
+    membersCount: number;
+    projectsCount: number;
+    documentsCount: number;
+    totalStorageBytes: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ArchivedDocument {
+  id: ID;
+  archiveId: ID;
+  originalDocumentId: ID;
+  originalProjectId: ID;
+  projectName: string;
+  title: string;
+  type?: string;
+  fileId: ID;
+  fileUrl: string;
+  fileSizeBytes: number;
+  metadata?: Record<string, unknown>;
+  archivedAt: string;
+  expiresAt: string;
+}
+
+export type ClosureBlockerType = 'financial' | 'data';
+export type ClosureBlockerSeverity = 'blocking' | 'warning' | 'info';
+
+export interface ClosureBlocker {
+  moduleId: string;
+  type: ClosureBlockerType;
+  severity: ClosureBlockerSeverity;
+  id: string;
+  title: string;
+  description: string;
+  actionRequired?: string;
+  actionUrl?: string;
+}
+
+export interface ArchivableData {
+  moduleId: string;
+  type: string;
+  id: string;
+  title: string;
+  sizeBytes?: number;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ClosureCheckResult {
+  moduleId: string;
+  moduleName: string;
+  blockers: ClosureBlocker[];
+  archivableData: ArchivableData[];
+}
+
+export interface OrganizationClosurePreview {
+  canClose: boolean;
+  blockers: ClosureBlocker[];
+  warnings: ClosureBlocker[];
+  archivableData: ArchivableData[];
+  impact: {
+    projects: number;
+    tasks: number;
+    members: number;
+    invites: number;
+    documents: number;
+    expenses: number;
+  };
+}
+
+export interface OrganizationClosureResult {
+  success: boolean;
+  organizationId: string;
+  archiveId: string;
+  closedAt: string;
+  deleted: {
+    projects: number;
+    tasks: number;
+    members: number;
+    invites: number;
+    documents: number;
+  };
 }

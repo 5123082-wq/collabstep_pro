@@ -20,6 +20,16 @@ export class ContractsRepository {
         return contract || null;
     }
 
+    /**
+     * Найти все контракты организации
+     */
+    async findByOrganization(organizationId: string) {
+        return await db
+            .select()
+            .from(contracts)
+            .where(eq(contracts.organizationId, organizationId));
+    }
+
     async updateStatus(id: string, status: ContractStatus) {
         const [updated] = await db.update(contracts)
             .set({ status, updatedAt: new Date() })

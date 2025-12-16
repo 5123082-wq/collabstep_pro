@@ -5,23 +5,27 @@
 ### Добавлено
 
 **AI Core Infrastructure:**
+
 - OpenAI интеграция с базовым клиентом и retry логикой
 - Шаблоны промптов для всех AI операций
 - Rate limiting и система безопасности (валидация, санитизация)
 - Сервис напоминаний о дедлайнах через AI
 
 **API Endpoints:**
+
 - `/api/ai/generate-description` — генерация описания задачи через AI
 - `/api/ai/summarize-comments` — суммирование комментариев задачи через AI
 - `/api/pm/projects/[id]/ai-agents` — управление AI-агентами проекта (GET, POST, DELETE)
 
 **UI Components:**
+
 - `TaskAIActions` — кнопки AI действий для задач (генерация описания, суммирование)
 - `AIAssistant` — панель чата с AI ассистентом
 - `ProjectAIAgents` — управление AI-агентами проекта
 - Интеграция AI в форму создания задачи
 
 **AI-агенты:**
+
 - AI Помощник — помогает с общими вопросами по проекту
 - AI Ревьюер — проверяет задачи и даёт обратную связь
 - AI Напоминатель — напоминает о дедлайнах
@@ -29,12 +33,14 @@
 - Автоматические ответы агентов на упоминания в чате (@ai-assistant)
 
 **Безопасность и ограничения:**
+
 - Rate limiting на уровне пользователя, endpoint и глобально
 - Валидация входных данных и санитизация ответов AI
 - Контроль стоимости запросов
 - Аудит логирование AI запросов
 
 **Новые файлы:**
+
 - `apps/web/lib/ai/README.md` — документация по AI
 - `apps/web/lib/ai/client.ts` — OpenAI клиент
 - `apps/web/lib/ai/prompts.ts` — шаблоны промптов
@@ -55,6 +61,7 @@
 - `docs/ai/AI_QUICK_START.md` — быстрая инструкция по настройке
 
 **Обновлено:**
+
 - `apps/web/package.json` — добавлена зависимость `openai@4.68.0`
 - `apps/web/components/pm/CreateTaskModal.tsx` — интегрирован TaskAIActions
 - `apps/web/app/(app)/pm/projects/[id]/page.tsx` — добавлена вкладка "AI-агенты"
@@ -65,6 +72,7 @@
 ### Требования для работы AI
 
 Для использования AI функциональности необходимо:
+
 1. OpenAI API ключ (получить на https://platform.openai.com/api-keys)
 2. Настроенный биллинг на OpenAI
 3. Файл `.env.local` с переменными:
@@ -82,6 +90,7 @@
 ### Добавлено (Stage J)
 
 **Чат проекта:**
+
 - Полноценный чат проекта для командного общения
 - API endpoints для получения и отправки сообщений в чате проекта
 - UI компонент ProjectChat с polling, infinite scroll и прикреплением файлов
@@ -89,6 +98,7 @@
 - Автопрокрутка к новым сообщениям и загрузка старых при прокрутке вверх
 
 **Файловый каталог проекта:**
+
 - Централизованный файловый каталог проекта
 - API endpoints для получения списка файлов и загрузки файлов в проект
 - UI компонент ProjectFilesCatalog с фильтрацией и группировкой по источникам
@@ -96,6 +106,7 @@
 - Просмотр, скачивание и загрузка файлов
 
 **Новые файлы:**
+
 - `apps/api/src/repositories/project-chat-repository.ts`
 - `apps/web/app/api/pm/projects/[id]/chat/route.ts`
 - `apps/web/components/pm/ProjectChat.tsx`
@@ -103,6 +114,7 @@
 - `apps/web/components/pm/ProjectFilesCatalog.tsx`
 
 **Обновлено:**
+
 - `docs/development/projects-master-guide.md` — добавлен отчет о завершении Stage J
 - `docs/development/stages/stage-J-chat-files.md` — статус изменен на "ЗАВЕРШЁН"
 - `apps/api/src/types.ts` — добавлен `ProjectChatMessage` и `'project_chat'` в `AttachmentEntityType`
@@ -123,6 +135,7 @@
 ### Добавлено (Stage I)
 
 **Система уведомлений:**
+
 - Полноценная система уведомлений для событий в проектах
 - API endpoints для получения, обновления и удаления уведомлений
 - Генератор событий уведомлений для задач, комментариев и приглашений
@@ -131,6 +144,7 @@
 - Unit и E2E тесты для всех компонентов системы
 
 **Новые файлы:**
+
 - `apps/api/src/repositories/notifications-repository.ts`
 - `apps/web/lib/notifications/event-generator.ts`
 - `apps/web/app/api/notifications/route.ts`
@@ -142,6 +156,7 @@
 - `apps/web/tests/e2e/notifications.spec.ts`
 
 **Обновлено:**
+
 - `docs/development/projects-master-guide.md` — добавлен отчет о завершении Stage I
 - `docs/development/stages/stage-I-notifications.md` — статус изменен на "ЗАВЕРШЁН"
 

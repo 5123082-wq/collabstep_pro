@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { GeneralSettingsTab } from '@/components/organizations/settings/GeneralSettingsTab';
 import { MembersTab } from '@/components/organizations/settings/MembersTab';
 import { InvitesTab } from '@/components/organizations/settings/InvitesTab';
+import { DangerZoneTab } from '@/components/organizations/settings/DangerZoneTab';
 import { cn } from '@/lib/utils';
 
 import { Organization } from '@collabverse/api';
@@ -12,6 +13,7 @@ const TABS = [
   { id: 'general', label: 'Общие' },
   { id: 'members', label: 'Участники' },
   { id: 'invites', label: 'Приглашения' },
+  { id: 'danger', label: 'Опасная зона' },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
@@ -51,6 +53,7 @@ export function OrganizationSettingsClient({ organization }: { organization: Org
           {activeTab === 'general' && <GeneralSettingsTab organization={organization} />}
           {activeTab === 'members' && <MembersTab orgId={organization.id} />}
           {activeTab === 'invites' && <InvitesTab orgId={organization.id} />}
+          {activeTab === 'danger' && <DangerZoneTab organizationId={organization.id} />}
         </main>
       </div>
     </div>
