@@ -26,60 +26,98 @@ export class UsersDbRepository implements UsersRepository {
 
     async findByEmail(email: string): Promise<WorkspaceUser | null> {
         if (!email) return null;
-        const [user] = await db.select().from(users).where(eq(users.email, email));
-        return user ? this.mapToWorkspaceUser(user) : null;
+        try {
+            const normalizedEmail = email.trim().toLowerCase();
+            const [user] = await db.select().from(users).where(eq(users.email, normalizedEmail));
+            return user ? this.mapToWorkspaceUser(user) : null;
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            const errorStack = error instanceof Error ? error.stack : undefined;
+            console.error('[UsersDbRepository] Error in findByEmail:', {
+                email,
+                error: errorMessage,
+                stack: errorStack,
+                postgresUrl: process.env.POSTGRES_URL ? 'set' : 'not set'
+            });
+            // Пробрасываем ошибку дальше, чтобы вызывающий код мог ее обработать
+            throw error;
+        }
     }
 
     async updatePassword(email: string, passwordHash: string): Promise<boolean> {
         if (!email) return false;
-        const result = await db
-            .update(users)
-            .set({ passwordHash, updatedAt: new Date() })
-            .where(eq(users.email, email))
-            .returning();
-        return result.length > 0;
+        try {
+            const normalizedEmail = email.trim().toLowerCase();
+            const result = await db
+                .update(users)
+                .set({ passwordHash, updatedAt: new Date() })
+                .where(eq(users.email, normalizedEmail))
+                .returning();
+            return result.length > 0;
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.error('[UsersDbRepository] Error in updatePassword:', {
+                email,
+                error: errorMessage,
+                postgresUrl: process.env.POSTGRES_URL ? 'set' : 'not set'
+            });
+            throw error;
+        }
     }
 
     async create(user: Omit<WorkspaceUser, 'id'> & { id?: string; passwordHash?: string }): Promise<WorkspaceUser> {
-        const newUser = {
-            id: user.id || crypto.randomUUID(),
-            name: user.name,
-            email: user.email,
-            image: user.avatarUrl,
-            title: user.title,
-            department: user.department,
-            location: user.location,
-            timezone: user.timezone,
-            passwordHash: user.passwordHash,
-            emailVerified: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        };
+        try {
+            const normalizedEmail = user.email.trim().toLowerCase();
+            const newUser = {
+                id: user.id || crypto.randomUUID(),
+                name: user.name.trim(),
+                email: normalizedEmail,
+                image: user.avatarUrl,
+                title: user.title,
+                department: user.department,
+                location: user.location,
+                timezone: user.timezone,
+                passwordHash: user.passwordHash,
+                emailVerified: null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            };
 
-        const [createdUser] = await db.insert(users).values(newUser).returning();
+            const [createdUser] = await db.insert(users).values(newUser).returning();
 
-        if (!createdUser) {
-            throw new Error('Failed to create user');
+            if (!createdUser) {
+                throw new Error('Failed to create user');
+            }
+
+            // Create default user control entry
+            try {
+                await db.insert(userControls).values({
+                    userId: createdUser.id,
+                    status: 'active',
+                    roles: [],
+                    testerAccess: [],
+                    updatedAt: new Date(),
+                });
+            } catch (error) {
+                // Если userControls уже существует или другая ошибка, логируем но не падаем
+                console.error('[UsersDbRepository] Error creating userControls:', error);
+                // Продолжаем выполнение, так как пользователь уже создан
+            }
+
+            // Note: Account/Workspace membership logic would typically go here or in a service.
+            // For now, we assume the DB schema handles the core user data.
+            // If we need to maintain the exact same side-effects as memory repo (adding to global lists),
+            // we would need tables for workspace_members and account_members.
+            // Assuming those are not yet in the migration plan scope for this step (only users table was explicitly detailed),
+            // but the plan mentioned "accounts" table which is for OAuth.
+            // We will stick to the user creation for now.
+
+            return this.mapToWorkspaceUser(createdUser);
+        } catch (error) {
+            console.error('[UsersDbRepository] Error in create:', error);
+            console.error('[UsersDbRepository] User data:', { email: user.email, id: user.id });
+            throw error;
         }
-
-        // Create default user control entry
-        await db.insert(userControls).values({
-            userId: createdUser.id,
-            status: 'active',
-            roles: [],
-            testerAccess: [],
-            updatedAt: new Date(),
-        });
-
-        // Note: Account/Workspace membership logic would typically go here or in a service.
-        // For now, we assume the DB schema handles the core user data.
-        // If we need to maintain the exact same side-effects as memory repo (adding to global lists),
-        // we would need tables for workspace_members and account_members.
-        // Assuming those are not yet in the migration plan scope for this step (only users table was explicitly detailed),
-        // but the plan mentioned "accounts" table which is for OAuth.
-        // We will stick to the user creation for now.
-
-        return this.mapToWorkspaceUser(createdUser);
     }
 
     async update(id: string, data: Partial<WorkspaceUser>): Promise<WorkspaceUser | null> {

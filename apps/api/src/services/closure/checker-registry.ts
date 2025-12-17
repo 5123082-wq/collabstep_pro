@@ -98,3 +98,4 @@ export class ClosureCheckerRegistry {
     return Array.from(this.checkers.keys());
   }
 }
+

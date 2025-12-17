@@ -1,7 +1,7 @@
 'use client';
 
 // @ts-expect-error lucide-react icon types
-import { AlertCircle, AlertTriangle, InfoCircle } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Info } from 'lucide-react';
 import Link from 'next/link';
 
 type ClosureBlocker = {
@@ -29,7 +29,7 @@ export function ClosureBlockersCard({ blockers, warnings = [] }: ClosureBlockers
       case 'warning':
         return <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0" />;
       case 'info':
-        return <InfoCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />;
+        return <Info className="h-5 w-5 text-blue-600 flex-shrink-0" />;
     }
   };
 

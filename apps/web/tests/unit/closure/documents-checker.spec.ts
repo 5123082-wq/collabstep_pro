@@ -9,7 +9,12 @@ import {
   archivedDocumentsRepository,
 } from '@collabverse/api';
 
-describe('DocumentsClosureChecker', () => {
+// Skip tests if POSTGRES_URL is not set (e.g., in CI without database)
+const hasDatabase =
+  !!process.env.POSTGRES_URL && process.env.POSTGRES_URL.trim() !== '';
+const describeIfDb = hasDatabase ? describe : describe.skip;
+
+describeIfDb('DocumentsClosureChecker', () => {
   let checker: DocumentsClosureChecker;
   let testOrgId: string;
   let testOwnerId: string;

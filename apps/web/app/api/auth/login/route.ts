@@ -23,14 +23,19 @@ async function collectAccounts(): Promise<DemoAccount[]> {
   // Проверяем, какие демо-аккаунты существуют в БД
   const accounts: DemoAccount[] = [];
   
-  // Всегда проверяем администратора
-  const adminAccount = getDemoAccount('admin');
-  const adminUser = await usersRepository.findByEmail(adminAccount.email);
-  if (adminUser) {
-    accounts.push({
-      role: 'admin',
-      ...adminAccount
-    });
+  try {
+    // Всегда проверяем администратора
+    const adminAccount = getDemoAccount('admin');
+    const adminUser = await usersRepository.findByEmail(adminAccount.email);
+    if (adminUser) {
+      accounts.push({
+        role: 'admin',
+        ...adminAccount
+      });
+    }
+  } catch (error) {
+    console.error('[Login] Error checking admin account:', error);
+    // Продолжаем выполнение, но не добавляем аккаунт
   }
   
   // Роль 'user' больше не поддерживается - пользователь был удален
@@ -72,70 +77,119 @@ function findMatchingAccount(accounts: DemoAccount[], email: string, password: s
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  if (!isDemoAuthEnabled()) {
-    return NextResponse.json({ error: 'Dev authentication disabled' }, { status: 403 });
-  }
+  try {
+    if (!isDemoAuthEnabled()) {
+      return NextResponse.json({ error: 'Dev authentication disabled' }, { status: 403 });
+    }
 
-  // Инициализируем демо-аккаунты при первом использовании
-  await ensureDemoAccountsInitialized();
+    // Инициализируем демо-аккаунты при первом использовании
+    try {
+      await ensureDemoAccountsInitialized();
+    } catch (error) {
+      console.error('[Login] Error in ensureDemoAccountsInitialized:', error);
+      return NextResponse.json(
+        { error: 'Внутренняя ошибка сервера при инициализации аккаунтов.' },
+        { status: 500 }
+      );
+    }
 
-  const payload = await readPayload(request);
-  const email = typeof payload.email === 'string' ? payload.email.trim() : '';
-  const password = typeof payload.password === 'string' ? payload.password : '';
+    const payload = await readPayload(request);
+    const email = typeof payload.email === 'string' ? payload.email.trim() : '';
+    const password = typeof payload.password === 'string' ? payload.password : '';
 
-  if (!email || !password) {
-    return NextResponse.json({ error: INVALID_MESSAGE }, { status: 401 });
-  }
+    if (!email || !password) {
+      return NextResponse.json({ error: INVALID_MESSAGE }, { status: 401 });
+    }
 
-  // Сначала проверяем демо-аккаунты, но только если пользователь существует в БД
-  const demoAccounts = await collectAccounts();
-  const demoAccount = findMatchingAccount(demoAccounts, email, password);
+    // Сначала проверяем демо-аккаунты, но только если пользователь существует в БД
+    let demoAccounts: DemoAccount[] = [];
+    try {
+      demoAccounts = await collectAccounts();
+    } catch (error) {
+      console.error('[Login] Error in collectAccounts:', error);
+      return NextResponse.json(
+        { error: 'Внутренняя ошибка сервера при проверке аккаунтов.' },
+        { status: 500 }
+      );
+    }
 
-  if (demoAccount) {
-    // Получаем пользователя из БД для получения userId
-    const user = await usersRepository.findByEmail(demoAccount.email);
-    // Если пользователя нет в БД, не пропускаем вход (пользователь был удален)
+    const demoAccount = findMatchingAccount(demoAccounts, email, password);
+
+    if (demoAccount) {
+      // Получаем пользователя из БД для получения userId
+      let user;
+      try {
+        user = await usersRepository.findByEmail(demoAccount.email);
+      } catch (error) {
+        console.error('[Login] Error finding user by email:', error);
+        return NextResponse.json(
+          { error: 'Внутренняя ошибка сервера при поиске пользователя.' },
+          { status: 500 }
+        );
+      }
+      // Если пользователя нет в БД, не пропускаем вход (пользователь был удален)
+      if (!user) {
+        return NextResponse.json({ error: INVALID_MESSAGE }, { status: 401 });
+      }
+      const userId = user.id;
+      const sessionToken = encodeDemoSession({ 
+        email: demoAccount.email, 
+        userId,
+        role: demoAccount.role, 
+        issuedAt: Date.now() 
+      });
+      const redirectPath = resolveReturnPath(payload.returnTo);
+      const response = NextResponse.json({ redirect: redirectPath });
+      return withSessionCookie(response, sessionToken);
+    }
+
+    // Затем проверяем пользователей из БД
+    let user;
+    try {
+      user = await usersRepository.findByEmail(email);
+    } catch (error) {
+      console.error('[Login] Error finding user by email:', error);
+      return NextResponse.json(
+        { error: 'Внутренняя ошибка сервера при поиске пользователя.' },
+        { status: 500 }
+      );
+    }
     if (!user) {
       return NextResponse.json({ error: INVALID_MESSAGE }, { status: 401 });
     }
-    const userId = user.id;
+
+    // Если у пользователя нет пароля, это ошибка - все пользователи должны иметь пароль
+    if (!user.passwordHash) {
+      return NextResponse.json({ error: INVALID_MESSAGE }, { status: 401 });
+    }
+
+    // Проверяем пароль для пользователя с установленным паролем
+    const isValidPassword = verifyPassword(password, user.passwordHash);
+    if (!isValidPassword) {
+      return NextResponse.json({ error: INVALID_MESSAGE }, { status: 401 });
+    }
+
+    // Определяем роль: если это админ по email, то admin, иначе user
+    const role: DemoRole = email.toLowerCase() === getDemoAccount('admin').email.toLowerCase() ? 'admin' : 'user';
     const sessionToken = encodeDemoSession({ 
-      email: demoAccount.email, 
-      userId,
-      role: demoAccount.role, 
+      email: user.email, 
+      userId: user.id,
+      role, 
       issuedAt: Date.now() 
     });
     const redirectPath = resolveReturnPath(payload.returnTo);
     const response = NextResponse.json({ redirect: redirectPath });
     return withSessionCookie(response, sessionToken);
+  } catch (error) {
+    console.error('[Login] Unexpected error:', error);
+    console.error('[Login] Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined
+    });
+    return NextResponse.json(
+      { error: 'Внутренняя ошибка сервера при входе.' },
+      { status: 500 }
+    );
   }
-
-  // Затем проверяем пользователей из БД
-  const user = await usersRepository.findByEmail(email);
-  if (!user) {
-    return NextResponse.json({ error: INVALID_MESSAGE }, { status: 401 });
-  }
-
-  // Если у пользователя нет пароля, это ошибка - все пользователи должны иметь пароль
-  if (!user.passwordHash) {
-    return NextResponse.json({ error: INVALID_MESSAGE }, { status: 401 });
-  }
-
-  // Проверяем пароль для пользователя с установленным паролем
-  const isValidPassword = verifyPassword(password, user.passwordHash);
-  if (!isValidPassword) {
-    return NextResponse.json({ error: INVALID_MESSAGE }, { status: 401 });
-  }
-
-  // Определяем роль: если это админ по email, то admin, иначе user
-  const role: DemoRole = email.toLowerCase() === getDemoAccount('admin').email.toLowerCase() ? 'admin' : 'user';
-  const sessionToken = encodeDemoSession({ 
-    email: user.email, 
-    userId: user.id,
-    role, 
-    issuedAt: Date.now() 
-  });
-  const redirectPath = resolveReturnPath(payload.returnTo);
-  const response = NextResponse.json({ redirect: redirectPath });
-  return withSessionCookie(response, sessionToken);
 }

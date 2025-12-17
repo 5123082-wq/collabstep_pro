@@ -1,5 +1,4 @@
 import { eq, and } from 'drizzle-orm';
-import { db } from '../db/config';
 import {
     organizations,
     organizationMembers
@@ -7,6 +6,31 @@ import {
 import type { Organization, OrganizationMember } from '../types';
 import type { OrganizationMembership, OrganizationsRepository, NewOrganization, NewOrganizationMember } from './organizations-repository.interface';
 import { memory } from '../data/memory';
+
+// Try to import db - if it fails, we'll use memory repository
+type DbType = typeof import('../db/config').db;
+let db: DbType | null = null;
+let dbAvailable = false;
+
+try {
+    // Use require for conditional import to avoid module load errors
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const dbModule = require('../db/config');
+    if (dbModule?.db) {
+        db = dbModule.db as DbType;
+        dbAvailable = true;
+    }
+} catch (error) {
+    console.warn('[OrganizationsRepository] DB not available, will use memory repository:', 
+        error instanceof Error ? error.message : String(error));
+}
+
+function getDb(): NonNullable<DbType> {
+    if (!db) {
+        throw new Error('Database connection not available');
+    }
+    return db;
+}
 
 // Export types from interface for convenience
 export type { Organization, OrganizationMember, NewOrganization, NewOrganizationMember, OrganizationMembership };
@@ -22,7 +46,8 @@ export class OrganizationsDbRepository implements OrganizationsRepository {
     // --- Organizations ---
 
     async create(org: NewOrganization): Promise<Organization> {
-        return await db.transaction(async (tx) => {
+        const dbInstance = getDb();
+        return await dbInstance.transaction(async (tx) => {
             const [createdOrg] = await tx
                 .insert(organizations)
                 .values({
@@ -51,86 +76,245 @@ export class OrganizationsDbRepository implements OrganizationsRepository {
     }
 
     async findById(id: string): Promise<Organization | null> {
-        const [org] = await db
-            .select()
+        const dbInstance = getDb();
+        // Use explicit field selection to avoid fields that may not exist in DB
+        const [row] = await dbInstance
+            .select({
+                id: organizations.id,
+                ownerId: organizations.ownerId,
+                name: organizations.name,
+                description: organizations.description,
+                type: organizations.type,
+                isPublicInDirectory: organizations.isPublicInDirectory,
+                createdAt: organizations.createdAt,
+                updatedAt: organizations.updatedAt,
+            })
             .from(organizations)
             .where(eq(organizations.id, id));
-        return (org as unknown as Organization) || null;
+        
+        if (!row) return null;
+        
+        const org: Organization = {
+            id: row.id,
+            ownerId: row.ownerId,
+            name: row.name,
+            description: row.description ?? undefined,
+            type: row.type,
+            isPublicInDirectory: row.isPublicInDirectory,
+            status: 'active' as const, // Default value if status column doesn't exist in DB
+            createdAt: row.createdAt ?? new Date(),
+            updatedAt: row.updatedAt ?? new Date(),
+        } as Organization;
+        
+        return org;
     }
 
     async listForUser(userId: string): Promise<Organization[]> {
         const normalizedUserId = userId.trim();
         if (!normalizedUserId) return [];
 
-        // Get organizations where user is a member (canonical userId only)
-        const memberOrgs = await db
-            .select({ org: organizations })
-            .from(organizations)
-            .innerJoin(
-                organizationMembers,
-                eq(organizations.id, organizationMembers.organizationId)
-            )
-            .where(and(
-                eq(organizationMembers.userId, normalizedUserId),
-                eq(organizationMembers.status, 'active')
-            ));
+        console.log('[OrganizationsDbRepository] listForUser called with userId:', normalizedUserId);
 
-        // Also get organizations where user is the owner (canonical userId only)
-        const ownerOrgs = await db
-            .select()
-            .from(organizations)
-            .where(eq(organizations.ownerId, normalizedUserId));
+        try {
+            const dbInstance = getDb();
+            // Get organizations where user is a member (canonical userId only)
+            // Use explicit field selection to avoid fields that may not exist in DB
+            console.log('[OrganizationsDbRepository] Querying member organizations...');
+            const memberOrgs = await dbInstance
+                .select({
+                    orgId: organizations.id,
+                    orgOwnerId: organizations.ownerId,
+                    orgName: organizations.name,
+                    orgDescription: organizations.description,
+                    orgType: organizations.type,
+                    orgIsPublicInDirectory: organizations.isPublicInDirectory,
+                    orgCreatedAt: organizations.createdAt,
+                    orgUpdatedAt: organizations.updatedAt,
+                })
+                .from(organizations)
+                .innerJoin(
+                    organizationMembers,
+                    eq(organizations.id, organizationMembers.organizationId)
+                )
+                .where(and(
+                    eq(organizationMembers.userId, normalizedUserId),
+                    eq(organizationMembers.status, 'active')
+                ));
 
-        // Combine and deduplicate by organization ID
-        const orgMap = new Map<string, Organization>();
+            // Also get organizations where user is the owner (canonical userId only)
+            console.log('[OrganizationsDbRepository] Querying owner organizations...');
+            const ownerOrgs = await dbInstance
+                .select({
+                    id: organizations.id,
+                    ownerId: organizations.ownerId,
+                    name: organizations.name,
+                    description: organizations.description,
+                    type: organizations.type,
+                    isPublicInDirectory: organizations.isPublicInDirectory,
+                    createdAt: organizations.createdAt,
+                    updatedAt: organizations.updatedAt,
+                })
+                .from(organizations)
+                .where(eq(organizations.ownerId, normalizedUserId));
 
-        for (const { org } of memberOrgs) {
-            orgMap.set(org.id, org as unknown as Organization);
+            // Combine and deduplicate by organization ID
+            const orgMap = new Map<string, Organization>();
+
+            for (const row of memberOrgs) {
+                const org: Organization = {
+                    id: row.orgId,
+                    ownerId: row.orgOwnerId,
+                    name: row.orgName,
+                    description: row.orgDescription ?? undefined,
+                    type: row.orgType,
+                    isPublicInDirectory: row.orgIsPublicInDirectory,
+                    status: 'active' as const, // Default value if status column doesn't exist in DB
+                    createdAt: row.orgCreatedAt ?? new Date(),
+                    updatedAt: row.orgUpdatedAt ?? new Date(),
+                } as Organization;
+                orgMap.set(org.id, org);
+            }
+
+            for (const row of ownerOrgs) {
+                const org: Organization = {
+                    id: row.id,
+                    ownerId: row.ownerId,
+                    name: row.name,
+                    description: row.description ?? undefined,
+                    type: row.type,
+                    isPublicInDirectory: row.isPublicInDirectory,
+                    status: 'active' as const, // Default value if status column doesn't exist in DB
+                    createdAt: row.createdAt ?? new Date(),
+                    updatedAt: row.updatedAt ?? new Date(),
+                } as Organization;
+                orgMap.set(org.id, org);
+            }
+
+            // Sort by creation date (newest first)
+            return Array.from(orgMap.values()).sort((a, b) => {
+                const getTime = (date: Date | string | null | undefined): number => {
+                    if (!date) return 0;
+                    if (date instanceof Date) return date.getTime();
+                    if (typeof date === 'string') return new Date(date).getTime();
+                    return 0;
+                };
+                const dateA = getTime(a.createdAt);
+                const dateB = getTime(b.createdAt);
+                return dateB - dateA;
+            });
+        } catch (error) {
+            console.error('[OrganizationsDbRepository] Error in listForUser:', error);
+            const message = error instanceof Error ? error.message : String(error);
+            const stack = error instanceof Error ? error.stack : undefined;
+            console.error('[OrganizationsDbRepository] Error details:', { message, stack, userId: normalizedUserId });
+            
+            // If table doesn't exist or connection failed, return empty array instead of throwing
+            // This allows the app to work even if migrations haven't been run
+            if (message.includes('does not exist') || message.includes('relation') || message.includes('connection')) {
+                console.warn('[OrganizationsDbRepository] Database table or connection issue, returning empty array');
+                return [];
+            }
+            
+            throw error;
         }
-
-        for (const org of ownerOrgs) {
-            orgMap.set(org.id, org as unknown as Organization);
-        }
-
-        // Sort by creation date (newest first)
-        return Array.from(orgMap.values()).sort((a, b) => {
-            const dateA = a.createdAt?.getTime() ?? 0;
-            const dateB = b.createdAt?.getTime() ?? 0;
-            return dateB - dateA;
-        });
     }
 
     async listMembershipsForUser(userId: string): Promise<OrganizationMembership[]> {
         const normalizedUserId = userId.trim();
         if (!normalizedUserId) return [];
 
-        const rows = await db
-            .select({ org: organizations, member: organizationMembers })
-            .from(organizationMembers)
-            .innerJoin(
-                organizations,
-                eq(organizations.id, organizationMembers.organizationId)
-            )
-            .where(eq(organizationMembers.userId, normalizedUserId));
+        try {
+            const dbInstance = getDb();
+            console.log('[OrganizationsDbRepository] listMembershipsForUser called with userId:', normalizedUserId);
+            
+            // Use join with explicit field selection to avoid conflicts
+            // Note: Some fields may not exist in DB if migrations haven't been run
+            const rows = await dbInstance
+                .select({
+                    // Organization fields
+                    orgId: organizations.id,
+                    orgOwnerId: organizations.ownerId,
+                    orgName: organizations.name,
+                    orgDescription: organizations.description,
+                    orgType: organizations.type,
+                    orgIsPublicInDirectory: organizations.isPublicInDirectory,
+                    // orgStatus: organizations.status, // Temporarily removed - may not exist in DB
+                    // orgClosedAt: organizations.closedAt, // Temporarily removed - may not exist in DB
+                    // orgClosureReason: organizations.closureReason, // Temporarily removed - may not exist in DB
+                    orgCreatedAt: organizations.createdAt,
+                    orgUpdatedAt: organizations.updatedAt,
+                    // Member fields
+                    memberId: organizationMembers.id,
+                    memberOrganizationId: organizationMembers.organizationId,
+                    memberUserId: organizationMembers.userId,
+                    memberRole: organizationMembers.role,
+                    memberStatus: organizationMembers.status,
+                    memberCreatedAt: organizationMembers.createdAt,
+                    memberUpdatedAt: organizationMembers.updatedAt,
+                })
+                .from(organizationMembers)
+                .innerJoin(
+                    organizations,
+                    eq(organizations.id, organizationMembers.organizationId)
+                )
+                .where(eq(organizationMembers.userId, normalizedUserId));
 
-        const result = rows.map((row) => {
-            const org = row.org as unknown as Organization;
-            const member = row.member as unknown as OrganizationMember;
-            return { organization: org, member } satisfies OrganizationMembership;
-        });
+            console.log('[OrganizationsDbRepository] Found memberships:', rows.length);
 
-        return result.sort((a, b) => {
-            // Active first; then newest orgs first
-            const byStatus = statusRank(b.member.status) - statusRank(a.member.status);
-            if (byStatus !== 0) return byStatus;
-            const dateA = a.organization.createdAt?.getTime?.() ?? 0;
-            const dateB = b.organization.createdAt?.getTime?.() ?? 0;
-            return dateB - dateA;
-        });
+            const result: OrganizationMembership[] = rows.map((row) => {
+                const org: Organization = {
+                    id: row.orgId,
+                    ownerId: row.orgOwnerId,
+                    name: row.orgName,
+                    description: row.orgDescription ?? undefined,
+                    type: row.orgType,
+                    isPublicInDirectory: row.orgIsPublicInDirectory,
+                    status: 'active' as const, // Default value if status column doesn't exist in DB
+                    createdAt: row.orgCreatedAt ?? new Date(),
+                    updatedAt: row.orgUpdatedAt ?? new Date(),
+                } as Organization;
+
+                const member: OrganizationMember = {
+                    id: row.memberId,
+                    organizationId: row.memberOrganizationId,
+                    userId: row.memberUserId,
+                    role: row.memberRole,
+                    status: row.memberStatus,
+                    createdAt: row.memberCreatedAt ?? new Date(),
+                    updatedAt: row.memberUpdatedAt ?? new Date(),
+                } as OrganizationMember;
+
+                return { organization: org, member } satisfies OrganizationMembership;
+            });
+
+            return result.sort((a: OrganizationMembership, b: OrganizationMembership) => {
+                // Active first; then newest orgs first
+                const byStatus = statusRank(b.member.status) - statusRank(a.member.status);
+                if (byStatus !== 0) return byStatus;
+                const dateA = a.organization.createdAt?.getTime?.() ?? 0;
+                const dateB = b.organization.createdAt?.getTime?.() ?? 0;
+                return dateB - dateA;
+            });
+        } catch (error) {
+            console.error('[OrganizationsDbRepository] Error in listMembershipsForUser:', error);
+            const message = error instanceof Error ? error.message : String(error);
+            const stack = error instanceof Error ? error.stack : undefined;
+            console.error('[OrganizationsDbRepository] Error details:', { message, stack, userId: normalizedUserId });
+            
+            // If table doesn't exist or connection failed, return empty array instead of throwing
+            // This allows the app to work even if migrations haven't been run
+            if (message.includes('does not exist') || message.includes('relation') || message.includes('connection')) {
+                console.warn('[OrganizationsDbRepository] Database table or connection issue, returning empty array');
+                return [];
+            }
+            
+            throw error;
+        }
     }
 
     async update(id: string, data: Partial<Organization>): Promise<Organization | null> {
-        const [updated] = await db
+        const dbInstance = getDb();
+        const [updated] = await dbInstance
             .update(organizations)
             .set({ ...data, updatedAt: new Date() })
             .where(eq(organizations.id, id))
@@ -141,7 +325,8 @@ export class OrganizationsDbRepository implements OrganizationsRepository {
     // --- Members ---
 
     async addMember(member: NewOrganizationMember): Promise<OrganizationMember> {
-        const [created] = await db
+        const dbInstance = getDb();
+        const [created] = await dbInstance
             .insert(organizationMembers)
             .values({
                 organizationId: member.organizationId,
@@ -158,7 +343,8 @@ export class OrganizationsDbRepository implements OrganizationsRepository {
     }
 
     async findMember(organizationId: string, userId: string): Promise<OrganizationMember | null> {
-        const [member] = await db
+        const dbInstance = getDb();
+        const [member] = await dbInstance
             .select()
             .from(organizationMembers)
             .where(and(
@@ -169,7 +355,8 @@ export class OrganizationsDbRepository implements OrganizationsRepository {
     }
 
     async findMemberById(organizationId: string, memberId: string): Promise<OrganizationMember | null> {
-        const [member] = await db
+        const dbInstance = getDb();
+        const [member] = await dbInstance
             .select()
             .from(organizationMembers)
             .where(and(
@@ -180,7 +367,8 @@ export class OrganizationsDbRepository implements OrganizationsRepository {
     }
 
     async listMembers(organizationId: string): Promise<OrganizationMember[]> {
-        const members = await db
+        const dbInstance = getDb();
+        const members = await dbInstance
             .select()
             .from(organizationMembers)
             .where(eq(organizationMembers.organizationId, organizationId));
@@ -192,7 +380,8 @@ export class OrganizationsDbRepository implements OrganizationsRepository {
         memberId: string,
         role: OrganizationMember['role']
     ): Promise<OrganizationMember | null> {
-        const [updated] = await db
+        const dbInstance = getDb();
+        const [updated] = await dbInstance
             .update(organizationMembers)
             .set({ role, updatedAt: new Date() })
             .where(and(
@@ -208,7 +397,8 @@ export class OrganizationsDbRepository implements OrganizationsRepository {
         memberId: string,
         status: OrganizationMember['status']
     ): Promise<OrganizationMember | null> {
-        const [updated] = await db
+        const dbInstance = getDb();
+        const [updated] = await dbInstance
             .update(organizationMembers)
             .set({ status, updatedAt: new Date() })
             .where(and(
@@ -220,7 +410,8 @@ export class OrganizationsDbRepository implements OrganizationsRepository {
     }
 
     async removeMember(organizationId: string, memberId: string): Promise<void> {
-        await db
+        const dbInstance = getDb();
+        await dbInstance
             .delete(organizationMembers)
             .where(and(
                 eq(organizationMembers.id, memberId),
@@ -422,7 +613,15 @@ export class OrganizationsMemoryRepository implements OrganizationsRepository {
 const hasDbConnection = !!process.env.POSTGRES_URL;
 const isDbStorage = process.env.AUTH_STORAGE === 'db' && hasDbConnection;
 
-// If no DB connection, default to memory repository to prevent 500 errors in dev
-export const organizationsRepository: OrganizationsRepository = isDbStorage
+console.log('[OrganizationsRepository] Initialization:', {
+    hasDbConnection,
+    isDbStorage,
+    dbAvailable,
+    AUTH_STORAGE: process.env.AUTH_STORAGE,
+    hasPostgresUrl: !!process.env.POSTGRES_URL
+});
+
+// If no DB connection or DB is not available, default to memory repository to prevent 500 errors
+export const organizationsRepository: OrganizationsRepository = (isDbStorage && dbAvailable)
     ? new OrganizationsDbRepository()
     : new OrganizationsMemoryRepository();
