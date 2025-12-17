@@ -67,12 +67,27 @@ export function ClosurePreviewModal({
       
       const res = await fetch(`/api/organizations/${organizationId}/closure/preview`);
       
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.details || errorData.message || 'Не удалось загрузить preview');
+      const responseData = await res.json();
+      
+      if (!res.ok || !responseData.ok) {
+        throw new Error(responseData.details || responseData.error || 'Не удалось загрузить preview');
       }
       
-      const data = await res.json();
+      // Extract data from API response (jsonOk returns { ok: true, data: ... })
+      const data = responseData.data || responseData;
+      
+      // Ensure all array fields are arrays
+      if (data && typeof data === 'object') {
+        if (!Array.isArray(data.archivableData)) {
+          data.archivableData = data.archivableData ? [data.archivableData] : [];
+        }
+        if (!Array.isArray(data.blockers)) {
+          data.blockers = data.blockers ? [data.blockers] : [];
+        }
+        if (!Array.isArray(data.warnings)) {
+          data.warnings = data.warnings ? [data.warnings] : [];
+        }
+      }
       setPreview(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Произошла ошибка при загрузке данных');
@@ -106,7 +121,11 @@ export function ClosurePreviewModal({
     return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`;
   };
 
-  const groupArchivableDataByModule = (data: ArchivableData[]) => {
+  const groupArchivableDataByModule = (data: ArchivableData[] | undefined | null) => {
+    if (!data || !Array.isArray(data)) {
+      return [];
+    }
+    
     const grouped = new Map<string, { moduleName: string; items: ArchivableData[]; totalSize: number }>();
     
     for (const item of data) {

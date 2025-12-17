@@ -6,7 +6,12 @@ import {
 } from '@collabverse/api';
 import { amountToCents } from '@collabverse/api/utils/money';
 
-describe('WalletClosureChecker', () => {
+// Skip tests if POSTGRES_URL is not set (e.g., in CI without database)
+const hasDatabase =
+  !!process.env.POSTGRES_URL && process.env.POSTGRES_URL.trim() !== '';
+const describeIfDb = hasDatabase ? describe : describe.skip;
+
+describeIfDb('WalletClosureChecker', () => {
   let checker: WalletClosureChecker;
   let testOrgId: string;
   let testOwnerId: string;

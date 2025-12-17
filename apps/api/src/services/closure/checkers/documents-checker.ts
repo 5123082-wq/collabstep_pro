@@ -167,3 +167,4 @@ export class DocumentsClosureChecker implements OrganizationClosureChecker {
     await archivedDocumentsRepository.deleteByArchive(archiveId);
   }
 }
+

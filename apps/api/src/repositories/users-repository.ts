@@ -190,5 +190,11 @@ export class UsersMemoryRepository implements UsersRepository {
 // @vercel/postgres requires POSTGRES_URL to be set. DATABASE_URL is not enough for it.
 const hasDbConnection = !!process.env.POSTGRES_URL;
 const isDbStorage = process.env.AUTH_STORAGE === 'db' && hasDbConnection;
+
+if (process.env.AUTH_STORAGE === 'db' && !hasDbConnection) {
+  console.error('[UsersRepository] AUTH_STORAGE=db but POSTGRES_URL is not set. Database operations will fail.');
+  throw new Error('AUTH_STORAGE=db requires POSTGRES_URL to be set');
+}
+
 export const usersRepository: UsersRepository = isDbStorage ? new UsersDbRepository() : new UsersMemoryRepository();
 export type { UsersRepository };

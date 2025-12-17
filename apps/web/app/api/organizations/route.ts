@@ -16,7 +16,10 @@ export async function GET() {
         return jsonOk({ organizations });
     } catch (error) {
         console.error('[Organizations] Error listing:', error);
-        return jsonError('INTERNAL_ERROR', { status: 500 });
+        const message = error instanceof Error ? error.message : String(error);
+        const stack = error instanceof Error ? error.stack : undefined;
+        console.error('[Organizations] Error details:', { message, stack, userId });
+        return jsonError('INTERNAL_ERROR', { status: 500, details: message });
     }
 }
 

@@ -9,7 +9,12 @@ import {
   filesRepository,
 } from '@collabverse/api';
 
-describe('Organization Closure Integration', () => {
+// Skip tests if POSTGRES_URL is not set (e.g., in CI without database)
+const hasDatabase =
+  !!process.env.POSTGRES_URL && process.env.POSTGRES_URL.trim() !== '';
+const describeIfDb = hasDatabase ? describe : describe.skip;
+
+describeIfDb('Organization Closure Integration', () => {
   let testOrgId: string;
   let testOwnerId: string;
   let testProjectId: string;

@@ -28,5 +28,7 @@ module.exports = {
     'node_modules/(?!.*(@auth|next-auth|jose|oauth4webapi|preact-render-to-string))',
   ],
   extensionsToTreatAsEsm: [],
+  // Load environment variables from .env.local before tests run
+  setupFiles: ['<rootDir>/apps/web/tests/setup-env.js'],
   setupFilesAfterEnv: [],
 };
