@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-// @ts-expect-error lucide-react icon types
 import { ArrowLeft, Check, X } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ContentBlock } from '@/components/ui/content-block';

@@ -200,12 +200,14 @@ export const organizationMembers = pgTable(
             .references(() => users.id, { onDelete: "cascade" }),
         role: organizationRoleEnum("role").default("member").notNull(),
         status: organizationMemberStatusEnum("status").default("active").notNull(),
+        isPrimary: boolean("is_primary").default(false).notNull(), // First created org is primary for user
         createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
         updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow(),
     },
     (table) => ({
         orgUserIdx: uniqueIndex("organization_member_org_user_idx").on(table.organizationId, table.userId),
         userIdIdx: index("organization_member_user_id_idx").on(table.userId),
+        primaryUserIdx: index("organization_member_primary_user_idx").on(table.userId, table.isPrimary),
     })
 );
 
@@ -654,5 +656,30 @@ export const organizationStorageUsage = pgTable(
     },
     (table) => ({
         organizationIdIdx: uniqueIndex("organization_storage_usage_organization_id_idx").on(table.organizationId),
+    })
+);
+
+// --- User Subscription (for multi-org limits) ---
+
+export const userSubscriptions = pgTable(
+    "user_subscription",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        userId: text("user_id")
+            .notNull()
+            .unique()
+            .references(() => users.id, { onDelete: "cascade" }),
+        planCode: subscriptionPlanCodeEnum("plan_code").default("free").notNull(),
+        maxOrganizations: integer("max_organizations").default(1).notNull(), // free=1, pro/max=unlimited (-1)
+        expiresAt: timestamp("expires_at", { mode: "date" }),
+        createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+        updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow(),
+    },
+    (table) => ({
+        userIdIdx: uniqueIndex("user_subscription_user_id_idx").on(table.userId),
+        planCodeIdx: index("user_subscription_plan_code_idx").on(table.planCode),
+        expiresAtIdx: index("user_subscription_expires_at_idx").on(table.expiresAt),
     })
 );

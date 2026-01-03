@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, useTransition, useCallback, useRef } from
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { flags } from '@/lib/flags';
 import { FeatureComingSoon } from '@/components/app/FeatureComingSoon';
+import { useOrganization } from '@/components/organizations/OrganizationContext';
 import {
   parseTaskFilters,
   buildTaskFilterParams,
@@ -52,6 +53,7 @@ export default function PMTasksPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const { currentOrganization } = useOrganization();
 
   const urlFilters = useMemo(() => parseTaskFilters(searchParams), [searchParams]);
   const view = urlFilters.view || 'board';
@@ -368,8 +370,15 @@ export default function PMTasksPage() {
     <div className="space-y-6 min-w-0 max-w-full overflow-x-hidden">
       <header className="flex items-center justify-between min-w-0 flex-wrap gap-4 max-w-full">
         <div>
-          <h1 className="text-xl font-semibold text-white">Задачи</h1>
-          <p className="mt-2 text-sm text-neutral-400">Управляйте всеми задачами</p>
+          <h1 className="text-xl font-semibold text-white">
+            {currentOrganization ? `Задачи — ${currentOrganization.name}` : 'Задачи'}
+          </h1>
+          <p className="mt-2 text-sm text-neutral-400">
+            {currentOrganization 
+              ? `Управляйте задачами организации ${currentOrganization.name}`
+              : 'Управляйте всеми задачами'
+            }
+          </p>
         </div>
 
         {/* Переключатель представлений */}

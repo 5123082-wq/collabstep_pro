@@ -3,7 +3,6 @@
 import * as React from 'react';
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
 import { cn } from '@/lib/utils';
-// @ts-expect-error lucide-react icon types
 import { Check, ChevronRight } from 'lucide-react';
 
 const DropdownMenu = DropdownMenuPrimitive.Root;

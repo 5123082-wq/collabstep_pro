@@ -150,23 +150,6 @@ export async function GET(request: Request) {
       }
     }
 
-    // Если нет доступных проектов — создаём демо-проект, чтобы доска/список были работоспособны
-    if (accessibleProjects.length === 0) {
-      try {
-        const seeded = projectsRepository.create({
-          title: 'Demo tasks project',
-          description: 'Автосозданный проект для e2e задач',
-          ownerId: auth.userId,
-          workspaceId: 'ws-collabverse-core',
-          status: 'active',
-          visibility: 'private'
-        });
-        projectsRepository.upsertMember(seeded.id, auth.userId, 'owner');
-        accessibleProjects.push(seeded);
-      } catch (error) {
-        console.error('[Tasks API] Failed to seed project for user', error);
-      }
-    }
 
     // Получаем все задачи и фильтруем их по доступу к проектам
     const allTasks = tasksRepository.list();

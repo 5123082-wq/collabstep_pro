@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ContentBlock } from '@/components/ui/content-block';
 import { toast } from '@/lib/ui/toast';
-// @ts-expect-error lucide-react icon types
 import { Building2, ArrowLeft } from 'lucide-react';
 
 export default function CreateOrganizationPage() {

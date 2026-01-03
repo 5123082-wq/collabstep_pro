@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import { AppShellProvider } from '@/components/app/AppShellContext';
 import { SessionProvider } from '@/components/app/SessionContext';
+import { OrganizationProvider } from '@/components/organizations/OrganizationContext';
 import AppTopbar from '@/components/app/AppTopbar';
 import CommandPalette from '@/components/app/CommandPalette';
 import ContentContainer from '@/components/app/ContentContainer';
@@ -195,8 +196,9 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
 
   return (
     <SessionProvider session={session}>
-      <AppShellProvider openCreateMenu={openCreateMenu} openCommandPalette={openCommandPalette}>
-        <div
+      <OrganizationProvider>
+        <AppShellProvider openCreateMenu={openCreateMenu} openCommandPalette={openCommandPalette}>
+          <div
           className={clsx(
             'flex h-screen min-h-0 max-h-screen overflow-hidden bg-transparent text-[color:var(--text-primary)]',
             isAdminRoute && 'admin-route'
@@ -267,8 +269,9 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
               onClose={() => setAssistantOpen(false)}
             />
           )}
-        </div>
-      </AppShellProvider>
+          </div>
+        </AppShellProvider>
+      </OrganizationProvider>
     </SessionProvider>
   );
 }

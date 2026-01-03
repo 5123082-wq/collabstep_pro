@@ -64,35 +64,6 @@ export async function GET(request: NextRequest) {
     // Очищаем возможные устаревшие демо-данные (без автосоздания)
     await ensureTestProject(auth.userId, auth.email);
 
-    // Гарантируем, что у пользователя есть хотя бы один проект (важно для демо/e2e)
-    const existing = projectsRepository.list({ workspaceId: DEFAULT_WORKSPACE_ID });
-    const organizations = await organizationsRepository.listForUser(auth.userId).catch(() => []);
-    const defaultOrganizationId = organizations[0]?.id;
-    if (!existing.some((p) => p.ownerId === auth.userId) && defaultOrganizationId) {
-      try {
-        const seedProject = projectsRepository.create({
-          title: 'Demo workspace project',
-          description: 'Автосозданный проект для e2e',
-          ownerId: auth.userId,
-          workspaceId: DEFAULT_WORKSPACE_ID,
-          status: 'active',
-          visibility: 'private'
-        });
-        // Добавляем владельца в мемберы для консистентности
-        projectsRepository.upsertMember(seedProject.id, auth.userId, 'owner');
-        await upsertOrganizationProject({
-          projectId: seedProject.id,
-          organizationId: defaultOrganizationId,
-          ownerId: auth.userId,
-          title: seedProject.title,
-          ...(seedProject.description && { description: seedProject.description }),
-          visibility: seedProject.visibility
-        });
-      } catch (error) {
-        console.error('[Projects API] Failed to seed project for user', error);
-      }
-    }
-
     const searchParams = request.nextUrl.searchParams;
     const parsedFilters = parseProjectFilters(searchParams);
     const scopeParam = searchParams.get('scope');
@@ -134,38 +105,6 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    // Если после всех операций список пуст — создаём резервный проект и пробуем ещё раз
-    if (!overview.items || overview.items.length === 0) {
-      try {
-        if (defaultOrganizationId) {
-          const fallback = projectsRepository.create({
-            title: 'Demo fallback project',
-            description: 'Автосозданный проект, когда список пуст',
-            ownerId: auth.userId,
-            workspaceId: DEFAULT_WORKSPACE_ID,
-            status: 'active',
-            visibility: 'private'
-          });
-          projectsRepository.upsertMember(fallback.id, auth.userId, 'owner');
-          await upsertOrganizationProject({
-            projectId: fallback.id,
-            organizationId: defaultOrganizationId,
-            ownerId: auth.userId,
-            title: fallback.title,
-            ...(fallback.description && { description: fallback.description }),
-            visibility: fallback.visibility
-          });
-          overview = await getProjectsOverview(auth.userId, {
-            ...parsedFilters,
-            scope: 'owned',
-            page: parsedFilters.page,
-            pageSize: parsedFilters.pageSize
-          });
-        }
-      } catch (error) {
-        console.error('[Projects API] Failed to create fallback project', error);
-      }
-    }
 
     // Логирование для отладки
     const allProjects = projectsRepository.list();
