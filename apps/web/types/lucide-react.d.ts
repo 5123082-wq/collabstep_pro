@@ -55,4 +55,9 @@ declare module 'lucide-react' {
   export const Link2: LucideIcon;
   export const DollarSign: LucideIcon;
   export const Maximize2: LucideIcon;
+  // Multi-org feature icons
+  export const Crown: LucideIcon;
+  export const Building2: LucideIcon;
+  export const Check: LucideIcon;
+  export const ArrowRight: LucideIcon;
 }

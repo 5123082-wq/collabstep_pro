@@ -3,57 +3,91 @@
 ## Goal
 
 - Integrate file manager with Org → Project → Task, @vercel/blob storage, share links, folders, trash/limits, direct upload.
+- **NEW**: Multi-Organization Premium Feature - allow paid users to create multiple organizations.
 
 ## Constraints/Assumptions
 
 - No secrets in repo; BLOB token only via env.
 - Previews: images/PDF only; no document versioning; no audit initially.
+- Multi-org: free plan = 1 org, pro/max = unlimited.
 
 ## Key Decisions
 
 - Share: public view; download requires login via server-side proxy (no exposed URLs).
 - Results: task has result folder; can be empty.
 - Limits: free/pro/max; trash retention 7/30/unlimited days.
+- **Multi-org**: First created org = primary; user can switch between orgs; data filtered by current org.
 
 ## State
 
-- Tasks 01–16 complete (all code changes + DB migration done).
-- **Done in Task 16**:
-  - Applied migration 0006 (organization archive tables, status columns).
-  - Applied migration 0007 (file manager tables: file, attachment, folder, share, file_trash, subscription_plan, organization_subscription, organization_storage_usage).
-  - Created migration scripts (`apply-migration-0006.mjs`, `apply-migration-0007.mjs`).
-  - Tests: 38/55 pass (69%), failures are timeout-related due to remote DB latency.
+- Tasks 01–16 complete (file manager).
+- **Multi-Org Feature implemented** (2026-01-03):
+  - DB migration 0008: `is_primary` column in `organization_member`, `user_subscription` table
+  - Zustand store: `organization-store.ts` for org state
+  - Context: `OrganizationContext.tsx` with `useOrganization()` hook
+  - Updated `OrganizationSwitcher` - shows current org, switch functionality, primary indicator
+  - API updates: `/api/organizations` returns isPrimary, userRole, memberCount
+  - API limits: POST `/api/organizations` checks subscription limits
+  - New API: `/api/me/subscription` for user subscription info
+  - `UpgradeToCreateOrgModal` paywall for free users
+  - Pages integrated: Projects, Tasks, Files - all show org name in header
 
 ### Now
 
-- ✅ DB migrations applied (0006, 0007). All file manager tables exist.
-- ✅ Env vars added to `.env.local`: `BLOB_READ_WRITE_TOKEN`, `CRON_SECRET`.
-- ✅ Dev server restarted with new env vars.
-- ✅ **UI VERIFIED**: File manager fully working!
-  - Tab "Файлы" shows project files.
-  - Upload button "📎 Загрузить файл" available.
-  - Existing file "test.txt" displayed with Open/Download actions.
-  - Folder structure visible.
-- ✅ Ready for production deploy.
+- ✅ Multi-Organization feature implemented (code complete)
+- ✅ Migration 0008 applied successfully (is_primary, user_subscription table)
+- ✅ Pages show current organization name in headers
+- ✅ OrganizationSwitcher shows current org with switch capability
+- ✅ Tested: Projects and Files pages show "— Test Org" in header
+- ✅ **Folder deletion feature** (2026-01-03):
+  - Added delete button for custom folders in FolderTreeSidebar (appears on hover)
+  - API tracks files belonging to projects when deleting folders
+  - Logs notification info for project owners (for future notification system)
+  - Files moved to trash on folder deletion, can be restored
 
-### Next (for production deploy)
+### Next
 
-- Add to Vercel env vars:
-  - `FEATURE_PROJECT_ATTACHMENTS=1`
-  - `NEXT_PUBLIC_FEATURE_PROJECT_ATTACHMENTS=1`
-  - `CRON_SECRET=<your secret>`
-  - `BLOB_READ_WRITE_TOKEN=<provided token>`
-- Deploy to Vercel.
-- Full production smoke test.
+- Implement actual subscription purchase flow (Stripe integration)
+- Add "god mode" view (see all orgs at once) - deferred for later
+- Consider adding org indicator badge in project/task cards
+- Implement notification system for project owners when their files are deleted
 
-## Documentation cleanup
+## Files Changed (Multi-Org Feature)
 
-- Archived completed task docs: `docs/agent_tasks/file-manager-integration/` → `docs/archive/agent_tasks/file-manager-integration/`
-- Archived audit docs: `docs/audit/` → `docs/archive/audit/`
-- Archived old development stages: `docs/development/stages/` → `docs/archive/development/stages/`
-- Archived temporary root files: `FIX_WEBPACK_CHUNK_ERROR.md`, `TEST_REPORT.md`, `WEBPACK_ERROR_RESOLUTION.md` → `docs/archive/`
-- Updated `.gitignore` to exclude `docs/archive/` from git
+- `apps/api/src/db/schema.ts` - added isPrimary to organizationMembers, userSubscriptions table
+- `apps/api/src/db/migrations/0008_multi_org_feature.sql` - migration file
+- `apps/api/apply-migration-0008.mjs` - migration script
+- `apps/web/stores/organization-store.ts` - Zustand store for org state
+- `apps/web/components/organizations/OrganizationContext.tsx` - Context provider
+- `apps/web/components/organizations/OrganizationSwitcher.tsx` - Updated switcher UI
+- `apps/web/components/organizations/UpgradeToCreateOrgModal.tsx` - Paywall modal
+- `apps/web/components/app/AppLayoutClient.tsx` - Added OrganizationProvider
+- `apps/web/app/api/organizations/route.ts` - Enhanced GET/POST
+- `apps/web/app/api/me/subscription/route.ts` - New endpoint
+- `apps/web/lib/api/user-subscription.ts` - Subscription utilities
+- `apps/web/app/(app)/pm/projects/page.tsx` - Org context integration
+- `apps/web/app/(app)/pm/tasks/page.tsx` - Org context integration
+- `apps/web/app/(app)/docs/files/page.tsx` - Org context integration
+
+## Critical Issue: User Data Loss
+
+- **2026-01-03**: Скрипт `cleanup-users-db.ts` был запущен и удалил всех пользователей кроме администратора
+- **Результат**: В базе данных остался только 1 пользователь (было 199)
+- **Действие**: Проверить возможность восстановления из бэкапов Vercel Postgres
+- **Документация**: `docs/runbooks/USER_DATA_RECOVERY.md`
 
 ## Last updated
 
-- 2026-01-03 — File manager smoke test PASSED ✅
+- 2026-01-03 — **Folder Deletion Feature** ✅
+  - Added delete button in FolderTreeSidebar for custom folders (hover to show)
+  - API tracks project files when deleting folders, logs notification info
+  - Files moved to trash on folder deletion, can be restored via existing restore mechanism
+
+- 2026-01-03 — **Multi-Organization Premium Feature** ✅
+  - Added isPrimary flag to organization_member table
+  - Created user_subscription table for plan limits
+  - Zustand store + Context for organization state
+  - OrganizationSwitcher shows current org with switching
+  - API limits: free=1 org, pro/max=unlimited
+  - Paywall modal for free users trying to create 2nd org
+  - Projects/Tasks/Files pages show current org name
