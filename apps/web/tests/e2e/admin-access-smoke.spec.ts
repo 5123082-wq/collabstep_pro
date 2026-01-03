@@ -15,6 +15,10 @@ test.describe('demo admin smoke workflow', () => {
     await page.waitForURL('**/pm/projects/create', { waitUntil: 'load' });
 
     const projectName = `Admin Smoke Project ${Date.now()}`;
+    const organizationSelect = page.getByLabel('Организация');
+    if (await organizationSelect.count()) {
+      await organizationSelect.selectOption({ index: 0 });
+    }
     await page.getByLabel('Название проекта').fill(projectName);
 
     await page.getByRole('button', { name: 'Далее' }).click();

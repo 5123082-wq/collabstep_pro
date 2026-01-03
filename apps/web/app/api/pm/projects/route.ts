@@ -1,11 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { flags } from '@/lib/flags';
 import { getAuthFromRequest } from '@/lib/api/finance-access';
-import { projectsRepository, DEFAULT_WORKSPACE_ID } from '@collabverse/api';
+import { organizationsRepository, projectsRepository, DEFAULT_WORKSPACE_ID } from '@collabverse/api';
+import { db } from '@collabverse/api/db/config';
+import { projects } from '@collabverse/api/db/schema';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { parseProjectFilters, type ProjectScope } from '@/lib/pm/filters';
 import { getProjectsOverview } from '@/lib/pm/projects-overview.server';
 import { ensureTestProject } from '@/lib/pm/ensure-test-project';
+
+async function upsertOrganizationProject({
+  projectId,
+  organizationId,
+  ownerId,
+  title,
+  description,
+  visibility
+}: {
+  projectId: string;
+  organizationId: string;
+  ownerId: string;
+  title: string;
+  description?: string;
+  visibility: 'private' | 'public';
+}): Promise<void> {
+  const now = new Date();
+  await db
+    .insert(projects)
+    .values({
+      id: projectId,
+      organizationId,
+      ownerId,
+      name: title,
+      description,
+      visibility: visibility === 'public' ? 'public' : 'private',
+      createdAt: now,
+      updatedAt: now
+    })
+    .onConflictDoUpdate({
+      target: projects.id,
+      set: {
+        organizationId,
+        ownerId,
+        name: title,
+        description,
+        visibility: visibility === 'public' ? 'public' : 'private',
+        updatedAt: now
+      }
+    });
+}
 
 export async function GET(request: NextRequest) {
   if (!flags.PM_NAV_PROJECTS_AND_TASKS || !flags.PM_PROJECTS_LIST) {
@@ -23,7 +66,9 @@ export async function GET(request: NextRequest) {
 
     // Гарантируем, что у пользователя есть хотя бы один проект (важно для демо/e2e)
     const existing = projectsRepository.list({ workspaceId: DEFAULT_WORKSPACE_ID });
-    if (!existing.some((p) => p.ownerId === auth.userId)) {
+    const organizations = await organizationsRepository.listForUser(auth.userId).catch(() => []);
+    const defaultOrganizationId = organizations[0]?.id;
+    if (!existing.some((p) => p.ownerId === auth.userId) && defaultOrganizationId) {
       try {
         const seedProject = projectsRepository.create({
           title: 'Demo workspace project',
@@ -35,6 +80,14 @@ export async function GET(request: NextRequest) {
         });
         // Добавляем владельца в мемберы для консистентности
         projectsRepository.upsertMember(seedProject.id, auth.userId, 'owner');
+        await upsertOrganizationProject({
+          projectId: seedProject.id,
+          organizationId: defaultOrganizationId,
+          ownerId: auth.userId,
+          title: seedProject.title,
+          ...(seedProject.description && { description: seedProject.description }),
+          visibility: seedProject.visibility
+        });
       } catch (error) {
         console.error('[Projects API] Failed to seed project for user', error);
       }
@@ -84,21 +137,31 @@ export async function GET(request: NextRequest) {
     // Если после всех операций список пуст — создаём резервный проект и пробуем ещё раз
     if (!overview.items || overview.items.length === 0) {
       try {
-        const fallback = projectsRepository.create({
-          title: 'Demo fallback project',
-          description: 'Автосозданный проект, когда список пуст',
-          ownerId: auth.userId,
-          workspaceId: DEFAULT_WORKSPACE_ID,
-          status: 'active',
-          visibility: 'private'
-        });
-        projectsRepository.upsertMember(fallback.id, auth.userId, 'owner');
-        overview = await getProjectsOverview(auth.userId, {
-          ...parsedFilters,
-          scope: 'owned',
-          page: parsedFilters.page,
-          pageSize: parsedFilters.pageSize
-        });
+        if (defaultOrganizationId) {
+          const fallback = projectsRepository.create({
+            title: 'Demo fallback project',
+            description: 'Автосозданный проект, когда список пуст',
+            ownerId: auth.userId,
+            workspaceId: DEFAULT_WORKSPACE_ID,
+            status: 'active',
+            visibility: 'private'
+          });
+          projectsRepository.upsertMember(fallback.id, auth.userId, 'owner');
+          await upsertOrganizationProject({
+            projectId: fallback.id,
+            organizationId: defaultOrganizationId,
+            ownerId: auth.userId,
+            title: fallback.title,
+            ...(fallback.description && { description: fallback.description }),
+            visibility: fallback.visibility
+          });
+          overview = await getProjectsOverview(auth.userId, {
+            ...parsedFilters,
+            scope: 'owned',
+            page: parsedFilters.page,
+            pageSize: parsedFilters.pageSize
+          });
+        }
       } catch (error) {
         console.error('[Projects API] Failed to create fallback project', error);
       }
@@ -163,7 +226,14 @@ export async function POST(request: Request) {
     const visibility = 'private';
     const normalizedStatus = 'active';
     const workspaceId = body.workspaceId || DEFAULT_WORKSPACE_ID;
-    const organizationId = body.organizationId;
+    const organizationId = typeof body.organizationId === 'string' ? body.organizationId.trim() : '';
+    if (!organizationId) {
+      return jsonError('ORGANIZATION_REQUIRED', { status: 400 });
+    }
+    const member = await organizationsRepository.findMember(organizationId, auth.userId);
+    if (!member || member.status !== 'active') {
+      return jsonError('ORGANIZATION_ACCESS_DENIED', { status: 403 });
+    }
     console.log(
       `[Projects API POST] Creating project: title=${title}, ownerId=${auth.userId}, workspaceId=${workspaceId}, organizationId=${organizationId}, status=${normalizedStatus}, visibility=${visibility}`
     );
@@ -186,6 +256,21 @@ export async function POST(request: Request) {
       console.error(`[Projects API POST] Project was created but not found immediately: id=${project.id}`);
     } else {
       console.log(`[Projects API POST] Project verified: id=${verifyProject.id}, workspaceId=${verifyProject.workspaceId}`);
+    }
+
+    try {
+      await upsertOrganizationProject({
+        projectId: project.id,
+        organizationId,
+        ownerId: auth.userId,
+        title: project.title,
+        ...(project.description && { description: project.description }),
+        visibility
+      });
+    } catch (error) {
+      console.error('[Projects API POST] Failed to sync organization project record', error);
+      projectsRepository.delete(project.id);
+      return jsonError('PROJECT_ORGANIZATION_SYNC_FAILED', { status: 500 });
     }
 
     return jsonOk({ project });

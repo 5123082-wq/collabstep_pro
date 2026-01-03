@@ -1,16 +1,32 @@
 import { encodeDemoSession } from '@/lib/auth/demo-session';
 import {
   projectsRepository,
-  filesRepository,
-  attachmentsRepository,
   resetFinanceMemory,
   TEST_ADMIN_USER_ID
 } from '@collabverse/api';
+import { db } from '@collabverse/api/db/config';
+import {
+  attachments,
+  files,
+  organizationMembers,
+  organizations,
+  organizationStorageUsage,
+  projects,
+  users
+} from '@collabverse/api/db/schema';
 import { GET as getProjectFiles, POST as uploadFile } from '@/app/api/pm/projects/[id]/files/route';
 import { NextRequest } from 'next/server';
+import { randomUUID } from 'node:crypto';
+import { eq } from 'drizzle-orm';
+import { put } from '@vercel/blob';
+
+jest.mock('@vercel/blob', () => ({
+  put: jest.fn()
+}));
 
 describe('Project Files API', () => {
   let projectId: string;
+  let organizationId: string;
   const adminEmail = 'admin.demo@collabverse.test';
   const userId = TEST_ADMIN_USER_ID;
   const session = encodeDemoSession({
@@ -23,8 +39,54 @@ describe('Project Files API', () => {
     cookie: `cv_session=${session}`
   };
 
-  beforeEach(() => {
+  const mockPut = put as jest.MockedFunction<typeof put>;
+
+  beforeEach(async () => {
     resetFinanceMemory();
+
+    await db.delete(attachments);
+    await db.delete(files);
+    await db.delete(organizationStorageUsage);
+    await db.delete(projects);
+    await db.delete(organizationMembers);
+    await db.delete(organizations);
+    await db.delete(users);
+
+    process.env.BLOB_READ_WRITE_TOKEN = 'test-blob-token';
+    mockPut.mockResolvedValue({
+      url: 'https://example.blob.vercel-storage.com/test.txt',
+      downloadUrl: 'https://example.blob.vercel-storage.com/test.txt?download=1',
+      pathname: 'projects/test/test.txt',
+      contentType: 'text/plain',
+      contentDisposition: 'attachment; filename="test.txt"'
+    });
+
+    await db
+      .insert(users)
+      .values({
+        id: userId,
+        email: adminEmail,
+        name: 'Test Admin'
+      });
+
+    organizationId = randomUUID();
+    await db
+      .insert(organizations)
+      .values({
+        id: organizationId,
+        ownerId: userId,
+        name: 'Test Org',
+        type: 'closed'
+      });
+
+    await db
+      .insert(organizationMembers)
+      .values({
+        organizationId,
+        userId,
+        role: 'owner',
+        status: 'active'
+      });
 
     // Создаем проект для тестов
     const project = projectsRepository.create({
@@ -35,6 +97,20 @@ describe('Project Files API', () => {
       status: 'active'
     });
     projectId = project.id;
+
+    await db
+      .insert(projects)
+      .values({
+        id: projectId,
+        organizationId,
+        ownerId: userId,
+        name: project.title,
+        description: project.description
+      });
+  });
+
+  afterEach(() => {
+    mockPut.mockReset();
   });
 
   describe('GET /api/pm/projects/[id]/files', () => {
@@ -53,21 +129,33 @@ describe('Project Files API', () => {
     });
 
     it('should return files for a project', async () => {
-      // Создаем файл и attachment
-      const file = filesRepository.create({
-        filename: 'test.txt',
-        mimeType: 'text/plain',
-        sizeBytes: 100,
-        uploaderId: userId
-      });
+      const [createdFile] = await db
+        .insert(files)
+        .values({
+          organizationId,
+          projectId,
+          uploadedBy: userId,
+          filename: 'test.txt',
+          mimeType: 'text/plain',
+          sizeBytes: 100,
+          storageKey: `projects/${projectId}/test.txt`,
+          storageUrl: 'https://example.blob.vercel-storage.com/test.txt',
+          sha256: null,
+          description: null,
+          folderId: null,
+          taskId: null
+        })
+        .returning();
 
-      attachmentsRepository.create({
-        projectId,
-        fileId: file.id,
-        linkedEntity: 'project',
-        entityId: null,
-        createdBy: userId
-      });
+      await db
+        .insert(attachments)
+        .values({
+          projectId,
+          fileId: createdFile!.id,
+          linkedEntity: 'project',
+          entityId: null,
+          createdBy: userId
+        });
 
       const response = await getProjectFiles(
         new NextRequest(`http://localhost/api/pm/projects/${projectId}/files`, {
@@ -86,35 +174,61 @@ describe('Project Files API', () => {
 
     it('should filter files by source', async () => {
       // Создаем файлы из разных источников
-      const file1 = filesRepository.create({
-        filename: 'project-file.txt',
-        mimeType: 'text/plain',
-        sizeBytes: 100,
-        uploaderId: userId
-      });
+      const [file1] = await db
+        .insert(files)
+        .values({
+          organizationId,
+          projectId,
+          uploadedBy: userId,
+          filename: 'project-file.txt',
+          mimeType: 'text/plain',
+          sizeBytes: 100,
+          storageKey: `projects/${projectId}/project-file.txt`,
+          storageUrl: 'https://example.blob.vercel-storage.com/project-file.txt',
+          sha256: null,
+          description: null,
+          folderId: null,
+          taskId: null
+        })
+        .returning();
 
-      const file2 = filesRepository.create({
-        filename: 'task-file.txt',
-        mimeType: 'text/plain',
-        sizeBytes: 200,
-        uploaderId: userId
-      });
+      const [file2] = await db
+        .insert(files)
+        .values({
+          organizationId,
+          projectId,
+          uploadedBy: userId,
+          filename: 'task-file.txt',
+          mimeType: 'text/plain',
+          sizeBytes: 200,
+          storageKey: `projects/${projectId}/task-file.txt`,
+          storageUrl: 'https://example.blob.vercel-storage.com/task-file.txt',
+          sha256: null,
+          description: null,
+          folderId: null,
+          taskId: null
+        })
+        .returning();
 
-      attachmentsRepository.create({
-        projectId,
-        fileId: file1.id,
-        linkedEntity: 'project',
-        entityId: null,
-        createdBy: userId
-      });
+      await db
+        .insert(attachments)
+        .values({
+          projectId,
+          fileId: file1!.id,
+          linkedEntity: 'project',
+          entityId: null,
+          createdBy: userId
+        });
 
-      attachmentsRepository.create({
-        projectId,
-        fileId: file2.id,
-        linkedEntity: 'task',
-        entityId: 'task-123',
-        createdBy: userId
-      });
+      await db
+        .insert(attachments)
+        .values({
+          projectId,
+          fileId: file2!.id,
+          linkedEntity: 'task',
+          entityId: 'task-123',
+          createdBy: userId
+        });
 
       const response = await getProjectFiles(
         new NextRequest(`http://localhost/api/pm/projects/${projectId}/files?source=project`, {
@@ -132,35 +246,61 @@ describe('Project Files API', () => {
 
     it('should group files by source', async () => {
       // Создаем файлы из разных источников
-      const projectFile = filesRepository.create({
-        filename: 'project.txt',
-        mimeType: 'text/plain',
-        sizeBytes: 100,
-        uploaderId: userId
-      });
+      const [projectFile] = await db
+        .insert(files)
+        .values({
+          organizationId,
+          projectId,
+          uploadedBy: userId,
+          filename: 'project.txt',
+          mimeType: 'text/plain',
+          sizeBytes: 100,
+          storageKey: `projects/${projectId}/project.txt`,
+          storageUrl: 'https://example.blob.vercel-storage.com/project.txt',
+          sha256: null,
+          description: null,
+          folderId: null,
+          taskId: null
+        })
+        .returning();
 
-      const taskFile = filesRepository.create({
-        filename: 'task.txt',
-        mimeType: 'text/plain',
-        sizeBytes: 200,
-        uploaderId: userId
-      });
+      const [taskFile] = await db
+        .insert(files)
+        .values({
+          organizationId,
+          projectId,
+          uploadedBy: userId,
+          filename: 'task.txt',
+          mimeType: 'text/plain',
+          sizeBytes: 200,
+          storageKey: `projects/${projectId}/task.txt`,
+          storageUrl: 'https://example.blob.vercel-storage.com/task.txt',
+          sha256: null,
+          description: null,
+          folderId: null,
+          taskId: null
+        })
+        .returning();
 
-      attachmentsRepository.create({
-        projectId,
-        fileId: projectFile.id,
-        linkedEntity: 'project',
-        entityId: null,
-        createdBy: userId
-      });
+      await db
+        .insert(attachments)
+        .values({
+          projectId,
+          fileId: projectFile!.id,
+          linkedEntity: 'project',
+          entityId: null,
+          createdBy: userId
+        });
 
-      attachmentsRepository.create({
-        projectId,
-        fileId: taskFile.id,
-        linkedEntity: 'task',
-        entityId: 'task-123',
-        createdBy: userId
-      });
+      await db
+        .insert(attachments)
+        .values({
+          projectId,
+          fileId: taskFile!.id,
+          linkedEntity: 'task',
+          entityId: 'task-123',
+          createdBy: userId
+        });
 
       const response = await getProjectFiles(
         new NextRequest(`http://localhost/api/pm/projects/${projectId}/files`, {
@@ -294,8 +434,10 @@ describe('Project Files API', () => {
       const data = await response.json();
 
       // Проверяем, что attachment создан
-      const attachments = attachmentsRepository.listByProject(projectId);
-      const attachment = attachments.find(a => a.fileId === data.data.file.id);
+      const [attachment] = await db
+        .select()
+        .from(attachments)
+        .where(eq(attachments.fileId, data.data.file.id));
       expect(attachment).toBeDefined();
       expect(attachment?.linkedEntity).toBe('project');
       expect(attachment?.projectId).toBe(projectId);

@@ -3,7 +3,7 @@ export { memory } from './data/memory';
 export { DEFAULT_WORKSPACE_USER_ID, DEFAULT_ACCOUNT_ID, DEFAULT_WORKSPACE_ID, TEST_PROJECT_DEMO_ID, TEST_PROJECT_2_ID, TEST_ADMIN_USER_ID, TEST_USER_ID, TEST_FINANCE_USER_ID, TEST_DESIGNER_USER_ID, isAdminUserId } from './data/memory';
 export { ProjectsRepository, projectsRepository } from './repositories/projects-repository';
 export { TemplatesRepository, templatesRepository } from './repositories/templates-repository';
-export { TasksRepository, tasksRepository } from './repositories/tasks-repository';
+export { TasksRepository, tasksRepository, hydrateTaskAttachmentsFromDb, hydrateTasksAttachmentsFromDb } from './repositories/tasks-repository';
 export { TaskDependenciesRepository, taskDependenciesRepository } from './repositories/task-dependencies-repository';
 export {
   FilesRepository,
@@ -151,6 +151,7 @@ export {
 } from './services/closure';
 export { performerProfilesRepository, type PerformerProfile } from './repositories/performer-profiles-repository';
 export { dbProjectsRepository, type DbProject } from './repositories/db-projects-repository';
+export { sharesRepository, SharesRepository, type DbShare } from './repositories/shares-repository';
 // WebSocket server exports are intentionally excluded from the main index
 // to prevent them from being bundled in client code.
 // Import them directly from './websocket' or './websocket/server' if needed server-side.
@@ -166,3 +167,12 @@ export { organizationClosureService, OrganizationClosureService } from './servic
 export { cleanupExpiredArchives } from './services/closure/archive-cleanup-job';
 export { sendExpiryNotifications } from './services/closure/archive-expiry-notifications';
 export { pmPgHydration } from './storage/pm-pg-bootstrap';
+export { fileTrashRepository, FileTrashRepository, type DbFileTrash, type NewDbFileTrash, type FileTrashWithFile } from './repositories/file-trash-repository';
+export { subscriptionPlansRepository, SubscriptionPlansRepository, type DbSubscriptionPlan, type NewDbSubscriptionPlan } from './repositories/subscription-plans-repository';
+export { organizationSubscriptionsRepository, OrganizationSubscriptionsRepository, type DbOrganizationSubscription, type NewDbOrganizationSubscription, type OrganizationSubscriptionWithPlan } from './repositories/organization-subscriptions-repository';
+export { organizationStorageUsageRepository, OrganizationStorageUsageRepository, type DbOrganizationStorageUsage, type NewDbOrganizationStorageUsage } from './repositories/organization-storage-usage-repository';
+export { cleanupExpiredFileTrash } from './services/file-trash-cleanup-job';
+export { foldersRepository, FoldersRepository, type DbFolder, type NewDbFolder } from './repositories/folders-repository';
+// Export db and schema for API routes
+export { db } from './db/config';
+export * as schema from './db/schema';

@@ -11,6 +11,7 @@ import {
     jsonb,
     bigint,
 } from "drizzle-orm/pg-core";
+import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "@auth/core/adapters";
 
 // Enums
@@ -39,6 +40,12 @@ export const inviteStatusEnum = pgEnum("invite_status", [
     "approved",
     "rejected",
 ]);
+
+export const shareScopeEnum = pgEnum("share_scope", ["view", "download"]);
+export const subscriptionStatusEnum = pgEnum("subscription_status", ["active", "expired", "cancelled"]);
+export const subscriptionPlanCodeEnum = pgEnum("subscription_plan_code", ["free", "pro", "max"]);
+export const folderTypeEnum = pgEnum("folder_type", ["project", "task", "result", "custom"]);
+export const attachmentEntityTypeEnum = pgEnum("attachment_entity_type", ["project", "task", "comment", "document", "project_chat"]);
 
 export const users = pgTable("user", {
     id: text("id")
@@ -431,5 +438,221 @@ export const archivedDocuments = pgTable(
     (table) => ({
         archiveIdx: index("archived_document_archive_idx").on(table.archiveId),
         expiresIdx: index("archived_document_expires_idx").on(table.expiresAt),
+    })
+);
+
+// --- File Manager System ---
+
+export const folders = pgTable(
+    "folder",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        organizationId: text("organization_id")
+            .notNull()
+            .references(() => organizations.id, { onDelete: "cascade" }),
+        projectId: text("project_id")
+            .references(() => projects.id, { onDelete: "cascade" }),
+        taskId: text("task_id"),
+        parentId: text("parent_id")
+            .references((): AnyPgColumn => folders.id, { onDelete: "cascade" }),
+        name: text("name").notNull(),
+        type: folderTypeEnum("type"),
+        createdBy: text("created_by")
+            .notNull()
+            .references(() => users.id, { onDelete: "restrict" }),
+        createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+        updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow(),
+    },
+    (table) => ({
+        organizationIdIdx: index("folder_organization_id_idx").on(table.organizationId),
+        projectIdIdx: index("folder_project_id_idx").on(table.projectId),
+        taskIdIdx: index("folder_task_id_idx").on(table.taskId),
+        parentIdIdx: index("folder_parent_id_idx").on(table.parentId),
+        typeIdx: index("folder_type_idx").on(table.type),
+    })
+);
+
+export const files = pgTable(
+    "file",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        organizationId: text("organization_id")
+            .notNull()
+            .references(() => organizations.id, { onDelete: "cascade" }),
+        projectId: text("project_id")
+            .references(() => projects.id, { onDelete: "cascade" }),
+        taskId: text("task_id"),
+        uploadedBy: text("uploaded_by")
+            .notNull()
+            .references(() => users.id, { onDelete: "restrict" }),
+        filename: text("filename").notNull(),
+        mimeType: text("mime_type").notNull(),
+        sizeBytes: bigint("size_bytes", { mode: "number" }).notNull(),
+        storageKey: text("storage_key").notNull(),
+        storageUrl: text("storage_url").notNull(),
+        sha256: text("sha256"),
+        description: text("description"),
+        folderId: text("folder_id")
+            .references(() => folders.id, { onDelete: "set null" }),
+        createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+        updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow(),
+    },
+    (table) => ({
+        organizationIdIdx: index("file_organization_id_idx").on(table.organizationId),
+        projectIdIdx: index("file_project_id_idx").on(table.projectId),
+        taskIdIdx: index("file_task_id_idx").on(table.taskId),
+        uploadedByIdx: index("file_uploaded_by_idx").on(table.uploadedBy),
+        folderIdIdx: index("file_folder_id_idx").on(table.folderId),
+        storageKeyIdx: uniqueIndex("file_storage_key_idx").on(table.storageKey),
+        createdAtIdx: index("file_created_at_idx").on(table.createdAt),
+    })
+);
+
+export const attachments = pgTable(
+    "attachment",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        fileId: text("file_id")
+            .notNull()
+            .references(() => files.id, { onDelete: "cascade" }),
+        projectId: text("project_id")
+            .notNull()
+            .references(() => projects.id, { onDelete: "cascade" }),
+        linkedEntity: attachmentEntityTypeEnum("linked_entity").notNull(),
+        entityId: text("entity_id"),
+        createdBy: text("created_by")
+            .notNull()
+            .references(() => users.id, { onDelete: "restrict" }),
+        createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+    },
+    (table) => ({
+        fileIdIdx: index("attachment_file_id_idx").on(table.fileId),
+        projectIdIdx: index("attachment_project_id_idx").on(table.projectId),
+        entityIdx: index("attachment_entity_idx").on(table.linkedEntity, table.entityId),
+        createdAtIdx: index("attachment_created_at_idx").on(table.createdAt),
+    })
+);
+
+export const shares = pgTable(
+    "share",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        fileId: text("file_id")
+            .notNull()
+            .references(() => files.id, { onDelete: "cascade" }),
+        token: text("token").notNull(),
+        scope: shareScopeEnum("scope").notNull(),
+        expiresAt: timestamp("expires_at", { mode: "date" }),
+        createdBy: text("created_by")
+            .notNull()
+            .references(() => users.id, { onDelete: "restrict" }),
+        createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+        updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow(),
+    },
+    (table) => ({
+        tokenIdx: uniqueIndex("share_token_idx").on(table.token),
+        fileIdIdx: index("share_file_id_idx").on(table.fileId),
+        expiresAtIdx: index("share_expires_at_idx").on(table.expiresAt),
+        createdAtIdx: index("share_created_at_idx").on(table.createdAt),
+    })
+);
+
+export const fileTrash = pgTable(
+    "file_trash",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        fileId: text("file_id")
+            .notNull()
+            .references(() => files.id, { onDelete: "cascade" }),
+        organizationId: text("organization_id")
+            .notNull()
+            .references(() => organizations.id, { onDelete: "cascade" }),
+        deletedBy: text("deleted_by")
+            .notNull()
+            .references(() => users.id, { onDelete: "restrict" }),
+        deletedAt: timestamp("deleted_at", { mode: "date" }).defaultNow(),
+        expiresAt: timestamp("expires_at", { mode: "date" }),
+        retentionDays: integer("retention_days"),
+        restoredAt: timestamp("restored_at", { mode: "date" }),
+    },
+    (table) => ({
+        fileIdIdx: uniqueIndex("file_trash_file_id_idx").on(table.fileId),
+        organizationIdIdx: index("file_trash_organization_id_idx").on(table.organizationId),
+        expiresAtIdx: index("file_trash_expires_at_idx").on(table.expiresAt),
+        deletedAtIdx: index("file_trash_deleted_at_idx").on(table.deletedAt),
+    })
+);
+
+export const subscriptionPlans = pgTable(
+    "subscription_plan",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        code: subscriptionPlanCodeEnum("code").notNull(),
+        name: text("name").notNull(),
+        storageLimitBytes: bigint("storage_limit_bytes", { mode: "number" }),
+        fileSizeLimitBytes: bigint("file_size_limit_bytes", { mode: "number" }),
+        trashRetentionDays: integer("trash_retention_days"),
+        createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+        updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow(),
+    },
+    (table) => ({
+        codeIdx: uniqueIndex("subscription_plan_code_idx").on(table.code),
+    })
+);
+
+export const organizationSubscriptions = pgTable(
+    "organization_subscription",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        organizationId: text("organization_id")
+            .notNull()
+            .references(() => organizations.id, { onDelete: "cascade" }),
+        planId: text("plan_id")
+            .notNull()
+            .references(() => subscriptionPlans.id, { onDelete: "restrict" }),
+        status: subscriptionStatusEnum("status").notNull(),
+        startsAt: timestamp("starts_at", { mode: "date" }).notNull(),
+        expiresAt: timestamp("expires_at", { mode: "date" }),
+        createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+        updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow(),
+    },
+    (table) => ({
+        organizationIdIdx: uniqueIndex("organization_subscription_organization_id_idx").on(table.organizationId),
+        planIdIdx: index("organization_subscription_plan_id_idx").on(table.planId),
+        statusIdx: index("organization_subscription_status_idx").on(table.status),
+        expiresAtIdx: index("organization_subscription_expires_at_idx").on(table.expiresAt),
+    })
+);
+
+export const organizationStorageUsage = pgTable(
+    "organization_storage_usage",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        organizationId: text("organization_id")
+            .notNull()
+            .references(() => organizations.id, { onDelete: "cascade" }),
+        totalBytes: bigint("total_bytes", { mode: "number" }).default(0).notNull(),
+        fileCount: integer("file_count").default(0).notNull(),
+        lastCalculatedAt: timestamp("last_calculated_at", { mode: "date" }).notNull(),
+        updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow(),
+    },
+    (table) => ({
+        organizationIdIdx: uniqueIndex("organization_storage_usage_organization_id_idx").on(table.organizationId),
     })
 );

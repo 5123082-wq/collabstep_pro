@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { flags } from '@/lib/flags';
 import { getAuthFromRequest } from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
-import { tasksRepository, projectsRepository, type TaskStatus, aiAgentsRepository } from '@collabverse/api';
+import { tasksRepository, projectsRepository, type TaskStatus, aiAgentsRepository, hydrateTasksAttachmentsFromDb } from '@collabverse/api';
 import type { ProjectScope } from '@/lib/pm/filters';
 import { notifyTaskAssigned } from '@/lib/notifications/event-generator';
 import { broadcastToProject } from '@/lib/websocket/event-broadcaster';
@@ -287,6 +287,11 @@ export async function GET(request: Request) {
 
     const { items: paginated, pagination } = applyPagination(filtered, page, pageSize);
 
+    // Hydrate task attachments from DB if feature flag is enabled
+    const hydratedItems = flags.PROJECT_ATTACHMENTS
+      ? await hydrateTasksAttachmentsFromDb(paginated)
+      : paginated;
+
     // Подсчитываем количество задач по каждому scope
     const ownedProjectIds = new Set(
       projectOptions
@@ -306,7 +311,7 @@ export async function GET(request: Request) {
     };
 
     const response: TasksResponse = {
-      items: paginated,
+      items: hydratedItems,
       pagination,
       meta: {
         projects: projectOptions,

@@ -22,3 +22,9 @@ debug-export.ndjson
 playwright-output*.txt
 test-output.txt
 .cursor/
+
+# Example code (not part of the main project)
+filebrowser-test/
+
+# Archived documentation (not for git)
+docs/archive/

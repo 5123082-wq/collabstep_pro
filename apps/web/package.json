@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "prebuild": "node scripts/clean-next.mjs && node scripts/validate-env.mjs && node scripts/index-docs-if-enabled.mjs",
+    "prebuild": "node scripts/clean-next.mjs && node scripts/check-app-routes.mjs && node scripts/validate-env.mjs && node scripts/index-docs-if-enabled.mjs",
     "build": "next build && node scripts/fix-manifests.mjs",
     "dev": "next dev",
     "dev:3001": "next dev -p 3001",
@@ -26,6 +26,7 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "@tanstack/react-virtual": "^3.10.8",
     "@types/archiver": "^7.0.0",
+    "@vercel/blob": "^2.0.0",
     "@vercel/speed-insights": "^1.2.0",
     "archiver": "^7.0.1",
     "clsx": "^2.1.1",

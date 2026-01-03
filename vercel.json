@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/archive-expiry-notifications",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/cleanup-file-trash",
+      "schedule": "0 3 * * *"
     }
   ]
 }

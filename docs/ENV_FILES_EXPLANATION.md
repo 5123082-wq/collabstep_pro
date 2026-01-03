@@ -120,6 +120,14 @@ NEXT_PUBLIC_FEATURE_AI_ASSISTANT=true
 NEXT_PUBLIC_FEATURE_PM_DASHBOARD=1
 ```
 
+### ⏰ Cron
+
+```bash
+CRON_SECRET=your-cron-secret
+```
+
+Используется для защиты cron endpoints (Authorization: Bearer ...).
+
 ## Рекомендации
 
 1. **Все секреты** → `apps/web/.env.local`

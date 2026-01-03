@@ -1,6 +1,13 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const apiSrcPath = path.resolve(__dirname, '../api/src');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false,
+  transpilePackages: ['@collabverse/api'],
   eslint: {
     // Warning: This allows production builds to successfully complete even if
     // your project has ESLint errors.
@@ -15,6 +22,11 @@ const nextConfig = {
     ]
   },
   webpack: (config, { isServer }) => {
+    // Ensure workspace package paths resolve consistently in webpack.
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      '@collabverse/api': apiSrcPath
+    };
     // Exclude Node.js built-in modules from client bundles
     if (!isServer) {
       config.resolve.fallback = {

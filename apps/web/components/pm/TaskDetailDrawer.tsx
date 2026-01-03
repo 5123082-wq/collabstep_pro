@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { ContentBlock } from '@/components/ui/content-block';
 import TaskComments from './TaskComments';
 import type { Task } from '@/types/pm';
+import TaskResultsBlock from '@/components/pm/TaskResultsBlock';
 
 type TaskDetailDrawerProps = {
   task: Task | null;
@@ -170,6 +171,13 @@ export default function TaskDetailDrawer({
             )}
           </ContentBlock>
 
+          <TaskResultsBlock
+            taskId={task.id}
+            {...(task.attachments && { attachments: task.attachments })}
+            active={open}
+            size="sm"
+          />
+
           {/* Комментарии */}
           <ContentBlock size="sm">
             <TaskComments
@@ -183,4 +191,3 @@ export default function TaskDetailDrawer({
     </Sheet>
   );
 }
-
