@@ -25,6 +25,7 @@ import ProjectAIAgents from '@/components/pm/ProjectAIAgents';
 import ProjectInviteModal from '@/components/pm/ProjectInviteModal';
 import ProjectTasksSection from '@/components/pm/ProjectTasksSection';
 import TaskDetailDrawer from '@/components/pm/TaskDetailDrawer';
+import ProjectOrganizationCard from '@/components/pm/ProjectOrganizationCard';
 import { ContentBlock } from '@/components/ui/content-block';
 import {
   drawerReducer,
@@ -535,6 +536,15 @@ export default function PMProjectDetailPage() {
             <ProjectTeam project={project} currentUserId={currentUserId} />
             <ProjectLinks project={project} />
           </div>
+
+          <ProjectOrganizationCard
+            projectId={projectId}
+            canManage={
+              project.ownerId === currentUserId ||
+              role === 'owner' ||
+              role === 'admin'
+            }
+          />
 
           {/* LimitsLog - Журнал событий бюджета */}
           {project.metrics?.budgetLimit && (

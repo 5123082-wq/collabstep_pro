@@ -53,7 +53,7 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
       fetch('/api/organizations')
         .then((res) => res.json())
         .then((data) => {
-          const orgs = data.organizations || [];
+          const orgs = data?.ok ? data.data?.organizations || [] : [];
           setOrganizations(orgs);
           if (orgs.length > 0) {
             setOrganizationId(orgs[0].id);
@@ -81,11 +81,16 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
     }
   }, [isOpen, resetState]);
 
-  const canContinue = name.trim().length >= 3;
+  const hasOrganization = organizationId.trim().length > 0;
+  const isNameValid = name.trim().length >= 3;
 
   const handleNext = () => {
     setTouched(true);
-    if (!canContinue) {
+    if (!hasOrganization) {
+      toast('Выберите организацию проекта', 'warning');
+      return;
+    }
+    if (!isNameValid) {
       toast('Введите название проекта (не менее 3 символов)', 'warning');
       return;
     }
@@ -113,7 +118,11 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setTouched(true);
-    if (!canContinue) {
+    if (!hasOrganization) {
+      toast('Выберите организацию проекта', 'warning');
+      return;
+    }
+    if (!isNameValid) {
       toast('Введите название проекта (не менее 3 символов)', 'warning');
       return;
     }
@@ -129,7 +138,7 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
           name: name.trim(),
           description: description.trim(),
           key: key.trim() || undefined,
-          organizationId: organizationId || undefined,
+          organizationId,
           visibility,
           status
         })
@@ -230,7 +239,7 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                   </div>
                 )}
 
-                {organizations.length > 0 && (
+                {organizations.length > 0 ? (
                   <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">
                     Организация
                     <select
@@ -238,14 +247,20 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                       onChange={(event) => setOrganizationId(event.target.value)}
                       className="w-full rounded-xl border border-neutral-900 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 appearance-none"
                     >
-                      <option value="">Личный проект</option>
                       {organizations.map((org) => (
                         <option key={org.id} value={org.id}>
                           {org.name}
                         </option>
                       ))}
                     </select>
+                    {touched && !hasOrganization ? (
+                      <span className="text-[11px] text-rose-300">Выберите организацию.</span>
+                    ) : null}
                   </label>
+                ) : (
+                  <div className="rounded-xl border border-neutral-900 bg-neutral-950/60 px-4 py-3 text-xs text-neutral-400">
+                    Сначала создайте организацию, чтобы добавить проект.
+                  </div>
                 )}
 
                 <div>
@@ -259,11 +274,11 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                       autoFocus
                       className={cn(
                         'w-full rounded-xl border bg-neutral-950 px-4 py-3 text-sm text-white placeholder:text-neutral-500 focus:border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/20',
-                        touched && !canContinue ? 'border-rose-500/60' : 'border-neutral-900'
+                        touched && !isNameValid ? 'border-rose-500/60' : 'border-neutral-900'
                       )}
                     />
                   </label>
-                  {touched && !canContinue ? (
+                  {touched && !isNameValid ? (
                     <p className="mt-2 text-xs text-rose-300">Минимум 3 символа.</p>
                   ) : null}
                 </div>

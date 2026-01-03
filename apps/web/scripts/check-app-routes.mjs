@@ -1,14 +1,17 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const root = 'apps/web/app';
+const cwd = process.cwd();
+const root = fs.existsSync(path.join(cwd, 'app'))
+  ? path.join(cwd, 'app')
+  : path.join(cwd, 'apps/web/app');
 const pages = [];
 
 // 1) запретные директории — ломаем сборку, если найдены
 const forbidden = [
-  path.join('apps/web/app', 'project'),
-  path.join('apps/web/app', 'projects'),
-  path.join('apps/web/app', 'app') // вложенный app/*
+  path.join(root, 'project'),
+  path.join(root, 'projects'),
+  path.join(root, 'app') // вложенный app/*
 ];
 
 const bad = forbidden.filter((p) => fs.existsSync(p));

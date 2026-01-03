@@ -1,8 +1,21 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { captureConsole } from './utils/console';
 import { loginAsDemo } from './utils/auth';
 
 const appOrigin = 'http://localhost:3000';
+let cachedOrganizationId: string | null = null;
+
+async function getOrganizationId(page: Page) {
+  if (cachedOrganizationId) return cachedOrganizationId;
+  const res = await page.request.get(`${appOrigin}/api/organizations`);
+  const payload = await res.json().catch(() => ({}));
+  const organizationId = payload?.data?.organizations?.[0]?.id;
+  if (!organizationId) {
+    throw new Error('Нет доступной организации для создания проекта в тесте.');
+  }
+  cachedOrganizationId = organizationId;
+  return organizationId;
+}
 const REQUIRED_SECTIONS = [
   'Маркетплейс',
   'Исполнители',
@@ -36,8 +49,9 @@ test.describe('app navigation integrity', () => {
     await loginAsDemo(page, 'admin', appOrigin);
 
     // Создаём проект, чтобы ссылка гарантированно была в списке
+    const organizationId = await getOrganizationId(page);
     const projectRes = await page.request.post(`${appOrigin}/api/pm/projects`, {
-      data: { title: 'E2E Navigation Project' }
+      data: { title: 'E2E Navigation Project', organizationId }
     });
     if (projectRes.status() >= 400) {
       const body = await projectRes.text();

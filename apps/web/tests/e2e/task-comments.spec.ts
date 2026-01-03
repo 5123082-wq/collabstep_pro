@@ -3,11 +3,25 @@ import { captureConsole } from './utils/console';
 import { loginAsDemo } from './utils/auth';
 
 const appOrigin = 'http://127.0.0.1:3000';
+let cachedOrganizationId: string | null = null;
+
+async function getOrganizationId(page: Page) {
+  if (cachedOrganizationId) return cachedOrganizationId;
+  const res = await page.request.get(`${appOrigin}/api/organizations`);
+  const payload = await res.json().catch(() => ({}));
+  const organizationId = payload?.data?.organizations?.[0]?.id;
+  if (!organizationId) {
+    throw new Error('Нет доступной организации для создания проекта в тесте.');
+  }
+  cachedOrganizationId = organizationId;
+  return organizationId;
+}
 
 test.describe('Task Comments', () => {
   async function ensureTask(page: Page) {
+    const organizationId = await getOrganizationId(page);
     const projectRes = await page.request.post(`${appOrigin}/api/pm/projects`, {
-      data: { title: 'E2E Task Comments Project' }
+      data: { title: 'E2E Task Comments Project', organizationId }
     });
     if (projectRes.status() >= 400) {
       const body = await projectRes.text();

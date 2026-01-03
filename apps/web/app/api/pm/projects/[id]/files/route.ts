@@ -1,18 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Buffer } from 'node:buffer';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
+import { eq, and, isNull } from 'drizzle-orm';
 import { flags } from '@/lib/flags';
 import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
 import {
-  attachmentsRepository,
-  filesRepository,
   projectsRepository,
   tasksRepository,
   commentsRepository,
   projectChatRepository,
-  usersRepository
+  usersRepository,
+  organizationSubscriptionsRepository,
+  organizationStorageUsageRepository,
+  foldersRepository
 } from '@collabverse/api';
+import { db } from '@collabverse/api/db/config';
+import { attachments, files, fileTrash, projects } from '@collabverse/api/db/schema';
 import { jsonError, jsonOk } from '@/lib/api/http';
+import { put } from '@vercel/blob';
 
 type FileSource = 'tasks' | 'comments' | 'chat' | 'project' | 'documents';
 
@@ -32,6 +37,8 @@ interface ProjectFile {
   sourceEntityId?: string;
   sourceEntityTitle?: string;
   url?: string;
+  folderId?: string | null;
+  taskId?: string | null;
 }
 
 export async function GET(
@@ -68,9 +75,25 @@ export async function GET(
     const url = new URL(req.url);
     const sourceFilter = url.searchParams.get('source') as FileSource | null;
 
-    // Получение всех attachments проекта
-    const attachments = attachmentsRepository.listByProject(projectId);
-    const fileLookup = new Map(filesRepository.list().map((file) => [file.id, file] as const));
+    // Получение всех attachments проекта из БД (исключая файлы в корзине)
+    const dbAttachments = await db
+      .select({
+        attachment: attachments,
+        file: files,
+      })
+      .from(attachments)
+      .innerJoin(files, eq(attachments.fileId, files.id))
+      .leftJoin(fileTrash, and(
+        eq(fileTrash.fileId, files.id),
+        isNull(fileTrash.restoredAt)
+      ))
+      .where(
+        and(
+          eq(attachments.projectId, projectId),
+          // Exclude files in trash
+          isNull(fileTrash.id)
+        )
+      );
 
     // Получение задач проекта для получения названий
     const projectTasks = tasksRepository.list().filter((task) => task.projectId === projectId);
@@ -100,10 +123,11 @@ export async function GET(
     );
 
     // Группировка файлов по источникам
-    const files: ProjectFile[] = [];
+    const projectFiles: ProjectFile[] = [];
 
-    for (const attachment of attachments) {
-      const file = fileLookup.get(attachment.fileId);
+    for (const item of dbAttachments) {
+      const attachment = item.attachment;
+      const file = item.file;
       if (!file) continue;
 
       let source: FileSource;
@@ -151,15 +175,15 @@ export async function GET(
         continue;
       }
 
-      const uploader = await usersRepository.findById(file.uploaderId);
+      const uploader = await usersRepository.findById(file.uploadedBy);
 
-      files.push({
+      projectFiles.push({
         id: file.id,
         filename: file.filename,
         mimeType: file.mimeType,
-        sizeBytes: file.sizeBytes,
-        uploadedAt: file.uploadedAt,
-        uploaderId: file.uploaderId,
+        sizeBytes: Number(file.sizeBytes),
+        uploadedAt: file.createdAt?.toISOString() || new Date().toISOString(),
+        uploaderId: file.uploadedBy,
         ...(uploader
           ? {
             uploader: {
@@ -172,14 +196,16 @@ export async function GET(
         source,
         ...(sourceEntityId ? { sourceEntityId } : {}),
         ...(sourceEntityTitle ? { sourceEntityTitle } : {}),
-        url: file.storageUrl
+        url: file.storageUrl,
+        folderId: file.folderId ?? null,
+        taskId: file.taskId ?? null
       });
     }
 
     // Сортировка по дате загрузки (новые сначала)
-    files.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
+    projectFiles.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
 
-    return jsonOk({ files });
+    return jsonOk({ files: projectFiles });
   } catch (error) {
     console.error('Error fetching project files:', error);
     return jsonError('INTERNAL_ERROR', { status: 500 });
@@ -223,33 +249,111 @@ export async function POST(
       return jsonError('File is required', { status: 400 });
     }
 
-    // Создание файла через filesRepository
+    // Get organization ID from project
+    const [dbProject] = await db
+      .select({ organizationId: projects.organizationId })
+      .from(projects)
+      .where(eq(projects.id, projectId));
+
+    if (!dbProject || !dbProject.organizationId) {
+      return jsonError('PROJECT_HAS_NO_ORGANIZATION', { status: 400 });
+    }
+    const organizationId = dbProject.organizationId;
+
     const buffer = Buffer.from(await file.arrayBuffer());
     const sha256 = createHash('sha256').update(buffer).digest('hex');
 
-    const fileObject = filesRepository.create({
-      filename: file.name,
-      mimeType: file.type || 'application/octet-stream',
-      sizeBytes: buffer.length,
-      uploaderId: auth.userId,
-      sha256
+    const plan = await organizationSubscriptionsRepository.getPlanForOrganization(organizationId);
+    const usage = await organizationStorageUsageRepository.get(organizationId);
+
+    if (plan.fileSizeLimitBytes && buffer.length > plan.fileSizeLimitBytes) {
+      return jsonError('FILE_SIZE_EXCEEDED', {
+        status: 413,
+        details: `File size ${buffer.length} exceeds limit ${plan.fileSizeLimitBytes}`
+      });
+    }
+
+    if (plan.storageLimitBytes) {
+      const newTotalBytes = Number(usage.totalBytes) + buffer.length;
+      if (newTotalBytes > plan.storageLimitBytes) {
+        return jsonError('STORAGE_LIMIT_EXCEEDED', {
+          status: 403,
+          details: `Storage limit would be exceeded: ${newTotalBytes} > ${plan.storageLimitBytes}`
+        });
+      }
+    }
+
+    const sanitizedFilename = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storageKey = `projects/${projectId}/${randomUUID()}-${sanitizedFilename}`;
+
+    const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+    if (!blobToken) {
+      console.error('BLOB_READ_WRITE_TOKEN is not set');
+      return jsonError('BLOB_CONFIG_ERROR', { status: 500 });
+    }
+
+    const blobResult = await put(storageKey, buffer, {
+      access: 'public',
+      contentType: file.type || 'application/octet-stream',
+      token: blobToken,
     });
 
-    // Привязка файла к проекту через attachmentsRepository
-    const attachment = attachmentsRepository.create({
-      projectId: projectId,
-      fileId: fileObject.id,
-      linkedEntity: 'project',
-      entityId: null,
-      createdBy: auth.userId
-    });
+    // Убеждаемся, что существует папка проекта (type='project')
+    const projectFolder = await foldersRepository.ensureProjectFolder(
+      organizationId,
+      projectId,
+      `${project.title || 'Project'} (${projectId})`,
+      auth.userId
+    );
+
+    const [createdFile] = await db
+      .insert(files)
+      .values({
+        organizationId,
+        projectId,
+        uploadedBy: auth.userId,
+        filename: file.name,
+        mimeType: file.type || 'application/octet-stream',
+        sizeBytes: buffer.length,
+        storageKey: blobResult.pathname,
+        storageUrl: blobResult.url,
+        sha256,
+        description: null,
+        folderId: projectFolder.id,
+        taskId: null,
+      })
+      .returning();
+
+    if (!createdFile) {
+      return jsonError('FAILED_TO_CREATE_FILE', { status: 500 });
+    }
+
+    // Привязка файла к проекту через attachments
+    const [createdAttachment] = await db
+      .insert(attachments)
+      .values({
+        fileId: createdFile.id,
+        projectId: projectId,
+        linkedEntity: 'project',
+        entityId: null,
+        createdBy: auth.userId,
+      })
+      .returning();
 
     // Получение информации об авторе
-    const uploader = await usersRepository.findById(fileObject.uploaderId);
+    const uploader = await usersRepository.findById(auth.userId);
+
+    await organizationStorageUsageRepository.increment(organizationId, buffer.length);
 
     return jsonOk({
       file: {
-        ...fileObject,
+        id: createdFile.id,
+        uploaderId: createdFile.uploadedBy,
+        filename: createdFile.filename,
+        mimeType: createdFile.mimeType,
+        sizeBytes: Number(createdFile.sizeBytes),
+        storageUrl: createdFile.storageUrl,
+        uploadedAt: createdFile.createdAt?.toISOString() || new Date().toISOString(),
         uploader: uploader
           ? {
             id: uploader.id,
@@ -257,14 +361,13 @@ export async function POST(
             email: uploader.email
           }
           : undefined,
-        url: fileObject.storageUrl,
+        url: createdFile.storageUrl,
         source: 'project' as const
       },
-      attachment
+      attachment: createdAttachment
     });
   } catch (error) {
     console.error('Error uploading file:', error);
     return jsonError('INTERNAL_ERROR', { status: 500 });
   }
 }
-

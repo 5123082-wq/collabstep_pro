@@ -1,8 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { Buffer } from 'node:buffer';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
-import { attachmentsRepository, filesRepository, type AttachmentEntityType } from '@collabverse/api';
+import {
+  organizationSubscriptionsRepository,
+  organizationStorageUsageRepository,
+  projectsRepository,
+  usersRepository,
+  tasksRepository,
+  foldersRepository,
+  type AttachmentEntityType
+} from '@collabverse/api';
+import { db } from '@collabverse/api/db/config';
+import { attachments, files, projects } from '@collabverse/api/db/schema';
+import { put } from '@vercel/blob';
+import { eq } from 'drizzle-orm';
+import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
+import { jsonError, jsonOk } from '@/lib/api/http';
 import { flags } from '@/lib/flags';
 
 const UploadJsonSchema = z.object({
@@ -11,7 +25,7 @@ const UploadJsonSchema = z.object({
   sizeBytes: z.number().int().nonnegative(),
   uploaderId: z.string().default('admin.demo@collabverse.test'),
   projectId: z.string().optional(),
-  entityType: z.enum(['project', 'task', 'comment', 'document']).optional(),
+  entityType: z.enum(['project', 'task', 'comment', 'document', 'project_chat']).optional(),
   entityId: z.string().optional()
 });
 
@@ -24,9 +38,10 @@ type UploadPayload = {
   entityType?: AttachmentEntityType;
   entityId?: string | null;
   sha256?: string;
+  buffer?: Buffer;
 };
 
-const ENTITY_TYPES: AttachmentEntityType[] = ['project', 'task', 'comment', 'document'];
+const ENTITY_TYPES: AttachmentEntityType[] = ['project', 'task', 'comment', 'document', 'project_chat'];
 
 function normalizeEntityType(value?: string | null): AttachmentEntityType | undefined {
   if (!value) {
@@ -35,8 +50,9 @@ function normalizeEntityType(value?: string | null): AttachmentEntityType | unde
   return ENTITY_TYPES.find((item) => item === value) ?? undefined;
 }
 
-async function extractUploadPayload(req: NextRequest): Promise<UploadPayload | { error: 'missing_file' | 'invalid_payload' }>
-{
+async function extractUploadPayload(
+  req: NextRequest
+): Promise<UploadPayload | { error: 'missing_file' | 'invalid_payload' }> {
   const contentType = req.headers.get('content-type') ?? '';
   if (contentType.includes('multipart/form-data')) {
     const form = await req.formData();
@@ -58,6 +74,7 @@ async function extractUploadPayload(req: NextRequest): Promise<UploadPayload | {
       sizeBytes: buffer.length,
       uploaderId,
       sha256,
+      buffer,
       ...(projectId ? { projectId } : {}),
       ...(entityType ? { entityType } : {}),
       ...(entityId ? { entityId } : {})
@@ -69,56 +86,207 @@ async function extractUploadPayload(req: NextRequest): Promise<UploadPayload | {
   if (!parsed.success) {
     return { error: 'invalid_payload' as const };
   }
-  const data = parsed.data;
-  const entityType = normalizeEntityType(data.entityType);
-  const payload: UploadPayload = {
-    filename: data.filename,
-    mimeType: data.mimeType,
-    sizeBytes: data.sizeBytes,
-    uploaderId: data.uploaderId,
-    ...(data.projectId ? { projectId: data.projectId } : {}),
-    ...(entityType ? { entityType } : {}),
-    ...(data.entityId ? { entityId: data.entityId } : {})
-  };
-  return payload;
+  return { error: 'missing_file' as const };
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   if (!flags.PROJECT_ATTACHMENTS) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return jsonError('FEATURE_DISABLED', { status: 404 });
   }
-  const items = filesRepository.list();
-  return NextResponse.json({ items });
+
+  const auth = getAuthFromRequest(req);
+  if (!auth) {
+    return jsonError('UNAUTHORIZED', { status: 401 });
+  }
+
+  return jsonError('NOT_SUPPORTED', { status: 405 });
 }
 
 export async function POST(req: NextRequest) {
   if (!flags.PROJECT_ATTACHMENTS) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return jsonError('FEATURE_DISABLED', { status: 404 });
   }
 
-  const payload = await extractUploadPayload(req);
-  if ('error' in payload) {
-    return NextResponse.json({ error: payload.error }, { status: 400 });
+  const auth = getAuthFromRequest(req);
+  if (!auth) {
+    return jsonError('UNAUTHORIZED', { status: 401 });
   }
 
-  const file = filesRepository.create({
-    filename: payload.filename,
-    mimeType: payload.mimeType,
-    sizeBytes: payload.sizeBytes,
-    uploaderId: payload.uploaderId,
-    ...(payload.sha256 ? { sha256: payload.sha256 } : {})
-  });
+  try {
+    const payload = await extractUploadPayload(req);
+    if ('error' in payload) {
+      return jsonError(payload.error === 'missing_file' ? 'FILE_REQUIRED' : 'INVALID_PAYLOAD', { status: 400 });
+    }
 
-  let attachment = null;
-  if (payload.projectId && payload.entityType) {
-    attachment = attachmentsRepository.create({
-      projectId: payload.projectId,
-      fileId: file.id,
-      linkedEntity: payload.entityType,
-      entityId: payload.entityId ?? null,
-      createdBy: payload.uploaderId
+    if (!payload.buffer) {
+      return jsonError('FILE_REQUIRED', { status: 400 });
+    }
+
+    if (!payload.projectId) {
+      return jsonError('PROJECT_ID_REQUIRED', { status: 400 });
+    }
+
+    const projectId = payload.projectId;
+    const project = await projectsRepository.findById(projectId);
+    if (!project) {
+      return jsonError('PROJECT_NOT_FOUND', { status: 404 });
+    }
+
+    const role = await getProjectRole(projectId, auth.userId, auth.email);
+    if (role === 'viewer') {
+      return jsonError('ACCESS_DENIED', { status: 403 });
+    }
+
+    const [dbProject] = await db
+      .select({ organizationId: projects.organizationId })
+      .from(projects)
+      .where(eq(projects.id, projectId));
+
+    if (!dbProject || !dbProject.organizationId) {
+      return jsonError('PROJECT_HAS_NO_ORGANIZATION', { status: 400 });
+    }
+
+    const organizationId = dbProject.organizationId;
+    const projectFolderName = `${project.title || 'Project'} (${projectId})`;
+    let taskForFolder: ReturnType<typeof tasksRepository.findById> | null = null;
+
+    if (payload.entityType === 'task' && payload.entityId) {
+      const task = tasksRepository.findById(payload.entityId);
+      if (!task) {
+        return jsonError('TASK_NOT_FOUND', { status: 404 });
+      }
+      if (task.projectId !== projectId) {
+        return jsonError('TASK_PROJECT_MISMATCH', { status: 400 });
+      }
+      taskForFolder = task;
+    }
+
+    const plan = await organizationSubscriptionsRepository.getPlanForOrganization(organizationId);
+    const usage = await organizationStorageUsageRepository.get(organizationId);
+
+    if (plan.fileSizeLimitBytes && payload.sizeBytes > plan.fileSizeLimitBytes) {
+      return jsonError('FILE_SIZE_EXCEEDED', {
+        status: 413,
+        details: `File size ${payload.sizeBytes} exceeds limit ${plan.fileSizeLimitBytes}`
+      });
+    }
+
+    if (plan.storageLimitBytes) {
+      const newTotalBytes = Number(usage.totalBytes) + payload.sizeBytes;
+      if (newTotalBytes > plan.storageLimitBytes) {
+        return jsonError('STORAGE_LIMIT_EXCEEDED', {
+          status: 403,
+          details: `Storage limit would be exceeded: ${newTotalBytes} > ${plan.storageLimitBytes}`
+        });
+      }
+    }
+
+    const sanitizedFilename = payload.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storageKey = `projects/${projectId}/${crypto.randomUUID()}-${sanitizedFilename}`;
+
+    const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+    if (!blobToken) {
+      console.error('BLOB_READ_WRITE_TOKEN is not set');
+      return jsonError('BLOB_CONFIG_ERROR', { status: 500 });
+    }
+
+    const blobResult = await put(storageKey, payload.buffer, {
+      access: 'public',
+      contentType: payload.mimeType,
+      token: blobToken,
     });
-  }
 
-  return NextResponse.json({ file, attachment }, { status: 201 });
+    // Handle folder assignment for task files
+    let folderId: string | null = null;
+    let taskIdForFile: string | null = null;
+
+    if (payload.entityType === 'task' && payload.entityId && taskForFolder) {
+      taskIdForFile = payload.entityId;
+
+      // Ensure project folder exists
+      const projectFolder = await foldersRepository.ensureProjectFolder(
+        organizationId,
+        projectId,
+        projectFolderName,
+        auth.userId
+      );
+
+      // Ensure task folder exists
+      const taskFolder = await foldersRepository.ensureTaskFolder(
+        organizationId,
+        projectId,
+        payload.entityId,
+        `${taskForFolder.title || 'Task'} (${payload.entityId})`,
+        auth.userId,
+        projectFolder.id
+      );
+
+      folderId = taskFolder.id;
+    }
+
+    const [createdFile] = await db
+      .insert(files)
+      .values({
+        organizationId,
+        projectId,
+        uploadedBy: auth.userId,
+        filename: payload.filename,
+        mimeType: payload.mimeType,
+        sizeBytes: payload.sizeBytes,
+        storageKey: blobResult.pathname,
+        storageUrl: blobResult.url,
+        sha256: payload.sha256 ?? null,
+        description: null,
+        folderId,
+        taskId: taskIdForFile,
+      })
+      .returning();
+
+    if (!createdFile) {
+      return jsonError('FAILED_TO_CREATE_FILE', { status: 500 });
+    }
+
+    let attachment = null;
+    if (payload.entityType) {
+      const [createdAttachment] = await db
+        .insert(attachments)
+        .values({
+          projectId,
+          fileId: createdFile.id,
+          linkedEntity: payload.entityType,
+          entityId: payload.entityId || null,
+          createdBy: auth.userId,
+        })
+        .returning();
+
+      attachment = createdAttachment ?? null;
+    }
+
+    await organizationStorageUsageRepository.increment(organizationId, payload.sizeBytes);
+
+    const uploader = await usersRepository.findById(auth.userId);
+
+    return jsonOk({
+      file: {
+        id: createdFile.id,
+        uploaderId: createdFile.uploadedBy,
+        filename: createdFile.filename,
+        mimeType: createdFile.mimeType,
+        sizeBytes: Number(createdFile.sizeBytes),
+        storageUrl: createdFile.storageUrl,
+        uploadedAt: createdFile.createdAt?.toISOString() || new Date().toISOString(),
+        uploader: uploader
+          ? {
+              id: uploader.id,
+              name: uploader.name,
+              email: uploader.email
+            }
+          : undefined
+      },
+      attachment
+    });
+  } catch (error) {
+    console.error('Error uploading file:', error);
+    return jsonError('INTERNAL_ERROR', { status: 500 });
+  }
 }

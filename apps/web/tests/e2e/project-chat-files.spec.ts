@@ -4,9 +4,24 @@ import { loginAsDemo } from './utils/auth';
 
 const appOrigin = 'http://127.0.0.1:3000';
 
+let cachedOrganizationId: string | null = null;
+
+async function getOrganizationId(page: Page) {
+  if (cachedOrganizationId) return cachedOrganizationId;
+  const res = await page.request.get(`${appOrigin}/api/organizations`);
+  const payload = await res.json().catch(() => ({}));
+  const organizationId = payload?.data?.organizations?.[0]?.id;
+  if (!organizationId) {
+    throw new Error('Нет доступной организации для создания проекта в тесте.');
+  }
+  cachedOrganizationId = organizationId;
+  return organizationId;
+}
+
 async function createProject(page: Page, title: string) {
+  const organizationId = await getOrganizationId(page);
   const res = await page.request.post(`${appOrigin}/api/pm/projects`, {
-    data: { title }
+    data: { title, organizationId }
   });
   if (res.status() >= 400) {
     const body = await res.text();

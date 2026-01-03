@@ -2,6 +2,9 @@ import { memory } from '../data/memory';
 import type { FileObject, Task, TaskStatus, TaskTreeNode } from '../types';
 import { pmPgHydration } from '../storage/pm-pg-bootstrap';
 import { deleteTaskFromPg, isPmDbEnabled, persistTaskToPg, fetchTaskByIdFromPg } from '../storage/pm-pg-adapter';
+import { db } from '../db/config';
+import { files, attachments } from '../db/schema';
+import { eq, and, inArray } from 'drizzle-orm';
 
 // Fire-and-forget hydration for serverless; avoids top-level await in CJS builds
 void pmPgHydration;
@@ -330,4 +333,161 @@ function compactChildren(node: TaskTreeNode): TaskTreeNode {
     delete node.children;
   }
   return node;
+}
+
+/**
+ * Hydrate a single task with attachments from the database.
+ * Falls back to memory-based attachments if DB query fails.
+ */
+export async function hydrateTaskAttachmentsFromDb(task: Task): Promise<Task> {
+  try {
+    const dbAttachments = await db
+      .select({
+        attachmentId: attachments.id,
+        fileId: attachments.fileId,
+      })
+      .from(attachments)
+      .where(
+        and(
+          eq(attachments.linkedEntity, 'task'),
+          eq(attachments.entityId, task.id),
+          eq(attachments.projectId, task.projectId)
+        )
+      );
+
+    if (dbAttachments.length === 0) {
+      // No DB attachments, use memory-based ones
+      return task;
+    }
+
+    const fileIds = dbAttachments.map((a) => a.fileId);
+    const dbFiles = await db
+      .select()
+      .from(files)
+      .where(inArray(files.id, fileIds));
+
+    const fileObjects: FileObject[] = dbFiles.map((f) => ({
+      id: f.id,
+      uploaderId: f.uploadedBy,
+      filename: f.filename,
+      mimeType: f.mimeType,
+      sizeBytes: Number(f.sizeBytes),
+      storageUrl: f.storageUrl,
+      uploadedAt: f.createdAt?.toISOString() ?? new Date().toISOString(),
+      ...(f.description ? { description: f.description } : {}),
+      ...(f.sha256 ? { sha256: f.sha256 } : {}),
+    }));
+
+    // Merge with existing memory-based attachments (avoid duplicates)
+    const existingIds = new Set((task.attachments ?? []).map((a) => a.id));
+    const mergedAttachments = [...(task.attachments ?? [])];
+    for (const file of fileObjects) {
+      if (!existingIds.has(file.id)) {
+        mergedAttachments.push(file);
+      }
+    }
+
+    return { ...task, attachments: mergedAttachments };
+  } catch (error) {
+    console.error('[TasksRepository] Failed to hydrate attachments from DB', error);
+    // Fallback to task as-is with memory attachments
+    return task;
+  }
+}
+
+/**
+ * Hydrate multiple tasks with attachments from the database.
+ * More efficient than calling hydrateTaskAttachmentsFromDb for each task.
+ */
+export async function hydrateTasksAttachmentsFromDb(tasks: Task[]): Promise<Task[]> {
+  if (tasks.length === 0) {
+    return tasks;
+  }
+
+  try {
+    const taskIds = tasks.map((t) => t.id);
+    const taskProjectMap = new Map(tasks.map((task) => [task.id, task.projectId]));
+    const projectIds = Array.from(new Set(tasks.map((task) => task.projectId).filter(Boolean)));
+
+    const attachmentConditions = [
+      eq(attachments.linkedEntity, 'task'),
+      inArray(attachments.entityId, taskIds),
+      ...(projectIds.length > 0 ? [inArray(attachments.projectId, projectIds)] : [])
+    ];
+
+    const dbAttachments = await db
+      .select({
+        attachmentId: attachments.id,
+        fileId: attachments.fileId,
+        entityId: attachments.entityId,
+        projectId: attachments.projectId,
+      })
+      .from(attachments)
+      .where(and(...attachmentConditions));
+
+    if (dbAttachments.length === 0) {
+      // No DB attachments, return tasks as-is
+      return tasks;
+    }
+
+    const fileIds = dbAttachments.map((a) => a.fileId);
+    const dbFiles = await db
+      .select()
+      .from(files)
+      .where(inArray(files.id, fileIds));
+
+    const fileById = new Map(dbFiles.map((f) => [f.id, f]));
+
+    // Group attachments by task ID
+    const attachmentsByTaskId = new Map<string, FileObject[]>();
+    for (const attachment of dbAttachments) {
+      const taskId = attachment.entityId;
+      if (!taskId) continue;
+      const expectedProjectId = taskProjectMap.get(taskId);
+      if (!expectedProjectId || attachment.projectId !== expectedProjectId) {
+        continue;
+      }
+
+      const file = fileById.get(attachment.fileId);
+      if (!file) continue;
+
+      const fileObject: FileObject = {
+        id: file.id,
+        uploaderId: file.uploadedBy,
+        filename: file.filename,
+        mimeType: file.mimeType,
+        sizeBytes: Number(file.sizeBytes),
+        storageUrl: file.storageUrl,
+        uploadedAt: file.createdAt?.toISOString() ?? new Date().toISOString(),
+        ...(file.description ? { description: file.description } : {}),
+        ...(file.sha256 ? { sha256: file.sha256 } : {}),
+      };
+
+      const existing = attachmentsByTaskId.get(taskId) ?? [];
+      existing.push(fileObject);
+      attachmentsByTaskId.set(taskId, existing);
+    }
+
+    // Merge DB attachments with memory-based ones for each task
+    return tasks.map((task) => {
+      const dbAttachmentsForTask = attachmentsByTaskId.get(task.id) ?? [];
+      if (dbAttachmentsForTask.length === 0) {
+        return task;
+      }
+
+      const existingIds = new Set((task.attachments ?? []).map((a) => a.id));
+      const mergedAttachments = [...(task.attachments ?? [])];
+      for (const file of dbAttachmentsForTask) {
+        if (!existingIds.has(file.id)) {
+          mergedAttachments.push(file);
+        }
+      }
+
+      return { ...task, attachments: mergedAttachments };
+    });
+  } catch (error) {
+    console.error('[TasksRepository] Failed to hydrate task attachments from DB', error);
+    // Fallback to tasks as-is
+    return tasks;
+  }
 }

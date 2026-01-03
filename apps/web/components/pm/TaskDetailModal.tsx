@@ -9,6 +9,7 @@ import LargeContentModal from '@/components/ui/large-content-modal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import TaskResultsBlock from '@/components/pm/TaskResultsBlock';
 import { toast } from '@/lib/ui/toast';
 
 type ProjectMember = {
@@ -384,6 +385,14 @@ export default function TaskDetailModal({
                 )}
               </div>
             </ContentBlock>
+
+            <TaskResultsBlock
+              taskId={taskData.id}
+              {...(taskData.attachments && { attachments: taskData.attachments })}
+              active={isOpen}
+              size="sm"
+              className="rounded-2xl border-neutral-900 bg-neutral-950/85 p-4"
+            />
 
             {/* Управление задачей (компактно в колонку) */}
             <ContentBlock

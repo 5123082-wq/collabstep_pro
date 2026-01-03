@@ -11,7 +11,8 @@ module.exports = {
     "apps/web/check-icons.js",
     "apps/web/list-icons.js",
     "playwright.config.ts",
-    "scripts/**"
+    "scripts/**",
+    "filebrowser-test/**"
   ],
   rules: {
     "unused-imports/no-unused-imports": "error",
