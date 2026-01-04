@@ -34,11 +34,13 @@
 
 ### Now
 
-- ✅ **Speed Insights updated** (2026-01-04):
+- ✅ **Speed Insights updated and PR created** (2026-01-04):
   - Created dedicated client component `Insights.tsx` with `usePathname` for route tracking
   - Updated `layout.tsx` to use new component (removed dynamic import)
   - Follows official Vercel documentation best practices
   - Maintains SSR on layout while tracking performance metrics
+  - PR #32: https://github.com/5123082-wq/collabstep_pro/pull/32
+  - All checks passed: lint, typecheck
 - ✅ **Changes pushed to GitHub and PR created** (2026-01-03)
   - PR #31: https://github.com/5123082-wq/collabstep_pro/pull/31
   - All checks passed: lint, typecheck, routes
@@ -87,10 +89,11 @@
 
 ## Last updated
 
-- 2026-01-04 — **Speed Insights Integration Updated** ✅
+- 2026-01-04 — **Speed Insights Integration Updated & PR Created** ✅
   - Refactored to use dedicated client component with route tracking
   - Follows official Vercel documentation best practices
   - All checks passed (lint, typecheck)
+  - PR #32 created: https://github.com/5123082-wq/collabstep_pro/pull/32
 
 - 2026-01-03 — **PR Created and Pushed** ✅
   - PR #31 created: Multi-Organization feature and file manager improvements
