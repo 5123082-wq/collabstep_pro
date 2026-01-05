@@ -126,17 +126,18 @@ export class ProjectTemplateService {
     const visibility: Project['visibility'] =
       template.projectVisibility === 'public' ? 'public' : 'private';
 
-    const project = projectsRepository.create({
-      title: projectTitle,
-      description: projectDescription,
-      ownerId: params.ownerId,
-      workspaceId: DEFAULT_WORKSPACE_ID,
-      ...(template.projectType ? { type: template.projectType } : {}),
-      ...(template.projectStage ? { stage: template.projectStage } : {}),
-      visibility
-    });
-
+    let project: Project | null = null;
     try {
+      project = projectsRepository.create({
+        title: projectTitle,
+        description: projectDescription,
+        ownerId: params.ownerId,
+        workspaceId: DEFAULT_WORKSPACE_ID,
+        ...(template.projectType ? { type: template.projectType } : {}),
+        ...(template.projectStage ? { stage: template.projectStage } : {}),
+        visibility
+      });
+
       await upsertOrganizationProject({
         projectId: project.id,
         organizationId: params.organizationId,
@@ -146,8 +147,19 @@ export class ProjectTemplateService {
         visibility
       });
     } catch (error) {
-      projectsRepository.delete(project.id);
+      // Rollback: delete project if it was created before the error
+      if (project) {
+        try {
+          projectsRepository.delete(project.id);
+        } catch (deleteError) {
+          console.error('[ProjectTemplateService] Failed to rollback project deletion after upsertOrganizationProject error:', deleteError);
+        }
+      }
       throw error;
+    }
+
+    if (!project) {
+      throw new ProjectTemplateValidationError('Failed to create project', 500);
     }
 
     const selectedTaskIds = params.selectedTaskIds ?? allTasks.map((task) => task.id);
@@ -218,10 +230,15 @@ export class ProjectTemplateService {
       return { project, tasks: createdTasks };
     } catch (error) {
       // Rollback: delete project and organization linkage if task creation fails
-      try {
-        projectsRepository.delete(project.id);
-      } catch (deleteError) {
-        console.error('[ProjectTemplateService] Failed to rollback project deletion:', deleteError);
+      // This prevents orphaned projects when task creation fails
+      if (project) {
+        try {
+          console.error('[ProjectTemplateService] Task creation failed, rolling back project:', project.id, error);
+          projectsRepository.delete(project.id);
+        } catch (deleteError) {
+          console.error('[ProjectTemplateService] Failed to rollback project deletion:', deleteError);
+          // Re-throw the original error, not the delete error
+        }
       }
       throw error;
     }
