@@ -115,6 +115,15 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
     }
   }, [name, description]);
 
+  const handleOpenTemplateWizard = () => {
+    onClose();
+    window.dispatchEvent(
+      new CustomEvent<{ component: string }>('open-create-modal', {
+        detail: { component: 'createProjectFromTemplate' }
+      })
+    );
+  };
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setTouched(true);
@@ -213,6 +222,21 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                     </button>
                   </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={handleOpenTemplateWizard}
+                  className="flex w-full items-center gap-3 rounded-xl border border-neutral-900 bg-neutral-950/60 px-4 py-3 text-left transition hover:border-emerald-500/40 hover:bg-neutral-950/80"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-300">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-semibold text-white">Создать из шаблона</div>
+                    <div className="text-xs text-neutral-400">
+                      Выберите задачи и создайте проект пошагово
+                    </div>
+                  </div>
+                </button>
 
                 {selectedTemplate && (
                   <div className="relative rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-4">

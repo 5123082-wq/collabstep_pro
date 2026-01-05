@@ -709,3 +709,34 @@ export const userProjectTemplates = pgTable(
         createdAtIdx: index("user_project_templates_created_at_idx").on(table.createdAt),
     })
 );
+
+// --- Project Template Tasks ---
+
+export const projectTemplateTasks = pgTable(
+    "project_template_tasks",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        templateId: text("template_id").notNull(),
+        parentTaskId: text("parent_task_id")
+            .references((): AnyPgColumn => projectTemplateTasks.id, { onDelete: "cascade" }),
+        title: text("title").notNull(),
+        description: text("description"),
+        defaultStatus: text("default_status").notNull().default("new"),
+        defaultPriority: text("default_priority"),
+        defaultLabels: text("default_labels").array().default([]),
+        offsetStartDays: integer("offset_start_days").notNull().default(0),
+        offsetDueDays: integer("offset_due_days"),
+        estimatedTime: integer("estimated_time"),
+        storyPoints: integer("story_points"),
+        position: integer("position").notNull().default(0),
+        createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+    },
+    (table) => ({
+        templateIdIdx: index("project_template_tasks_template_id_idx").on(table.templateId),
+        parentTaskIdIdx: index("project_template_tasks_parent_task_id_idx").on(table.parentTaskId),
+        templatePositionIdx: index("project_template_tasks_template_position_idx").on(table.templateId, table.position),
+    })
+);

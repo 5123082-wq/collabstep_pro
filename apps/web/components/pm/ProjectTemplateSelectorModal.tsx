@@ -26,6 +26,10 @@ export type ProjectTemplate = {
   _type?: 'admin' | 'user';
 };
 
+type TemplateTaskNode = {
+  children?: TemplateTaskNode[];
+};
+
 type ProjectTemplateSelectorModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -64,6 +68,22 @@ export default function ProjectTemplateSelectorModal({
   const [userTemplates, setUserTemplates] = useState<ProjectTemplate[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<ProjectTemplate | null>(null);
+  const [taskCounts, setTaskCounts] = useState<Record<string, number>>({});
+
+  const countTasks = (nodes: TemplateTaskNode[]): number => {
+    let total = 0;
+    const stack = [...nodes];
+    while (stack.length > 0) {
+      const node = stack.pop();
+      if (!node) continue;
+      total += 1;
+      const children = node.children;
+      if (children && children.length > 0) {
+        stack.push(...children);
+      }
+    }
+    return total;
+  };
 
   useEffect(() => {
     if (!open) {
@@ -103,6 +123,42 @@ export default function ProjectTemplateSelectorModal({
 
     void fetchTemplates();
   }, [open]);
+
+  useEffect(() => {
+    if (!open || templates.length === 0) {
+      return;
+    }
+
+    let isActive = true;
+
+    const fetchTaskCounts = async () => {
+      const nextCounts: Record<string, number> = {};
+      await Promise.all(
+        templates.map(async (template) => {
+          try {
+            const response = await fetch(`/api/templates/${template.id}/tasks`, { cache: 'no-store' });
+            if (!response.ok) {
+              return;
+            }
+            const data = await response.json();
+            const items = Array.isArray(data?.items) ? data.items : [];
+            nextCounts[template.id] = countTasks(items);
+          } catch (error) {
+            console.error('[ProjectTemplateSelectorModal] Failed to fetch task count', error);
+          }
+        })
+      );
+      if (isActive) {
+        setTaskCounts(nextCounts);
+      }
+    };
+
+    void fetchTaskCounts();
+
+    return () => {
+      isActive = false;
+    };
+  }, [open, templates]);
 
   const handleSelect = (template: ProjectTemplate) => {
     setSelectedTemplate(template);
@@ -251,6 +307,11 @@ export default function ProjectTemplateSelectorModal({
                           </span>
                         </div>
                         <p className="text-xs text-neutral-400">{template.summary}</p>
+                        <div className="text-[11px] text-neutral-500">
+                          {typeof taskCounts[template.id] === 'number'
+                            ? `${taskCounts[template.id]} задач`
+                            : '— задач'}
+                        </div>
                       </div>
                     </button>
                   );
@@ -322,6 +383,11 @@ export default function ProjectTemplateSelectorModal({
                               </span>
                             </div>
                             <p className="text-xs text-neutral-400">{template.summary}</p>
+                            <div className="text-[11px] text-neutral-500">
+                              {typeof taskCounts[template.id] === 'number'
+                                ? `${taskCounts[template.id]} задач`
+                                : '— задач'}
+                            </div>
                           </div>
                         </button>
                       );
@@ -387,4 +453,3 @@ export default function ProjectTemplateSelectorModal({
     </Modal>
   );
 }
-

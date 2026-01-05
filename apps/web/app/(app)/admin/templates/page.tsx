@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 // @ts-expect-error lucide-react icon types
-import { Plus, Edit, Trash2, RefreshCw, FileText, Palette, Globe, Megaphone, Sparkles } from 'lucide-react';
+import { Plus, Edit, Trash2, RefreshCw, FileText, Palette, Globe, Megaphone, Sparkles, ListTodo } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import clsx from 'clsx';
 import { ContentBlock } from '@/components/ui/content-block';
@@ -408,6 +409,15 @@ export default function AdminTemplatesPage() {
                           </span>
                         </div>
                         <p className="text-xs text-neutral-400 line-clamp-2">{template.summary}</p>
+                      </div>
+                      <div className="pt-2 border-t border-neutral-800">
+                        <Link
+                          href={`/admin/templates/${template.id}/tasks`}
+                          className="flex items-center gap-2 text-xs font-medium text-indigo-400 hover:text-indigo-300 transition"
+                        >
+                          <ListTodo className="h-3.5 w-3.5" />
+                          Управление задачами
+                        </Link>
                       </div>
                     </div>
                   </ContentBlock>

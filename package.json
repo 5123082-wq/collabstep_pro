@@ -21,7 +21,7 @@
     "check:performance": "bash scripts/check-performance.sh",
     "kill:ports": "lsof -ti:3000,3001,3002,8080 | xargs kill -9 2>/dev/null || true",
     "kill:node": "pkill -9 node || true",
-    "build": "pnpm --filter @collabverse/web build",
+    "build": "pnpm -w typecheck && pnpm --filter @collabverse/web build",
     "start": "pnpm --filter @collabverse/web start",
     "typecheck": "pnpm --filter @collabverse/web typecheck && pnpm --filter @collabverse/api typecheck",
     "lint": "eslint .",
@@ -36,7 +36,7 @@
     "docs:links": "node scripts/check-docs-links.mjs",
     "reset:ai-agents": "tsx scripts/reset-ai-agents.ts",
     "prepare": "husky install",
-    "vercel-build": "pnpm -C apps/web build"
+    "vercel-build": "pnpm -w typecheck && pnpm -C apps/web build"
   },
   "devDependencies": {
     "@babel/core": "^7.28.5",

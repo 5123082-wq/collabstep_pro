@@ -235,12 +235,13 @@ export default function PMTasksPage() {
       }
       // Также очищаем все кэшированные данные для надежности
       cacheRef.current.clear();
-      // Небольшая задержка для того, чтобы задача успела сохраниться в базе данных
+      // Задержка для того, чтобы задача успела сохраниться в базе данных
+      // Увеличена до 500ms для надежности сохранения в БД
       setTimeout(() => {
         // Принудительно обновляем данные, игнорируя проверку на изменение cacheKey
         prevCacheKeyRef.current = '';
         void loadTasks();
-      }, 100);
+      }, 500);
     };
 
     window.addEventListener('task-created', handleTaskEvent);

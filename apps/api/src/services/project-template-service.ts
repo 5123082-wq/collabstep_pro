@@ -1,0 +1,231 @@
+import { db } from '../db/config';
+import { projects as projectsTable } from '../db/schema';
+import { DEFAULT_WORKSPACE_ID } from '../data/memory';
+import { projectsRepository } from '../repositories/projects-repository';
+import { tasksRepository } from '../repositories/tasks-repository';
+import { templateTasksRepository } from '../repositories/template-tasks-repository';
+import { templatesRepository } from '../repositories/templates-repository';
+import { userTemplatesRepository } from '../repositories/user-templates-repository';
+import type { Project, Task, ProjectTemplateTask } from '../types';
+
+type TemplateMeta = {
+  id: string;
+  title: string;
+  summary?: string;
+  projectType?: Project['type'];
+  projectStage?: Project['stage'];
+  projectVisibility?: Project['visibility'];
+};
+
+export class ProjectTemplateValidationError extends Error {
+  status: number;
+
+  constructor(message: string, status = 400) {
+    super(message);
+    this.name = 'ProjectTemplateValidationError';
+    this.status = status;
+    Object.setPrototypeOf(this, ProjectTemplateValidationError.prototype);
+  }
+}
+
+function toTemplateMeta(template: {
+  id: string;
+  title: string;
+  summary?: string | null;
+  projectType?: Project['type'];
+  projectStage?: Project['stage'];
+  projectVisibility?: Project['visibility'];
+}): TemplateMeta {
+  return {
+    id: template.id,
+    title: template.title,
+    ...(template.summary && { summary: template.summary }),
+    ...(template.projectType && { projectType: template.projectType }),
+    ...(template.projectStage && { projectStage: template.projectStage }),
+    ...(template.projectVisibility && { projectVisibility: template.projectVisibility })
+  };
+}
+
+function addDays(baseDate: Date, offsetDays: number): string {
+  const next = new Date(baseDate.getTime());
+  next.setUTCDate(next.getUTCDate() + offsetDays);
+  return next.toISOString();
+}
+
+async function upsertOrganizationProject(params: {
+  projectId: string;
+  organizationId: string;
+  ownerId: string;
+  title: string;
+  description?: string;
+  visibility: 'private' | 'public';
+}): Promise<void> {
+  const now = new Date();
+  await db
+    .insert(projectsTable)
+    .values({
+      id: params.projectId,
+      organizationId: params.organizationId,
+      ownerId: params.ownerId,
+      name: params.title,
+      description: params.description,
+      visibility: params.visibility === 'public' ? 'public' : 'private',
+      createdAt: now,
+      updatedAt: now
+    })
+    .onConflictDoUpdate({
+      target: projectsTable.id,
+      set: {
+        organizationId: params.organizationId,
+        ownerId: params.ownerId,
+        name: params.title,
+        description: params.description,
+        visibility: params.visibility === 'public' ? 'public' : 'private',
+        updatedAt: now
+      }
+    });
+}
+
+export class ProjectTemplateService {
+  async createProjectFromTemplate(params: {
+    templateId: string;
+    ownerId: string;
+    organizationId: string;
+    projectTitle?: string;
+    projectDescription?: string;
+    startDate?: string;
+    selectedTaskIds?: string[];
+  }): Promise<{ project: Project; tasks: Task[] }> {
+    const adminTemplate = templatesRepository.findById(params.templateId);
+    const template = adminTemplate
+      ? toTemplateMeta(adminTemplate)
+      : await userTemplatesRepository
+          .findById(params.templateId, params.ownerId)
+          .then((item) => (item ? toTemplateMeta(item) : null));
+
+    if (!template) {
+      throw new ProjectTemplateValidationError('Template not found', 404);
+    }
+
+    // Validate selectedTaskIds BEFORE creating project to prevent orphaned projects
+    const allTasks = await templateTasksRepository.listByTemplateId(template.id);
+    const tasksById = new Map<string, ProjectTemplateTask>(
+      allTasks.map((task) => [task.id, task])
+    );
+
+    if (params.selectedTaskIds && params.selectedTaskIds.length > 0) {
+      for (const taskId of params.selectedTaskIds) {
+        if (!tasksById.has(taskId)) {
+          throw new ProjectTemplateValidationError(`Task not found in template: ${taskId}`, 400);
+        }
+      }
+    }
+
+    const projectTitle = params.projectTitle?.trim() || template.title;
+    const projectDescription = params.projectDescription?.trim() || template.summary || '';
+    const visibility: Project['visibility'] =
+      template.projectVisibility === 'public' ? 'public' : 'private';
+
+    const project = projectsRepository.create({
+      title: projectTitle,
+      description: projectDescription,
+      ownerId: params.ownerId,
+      workspaceId: DEFAULT_WORKSPACE_ID,
+      ...(template.projectType ? { type: template.projectType } : {}),
+      ...(template.projectStage ? { stage: template.projectStage } : {}),
+      visibility
+    });
+
+    try {
+      await upsertOrganizationProject({
+        projectId: project.id,
+        organizationId: params.organizationId,
+        ownerId: params.ownerId,
+        title: project.title,
+        ...(project.description ? { description: project.description } : {}),
+        visibility
+      });
+    } catch (error) {
+      projectsRepository.delete(project.id);
+      throw error;
+    }
+
+    const selectedTaskIds = params.selectedTaskIds ?? allTasks.map((task) => task.id);
+    const selected = new Set(selectedTaskIds);
+
+    const includeParents = (taskId: string) => {
+      const task = tasksById.get(taskId);
+      if (!task || !task.parentTaskId) {
+        return;
+      }
+      selected.add(task.parentTaskId);
+      includeParents(task.parentTaskId);
+    };
+
+    for (const taskId of selectedTaskIds) {
+      includeParents(taskId);
+    }
+
+    if (selected.size === 0) {
+      return { project, tasks: [] };
+    }
+
+    try {
+      const createdTasks: Task[] = [];
+      const idMap = new Map<string, string>();
+      const baseDate = params.startDate ? new Date(params.startDate) : new Date();
+
+      const createTaskRecursive = (task: ProjectTemplateTask) => {
+        if (!selected.has(task.id) || idMap.has(task.id)) {
+          return;
+        }
+
+        if (task.parentTaskId) {
+          const parent = tasksById.get(task.parentTaskId);
+          if (parent) {
+            createTaskRecursive(parent);
+          }
+        }
+
+        const startAt = addDays(baseDate, task.offsetStartDays);
+        const dueAt =
+          task.offsetDueDays !== undefined ? addDays(baseDate, task.offsetDueDays) : undefined;
+        const parentId = task.parentTaskId ? idMap.get(task.parentTaskId) ?? null : null;
+
+        const created = tasksRepository.create({
+          projectId: project.id,
+          title: task.title,
+          ...(task.description && { description: task.description }),
+          status: task.defaultStatus,
+          parentId,
+          startAt,
+          ...(dueAt && { dueAt }),
+          ...(task.defaultPriority && { priority: task.defaultPriority }),
+          ...(task.defaultLabels && { labels: task.defaultLabels }),
+          ...(task.estimatedTime !== undefined && { estimatedTime: task.estimatedTime }),
+          ...(task.storyPoints !== undefined && { storyPoints: task.storyPoints })
+        });
+
+        idMap.set(task.id, created.id);
+        createdTasks.push(created);
+      };
+
+      const sortedTasks = [...allTasks].sort((a, b) => a.position - b.position);
+      for (const task of sortedTasks) {
+        createTaskRecursive(task);
+      }
+
+      return { project, tasks: createdTasks };
+    } catch (error) {
+      // Rollback: delete project and organization linkage if task creation fails
+      try {
+        projectsRepository.delete(project.id);
+      } catch (deleteError) {
+        console.error('[ProjectTemplateService] Failed to rollback project deletion:', deleteError);
+      }
+      throw error;
+    }
+  }
+}
+
+export const projectTemplateService = new ProjectTemplateService();

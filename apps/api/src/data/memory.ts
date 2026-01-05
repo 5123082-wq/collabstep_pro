@@ -17,6 +17,7 @@ import type {
   ProjectBudgetSnapshot,
   ProjectMember,
   ProjectTemplate,
+  ProjectTemplateTask,
   ProjectVisibility,
   ProjectWorkflow,
   Task,
@@ -95,6 +96,7 @@ type GlobalMemory = {
   INVITE_THREADS: InviteThread[];
   INVITE_THREAD_PARTICIPANTS: InviteThreadParticipant[];
   INVITE_THREAD_MESSAGES: InviteThreadMessage[];
+  TEMPLATE_TASKS: ProjectTemplateTask[];
 };
 
 type GlobalMemoryScope = typeof globalThis & {
@@ -126,6 +128,9 @@ const getOrCreateGlobalMemory = (): GlobalMemory => {
     if (!globalMemoryScope.__collabverseMemory__.INVITE_THREAD_MESSAGES) {
       globalMemoryScope.__collabverseMemory__.INVITE_THREAD_MESSAGES = [] as InviteThreadMessage[];
     }
+    if (!globalMemoryScope.__collabverseMemory__.TEMPLATE_TASKS) {
+      globalMemoryScope.__collabverseMemory__.TEMPLATE_TASKS = [] as ProjectTemplateTask[];
+    }
     return globalMemoryScope.__collabverseMemory__;
   }
 
@@ -156,7 +161,8 @@ const getOrCreateGlobalMemory = (): GlobalMemory => {
     ORGANIZATION_MEMBERS: [] as OrganizationMember[],
     INVITE_THREADS: [] as InviteThread[],
     INVITE_THREAD_PARTICIPANTS: [] as InviteThreadParticipant[],
-    INVITE_THREAD_MESSAGES: [] as InviteThreadMessage[]
+    INVITE_THREAD_MESSAGES: [] as InviteThreadMessage[],
+    TEMPLATE_TASKS: [] as ProjectTemplateTask[]
   };
 
   globalMemoryScope.__collabverseMemory__ = mem;
@@ -386,6 +392,291 @@ export const memory = {
       projectVisibility: 'private'
     }
   ] as ProjectTemplate[],
+  // Template tasks for "Бренд-пакет" (tpl-brand) - 16 tasks in 3 phases
+  TEMPLATE_TASKS_INITIAL: [
+    // Phase 1: Naming
+    {
+      id: 'tpl-task-brand-1-1',
+      templateId: 'tpl-brand',
+      parentTaskId: null,
+      title: 'Исследование рынка и конкурентов',
+      description: 'Провести анализ целевой аудитории, конкурентов, рыночных трендов. Определить позиционирование бренда.',
+      defaultStatus: 'new',
+      defaultPriority: 'high',
+      defaultLabels: ['research', 'naming'],
+      offsetStartDays: 0,
+      offsetDueDays: 3,
+      estimatedTime: null,
+      storyPoints: null,
+      position: 0,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z'
+    },
+    {
+      id: 'tpl-task-brand-1-2',
+      templateId: 'tpl-brand',
+      parentTaskId: 'tpl-task-brand-1-1',
+      title: 'Генерация вариантов названий',
+      description: 'Создать список из 20-30 вариантов названий, учитывая семантику, фонетику, запоминаемость.',
+      defaultStatus: 'new',
+      defaultPriority: 'high',
+      defaultLabels: ['naming', 'creative'],
+      offsetStartDays: 3,
+      offsetDueDays: 5,
+      estimatedTime: null,
+      storyPoints: null,
+      position: 1,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z'
+    },
+    {
+      id: 'tpl-task-brand-1-3',
+      templateId: 'tpl-brand',
+      parentTaskId: 'tpl-task-brand-1-2',
+      title: 'Проверка доменов и торговых марок',
+      description: 'Проверить доступность доменных имен (.com, .ru, .io), наличие похожих торговых марок, социальных сетей.',
+      defaultStatus: 'new',
+      defaultPriority: 'high',
+      defaultLabels: ['naming', 'legal'],
+      offsetStartDays: 5,
+      offsetDueDays: 7,
+      estimatedTime: null,
+      storyPoints: null,
+      position: 2,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z'
+    },
+    {
+      id: 'tpl-task-brand-1-4',
+      templateId: 'tpl-brand',
+      parentTaskId: 'tpl-task-brand-1-3',
+      title: 'Выбор и утверждение финального названия',
+      description: 'Провести презентацию топ-5 вариантов, получить обратную связь, выбрать финальный вариант.',
+      defaultStatus: 'new',
+      defaultPriority: 'urgent',
+      defaultLabels: ['naming', 'decision'],
+      offsetStartDays: 7,
+      offsetDueDays: 9,
+      estimatedTime: null,
+      storyPoints: null,
+      position: 3,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z'
+    },
+    // Phase 2: Identity
+    {
+      id: 'tpl-task-brand-2-1',
+      templateId: 'tpl-brand',
+      parentTaskId: 'tpl-task-brand-1-4',
+      title: 'Разработка концепции визуального стиля',
+      description: 'Определить общее направление визуального стиля, настроение, эмоции, которые должен передавать бренд.',
+      defaultStatus: 'new',
+      defaultPriority: 'high',
+      defaultLabels: ['identity', 'concept'],
+      offsetStartDays: 9,
+      offsetDueDays: 12,
+      estimatedTime: null,
+      storyPoints: null,
+      position: 4,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z'
+    },
+    {
+      id: 'tpl-task-brand-2-2',
+      templateId: 'tpl-brand',
+      parentTaskId: 'tpl-task-brand-2-1',
+      title: 'Разработка логотипа',
+      description: 'Создать несколько вариантов логотипа (3-5 концепций), проработать детали, выбрать финальный вариант.',
+      defaultStatus: 'new',
+      defaultPriority: 'urgent',
+      defaultLabels: ['identity', 'logo', 'design'],
+      offsetStartDays: 12,
+      offsetDueDays: 18,
+      estimatedTime: null,
+      storyPoints: null,
+      position: 5,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z'
+    },
+    {
+      id: 'tpl-task-brand-2-3',
+      templateId: 'tpl-brand',
+      parentTaskId: 'tpl-task-brand-2-1',
+      title: 'Разработка цветовой палитры',
+      description: 'Определить основные и дополнительные цвета бренда, их значения, варианты использования (RGB, CMYK, HEX).',
+      defaultStatus: 'new',
+      defaultPriority: 'high',
+      defaultLabels: ['identity', 'colors', 'design'],
+      offsetStartDays: 12,
+      offsetDueDays: 16,
+      estimatedTime: null,
+      storyPoints: null,
+      position: 6,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z'
+    },
+    {
+      id: 'tpl-task-brand-2-4',
+      templateId: 'tpl-brand',
+      parentTaskId: 'tpl-task-brand-2-1',
+      title: 'Подбор и настройка типографики',
+      description: 'Выбрать шрифтовые пары (заголовки, основной текст), определить размеры, межстрочные интервалы, правила использования.',
+      defaultStatus: 'new',
+      defaultPriority: 'high',
+      defaultLabels: ['identity', 'typography', 'design'],
+      offsetStartDays: 12,
+      offsetDueDays: 16,
+      estimatedTime: null,
+      storyPoints: null,
+      position: 7,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z'
+    },
+    {
+      id: 'tpl-task-brand-2-5',
+      templateId: 'tpl-brand',
+      parentTaskId: 'tpl-task-brand-2-2',
+      title: 'Разработка иконографии и графических элементов',
+      description: 'Создать набор иконок, паттернов, декоративных элементов в стиле бренда.',
+      defaultStatus: 'new',
+      defaultPriority: 'med',
+      defaultLabels: ['identity', 'icons', 'design'],
+      offsetStartDays: 18,
+      offsetDueDays: 22,
+      estimatedTime: null,
+      storyPoints: null,
+      position: 8,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z'
+    },
+    {
+      id: 'tpl-task-brand-2-6',
+      templateId: 'tpl-brand',
+      parentTaskId: 'tpl-task-brand-2-2',
+      title: 'Создание базовых фирменных материалов',
+      description: 'Разработать визитки, бланки, шаблоны презентаций, email-подписи в фирменном стиле.',
+      defaultStatus: 'new',
+      defaultPriority: 'med',
+      defaultLabels: ['identity', 'materials', 'design'],
+      offsetStartDays: 20,
+      offsetDueDays: 25,
+      estimatedTime: null,
+      storyPoints: null,
+      position: 9,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z'
+    },
+    // Phase 3: Guidelines
+    {
+      id: 'tpl-task-brand-3-1',
+      templateId: 'tpl-brand',
+      parentTaskId: 'tpl-task-brand-2-6',
+      title: 'Разработка структуры брендбука',
+      description: 'Определить разделы гайдлайна, порядок изложения, формат документации.',
+      defaultStatus: 'new',
+      defaultPriority: 'high',
+      defaultLabels: ['guidelines', 'documentation'],
+      offsetStartDays: 25,
+      offsetDueDays: 27,
+      estimatedTime: null,
+      storyPoints: null,
+      position: 10,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z'
+    },
+    {
+      id: 'tpl-task-brand-3-2',
+      templateId: 'tpl-brand',
+      parentTaskId: 'tpl-task-brand-3-1',
+      title: 'Документация правил использования логотипа',
+      description: 'Описать варианты логотипа (горизонтальный, вертикальный, монохромный), зоны защиты, минимальные размеры, запрещенные варианты использования.',
+      defaultStatus: 'new',
+      defaultPriority: 'high',
+      defaultLabels: ['guidelines', 'logo', 'documentation'],
+      offsetStartDays: 27,
+      offsetDueDays: 30,
+      estimatedTime: null,
+      storyPoints: null,
+      position: 11,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z'
+    },
+    {
+      id: 'tpl-task-brand-3-3',
+      templateId: 'tpl-brand',
+      parentTaskId: 'tpl-task-brand-3-1',
+      title: 'Документация цветовой палитры',
+      description: 'Описать значения каждого цвета, правила сочетания, примеры правильного и неправильного использования.',
+      defaultStatus: 'new',
+      defaultPriority: 'high',
+      defaultLabels: ['guidelines', 'colors', 'documentation'],
+      offsetStartDays: 27,
+      offsetDueDays: 30,
+      estimatedTime: null,
+      storyPoints: null,
+      position: 12,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z'
+    },
+    {
+      id: 'tpl-task-brand-3-4',
+      templateId: 'tpl-brand',
+      parentTaskId: 'tpl-task-brand-3-1',
+      title: 'Документация типографической системы',
+      description: 'Описать шрифты, размеры, настройки, иерархию, примеры использования в заголовках и тексте.',
+      defaultStatus: 'new',
+      defaultPriority: 'high',
+      defaultLabels: ['guidelines', 'typography', 'documentation'],
+      offsetStartDays: 27,
+      offsetDueDays: 30,
+      estimatedTime: null,
+      storyPoints: null,
+      position: 13,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z'
+    },
+    {
+      id: 'tpl-task-brand-3-5',
+      templateId: 'tpl-brand',
+      parentTaskId: 'tpl-task-brand-3-2',
+      title: 'Создание примеров применения бренда',
+      description: 'Подготовить визуальные примеры применения бренда на различных носителях (сайт, соцсети, печать, сувенирка).',
+      defaultStatus: 'new',
+      defaultPriority: 'med',
+      defaultLabels: ['guidelines', 'examples', 'documentation'],
+      offsetStartDays: 30,
+      offsetDueDays: 35,
+      estimatedTime: null,
+      storyPoints: null,
+      position: 14,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z'
+    },
+    {
+      id: 'tpl-task-brand-3-6',
+      templateId: 'tpl-brand',
+      parentTaskId: 'tpl-task-brand-3-5',
+      title: 'Верстка и подготовка финального гайдлайна',
+      description: 'Собрать все разделы в единый документ, отредактировать, подготовить к печати и цифровому распространению.',
+      defaultStatus: 'new',
+      defaultPriority: 'high',
+      defaultLabels: ['guidelines', 'final', 'documentation'],
+      offsetStartDays: 35,
+      offsetDueDays: 40,
+      estimatedTime: null,
+      storyPoints: null,
+      position: 15,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z'
+    }
+  ] as ProjectTemplateTask[],
+  get TEMPLATE_TASKS() {
+    if (!globalMemory.TEMPLATE_TASKS || globalMemory.TEMPLATE_TASKS.length === 0) {
+      globalMemory.TEMPLATE_TASKS = [...memory.TEMPLATE_TASKS_INITIAL];
+    }
+    return globalMemory.TEMPLATE_TASKS;
+  },
+  set TEMPLATE_TASKS(value: ProjectTemplateTask[]) { globalMemory.TEMPLATE_TASKS = value; },
   get PROJECT_MEMBERS() { return globalMemory.PROJECT_MEMBERS; },
   set PROJECT_MEMBERS(value: Record<string, ProjectMember[]>) { globalMemory.PROJECT_MEMBERS = value; },
   get EXPENSES() { return globalMemory.EXPENSES; },

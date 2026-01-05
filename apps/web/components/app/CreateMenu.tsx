@@ -20,19 +20,9 @@ type CreateAction = {
   modalComponent?: string;
 };
 
-type CreateContext = 'projects' | 'pm' | 'marketplace' | 'finance' | 'community' | 'ai-hub' | 'default';
+type CreateContext = 'pm' | 'marketplace' | 'finance' | 'community' | 'ai-hub' | 'default';
 
 const CONTEXT_ACTIONS: Record<CreateContext, CreateAction[]> = {
-  projects: [
-    {
-      id: 'project',
-      label: 'Проект',
-      description: 'Создайте новый проект',
-      roles: ['FOUNDER', 'PM', 'ADMIN'],
-      intent: 'modal',
-      modalComponent: 'createProject'
-    }
-  ],
   pm: [
     {
       id: 'project',
@@ -129,12 +119,13 @@ export default function CreateMenu({ open, onClose, triggerRef }: CreateMenuProp
   const visibleActions = useMemo(() => {
     const context = resolveContext(pathname);
     const actions = CONTEXT_ACTIONS[context] ?? [];
-    return actions.filter((action) => {
+    const filtered = actions.filter((action) => {
       if (!action.roles) {
         return true;
       }
       return action.roles.some((role) => roles.includes(role));
     });
+    return filtered;
   }, [pathname, roles]);
 
   // Сброс активного индекса при изменении списка действий
