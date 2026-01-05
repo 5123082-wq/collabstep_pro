@@ -107,6 +107,20 @@ export class ProjectTemplateService {
       throw new ProjectTemplateValidationError('Template not found', 404);
     }
 
+    // Validate selectedTaskIds BEFORE creating project to prevent orphaned projects
+    const allTasks = await templateTasksRepository.listByTemplateId(template.id);
+    const tasksById = new Map<string, ProjectTemplateTask>(
+      allTasks.map((task) => [task.id, task])
+    );
+
+    if (params.selectedTaskIds && params.selectedTaskIds.length > 0) {
+      for (const taskId of params.selectedTaskIds) {
+        if (!tasksById.has(taskId)) {
+          throw new ProjectTemplateValidationError(`Task not found in template: ${taskId}`, 400);
+        }
+      }
+    }
+
     const projectTitle = params.projectTitle?.trim() || template.title;
     const projectDescription = params.projectDescription?.trim() || template.summary || '';
     const visibility: Project['visibility'] =
@@ -136,19 +150,6 @@ export class ProjectTemplateService {
       throw error;
     }
 
-    const allTasks = await templateTasksRepository.listByTemplateId(template.id);
-    const tasksById = new Map<string, ProjectTemplateTask>(
-      allTasks.map((task) => [task.id, task])
-    );
-
-    if (params.selectedTaskIds && params.selectedTaskIds.length > 0) {
-      for (const taskId of params.selectedTaskIds) {
-        if (!tasksById.has(taskId)) {
-          throw new ProjectTemplateValidationError(`Task not found in template: ${taskId}`, 400);
-        }
-      }
-    }
-
     const selectedTaskIds = params.selectedTaskIds ?? allTasks.map((task) => task.id);
     const selected = new Set(selectedTaskIds);
 
@@ -169,51 +170,61 @@ export class ProjectTemplateService {
       return { project, tasks: [] };
     }
 
-    const createdTasks: Task[] = [];
-    const idMap = new Map<string, string>();
-    const baseDate = params.startDate ? new Date(params.startDate) : new Date();
+    try {
+      const createdTasks: Task[] = [];
+      const idMap = new Map<string, string>();
+      const baseDate = params.startDate ? new Date(params.startDate) : new Date();
 
-    const createTaskRecursive = (task: ProjectTemplateTask) => {
-      if (!selected.has(task.id) || idMap.has(task.id)) {
-        return;
-      }
-
-      if (task.parentTaskId) {
-        const parent = tasksById.get(task.parentTaskId);
-        if (parent) {
-          createTaskRecursive(parent);
+      const createTaskRecursive = (task: ProjectTemplateTask) => {
+        if (!selected.has(task.id) || idMap.has(task.id)) {
+          return;
         }
+
+        if (task.parentTaskId) {
+          const parent = tasksById.get(task.parentTaskId);
+          if (parent) {
+            createTaskRecursive(parent);
+          }
+        }
+
+        const startAt = addDays(baseDate, task.offsetStartDays);
+        const dueAt =
+          task.offsetDueDays !== undefined ? addDays(baseDate, task.offsetDueDays) : undefined;
+        const parentId = task.parentTaskId ? idMap.get(task.parentTaskId) ?? null : null;
+
+        const created = tasksRepository.create({
+          projectId: project.id,
+          title: task.title,
+          ...(task.description && { description: task.description }),
+          status: task.defaultStatus,
+          parentId,
+          startAt,
+          ...(dueAt && { dueAt }),
+          ...(task.defaultPriority && { priority: task.defaultPriority }),
+          ...(task.defaultLabels && { labels: task.defaultLabels }),
+          ...(task.estimatedTime !== undefined && { estimatedTime: task.estimatedTime }),
+          ...(task.storyPoints !== undefined && { storyPoints: task.storyPoints })
+        });
+
+        idMap.set(task.id, created.id);
+        createdTasks.push(created);
+      };
+
+      const sortedTasks = [...allTasks].sort((a, b) => a.position - b.position);
+      for (const task of sortedTasks) {
+        createTaskRecursive(task);
       }
 
-      const startAt = addDays(baseDate, task.offsetStartDays);
-      const dueAt =
-        task.offsetDueDays !== undefined ? addDays(baseDate, task.offsetDueDays) : undefined;
-      const parentId = task.parentTaskId ? idMap.get(task.parentTaskId) ?? null : null;
-
-      const created = tasksRepository.create({
-        projectId: project.id,
-        title: task.title,
-        ...(task.description && { description: task.description }),
-        status: task.defaultStatus,
-        parentId,
-        startAt,
-        ...(dueAt && { dueAt }),
-        ...(task.defaultPriority && { priority: task.defaultPriority }),
-        ...(task.defaultLabels && { labels: task.defaultLabels }),
-        ...(task.estimatedTime !== undefined && { estimatedTime: task.estimatedTime }),
-        ...(task.storyPoints !== undefined && { storyPoints: task.storyPoints })
-      });
-
-      idMap.set(task.id, created.id);
-      createdTasks.push(created);
-    };
-
-    const sortedTasks = [...allTasks].sort((a, b) => a.position - b.position);
-    for (const task of sortedTasks) {
-      createTaskRecursive(task);
+      return { project, tasks: createdTasks };
+    } catch (error) {
+      // Rollback: delete project and organization linkage if task creation fails
+      try {
+        projectsRepository.delete(project.id);
+      } catch (deleteError) {
+        console.error('[ProjectTemplateService] Failed to rollback project deletion:', deleteError);
+      }
+      throw error;
     }
-
-    return { project, tasks: createdTasks };
   }
 }
 
