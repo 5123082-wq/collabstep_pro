@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 // @ts-expect-error lucide-react icon types
-import { Archive, DollarSign, Plus, Store, UserPlus } from 'lucide-react';
+import { Archive, DollarSign, Plus, Store, UserPlus, LayoutTemplate } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type Project } from '@/types/pm';
 import { trackEvent } from '@/lib/telemetry';
@@ -15,6 +15,7 @@ type QuickActionsProps = {
   onMarketplacePublish?: () => void;
   onArchive?: () => void;
   onVisibilityChange?: (visibility: Project['visibility']) => void;
+  onSaveAsTemplate?: () => void;
 };
 
 export default function QuickActions({
@@ -24,7 +25,8 @@ export default function QuickActions({
   onExpenseCreate,
   onMarketplacePublish,
   onArchive,
-  onVisibilityChange
+  onVisibilityChange,
+  onSaveAsTemplate
 }: QuickActionsProps) {
   const router = useRouter();
   const [archiving, setArchiving] = useState(false);
@@ -194,6 +196,24 @@ export default function QuickActions({
       >
         <Store className="h-4 w-4" />
         Выставить в маркетплейс
+      </button>
+
+      <button
+        type="button"
+        onClick={() => {
+          trackEvent('pm_project_action', {
+            workspaceId: 'current',
+            projectId: project.id,
+            userId: 'current',
+            action: 'save_as_template',
+            source: 'quick_actions'
+          });
+          onSaveAsTemplate?.();
+        }}
+        className="flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900/70 px-4 py-2 text-sm font-medium text-white transition hover:border-indigo-500/40 hover:bg-indigo-500/10"
+      >
+        <LayoutTemplate className="h-4 w-4" />
+        Сохранить как шаблон
       </button>
 
       {(project.status as string) !== 'ARCHIVED' && (project.status as string) !== 'archived' && (

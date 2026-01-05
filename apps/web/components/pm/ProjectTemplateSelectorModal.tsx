@@ -20,6 +20,10 @@ export type ProjectTemplate = {
   title: string;
   kind: string;
   summary: string;
+  projectType?: string;
+  projectStage?: string;
+  projectVisibility?: string;
+  _type?: 'admin' | 'user';
 };
 
 type ProjectTemplateSelectorModalProps = {
@@ -56,6 +60,8 @@ export default function ProjectTemplateSelectorModal({
   onSelect
 }: ProjectTemplateSelectorModalProps) {
   const [templates, setTemplates] = useState<ProjectTemplate[]>([]);
+  const [adminTemplates, setAdminTemplates] = useState<ProjectTemplate[]>([]);
+  const [userTemplates, setUserTemplates] = useState<ProjectTemplate[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<ProjectTemplate | null>(null);
 
@@ -73,10 +79,23 @@ export default function ProjectTemplateSelectorModal({
           throw new Error('Failed to fetch templates');
         }
         const data = await response.json();
-        setTemplates(data.items || []);
+        const allTemplates = data.items || [];
+        setTemplates(allTemplates);
+        
+        // Separate admin and user templates if sections are provided
+        if (data.sections) {
+          setAdminTemplates((data.sections.admin || []).map((t: ProjectTemplate) => ({ ...t, _type: 'admin' as const })));
+          setUserTemplates((data.sections.user || []).map((t: ProjectTemplate) => ({ ...t, _type: 'user' as const })));
+        } else {
+          // Fallback: separate by _type field
+          setAdminTemplates(allTemplates.filter((t: ProjectTemplate) => t._type === 'admin' || !t._type));
+          setUserTemplates(allTemplates.filter((t: ProjectTemplate) => t._type === 'user'));
+        }
       } catch (error) {
         console.error('Error fetching templates:', error);
         setTemplates([]);
+        setAdminTemplates([]);
+        setUserTemplates([]);
       } finally {
         setLoading(false);
       }
@@ -99,15 +118,16 @@ export default function ProjectTemplateSelectorModal({
     onOpenChange(false);
   };
 
-  const getKindIcon = (kind: string): React.ComponentType<{ className?: string }> => {
-    return KIND_ICONS[kind] ?? KIND_ICONS.default!;
+  const getKindIcon = (kind: string | undefined): React.ComponentType<{ className?: string }> => {
+    return KIND_ICONS[kind || ''] ?? KIND_ICONS.default!;
   };
 
-  const getKindColor = (kind: string) => {
-    return KIND_COLORS[kind] || 'indigo';
+  const getKindColor = (kind: string | undefined) => {
+    return KIND_COLORS[kind || ''] || 'indigo';
   };
 
-  const getKindLabel = (kind: string) => {
+  const getKindLabel = (kind: string | undefined) => {
+    if (!kind) return 'Без типа';
     return KIND_LABELS[kind] || kind;
   };
 
@@ -167,9 +187,16 @@ export default function ProjectTemplateSelectorModal({
               <p className="text-sm text-neutral-400">Шаблоны не найдены</p>
             </div>
           ) : (
-            <div className="space-y-6">
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {templates.map((template) => {
+            <div className="space-y-8">
+              {/* Рекомендованные шаблоны (административные) */}
+              {adminTemplates.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-neutral-300">Рекомендованные</h3>
+                    <div className="h-px flex-1 bg-neutral-800"></div>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {adminTemplates.map((template) => {
                   const Icon = getKindIcon(template.kind);
                   const color = getKindColor(template.kind);
                   const isSelected = selectedTemplate?.id === template.id;
@@ -228,7 +255,80 @@ export default function ProjectTemplateSelectorModal({
                     </button>
                   );
                 })}
-              </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Мои шаблоны (пользовательские) */}
+              {userTemplates.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-neutral-300">Мои шаблоны</h3>
+                    <div className="h-px flex-1 bg-neutral-800"></div>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {userTemplates.map((template) => {
+                      const Icon = getKindIcon(template.kind);
+                      const color = getKindColor(template.kind);
+                      const isSelected = selectedTemplate?.id === template.id;
+                      const colorClasses = getColorClasses(color, isSelected);
+
+                      return (
+                        <button
+                          key={template.id}
+                          type="button"
+                          onClick={() => handleSelect(template)}
+                          className={cn(
+                            'group relative flex flex-col gap-3 rounded-xl border p-4 text-left transition-all',
+                            colorClasses.border,
+                            colorClasses.bg,
+                            !isSelected && 'hover:border-indigo-500/40 hover:bg-neutral-950/80',
+                            isSelected && 'shadow-lg'
+                          )}
+                        >
+                          {isSelected && (
+                            <div
+                              className={cn(
+                                'absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full',
+                                colorClasses.bgIcon,
+                                colorClasses.textIcon
+                              )}
+                            >
+                              <Check className="h-4 w-4" />
+                            </div>
+                          )}
+
+                          <div
+                            className={cn(
+                              'flex h-12 w-12 items-center justify-center rounded-xl',
+                              colorClasses.bgIcon,
+                              colorClasses.textIcon,
+                              !isSelected && 'group-hover:text-indigo-400'
+                            )}
+                          >
+                            <Icon className="h-6 w-6" />
+                          </div>
+
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-sm font-semibold text-white">{template.title}</h3>
+                              <span
+                                className={cn(
+                                  'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+                                  isSelected ? cn(colorClasses.bgIcon, colorClasses.textIcon) : 'bg-neutral-900 text-neutral-500'
+                                )}
+                              >
+                                {getKindLabel(template.kind)}
+                              </span>
+                            </div>
+                            <p className="text-xs text-neutral-400">{template.summary}</p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {selectedTemplate && (
                 <div className="rounded-2xl border border-neutral-900 bg-neutral-950/70 p-6">

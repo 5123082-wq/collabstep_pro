@@ -683,3 +683,29 @@ export const userSubscriptions = pgTable(
         expiresAtIdx: index("user_subscription_expires_at_idx").on(table.expiresAt),
     })
 );
+
+// --- User Project Templates ---
+
+export const userProjectTemplates = pgTable(
+    "user_project_templates",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        userId: text("user_id")
+            .notNull()
+            .references(() => users.id, { onDelete: "cascade" }),
+        title: text("title").notNull(),
+        kind: text("kind"),
+        summary: text("summary"),
+        projectType: text("project_type"),
+        projectStage: text("project_stage"),
+        projectVisibility: text("project_visibility"),
+        createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+    },
+    (table) => ({
+        userIdIdx: index("user_project_templates_user_id_idx").on(table.userId),
+        createdAtIdx: index("user_project_templates_created_at_idx").on(table.createdAt),
+    })
+);

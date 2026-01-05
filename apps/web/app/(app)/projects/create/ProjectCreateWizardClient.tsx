@@ -14,20 +14,44 @@ type ProjectCreateWizardClientProps = {
   currentUserId: string;
 };
 
+const visibilityOptions = [
+  { value: 'private', label: 'Приватный' },
+  { value: 'public', label: 'Публичный' }
+] as const;
+
+const typeOptions = [
+  { value: '', label: 'Не выбран' },
+  { value: 'product', label: 'Продуктовый' },
+  { value: 'marketing', label: 'Маркетинг' },
+  { value: 'operations', label: 'Операционный' },
+  { value: 'service', label: 'Сервисный' },
+  { value: 'internal', label: 'Внутренний' }
+] as const;
+
+const stageOptions = [
+  { value: 'discovery', label: 'Исследование' },
+  { value: 'design', label: 'Дизайн' },
+  { value: 'build', label: 'Разработка' },
+  { value: 'launch', label: 'Запуск' },
+  { value: 'support', label: 'Поддержка' }
+] as const;
+
 export default function ProjectCreateWizardClient({ currentUserId }: ProjectCreateWizardClientProps) {
   const router = useRouter();
   const [step, setStep] = useState<WizardStep>('details');
   const [organizations, setOrganizations] = useState<{ id: string; name: string }[]>([]);
   const [organizationId, setOrganizationId] = useState('');
   const [name, setName] = useState('');
-  const [key, setKey] = useState('');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [touched, setTouched] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<ProjectTemplate | null>(null);
 
-  const visibility = 'private' as const;
+  const [visibility, setVisibility] = useState<(typeof visibilityOptions)[number]['value']>('private');
+  const [projectType, setProjectType] = useState<(typeof typeOptions)[number]['value']>('');
+  const [stage, setStage] = useState<(typeof stageOptions)[number]['value']>('discovery');
+  const [deadline, setDeadline] = useState('');
   const status = 'active' as const;
 
   useEffect(() => {
@@ -65,12 +89,15 @@ export default function ProjectCreateWizardClient({ currentUserId }: ProjectCrea
 
   const resetState = useCallback(() => {
     setName('');
-    setKey('');
     setDescription('');
     setStep('details');
     setSubmitting(false);
     setTouched(false);
     setSelectedTemplate(null);
+    setVisibility('private');
+    setProjectType('');
+    setStage('discovery');
+    setDeadline('');
   }, []);
 
   const handleTemplateSelect = useCallback((template: ProjectTemplate | null) => {
@@ -101,35 +128,58 @@ export default function ProjectCreateWizardClient({ currentUserId }: ProjectCrea
 
     setSubmitting(true);
     try {
+      const requestPayload: {
+        name: string;
+        description: string;
+        organizationId: string;
+        visibility: (typeof visibilityOptions)[number]['value'];
+        status: typeof status;
+        stage: (typeof stageOptions)[number]['value'];
+        type?: (typeof typeOptions)[number]['value'];
+        deadline?: string;
+      } = {
+        name: name.trim(),
+        description: description.trim(),
+        organizationId,
+        visibility,
+        status,
+        stage
+      };
+
+      if (projectType) {
+        requestPayload.type = projectType;
+      }
+
+      if (deadline) {
+        requestPayload.deadline = deadline;
+      }
+
       const response = await fetch('/api/pm/projects', {
         method: 'POST',
         headers: {
           'content-type': 'application/json'
         },
-        body: JSON.stringify({
-          name: name.trim(),
-          description: description.trim(),
-          key: key.trim() || undefined,
-          organizationId,
-          visibility,
-          status
-        })
+        body: JSON.stringify(requestPayload)
       });
 
       if (!response.ok) {
         throw new Error(`Create project failed with status ${response.status}`);
       }
 
-      const payload = (await response.json()) as {
-        project: { id: string; key: string };
+      const responseData = (await response.json()) as {
+        data?: { project: { id: string; key: string } };
+        project?: { id: string; key: string };
       };
-      const projectId = payload.project?.id;
+      const projectId = responseData.data?.project?.id || responseData.project?.id;
 
       trackEvent('project_created', {
         userId: currentUserId,
         projectId,
         visibility,
-        status
+        status,
+        type: projectType,
+        stage,
+        ...(deadline ? { deadline } : {})
       });
 
       toast('Проект создан', 'success');
@@ -153,8 +203,7 @@ export default function ProjectCreateWizardClient({ currentUserId }: ProjectCrea
         <p className="text-sm uppercase tracking-wide text-indigo-300">Мастер создания</p>
         <h1 className="text-xl font-semibold text-white">Новый проект</h1>
         <p className="text-sm text-neutral-400">
-          Заполните основные данные — проект сразу создастся активным и приватным. Публикацию можно
-          включить позже в настройках проекта.
+          Заполните основные данные, а настройки проекта выберите на следующем шаге.
         </p>
       </header>
 
@@ -251,20 +300,6 @@ export default function ProjectCreateWizardClient({ currentUserId }: ProjectCrea
             </div>
 
             <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">
-              Ключ проекта
-              <input
-                value={key}
-                onChange={(event) => setKey(event.target.value)}
-                placeholder="Например, REL"
-                className="w-full rounded-xl border border-neutral-900 bg-neutral-950 px-4 py-3 text-sm text-white placeholder:text-neutral-500 focus:border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                maxLength={10}
-              />
-              <span className="text-[11px] text-neutral-500">
-                Используется в задачах. Оставьте пустым — ключ сгенерируется автоматически.
-              </span>
-            </label>
-
-            <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">
               Краткое описание
               <textarea
                 value={description}
@@ -279,19 +314,99 @@ export default function ProjectCreateWizardClient({ currentUserId }: ProjectCrea
         {step === 'confirm' && (
           <section className="space-y-4">
             <div className="rounded-2xl border border-neutral-900 bg-neutral-950/70 p-6 text-sm text-neutral-200">
-              <h2 className="text-lg font-semibold text-white">Проверьте данные</h2>
+              <h2 className="text-lg font-semibold text-white">Настройки проекта</h2>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                  Видимость
+                  <select
+                    value={visibility}
+                    onChange={(event) =>
+                      setVisibility(event.target.value as (typeof visibilityOptions)[number]['value'])
+                    }
+                    className="w-full rounded-xl border border-neutral-900 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 appearance-none"
+                  >
+                    {visibilityOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                  Тип проекта
+                  <select
+                    value={projectType}
+                    onChange={(event) =>
+                      setProjectType(event.target.value as (typeof typeOptions)[number]['value'])
+                    }
+                    className="w-full rounded-xl border border-neutral-900 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 appearance-none"
+                  >
+                    {typeOptions.map((option) => (
+                      <option key={option.value || 'empty'} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                  Стадия
+                  <select
+                    value={stage}
+                    onChange={(event) =>
+                      setStage(event.target.value as (typeof stageOptions)[number]['value'])
+                    }
+                    className="w-full rounded-xl border border-neutral-900 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 appearance-none"
+                  >
+                    {stageOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-400 sm:col-span-2">
+                  Дедлайн
+                  <input
+                    type="date"
+                    value={deadline}
+                    onChange={(event) => setDeadline(event.target.value)}
+                    className="w-full rounded-xl border border-neutral-900 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-neutral-900 bg-neutral-950/70 p-6 text-sm text-neutral-200">
+              <h2 className="text-lg font-semibold text-white">Итог</h2>
               <ul className="mt-4 space-y-3">
                 <li>
                   <span className="text-neutral-500">Название:</span>{' '}
                   <strong className="text-white">{name.trim()}</strong>
                 </li>
                 <li>
-                  <span className="text-neutral-500">Ключ:</span>{' '}
-                  <strong className="text-white">{key.trim() || 'Будет сгенерирован'}</strong>
+                  <span className="text-neutral-500">Видимость:</span>{' '}
+                  <strong className="text-white">
+                    {visibilityOptions.find((option) => option.value === visibility)?.label ?? 'Приватный'}
+                  </strong>
                 </li>
                 <li>
-                  <span className="text-neutral-500">Видимость:</span>{' '}
-                  <strong className="text-white">Приватный</strong>
+                  <span className="text-neutral-500">Тип:</span>{' '}
+                  <strong className="text-white">
+                    {typeOptions.find((option) => option.value === projectType)?.label ?? 'Не выбран'}
+                  </strong>
+                </li>
+                <li>
+                  <span className="text-neutral-500">Стадия:</span>{' '}
+                  <strong className="text-white">
+                    {stageOptions.find((option) => option.value === stage)?.label ?? 'Исследование'}
+                  </strong>
+                </li>
+                <li>
+                  <span className="text-neutral-500">Дедлайн:</span>{' '}
+                  <strong className="text-white">{deadline || 'Не задан'}</strong>
                 </li>
                 <li>
                   <span className="text-neutral-500">Статус:</span>{' '}

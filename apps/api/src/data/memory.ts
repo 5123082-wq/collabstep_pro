@@ -344,12 +344,47 @@ export const memory = {
       id: 'tpl-admin-discovery',
       title: 'Админский discovery',
       kind: 'product',
-      summary: 'Скрипты интервью, CJM и гипотезы для старта команды.'
+      summary: 'Скрипты интервью, CJM и гипотезы для старта команды.',
+      projectType: 'product',
+      projectStage: 'discovery',
+      projectVisibility: 'private'
     },
-    { id: 'tpl-brand', title: 'Бренд-пакет', kind: 'brand', summary: 'Нейминг, айдентика, гайд' },
-    { id: 'tpl-landing', title: 'Лендинг', kind: 'landing', summary: 'Одностраничник с формой' },
-    { id: 'tpl-mkt', title: 'Маркетинг', kind: 'marketing', summary: 'Кампания + контент-план' },
-    { id: 'tpl-product', title: 'Digital-продукт', kind: 'product', summary: 'MVP флоу + бэклог' }
+    {
+      id: 'tpl-brand',
+      title: 'Бренд-пакет',
+      kind: 'brand',
+      summary: 'Нейминг, айдентика, гайд',
+      projectType: 'product',
+      projectStage: 'design',
+      projectVisibility: 'private'
+    },
+    {
+      id: 'tpl-landing',
+      title: 'Лендинг',
+      kind: 'landing',
+      summary: 'Одностраничник с формой',
+      projectType: 'marketing',
+      projectStage: 'build',
+      projectVisibility: 'public'
+    },
+    {
+      id: 'tpl-mkt',
+      title: 'Маркетинг',
+      kind: 'marketing',
+      summary: 'Кампания + контент-план',
+      projectType: 'marketing',
+      projectStage: 'discovery',
+      projectVisibility: 'private'
+    },
+    {
+      id: 'tpl-product',
+      title: 'Digital-продукт',
+      kind: 'product',
+      summary: 'MVP флоу + бэклог',
+      projectType: 'product',
+      projectStage: 'discovery',
+      projectVisibility: 'private'
+    }
   ] as ProjectTemplate[],
   get PROJECT_MEMBERS() { return globalMemory.PROJECT_MEMBERS; },
   set PROJECT_MEMBERS(value: Record<string, ProjectMember[]>) { globalMemory.PROJECT_MEMBERS = value; },
