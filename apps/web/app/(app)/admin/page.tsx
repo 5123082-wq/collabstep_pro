@@ -85,6 +85,14 @@ const overviewCards = [
     icon: FileText,
     href: '/admin/data',
     color: 'bg-yellow-500/10 border-yellow-500/30 text-yellow-100'
+  },
+  {
+    id: 'templates',
+    title: 'Шаблоны проектов',
+    description: 'Управление административными шаблонами для создания проектов',
+    icon: FileText,
+    href: '/admin/templates',
+    color: 'bg-violet-500/10 border-violet-500/30 text-violet-100'
   }
 ];
 

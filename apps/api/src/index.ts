@@ -2,7 +2,7 @@ export * from './types';
 export { memory } from './data/memory';
 export { DEFAULT_WORKSPACE_USER_ID, DEFAULT_ACCOUNT_ID, DEFAULT_WORKSPACE_ID, TEST_PROJECT_DEMO_ID, TEST_PROJECT_2_ID, TEST_ADMIN_USER_ID, TEST_USER_ID, TEST_FINANCE_USER_ID, TEST_DESIGNER_USER_ID, isAdminUserId } from './data/memory';
 export { ProjectsRepository, projectsRepository } from './repositories/projects-repository';
-export { TemplatesRepository, templatesRepository } from './repositories/templates-repository';
+export { TemplatesRepository, templatesRepository, type CreateTemplateInput, type UpdateTemplateInput } from './repositories/templates-repository';
 export { TasksRepository, tasksRepository, hydrateTaskAttachmentsFromDb, hydrateTasksAttachmentsFromDb } from './repositories/tasks-repository';
 export { TaskDependenciesRepository, taskDependenciesRepository } from './repositories/task-dependencies-repository';
 export {
@@ -173,6 +173,13 @@ export { organizationSubscriptionsRepository, OrganizationSubscriptionsRepositor
 export { organizationStorageUsageRepository, OrganizationStorageUsageRepository, type DbOrganizationStorageUsage, type NewDbOrganizationStorageUsage } from './repositories/organization-storage-usage-repository';
 export { cleanupExpiredFileTrash } from './services/file-trash-cleanup-job';
 export { foldersRepository, FoldersRepository, type DbFolder, type NewDbFolder } from './repositories/folders-repository';
+export {
+  userTemplatesRepository,
+  UserTemplatesRepository,
+  type UserProjectTemplate,
+  type CreateUserTemplateInput,
+  type UpdateUserTemplateInput
+} from './repositories/user-templates-repository';
 // Export db and schema for API routes
 export { db } from './db/config';
 export * as schema from './db/schema';

@@ -154,31 +154,9 @@ export async function GET(request: Request) {
     // Получаем все задачи и фильтруем их по доступу к проектам
     const allTasks = tasksRepository.list();
     const accessibleProjectIds = new Set(accessibleProjects.map((project) => project.id));
-    let accessibleTasks = filterTasksByAccess(allTasks, accessibleProjectIds);
+    const accessibleTasks = filterTasksByAccess(allTasks, accessibleProjectIds);
 
     // Если у доступных проектов нет задач, добавляем демо-задачу в первый проект
-    if (accessibleTasks.length === 0) {
-      if (accessibleProjects.length > 0) {
-        try {
-          const firstProject = accessibleProjects[0];
-          if (firstProject) {
-            const seededTask = tasksRepository.create({
-              projectId: firstProject.id,
-              title: 'Demo task',
-              status: 'new',
-              description: 'Автосозданная задача для пустого проекта'
-            });
-            accessibleTasks = [seededTask];
-          } else {
-            console.warn('[Tasks API] Expected accessible project but none found while seeding task');
-          }
-        } catch (error) {
-          console.error('[Tasks API] Failed to seed initial task', error);
-        }
-      } else {
-        console.warn('[Tasks API] No accessible projects available to seed tasks');
-      }
-    }
 
     // Группируем доступные задачи по проектам
     const tasksByProject = new Map<string, ReturnType<typeof tasksRepository.list>>();
@@ -220,25 +198,6 @@ export async function GET(request: Request) {
         // Проверяем, подходит ли проект по scope
         if (filters.scope === 'all' || projectScope === filters.scope) {
           baseTasks = tasksByProject.get(filters.projectId) ?? [];
-
-          // Если у проекта нет задач, подсеваем базовую задачу, чтобы рабочее пространство было функциональным
-          if (baseTasks.length === 0) {
-            try {
-              const seededTask = tasksRepository.create({
-                projectId: project.id,
-                title: 'Demo task',
-                status: 'new',
-                description: 'Автосозданная задача для пустого проекта'
-              });
-              const bucket = tasksByProject.get(project.id) ?? [];
-              bucket.push(seededTask);
-              tasksByProject.set(project.id, bucket);
-              accessibleTasks = [...accessibleTasks, seededTask];
-              baseTasks = bucket;
-            } catch (error) {
-              console.error('[Tasks API] Failed to seed task for project', project.id, error);
-            }
-          }
         }
       }
     } else if (filters.scope === 'all') {

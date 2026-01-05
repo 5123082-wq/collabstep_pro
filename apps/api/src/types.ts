@@ -51,6 +51,11 @@ export interface ProjectTemplate {
   title: string;
   kind: string;
   summary: string;
+  projectType?: ProjectType;
+  projectStage?: ProjectStage;
+  projectVisibility?: ProjectVisibility;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ProjectMember {

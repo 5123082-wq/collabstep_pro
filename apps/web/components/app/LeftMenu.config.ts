@@ -60,6 +60,7 @@ export const PM_MENU_SECTION: LeftMenuSection = {
   children: [
     { id: 'pm-projects', label: 'Проекты', href: `${PM_HUB_PATH}/projects` },
     { id: 'pm-tasks', label: 'Задачи', href: `${PM_HUB_PATH}/tasks` },
+    { id: 'pm-templates', label: 'Мои шаблоны', href: `${PM_HUB_PATH}/templates` },
     { id: 'pm-dashboard', label: 'Метрики', href: PM_HUB_PATH },
     { id: 'pm-archive', label: 'Архив', href: `${PM_HUB_PATH}/archive` }
   ]
@@ -211,7 +212,8 @@ const baseLeftMenuConfig: LeftMenuSection[] = [
       { id: 'admin-releases', label: 'Релизы', href: '/admin/releases' },
       { id: 'admin-ai-agents', label: 'AI-агенты', href: '/admin/ai-agents' },
       { id: 'admin-ai-indexing', label: 'Индексация AI', href: '/admin/ai-assistant-indexing' },
-      { id: 'admin-support', label: 'Support Tools', href: '/admin/support' }
+      { id: 'admin-support', label: 'Support Tools', href: '/admin/support' },
+      { id: 'admin-templates', label: 'Шаблоны проектов', href: '/admin/templates' }
     ]
   }
 ];

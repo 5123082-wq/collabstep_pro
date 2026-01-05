@@ -26,6 +26,7 @@ import ProjectInviteModal from '@/components/pm/ProjectInviteModal';
 import ProjectTasksSection from '@/components/pm/ProjectTasksSection';
 import TaskDetailDrawer from '@/components/pm/TaskDetailDrawer';
 import ProjectOrganizationCard from '@/components/pm/ProjectOrganizationCard';
+import SaveProjectAsTemplateModal from '@/components/pm/SaveProjectAsTemplateModal';
 import { ContentBlock } from '@/components/ui/content-block';
 import {
   drawerReducer,
@@ -72,6 +73,7 @@ export default function PMProjectDetailPage() {
   const [showBudgetSettingsModal, setShowBudgetSettingsModal] = useState(false);
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showSaveAsTemplateModal, setShowSaveAsTemplateModal] = useState(false);
   const [newLimit, setNewLimit] = useState('');
   const [savingLimit, setSavingLimit] = useState(false);
   const [publishingListing, setPublishingListing] = useState(false);
@@ -522,6 +524,9 @@ export default function PMProjectDetailPage() {
             onVisibilityChange={(visibility) => {
               setProject((prev) => (prev ? { ...prev, visibility } : prev));
             }}
+            onSaveAsTemplate={() => {
+              setShowSaveAsTemplateModal(true);
+            }}
           />
 
           <ProjectTasksSection
@@ -723,6 +728,21 @@ export default function PMProjectDetailPage() {
               .catch((error) => {
                 console.error('Error reloading project:', error);
               });
+          }}
+        />
+      )}
+
+      {/* Модальное окно сохранения проекта как шаблона */}
+      {project && (
+        <SaveProjectAsTemplateModal
+          projectId={projectId}
+          projectTitle={project.name}
+          projectVisibility={project.visibility}
+          isOpen={showSaveAsTemplateModal}
+          onClose={() => setShowSaveAsTemplateModal(false)}
+          onSuccess={() => {
+            // Можно обновить данные или перенаправить на страницу шаблонов
+            toast('Шаблон создан! Вы можете найти его в разделе "Мои шаблоны"', 'success');
           }}
         />
       )}

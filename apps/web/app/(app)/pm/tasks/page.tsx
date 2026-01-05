@@ -194,22 +194,6 @@ export default function PMTasksPage() {
             isOwner: true
           };
           cacheData.projects = [fallbackProject];
-
-          if (cacheData.items.length === 0) {
-            const now = new Date().toISOString();
-            cacheData.items = [
-              {
-                id: 'demo-task',
-                projectId: fallbackProject.id,
-                title: 'Demo task',
-                description: 'Автосозданная задача для пустого списка',
-                status: 'new',
-                number: 1,
-                createdAt: now,
-                updatedAt: now
-              } as Task
-            ];
-          }
         }
 
         // Сохраняем в кэш
