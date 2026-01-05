@@ -6,6 +6,7 @@ import { tasksRepository } from '../repositories/tasks-repository';
 import { templateTasksRepository } from '../repositories/template-tasks-repository';
 import { templatesRepository } from '../repositories/templates-repository';
 import { userTemplatesRepository } from '../repositories/user-templates-repository';
+import { organizationsRepository } from '../repositories/organizations-repository';
 import type { Project, Task, ProjectTemplateTask } from '../types';
 
 type TemplateMeta = {
@@ -105,6 +106,15 @@ export class ProjectTemplateService {
 
     if (!template) {
       throw new ProjectTemplateValidationError('Template not found', 404);
+    }
+
+    // Validate organization exists BEFORE creating project to prevent orphaned projects
+    const organization = await organizationsRepository.findById(params.organizationId);
+    if (!organization) {
+      throw new ProjectTemplateValidationError(
+        `Organization not found: ${params.organizationId}`,
+        404
+      );
     }
 
     // Validate selectedTaskIds BEFORE creating project to prevent orphaned projects
