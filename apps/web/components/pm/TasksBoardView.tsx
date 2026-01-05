@@ -11,6 +11,7 @@ import { useTransition } from 'react';
 import { trackEvent } from '@/lib/telemetry';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { ContentBlock } from '@/components/ui/content-block';
+import * as Avatar from '@radix-ui/react-avatar';
 
 const DEFAULT_STATUSES: TaskStatus[] = ['new', 'in_progress', 'review', 'done', 'blocked'];
 
@@ -32,9 +33,10 @@ const PRIORITY_COLORS: Record<string, string> = {
 type TaskCardProps = {
   task: Task;
   isDragging?: boolean;
+  assignee?: { id: string; name: string; email: string; role: string; avatarUrl?: string };
 };
 
-function TaskCard({ task, isDragging, onOpenDetail }: TaskCardProps & { onOpenDetail?: (task: Task) => void }) {
+function TaskCard({ task, isDragging, assignee, onOpenDetail, className }: TaskCardProps & { onOpenDetail?: (task: Task) => void; className?: string }) {
   const { attributes, listeners, setNodeRef, transform, isDragging: isDraggingState } = useDraggable({
     id: task.id,
     data: { task }
@@ -126,10 +128,12 @@ function TaskCard({ task, isDragging, onOpenDetail }: TaskCardProps & { onOpenDe
       data-task-card
       data-task-id={task.id}
       className={cn(
-        'relative rounded-xl border p-3 transition hover:border-indigo-500/40 cursor-pointer',
-        'block', // Явно указываем display
+        'relative rounded-xl border p-3 transition-all duration-200 ease-out',
+        'hover:border-indigo-500/40 hover:shadow-lg',
+        'cursor-pointer block',
         priorityColor,
-        (isDragging || isDraggingState) && 'opacity-50'
+        (isDragging || isDraggingState) && 'opacity-50 scale-95',
+        className
       )}
       onClick={handleClick}
     >
@@ -160,6 +164,23 @@ function TaskCard({ task, isDragging, onOpenDetail }: TaskCardProps & { onOpenDe
           Due: {new Date(task.dueAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
         </div>
       )}
+      {assignee && (
+        <div className="mt-2 flex items-center gap-2 pointer-events-none">
+          <Avatar.Root className="inline-flex h-6 w-6 select-none items-center justify-center overflow-hidden rounded-full bg-neutral-800 align-middle border-2 border-neutral-700">
+            <Avatar.Image
+              src={assignee.avatarUrl || ''}
+              alt={assignee.name}
+              className="h-full w-full rounded-[inherit] object-cover"
+            />
+            <Avatar.Fallback className="flex h-full w-full items-center justify-center bg-neutral-700 text-xs font-medium text-neutral-300">
+              {assignee.name.charAt(0).toUpperCase()}
+            </Avatar.Fallback>
+          </Avatar.Root>
+          <span className="text-xs text-neutral-400 truncate max-w-[100px]">
+            {assignee.name}
+          </span>
+        </div>
+      )}
       <div 
         {...attributes} 
         {...modifiedListeners} 
@@ -175,9 +196,10 @@ type StatusColumnProps = {
   status: TaskStatus;
   tasks: Task[];
   isOver?: boolean;
+  assigneesMap?: Record<string, { id: string; name: string; email: string; role: string; avatarUrl?: string }>;
 };
 
-function StatusColumn({ status, tasks, isOver, onOpenDetail }: StatusColumnProps & { onOpenDetail?: (task: Task) => void }) {
+function StatusColumn({ status, tasks, isOver, assigneesMap, onOpenDetail }: StatusColumnProps & { onOpenDetail?: (task: Task) => void }) {
   const { setNodeRef, isOver: isOverState } = useDroppable({
     id: status,
     data: { status }
@@ -188,8 +210,9 @@ function StatusColumn({ status, tasks, isOver, onOpenDetail }: StatusColumnProps
       size="sm"
       ref={setNodeRef}
       className={cn(
-        'flex min-h-[400px] flex-col w-full',
-        (isOver || isOverState) && 'border-indigo-500/60 bg-indigo-500/10'
+        'flex flex-col w-full h-full',
+        'transition-all duration-200 ease-out',
+        (isOver || isOverState) && 'border-indigo-500/60 bg-indigo-500/10 scale-[1.02]'
       )}
     >
       <div className="mb-4 flex items-center justify-between">
@@ -200,15 +223,19 @@ function StatusColumn({ status, tasks, isOver, onOpenDetail }: StatusColumnProps
           {tasks.length}
         </span>
       </div>
-      <div className="flex-1 space-y-2 overflow-y-auto">
+      <div className="flex-1 space-y-2 overflow-y-auto min-h-0">
         {tasks.length > 0 ? (
-          tasks.map((task) => (
-            <TaskCard 
-              key={task.id} 
-              task={task} 
-              {...(onOpenDetail && { onOpenDetail })}
-            />
-          ))
+          tasks.map((task) => {
+            const assignee = task.assigneeId && assigneesMap ? assigneesMap[task.assigneeId] : undefined;
+            return (
+              <TaskCard 
+                key={task.id} 
+                task={task}
+                {...(assignee && { assignee })}
+                {...(onOpenDetail && { onOpenDetail })}
+              />
+            );
+          })
         ) : (
           <div className="py-8 text-center text-sm text-neutral-500">Нет задач</div>
         )}
@@ -224,11 +251,14 @@ type TasksBoardViewProps = {
   onTaskClick?: (task: Task) => void;
 };
 
-export default function TasksBoardView({ tasks, loading, filters, onTaskClick }: TasksBoardViewProps) {
+export default function TasksBoardView({ tasks: initialTasks, loading, filters, onTaskClick }: TasksBoardViewProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [, startTransition] = useTransition();
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [projectMembers, setProjectMembers] = useState<Array<{ id: string; name: string; email: string; role: string; avatarUrl?: string }>>([]);
+  
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -237,6 +267,33 @@ export default function TasksBoardView({ tasks, loading, filters, onTaskClick }:
     }),
     useSensor(KeyboardSensor)
   );
+
+  // Синхронизация с props
+  useEffect(() => {
+    setTasks(initialTasks);
+  }, [initialTasks]);
+
+  // Загрузка участников проекта
+  useEffect(() => {
+    if (tasks.length > 0 && tasks[0]?.projectId) {
+      fetch(`/api/pm/projects/${tasks[0].projectId}/members`)
+        .then(res => res.json())
+        .then(data => {
+          const members = data.data?.members || data.members || [];
+          setProjectMembers(members);
+        })
+        .catch(console.error);
+    }
+  }, [tasks]);
+
+  // Создание мапы assignees
+  const assigneesMap = useMemo(() => {
+    const map: Record<string, { id: string; name: string; email: string; role: string; avatarUrl?: string }> = {};
+    projectMembers.forEach(member => {
+      map[member.id] = member;
+    });
+    return map;
+  }, [projectMembers]);
 
   const tasksByStatus = useMemo(() => {
     const grouped: Record<TaskStatus, Task[]> = {
@@ -276,12 +333,23 @@ export default function TasksBoardView({ tasks, loading, filters, onTaskClick }:
       const taskId = active.id as string;
       const newStatus = over.id as TaskStatus;
 
+      // Получаем текущую задачу из локального состояния
       const task = tasks.find((t) => t.id === taskId);
       if (!task || task.status === newStatus) return;
 
-      // Оптимистичное обновление
+      // Сохраняем исходную задачу для возможного отката
+      const originalTask = { ...task };
+
+      // ОПТИМИСТИЧНОЕ ОБНОВЛЕНИЕ
+      const updatedTask = { ...task, status: newStatus };
+      setTasks(prevTasks => 
+        prevTasks.map(t => t.id === taskId ? updatedTask : t)
+      );
+
       try {
+        console.log('[TasksBoard] Sending update request:', { taskId, fromStatus: task.status, toStatus: newStatus });
         trackEvent('pm_task_moved_board', { taskId, fromStatus: task.status, toStatus: newStatus });
+        
         const response = await fetch('/api/pm/tasks/bulk', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -304,12 +372,25 @@ export default function TasksBoardView({ tasks, loading, filters, onTaskClick }:
           throw new Error(errorData.error || `Failed to update task: ${response.status}`);
         }
 
+        const data = await response.json();
+        console.log('[TasksBoard] API Response:', data);
+        
+        if (data.tasks && data.tasks.length > 0) {
+          const serverTask = data.tasks[0];
+          console.log('[TasksBoard] Updating task from server:', serverTask);
+          setTasks(prevTasks => 
+            prevTasks.map(t => t.id === taskId ? serverTask : t)
+          );
+        } else {
+          console.warn('[TasksBoard] No tasks in API response, keeping optimistic update');
+        }
+
         trackEvent('pm_task_updated', { taskId, status: newStatus });
 
         // Отправляем событие для обновления списка задач на других страницах
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('task-updated', { 
-            detail: { taskId, projectId: task.projectId } 
+            detail: { taskId, projectId: originalTask.projectId } 
           }));
         }
 
@@ -319,7 +400,11 @@ export default function TasksBoardView({ tasks, loading, filters, onTaskClick }:
           router.replace(params.toString() ? `${pathname}?${params.toString()}` : pathname, { scroll: false });
         });
       } catch (error) {
-        console.error('Error updating task:', error);
+        // ОТКАТ ПРИ ОШИБКЕ
+        console.error('[TasksBoard] Error updating task, rolling back:', error);
+        setTasks(prevTasks => 
+          prevTasks.map(t => t.id === taskId ? originalTask : t)
+        );
         // В реальном приложении здесь бы был toast с ошибкой
       }
     },
@@ -348,15 +433,34 @@ export default function TasksBoardView({ tasks, loading, filters, onTaskClick }:
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      <div className="min-w-0 max-w-full">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 items-start">
+      <div className="min-w-0 max-w-full h-[calc(100vh-200px)]">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 items-stretch h-full">
           {DEFAULT_STATUSES.map((status) => (
-            <StatusColumn key={status} status={status} tasks={tasksByStatus[status]} {...(onTaskClick && { onOpenDetail: onTaskClick })} />
+            <StatusColumn 
+              key={status} 
+              status={status} 
+              tasks={tasksByStatus[status]} 
+              assigneesMap={assigneesMap}
+              {...(onTaskClick && { onOpenDetail: onTaskClick })} 
+            />
           ))}
         </div>
       </div>
-      <DragOverlay>
-        {activeTask ? <TaskCard task={activeTask} isDragging /> : null}
+      <DragOverlay
+        className="opacity-90"
+        style={{ cursor: 'grabbing' }}
+      >
+        {activeTask ? (() => {
+          const assignee = activeTask.assigneeId ? assigneesMap[activeTask.assigneeId] : undefined;
+          return (
+            <TaskCard 
+              task={activeTask} 
+              isDragging
+              {...(assignee && { assignee })}
+              className="shadow-2xl scale-105"
+            />
+          );
+        })() : null}
       </DragOverlay>
     </DndContext>
   );

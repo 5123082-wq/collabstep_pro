@@ -58,6 +58,24 @@ export interface ProjectTemplate {
   updatedAt?: string;
 }
 
+export interface ProjectTemplateTask {
+  id: ID;
+  templateId: ID;
+  parentTaskId: ID | null;
+  title: string;
+  description?: string;
+  defaultStatus: TaskStatus;
+  defaultPriority?: 'low' | 'med' | 'high' | 'urgent';
+  defaultLabels?: string[];
+  offsetStartDays: number;
+  offsetDueDays?: number;
+  estimatedTime?: number | null;
+  storyPoints?: number | null;
+  position: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface ProjectMember {
   userId: ID;
   role: 'owner' | 'admin' | 'member' | 'viewer';

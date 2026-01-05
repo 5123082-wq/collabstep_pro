@@ -3,6 +3,12 @@ export { memory } from './data/memory';
 export { DEFAULT_WORKSPACE_USER_ID, DEFAULT_ACCOUNT_ID, DEFAULT_WORKSPACE_ID, TEST_PROJECT_DEMO_ID, TEST_PROJECT_2_ID, TEST_ADMIN_USER_ID, TEST_USER_ID, TEST_FINANCE_USER_ID, TEST_DESIGNER_USER_ID, isAdminUserId } from './data/memory';
 export { ProjectsRepository, projectsRepository } from './repositories/projects-repository';
 export { TemplatesRepository, templatesRepository, type CreateTemplateInput, type UpdateTemplateInput } from './repositories/templates-repository';
+export {
+  TemplateTasksRepository,
+  templateTasksRepository,
+  TemplateTaskValidationError,
+  type CreateTemplateTaskInput
+} from './repositories/template-tasks-repository';
 export { TasksRepository, tasksRepository, hydrateTaskAttachmentsFromDb, hydrateTasksAttachmentsFromDb } from './repositories/tasks-repository';
 export { TaskDependenciesRepository, taskDependenciesRepository } from './repositories/task-dependencies-repository';
 export {
@@ -33,6 +39,11 @@ export {
   type ProjectCardSort,
   type ProjectCardTab
 } from './services/project-catalog-service';
+export {
+  ProjectTemplateService,
+  projectTemplateService,
+  ProjectTemplateValidationError
+} from './services/project-template-service';
 export {
   DeletionService,
   deletionService,

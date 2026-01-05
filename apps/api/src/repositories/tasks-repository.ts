@@ -268,9 +268,12 @@ export class TasksRepository {
 
     memory.TASKS[idx] = updated;
     if (isPmDbEnabled()) {
+      console.log('[TasksRepository] DB enabled, persisting task update:', updated.id, 'status:', updated.status);
       void persistTaskToPg(updated).catch((error) =>
         console.error('[TasksRepository] Failed to persist task update', error)
       );
+    } else {
+      console.warn('[TasksRepository] DB not enabled, task update only in memory:', updated.id, 'status:', updated.status);
     }
 
     return enrichTask(updated);

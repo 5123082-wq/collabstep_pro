@@ -18,6 +18,7 @@ import PlatformSettingsModal from '@/components/settings/PlatformSettingsModal';
 import UserProfileSettingsModal from '@/components/settings/UserProfileSettingsModal';
 import CreateTaskWithProjectModal from '@/components/pm/CreateTaskWithProjectModal';
 import CreateProjectModal from '@/components/pm/CreateProjectModal';
+import CreateProjectFromTemplateModal from '@/components/projects/CreateProjectFromTemplateModal';
 import { CreateAIAgentModal } from '@/components/ai-hub';
 import { AIAssistantChat, AIAssistantButton } from '@/components/ai-assistant';
 import { flags } from '@/lib/flags';
@@ -252,6 +253,12 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
           {activeModal === 'createProject' && (
             <CreateProjectModal
               isOpen={activeModal === 'createProject'}
+              onClose={() => setActiveModal(null)}
+            />
+          )}
+          {activeModal === 'createProjectFromTemplate' && (
+            <CreateProjectFromTemplateModal
+              isOpen={activeModal === 'createProjectFromTemplate'}
               onClose={() => setActiveModal(null)}
             />
           )}

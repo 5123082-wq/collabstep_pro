@@ -130,6 +130,7 @@ export async function POST(request: Request) {
         // Продолжаем обработку других задач, но логируем ошибку
         continue;
       }
+      console.log('[Bulk Update] Task updated successfully:', updated.id, 'new status:', updated.status);
       updatedTasks.push(updated);
 
       // Генерируем уведомления при изменении

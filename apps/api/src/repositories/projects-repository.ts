@@ -313,7 +313,7 @@ export class ProjectsRepository {
     const allowedTypes: ProjectType[] = ['product', 'marketing', 'operations', 'service', 'internal'];
     const type = payload.type && allowedTypes.includes(payload.type) ? payload.type : undefined;
 
-    const visibility: ProjectVisibility = 'private';
+    const visibility: ProjectVisibility = payload.visibility === 'public' ? 'public' : 'private';
     const status: ProjectStatus = 'active';
     const key = this.generateProjectKey(payload.workspaceId, payload.key, payload.title);
     const ownerNumber = this.getNextOwnerProjectNumber(payload.ownerId);
