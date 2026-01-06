@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "prebuild": "node scripts/clean-next.mjs && node scripts/check-app-routes.mjs && node scripts/validate-env.mjs && node scripts/index-docs-if-enabled.mjs",
-    "build": "next build && node scripts/fix-manifests.mjs",
+    "prebuild": "node ../../scripts/build/clean-next.mjs && node ../../scripts/build/check-app-routes.mjs && node ../../scripts/build/validate-env.mjs && node ../../scripts/build/index-docs-if-enabled.mjs",
+    "build": "next build && node ../../scripts/build/fix-manifests.mjs",
     "dev": "next dev",
     "dev:3001": "next dev -p 3001",
     "dev:3002": "next dev -p 3002",
@@ -12,8 +12,8 @@
     "dev:3004": "next dev -p 3004",
     "start": "next start",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "check:routes": "node scripts/check-app-routes.mjs",
-    "index-assistant-docs": "npx tsx scripts/index-assistant-docs.ts"
+    "check:routes": "node ../../scripts/build/check-app-routes.mjs",
+    "index-assistant-docs": "npx tsx ../../scripts/build/index-assistant-docs.ts"
   },
   "dependencies": {
     "@auth/core": "^0.34.3",

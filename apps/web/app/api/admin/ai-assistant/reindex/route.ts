@@ -26,8 +26,8 @@ export async function POST() {
       
       // Формируем команду в зависимости от платформы
       const command = isWindows
-        ? `start /b npx tsx scripts/index-assistant-docs.ts > "${logPath}" 2>&1`
-        : `npx tsx scripts/index-assistant-docs.ts > "${logPath}" 2>&1 &`;
+        ? `start /b npx tsx ../../scripts/build/index-assistant-docs.ts > "${logPath}" 2>&1`
+        : `npx tsx ../../scripts/build/index-assistant-docs.ts > "${logPath}" 2>&1 &`;
       
       execSync(command, {
         cwd: process.cwd(),
