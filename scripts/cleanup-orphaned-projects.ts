@@ -45,7 +45,11 @@ async function cleanupOrphanedProjects() {
       .selectDistinct({ projectId: tasksTable.projectId })
       .from(tasksTable);
 
-    const projectIdsWithTasks = new Set(projectsWithTasks.map((t) => t.projectId).filter(Boolean));
+    const projectIdsWithTasks = new Set(
+      projectsWithTasks
+        .map((t) => t?.projectId)
+        .filter((id): id is string => Boolean(id))
+    );
     const orphanedProjectsNoTasks = allProjects.filter((p) => !projectIdsWithTasks.has(p.id));
 
     console.log(`📋 Найдено проектов без задач: ${orphanedProjectsNoTasks.length}\n`);
@@ -86,15 +90,27 @@ async function cleanupOrphanedProjects() {
     console.log('🗑️  Удаление проектов...');
     const projectIdsArray = Array.from(projectsToDelete);
 
+    // Получить информацию о проектах перед удалением
+    const projectsToDeleteInfo = await db
+      .select()
+      .from(projectsTable)
+      .where(sql`${projectsTable.id} = ANY(${projectIdsArray})`);
+
     // Удалить связанные задачи (если есть)
     for (const projectId of projectIdsArray) {
-      await db.delete(tasksTable).where(sql`${tasksTable.projectId} = ${projectId}`);
+      const deletedTasks = await db
+        .delete(tasksTable)
+        .where(sql`${tasksTable.projectId} = ${projectId}`)
+        .returning();
+      if (deletedTasks.length > 0) {
+        console.log(`   🗑️  Удалено задач для проекта ${projectId}: ${deletedTasks.length}`);
+      }
     }
 
     // Удалить проекты
-    for (const projectId of projectIdsArray) {
-      await db.delete(projectsTable).where(sql`${projectsTable.id} = ${projectId}`);
-      console.log(`   ✅ Удален проект: ${projectId}`);
+    for (const projectInfo of projectsToDeleteInfo) {
+      await db.delete(projectsTable).where(sql`${projectsTable.id} = ${projectInfo.id}`);
+      console.log(`   ✅ Удален проект: ${projectInfo.name} (${projectInfo.id})`);
     }
 
     console.log(`\n✅ Успешно удалено ${projectsToDelete.size} проектов`);
