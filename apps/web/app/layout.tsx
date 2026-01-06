@@ -9,7 +9,17 @@ import { ThemeProvider } from '@/components/theme/ThemeContext';
 import { Toaster } from 'sonner';
 import { Insights } from '@/components/util/Insights';
 
+// Определяем базовый URL для метаданных
+const getMetadataBase = (): URL => {
+  // Используем NEXT_PUBLIC_SITE_URL если установлен, иначе fallback на Vercel URL или localhost
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+                  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
+                  'https://collabverse.local';
+  return new URL(siteUrl);
+};
+
 export const metadata: Metadata = {
+  metadataBase: getMetadataBase(),
   title: 'Collabverse',
   description: 'Платформа совместной работы. Этап 0.'
 };

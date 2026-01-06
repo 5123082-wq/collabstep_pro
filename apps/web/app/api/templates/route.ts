@@ -3,6 +3,8 @@ import { flags } from '@/lib/flags';
 import { projectCatalogService, templatesRepository, userTemplatesRepository } from '@collabverse/api';
 import { getAuthFromRequest } from '@/lib/api/finance-access';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   if (!flags.PROJECTS_V1) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
