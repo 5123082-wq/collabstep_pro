@@ -11,6 +11,7 @@
 #### Что такое пользователь
 
 Пользователь — это сущность, которая представляет человека в системе. Пользователь имеет:
+
 - **ID**: UUID (`00000000-0000-0000-0000-000000000001` для администратора)
 - **Email**: уникальный идентификатор (`admin.demo@collabverse.test`)
 - **Имя**: отображаемое имя (`Алина Админ`)
@@ -51,8 +52,8 @@ export const WORKSPACE_USERS: WorkspaceUser[] = [
     email: 'admin.demo@collabverse.test',
     title: 'Руководитель продукта',
     department: 'Продукт',
-    location: 'Москва'
-  }
+    location: 'Москва',
+  },
 ];
 ```
 
@@ -70,9 +71,9 @@ export const WORKSPACE_USERS: WorkspaceUser[] = [
 
 #### Результаты аудита пользователей
 
-| ID | Email | Имя | Расположение | Таблица БД | Ключ памяти | Источник |
-|----|-------|-----|--------------|------------|-------------|----------|
-| `00000000-0000-0000-0000-000000000001` | `admin.demo@collabverse.test` | `Алина Админ` | **БД + Память** | `user` | `memory.WORKSPACE_USERS` | Drizzle ORM + Direct SQL |
+| ID                                     | Email                         | Имя           | Расположение    | Таблица БД | Ключ памяти              | Источник                 |
+| -------------------------------------- | ----------------------------- | ------------- | --------------- | ---------- | ------------------------ | ------------------------ |
+| `00000000-0000-0000-0000-000000000001` | `admin.demo@collabverse.test` | `Алина Админ` | **БД + Память** | `user`     | `memory.WORKSPACE_USERS` | Drizzle ORM + Direct SQL |
 
 **Статус:** ✅ Пользователь синхронизирован между БД и памятью
 
@@ -81,6 +82,7 @@ export const WORKSPACE_USERS: WorkspaceUser[] = [
 #### Что такое организация
 
 Организация — это группа пользователей, которая владеет проектами. Организация имеет:
+
 - **ID**: текстовый идентификатор (`acct-collabverse`)
 - **Owner ID**: ID пользователя-владельца
 - **Название**: имя организации
@@ -113,6 +115,7 @@ CREATE TABLE "organization" (
 #### Как создается организация
 
 1. **Создание через API** (`POST /api/organizations`):
+
    ```typescript
    // apps/web/app/api/organizations/route.ts
    const organization = await organizationsRepository.create({
@@ -120,7 +123,7 @@ CREATE TABLE "organization" (
      name: body.name,
      description: body.description,
      type: body.type === 'open' ? 'open' : 'closed',
-     isPublicInDirectory: body.isPublicInDirectory ?? (body.type === 'open')
+     isPublicInDirectory: body.isPublicInDirectory ?? body.type === 'open',
    });
    ```
 
@@ -139,6 +142,7 @@ CREATE TABLE "organization" (
 #### Проблема с текущей организацией
 
 Организация `acct-collabverse` существует **только в памяти**, но не в БД. Это происходит потому что:
+
 - Организация создана при инициализации демо-данных
 - Не была синхронизирована с БД при первом запуске
 - При перезапуске сервера организация "исчезает"
@@ -148,6 +152,7 @@ CREATE TABLE "organization" (
 #### Что такое проект
 
 Проект — это контейнер для задач, принадлежащий организации. Проект имеет:
+
 - **ID**: UUID (генерируется через `crypto.randomUUID()`)
 - **Owner ID**: ID пользователя-владельца (берется из сессии аутентификации)
 - **Organization ID**: ID организации (обязательно для проектов из шаблонов)
@@ -237,25 +242,27 @@ CREATE TABLE IF NOT EXISTS pm_projects (
 **Процесс создания проекта из шаблона:**
 
 1. **Валидация** (`project-template-service.ts`):
+
    ```typescript
    // 1. Проверка существования шаблона
    const template = templatesRepository.findById(templateId);
-   
+
    // 2. Проверка существования организации (ДОБАВЛЕНО В ИСПРАВЛЕНИИ)
    const organization = await organizationsRepository.findById(organizationId);
-   
+
    // 3. Валидация selectedTaskIds (ДОБАВЛЕНО В ИСПРАВЛЕНИИ)
    // Проверка происходит ДО создания проекта
    ```
 
 2. **Создание проекта в памяти**:
+
    ```typescript
    // projectsRepository.create() создает проект в памяти
    project = projectsRepository.create({
      title: projectTitle,
      ownerId: params.ownerId, // Из сессии аутентификации
      workspaceId: DEFAULT_WORKSPACE_ID,
-     visibility: visibility
+     visibility: visibility,
    });
    // ID генерируется: crypto.randomUUID()
    // Key генерируется: generateProjectKey(workspaceId, key, title)
@@ -263,6 +270,7 @@ CREATE TABLE IF NOT EXISTS pm_projects (
    ```
 
 3. **Запись в БД** (`upsertOrganizationProject()`):
+
    ```typescript
    // Записывается напрямую в pm_projects через SQL
    await db.insert(projectsTable).values({
@@ -291,12 +299,14 @@ CREATE TABLE IF NOT EXISTS pm_projects (
 **Owner ID берется из сессии аутентификации:**
 
 1. **API Route** (`/api/projects/from-template`):
+
    ```typescript
    const auth = getAuthFromRequest(request);
    // auth.userId - это ID пользователя из сессии
    ```
 
 2. **Передача в сервис**:
+
    ```typescript
    await projectTemplateService.createProjectFromTemplate({
      ownerId: auth.userId, // ID из сессии
@@ -316,15 +326,18 @@ CREATE TABLE IF NOT EXISTS pm_projects (
 #### Как присваиваются ID
 
 **Проекты:**
+
 - **ID проекта**: `crypto.randomUUID()` - генерируется в `projectsRepository.create()`
 - **Key проекта**: `generateProjectKey(workspaceId, key, title)` - уникальный ключ в рамках workspace
 - **Owner Number**: `getNextOwnerProjectNumber(ownerId)` - последовательный номер для владельца
 
 **Задачи:**
+
 - **ID задачи**: `crypto.randomUUID()` или `input.id` (если передан) - генерируется в `tasksRepository.create()`
 - **Number задачи**: `getNextTaskNumber(projectId)` - последовательный номер в рамках проекта
 
 **Организации:**
+
 - **ID организации**: Генерируется в `organizationsRepository.create()` через `crypto.randomUUID()` или переданный ID
 
 ### 4. Задачи (Tasks)
@@ -332,6 +345,7 @@ CREATE TABLE IF NOT EXISTS pm_projects (
 #### Что такое задача
 
 Задача — это единица работы в проекте. Задача имеет:
+
 - **ID**: UUID (генерируется через `crypto.randomUUID()`)
 - **Project ID**: ID проекта, к которому принадлежит задача
 - **Number**: последовательный номер в рамках проекта
@@ -376,6 +390,7 @@ CREATE TABLE IF NOT EXISTS pm_tasks (
 #### Как создается задача
 
 1. **Создание в памяти** (`tasksRepository.create()`):
+
    ```typescript
    const task: Task = {
      id: input.id ?? crypto.randomUUID(),
@@ -389,6 +404,7 @@ CREATE TABLE IF NOT EXISTS pm_tasks (
    ```
 
 2. **Запись в БД** (`persistTaskToPg()`):
+
    ```typescript
    // Асинхронно записывается в pm_tasks
    if (isPmDbEnabled()) {
@@ -413,12 +429,12 @@ CREATE TABLE IF NOT EXISTS pm_tasks (
 
 Аудит данных показал следующее распределение:
 
-| Тип данных | Всего найдено | Только в БД | Только в памяти | В БД и памяти |
-|------------|---------------|-------------|-----------------|---------------|
-| **Организации** | 1 | 0 | 1 | 0 |
-| **Проекты** | 48 | 48 | 0 | 0 |
-| **Задачи** | 38 | 38 | 0 | 0 |
-| **ИТОГО** | **87** | **86** | **1** | **0** |
+| Тип данных      | Всего найдено | Только в БД | Только в памяти | В БД и памяти |
+| --------------- | ------------- | ----------- | --------------- | ------------- |
+| **Организации** | 1             | 0           | 1               | 0             |
+| **Проекты**     | 48            | 48          | 0               | 0             |
+| **Задачи**      | 38            | 38          | 0               | 0             |
+| **ИТОГО**       | **87**        | **86**      | **1**           | **0**         |
 
 ## Детальный анализ
 
@@ -426,13 +442,14 @@ CREATE TABLE IF NOT EXISTS pm_tasks (
 
 #### Найдено: 1 организация
 
-| ID | Название | Расположение | Таблица БД | Ключ памяти | Источник | Как попало |
-|----|----------|--------------|------------|-------------|----------|------------|
-| `acct-collabverse` | Collabverse Demo Org | **Только в памяти** | N/A | `memory.ORGANIZATIONS` | Memory | Инициализация при старте приложения |
+| ID                 | Название             | Расположение        | Таблица БД | Ключ памяти            | Источник | Как попало                          |
+| ------------------ | -------------------- | ------------------- | ---------- | ---------------------- | -------- | ----------------------------------- |
+| `acct-collabverse` | Collabverse Demo Org | **Только в памяти** | N/A        | `memory.ORGANIZATIONS` | Memory   | Инициализация при старте приложения |
 
 **Проблема:** Организация существует только в памяти, но не в БД. Это может быть причиной того, что организация "исчезает" при перезапуске сервера.
 
 **Пути хранения:**
+
 - ✅ Память: `memory.ORGANIZATIONS[0]`
 - ❌ БД (Drizzle): таблица `organization` - **НЕ НАЙДЕНО**
 - ❌ БД (SQL): таблица `organization` - **НЕ НАЙДЕНО**
@@ -445,18 +462,21 @@ CREATE TABLE IF NOT EXISTS pm_tasks (
 **Расположение:** Все проекты находятся **только в БД** (таблица `pm_projects`)
 
 **Пути хранения:**
+
 - ✅ БД (SQL): таблица `pm_projects` - **48 проектов**
 - ❌ БД (Drizzle): таблица `project` - **0 проектов** (не синхронизированы)
 - ❌ Память: `memory.PROJECTS` - **0 проектов** (не загружены в память)
 - ❌ Репозиторий: `projectsRepository.list()` - **0 проектов** (работает с памятью)
 
 **Как попало в БД:**
+
 - Проекты создаются через `upsertOrganizationProject()` в `project-template-service.ts`
 - Записываются напрямую в таблицу `pm_projects` через SQL
 - НЕ синхронизируются с Drizzle схемой `project`
 - НЕ загружаются в память автоматически
 
 **Примеры проектов:**
+
 - `Бренд-пакет` (319c987a-155f-4064-acf0-912211e812cd) - создан из шаблона
 - 47 проектов `Test Project` - тестовые проекты, созданные при разработке
 
@@ -467,16 +487,19 @@ CREATE TABLE IF NOT EXISTS pm_tasks (
 **Расположение:** Все задачи находятся **только в БД** (таблица `pm_tasks`)
 
 **Пути хранения:**
+
 - ✅ БД (SQL): таблица `pm_tasks` - **38 задач**
 - ❌ Память: `memory.TASKS` - **0 задач** (не загружены в память)
 - ❌ Репозиторий: `tasksRepository.list()` - **0 задач** (работает с памятью)
 
 **Как попало в БД:**
+
 - Задачи создаются через `tasksRepository.create()`
 - Записываются в БД через `persistTaskToPg()` в `pm-pg-adapter.ts`
 - НЕ загружаются в память автоматически при старте
 
 **Типы задач:**
+
 - 16 задач из шаблона "Бренд-пакет" (исследование, разработка логотипа, документация и т.д.)
 - 22 задачи "Test Task" - тестовые задачи
 
@@ -516,6 +539,7 @@ CREATE TABLE IF NOT EXISTS pm_tasks (
 ### Немедленные действия
 
 1. **Синхронизировать организацию с БД:**
+
    ```typescript
    // Создать организацию в БД через Drizzle
    await db.insert(organizations).values({
@@ -527,6 +551,7 @@ CREATE TABLE IF NOT EXISTS pm_tasks (
    ```
 
 2. **Загрузить проекты в память:**
+
    ```typescript
    // Использовать pmPgHydration для загрузки проектов из БД
    await pmPgHydration;
@@ -554,14 +579,15 @@ CREATE TABLE IF NOT EXISTS pm_tasks (
 
 ## Таблица путей хранения
 
-| Тип данных | БД (Drizzle) | БД (SQL) | Память | Репозиторий | Статус |
-|------------|-------------|----------|--------|-------------|--------|
-| **Пользователи** | `user` (1) | `user` (1) | `memory.WORKSPACE_USERS` (1) | `usersRepository` (1) | ✅ Синхронизировано |
-| **Организации** | `organization` (0) | `organization` (0) | `memory.ORGANIZATIONS` (1) | `organizationsRepository` (1) | ⚠️ Только память |
-| **Проекты** | `project` (0) | `pm_projects` (48) | `memory.PROJECTS` (0) | `projectsRepository` (0) | ⚠️ Только БД |
-| **Задачи** | N/A | `pm_tasks` (38) | `memory.TASKS` (0) | `tasksRepository` (0) | ⚠️ Только БД |
+| Тип данных       | БД (Drizzle)       | БД (SQL)           | Память                       | Репозиторий                   | Статус              |
+| ---------------- | ------------------ | ------------------ | ---------------------------- | ----------------------------- | ------------------- |
+| **Пользователи** | `user` (1)         | `user` (1)         | `memory.WORKSPACE_USERS` (1) | `usersRepository` (1)         | ✅ Синхронизировано |
+| **Организации**  | `organization` (0) | `organization` (0) | `memory.ORGANIZATIONS` (1)   | `organizationsRepository` (1) | ⚠️ Только память    |
+| **Проекты**      | `project` (0)      | `pm_projects` (48) | `memory.PROJECTS` (0)        | `projectsRepository` (0)      | ⚠️ Только БД        |
+| **Задачи**       | N/A                | `pm_tasks` (38)    | `memory.TASKS` (0)           | `tasksRepository` (0)         | ⚠️ Только БД        |
 
 **Легенда:**
+
 - ✅ Работает корректно
 - ⚠️ Есть проблемы синхронизации
 - ❌ Не используется/не найдено
@@ -620,16 +646,16 @@ CREATE TABLE IF NOT EXISTS pm_tasks (
 
 ## Полная таблица данных
 
-| Тип | ID | Название | Расположение | Таблица БД | Ключ памяти | Источник | Как попало |
-|-----|----|----------|--------------|------------|-------------|----------|------------|
-| **Пользователь** | `00000000-0000-0000-0000-000000000001` | Алина Админ | БД + Память | `user` | `memory.WORKSPACE_USERS` | Drizzle + SQL | Регистрация/инициализация |
-| **Организация** | `acct-collabverse` | Collabverse Demo Org | Память | N/A | `memory.ORGANIZATIONS` | Memory | Инициализация демо-данных |
-| **Проект** | `319c987a-...` | Бренд-пакет | БД | `pm_projects` | N/A | Direct SQL | Из шаблона через `upsertOrganizationProject()` |
-| **Проект** | `b0abeeae-...` | Test Project | БД | `pm_projects` | N/A | Direct SQL | Тестовое создание |
-| ... | ... | ... (46 проектов) | БД | `pm_projects` | N/A | Direct SQL | Тестовое создание |
-| **Задача** | `9ab10a5f-...` | Исследование рынка... | БД | `pm_tasks` | N/A | Direct SQL | Из шаблона через `tasksRepository.create()` |
-| **Задача** | `873e2e8b-...` | Разработка иконографии... | БД | `pm_tasks` | N/A | Direct SQL | Из шаблона через `tasksRepository.create()` |
-| ... | ... | ... (36 задач) | БД | `pm_tasks` | N/A | Direct SQL | Из шаблона/тестовые |
+| Тип              | ID                                     | Название                  | Расположение | Таблица БД    | Ключ памяти              | Источник      | Как попало                                     |
+| ---------------- | -------------------------------------- | ------------------------- | ------------ | ------------- | ------------------------ | ------------- | ---------------------------------------------- |
+| **Пользователь** | `00000000-0000-0000-0000-000000000001` | Алина Админ               | БД + Память  | `user`        | `memory.WORKSPACE_USERS` | Drizzle + SQL | Регистрация/инициализация                      |
+| **Организация**  | `acct-collabverse`                     | Collabverse Demo Org      | Память       | N/A           | `memory.ORGANIZATIONS`   | Memory        | Инициализация демо-данных                      |
+| **Проект**       | `319c987a-...`                         | Бренд-пакет               | БД           | `pm_projects` | N/A                      | Direct SQL    | Из шаблона через `upsertOrganizationProject()` |
+| **Проект**       | `b0abeeae-...`                         | Test Project              | БД           | `pm_projects` | N/A                      | Direct SQL    | Тестовое создание                              |
+| ...              | ...                                    | ... (46 проектов)         | БД           | `pm_projects` | N/A                      | Direct SQL    | Тестовое создание                              |
+| **Задача**       | `9ab10a5f-...`                         | Исследование рынка...     | БД           | `pm_tasks`    | N/A                      | Direct SQL    | Из шаблона через `tasksRepository.create()`    |
+| **Задача**       | `873e2e8b-...`                         | Разработка иконографии... | БД           | `pm_tasks`    | N/A                      | Direct SQL    | Из шаблона через `tasksRepository.create()`    |
+| ...              | ...                                    | ... (36 задач)            | БД           | `pm_tasks`    | N/A                      | Direct SQL    | Из шаблона/тестовые                            |
 
 ## Архитектурная схема
 
@@ -710,17 +736,19 @@ CREATE TABLE IF NOT EXISTS pm_tasks (
 ### Немедленные действия
 
 1. **Синхронизировать организацию с БД:**
+
    ```typescript
    await db.insert(organizations).values({
      id: 'acct-collabverse',
      name: 'Collabverse Demo Org',
      ownerId: '00000000-0000-0000-0000-000000000001',
      type: 'closed',
-     isPublicInDirectory: false
+     isPublicInDirectory: false,
    });
    ```
 
 2. **Загрузить данные в память:**
+
    ```typescript
    // Вызвать гидратацию при старте приложения
    await pmPgHydration;
@@ -745,4 +773,3 @@ CREATE TABLE IF NOT EXISTS pm_tasks (
    - Где какие данные хранятся
    - Как происходит синхронизация
    - Когда использовать память, когда БД
-
