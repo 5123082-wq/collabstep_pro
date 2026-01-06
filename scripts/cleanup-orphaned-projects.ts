@@ -11,9 +11,9 @@ if (!process.env.POSTGRES_URL && process.env.DATABASE_URL) {
 import { db } from '@collabverse/api/db/config';
 import {
   organizations,
-  projects as projectsTable,
-  tasks as tasksTable
+  projects as projectsTable
 } from '@collabverse/api/db/schema';
+import { tasksRepository } from '@collabverse/api';
 import { sql, isNull, and } from 'drizzle-orm';
 
 async function cleanupOrphanedProjects() {
@@ -41,25 +41,13 @@ async function cleanupOrphanedProjects() {
     console.log(`🔍 Найдено проектов с несуществующими организациями: ${projectsWithInvalidOrgs.length}`);
 
     // 3. Найти проекты без задач
-    let projectIdsWithTasks = new Set<string>();
-    try {
-      const projectsWithTasks = await db
-        .selectDistinct({ projectId: tasksTable.projectId })
-        .from(tasksTable);
-
-      if (Array.isArray(projectsWithTasks)) {
-        for (const task of projectsWithTasks) {
-          if (task && typeof task === 'object' && 'projectId' in task) {
-            const projectId = task.projectId;
-            if (projectId && typeof projectId === 'string') {
-              projectIdsWithTasks.add(projectId);
-            }
-          }
-        }
+    // Задачи хранятся в памяти, а не в БД, поэтому используем репозиторий
+    const allTasks = tasksRepository.list();
+    const projectIdsWithTasks = new Set<string>();
+    for (const task of allTasks) {
+      if (task && task.projectId) {
+        projectIdsWithTasks.add(task.projectId);
       }
-    } catch (error) {
-      console.warn('⚠️  Не удалось загрузить задачи из БД, используем пустой список:', error);
-      projectIdsWithTasks = new Set<string>();
     }
     const orphanedProjectsNoTasks = allProjects.filter((p) => !projectIdsWithTasks.has(p.id));
 
@@ -108,13 +96,14 @@ async function cleanupOrphanedProjects() {
       .where(sql`${projectsTable.id} = ANY(${projectIdsArray})`);
 
     // Удалить связанные задачи (если есть)
+    // Задачи хранятся в памяти, используем репозиторий
     for (const projectId of projectIdsArray) {
-      const deletedTasks = await db
-        .delete(tasksTable)
-        .where(sql`${tasksTable.projectId} = ${projectId}`)
-        .returning();
-      if (deletedTasks.length > 0) {
-        console.log(`   🗑️  Удалено задач для проекта ${projectId}: ${deletedTasks.length}`);
+      const projectTasks = tasksRepository.list({ projectId });
+      for (const task of projectTasks) {
+        tasksRepository.delete(task.id);
+      }
+      if (projectTasks.length > 0) {
+        console.log(`   🗑️  Удалено задач для проекта ${projectId}: ${projectTasks.length}`);
       }
     }
 

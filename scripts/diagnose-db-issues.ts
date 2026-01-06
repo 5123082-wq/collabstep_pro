@@ -13,9 +13,9 @@ import {
   users,
   organizations,
   organizationMembers,
-  projects as projectsTable,
-  tasks as tasksTable
+  projects as projectsTable
 } from '@collabverse/api/db/schema';
+import { tasksRepository } from '@collabverse/api';
 import { eq, sql, isNull, and } from 'drizzle-orm';
 
 async function diagnoseDbIssues() {
@@ -93,11 +93,14 @@ async function diagnoseDbIssues() {
 
     // 4. Проверка "осиротевших" проектов (без задач)
     console.log('\n🔗 Проверка проектов без задач...');
-    const projectsWithTasks = await db
-      .selectDistinct({ projectId: tasksTable.projectId })
-      .from(tasksTable);
-
-    const projectIdsWithTasks = new Set(projectsWithTasks.map((t) => t.projectId).filter(Boolean));
+    // Задачи хранятся в памяти, а не в БД, поэтому используем репозиторий
+    const allTasks = tasksRepository.list();
+    const projectIdsWithTasks = new Set<string>();
+    for (const task of allTasks) {
+      if (task && task.projectId) {
+        projectIdsWithTasks.add(task.projectId);
+      }
+    }
     const orphanedProjectsNoTasks = allProjects.filter((p) => !projectIdsWithTasks.has(p.id));
 
     console.log(`   ⚠️  Проектов БЕЗ задач: ${orphanedProjectsNoTasks.length}`);
@@ -147,12 +150,13 @@ async function diagnoseDbIssues() {
 
     // 7. Статистика по задачам
     console.log('\n📊 Статистика по задачам...');
-    const allTasks = await db.select().from(tasksTable);
-    console.log(`   Всего задач в БД: ${allTasks.length}`);
+    // Задачи хранятся в памяти, используем репозиторий
+    const allTasksForStats = tasksRepository.list();
+    console.log(`   Всего задач в памяти: ${allTasksForStats.length}`);
 
     const tasksByProject = new Map<string, number>();
-    allTasks.forEach((task) => {
-      if (task.projectId) {
+    allTasksForStats.forEach((task) => {
+      if (task && task.projectId) {
         tasksByProject.set(task.projectId, (tasksByProject.get(task.projectId) || 0) + 1);
       }
     });
