@@ -41,15 +41,26 @@ async function cleanupOrphanedProjects() {
     console.log(`🔍 Найдено проектов с несуществующими организациями: ${projectsWithInvalidOrgs.length}`);
 
     // 3. Найти проекты без задач
-    const projectsWithTasks = await db
-      .selectDistinct({ projectId: tasksTable.projectId })
-      .from(tasksTable);
+    let projectIdsWithTasks = new Set<string>();
+    try {
+      const projectsWithTasks = await db
+        .selectDistinct({ projectId: tasksTable.projectId })
+        .from(tasksTable);
 
-    const projectIdsWithTasks = new Set(
-      projectsWithTasks
-        .map((t) => t?.projectId)
-        .filter((id): id is string => Boolean(id))
-    );
+      if (Array.isArray(projectsWithTasks)) {
+        for (const task of projectsWithTasks) {
+          if (task && typeof task === 'object' && 'projectId' in task) {
+            const projectId = task.projectId;
+            if (projectId && typeof projectId === 'string') {
+              projectIdsWithTasks.add(projectId);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️  Не удалось загрузить задачи из БД, используем пустой список:', error);
+      projectIdsWithTasks = new Set<string>();
+    }
     const orphanedProjectsNoTasks = allProjects.filter((p) => !projectIdsWithTasks.has(p.id));
 
     console.log(`📋 Найдено проектов без задач: ${orphanedProjectsNoTasks.length}\n`);
