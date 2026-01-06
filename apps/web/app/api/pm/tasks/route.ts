@@ -51,13 +51,15 @@ function applyPagination<T>(items: T[], page: number, pageSize: number) {
   return { items: paginated, pagination: { page, pageSize, total, totalPages } };
 }
 
-function filterTasksByAccess(tasks: ReturnType<typeof tasksRepository.list>, accessibleProjectIds: Set<string>) {
+type TaskArray = Awaited<ReturnType<typeof tasksRepository.list>>;
+
+function filterTasksByAccess(tasks: TaskArray, accessibleProjectIds: Set<string>) {
   // Фильтруем задачи только по проектам, к которым уже подтвержден доступ
   return tasks.filter((task) => accessibleProjectIds.has(task.projectId));
 }
 
 function applyTaskFilters(
-  tasks: ReturnType<typeof tasksRepository.list>,
+  tasks: TaskArray,
   filters: ReturnType<typeof parseFilters>
 ) {
   let filtered = [...tasks];
@@ -117,7 +119,7 @@ type TaskProjectOption = {
 };
 
 type TasksResponse = {
-  items: ReturnType<typeof tasksRepository.list>;
+  items: TaskArray;
   pagination: ReturnType<typeof applyPagination>['pagination'];
   meta: {
     projects: TaskProjectOption[];
@@ -141,7 +143,7 @@ export async function GET(request: Request) {
     const filters = parseFilters(url);
 
     // Получаем ВСЕ проекты напрямую из репозитория (как в дашборде)
-    const allProjects = projectsRepository.list();
+    const allProjects = await projectsRepository.list();
     const accessibleProjects = [];
     for (const project of allProjects) {
       const hasAccess = await projectsRepository.hasAccess(project.id, auth.userId);
@@ -152,14 +154,14 @@ export async function GET(request: Request) {
 
 
     // Получаем все задачи и фильтруем их по доступу к проектам
-    const allTasks = tasksRepository.list();
+    const allTasks = await tasksRepository.list();
     const accessibleProjectIds = new Set(accessibleProjects.map((project) => project.id));
     const accessibleTasks = filterTasksByAccess(allTasks, accessibleProjectIds);
 
     // Если у доступных проектов нет задач, добавляем демо-задачу в первый проект
 
     // Группируем доступные задачи по проектам
-    const tasksByProject = new Map<string, ReturnType<typeof tasksRepository.list>>();
+    const tasksByProject = new Map<string, TaskArray>();
     for (const task of accessibleTasks) {
       const bucket = tasksByProject.get(task.projectId) ?? [];
       bucket.push(task);
@@ -184,7 +186,7 @@ export async function GET(request: Request) {
     }
 
     // Получаем задачи в зависимости от фильтров
-    let baseTasks: ReturnType<typeof tasksRepository.list> = [];
+    let baseTasks: TaskArray = [];
 
     if (filters.projectId) {
       // Конкретный проект выбран - проверяем доступ и scope

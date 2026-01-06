@@ -183,11 +183,11 @@ export class DeletionService {
       return null;
     }
 
-    const tasks = tasksRepository.list({ projectId });
+    const tasks = await tasksRepository.list({ projectId });
     const taskRefs = tasks.map(toTaskRef).filter(Boolean) as TaskRef[];
     const taskIds = new Set(tasks.map((task) => task.id));
 
-    const dependencies = taskDependenciesRepository.list({ projectId });
+    const dependencies = await taskDependenciesRepository.list({ projectId });
     const projectAttachments = memory.ATTACHMENTS.filter(
       (attachment) => attachment.projectId === projectId
     );

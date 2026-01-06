@@ -89,7 +89,7 @@ function handleError(error: unknown) {
 }
 
 async function collectAccessibleProjects(userId: string) {
-  const projects = projectsRepository.list();
+  const projects = await projectsRepository.list();
   const accessMap = new Map<string, Awaited<ReturnType<typeof getProjectRole>>>();
   for (const project of projects) {
     const role = await getProjectRole(project.id, userId);

@@ -428,6 +428,34 @@ export async function fetchTaskByIdFromPg(taskId: string): Promise<Task | null> 
   return row ? mapTaskRow(row) : null;
 }
 
+export async function fetchProjectsFromPg(options: { archived?: boolean | null; workspaceId?: string | null } = {}): Promise<Project[]> {
+  if (!isPmDbEnabled()) return [];
+  await ensurePmTables();
+  
+  let query = `SELECT * FROM ${TABLE_PROJECTS}`;
+  const params: unknown[] = [];
+  const conditions: string[] = [];
+  
+  if (options.archived !== null && options.archived !== undefined) {
+    conditions.push(`archived = $${params.length + 1}`);
+    params.push(options.archived);
+  }
+  
+  if (options.workspaceId) {
+    conditions.push(`workspace_id = $${params.length + 1}`);
+    params.push(options.workspaceId);
+  }
+  
+  if (conditions.length > 0) {
+    query += ` WHERE ${conditions.join(' AND ')}`;
+  }
+  
+  query += ` ORDER BY created_at DESC`;
+  
+  const result = await sql.query(query, params);
+  return result.rows.map(mapProjectRow);
+}
+
 export async function fetchProjectByIdFromPg(projectId: string): Promise<Project | null> {
   if (!isPmDbEnabled()) return null;
   await ensurePmTables();
@@ -458,6 +486,39 @@ export async function fetchProjectMembersFromPg(projectId: string): Promise<Proj
     userId: String(row.user_id),
     role: String(row.role) as ProjectMember['role']
   }));
+}
+
+export async function fetchTasksFromPg(options: { projectId?: string; status?: string; iterationId?: string } = {}): Promise<Task[]> {
+  if (!isPmDbEnabled()) return [];
+  await ensurePmTables();
+  
+  let query = `SELECT * FROM ${TABLE_TASKS}`;
+  const params: unknown[] = [];
+  const conditions: string[] = [];
+  
+  if (options.projectId) {
+    conditions.push(`project_id = $${params.length + 1}`);
+    params.push(options.projectId);
+  }
+  
+  if (options.status) {
+    conditions.push(`status = $${params.length + 1}`);
+    params.push(options.status);
+  }
+  
+  if (options.iterationId) {
+    conditions.push(`iteration_id = $${params.length + 1}`);
+    params.push(options.iterationId);
+  }
+  
+  if (conditions.length > 0) {
+    query += ` WHERE ${conditions.join(' AND ')}`;
+  }
+  
+  query += ` ORDER BY number ASC, created_at ASC`;
+  
+  const result = await sql.query(query, params);
+  return result.rows.map(mapTaskRow);
 }
 
 export async function fetchCommentsByTaskFromPg(projectId: string, taskId: string): Promise<TaskComment[]> {

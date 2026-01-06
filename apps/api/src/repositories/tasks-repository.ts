@@ -1,7 +1,8 @@
 import { memory } from '../data/memory';
 import type { FileObject, Task, TaskStatus, TaskTreeNode } from '../types';
 import { pmPgHydration } from '../storage/pm-pg-bootstrap';
-import { deleteTaskFromPg, isPmDbEnabled, persistTaskToPg, fetchTaskByIdFromPg } from '../storage/pm-pg-adapter';
+import { deleteTaskFromPg, isPmDbEnabled, persistTaskToPg, fetchTaskByIdFromPg, fetchTasksFromPg } from '../storage/pm-pg-adapter';
+import { cacheManager } from '../data/cache-manager';
 import { db } from '../db/config';
 import { files, attachments } from '../db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
@@ -73,11 +74,77 @@ function cloneFileObject(file: FileObject): FileObject {
 }
 
 export class TasksRepository {
-  list(options?: TaskListOptions & { view?: 'list' }): Task[];
-  list(options: TaskListOptions & { view: 'tree' }): TaskTreeNode[];
-  list(options: TaskListOptions = {}): Task[] | TaskTreeNode[] {
+  async list(options?: TaskListOptions & { view?: 'list' }): Promise<Task[]>;
+  async list(options: TaskListOptions & { view: 'tree' }): Promise<TaskTreeNode[]>;
+  async list(options: TaskListOptions = {}): Promise<Task[] | TaskTreeNode[]> {
     const { projectId, status, iterationId, view = 'list' } = options;
     const normalizedView: TaskListView = view === 'tree' ? 'tree' : 'list';
+    
+    // Если БД включена, используем cache-aside паттерн с TTL
+    if (isPmDbEnabled()) {
+      try {
+        // Формируем ключ кэша на основе параметров
+        const cacheKey = projectId 
+          ? `tasks:project:${projectId}:status:${status ?? 'all'}:iteration:${iterationId ?? 'all'}`
+          : `tasks:all:status:${status ?? 'all'}:iteration:${iterationId ?? 'all'}`;
+        
+        // Проверяем кэш
+        const cached = cacheManager.getTasks(cacheKey);
+        if (cached) {
+          // Фильтруем по projectId если нужно (кэш может содержать все задачи)
+          let items = cached;
+          if (projectId) {
+            items = items.filter((task) => task.projectId === projectId);
+          }
+          const cloned = items.map(enrichTask);
+          if (normalizedView === 'tree') {
+            return buildTaskTree(cloned);
+          }
+          return cloned;
+        }
+
+        // Кэш промах - читаем из БД
+        const fetchOptions: { projectId?: string; status?: string; iterationId?: string } = {};
+        if (projectId) {
+          fetchOptions.projectId = projectId;
+        }
+        if (status) {
+          fetchOptions.status = status;
+        }
+        if (iterationId) {
+          fetchOptions.iterationId = iterationId;
+        }
+        const dbTasks = await fetchTasksFromPg(fetchOptions);
+        
+        // Сохраняем в кэш
+        cacheManager.setTasks(cacheKey, dbTasks);
+        
+        // Также обновляем память для обратной совместимости (но это не источник истины)
+        if (memory.TASKS.length === 0) {
+          memory.TASKS = dbTasks;
+        } else {
+          // Синхронизируем: добавляем новые задачи из БД, обновляем существующие
+          for (const dbTask of dbTasks) {
+            const index = memory.TASKS.findIndex(t => t.id === dbTask.id);
+            if (index >= 0) {
+              memory.TASKS[index] = dbTask;
+            } else {
+              memory.TASKS.push(dbTask);
+            }
+          }
+        }
+        const cloned = dbTasks.map(enrichTask);
+        if (normalizedView === 'tree') {
+          return buildTaskTree(cloned);
+        }
+        return cloned;
+      } catch (error) {
+        console.error('[TasksRepository] Error loading tasks from DB, falling back to memory:', error);
+        // Fallback to memory if DB fails
+      }
+    }
+    
+    // Fallback: читаем из памяти (для случаев когда БД не включена)
     let items = memory.TASKS;
     if (projectId) {
       items = items.filter((task) => task.projectId === projectId);
@@ -96,8 +163,9 @@ export class TasksRepository {
     return cloned;
   }
 
-  listByProject(projectId: string): Task[] {
-    return this.list({ projectId });
+  async listByProject(projectId: string): Promise<Task[]> {
+    const result = await this.list({ projectId });
+    return Array.isArray(result) ? result : [];
   }
 
   findById(id: string): Task | null {
@@ -170,6 +238,8 @@ export class TasksRepository {
       void persistTaskToPg(task).catch((error) =>
         console.error('[TasksRepository] Failed to persist task', error)
       );
+      // Инвалидируем кэш задач при создании
+      cacheManager.invalidateTasks(task.projectId);
     }
 
     return enrichTask(task);
@@ -272,6 +342,8 @@ export class TasksRepository {
       void persistTaskToPg(updated).catch((error) =>
         console.error('[TasksRepository] Failed to persist task update', error)
       );
+      // Инвалидируем кэш задач при обновлении
+      cacheManager.invalidateTasks(updated.projectId);
     } else {
       console.warn('[TasksRepository] DB not enabled, task update only in memory:', updated.id, 'status:', updated.status);
     }
@@ -285,6 +357,9 @@ export class TasksRepository {
       return false;
     }
 
+    const task = memory.TASKS[idx];
+    const projectId = task?.projectId;
+
     memory.TASKS.splice(idx, 1);
     // Also remove dependencies for this task
     memory.TASK_DEPENDENCIES = memory.TASK_DEPENDENCIES.filter(
@@ -295,6 +370,10 @@ export class TasksRepository {
       void deleteTaskFromPg(id).catch((error) =>
         console.error('[TasksRepository] Failed to delete task from Postgres', error)
       );
+      // Инвалидируем кэш задач при удалении
+      if (projectId) {
+        cacheManager.invalidateTasks(projectId);
+      }
     }
 
     return true;

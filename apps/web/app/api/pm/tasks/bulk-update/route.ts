@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Проверка доступа к проекту
-    const project = projectsRepository.findById(projectId);
+    const project = await projectsRepository.findById(projectId);
 
     if (!project) {
       return jsonError('NOT_FOUND', {
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Получение задач проекта
-    const allTasks = tasksRepository.listByProject(projectId);
+    const allTasks = await tasksRepository.listByProject(projectId);
 
     // Фильтрация задач согласно фильтру операции
     const tasksToUpdate = allTasks.filter((task) => {

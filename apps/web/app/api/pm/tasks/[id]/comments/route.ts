@@ -29,7 +29,7 @@ export async function GET(
 
   try {
     // Получение задачи
-    const tasks = tasksRepository.list();
+    const tasks = await tasksRepository.list();
     const task = tasks.find((t) => t.id === taskId);
     
     if (!task) {
@@ -124,7 +124,7 @@ export async function POST(
     }
 
     // Получение задачи и проверка доступа
-    const tasks = tasksRepository.list();
+    const tasks = await tasksRepository.list();
     const task = tasks.find((t) => t.id === taskId);
     
     if (!task) {

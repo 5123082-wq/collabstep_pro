@@ -63,7 +63,8 @@ export async function generateProjectChatAIResponse(
   }
 
   // Получение задач проекта для контекста
-  const tasks = tasksRepository.list().filter(t => t.projectId === projectId);
+  const allTasks = await tasksRepository.list();
+  const tasks = allTasks.filter((t) => t.projectId === projectId);
   const members = await projectsRepository.listMembers(projectId);
 
   // Получение недавних сообщений чата для контекста (последние 5)

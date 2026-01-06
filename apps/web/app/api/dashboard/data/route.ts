@@ -77,7 +77,7 @@ async function buildProjectsTasksData(userId: string, email: string): Promise<Wi
     projectIds: Array.from(projectIds)
   });
 
-  const allTasks = tasksRepository.list();
+  const allTasks = await tasksRepository.list();
   const tasks = allTasks.filter((task) => projectIds.has(task.projectId));
   const accessibleTaskIds = new Set(tasks.map((task) => task.id));
   
@@ -127,7 +127,7 @@ async function buildProjectsTasksData(userId: string, email: string): Promise<Wi
     return Number.isFinite(due) && due >= now && due <= dueSoonThreshold;
   });
 
-  const dependencies = taskDependenciesRepository.list();
+  const dependencies = await taskDependenciesRepository.list();
   const blockedByDependencies = dependencies
     .filter((dep) => accessibleTaskIds.has(dep.dependentTaskId))
     .map((dep) => dep.dependentTaskId);

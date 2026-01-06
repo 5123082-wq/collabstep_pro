@@ -29,7 +29,7 @@ export async function PATCH(
 
   try {
     // Получение задачи
-    const tasks = tasksRepository.list();
+    const tasks = await tasksRepository.list();
     const task = tasks.find((t) => t.id === taskId);
     
     if (!task) {
@@ -158,7 +158,7 @@ export async function DELETE(
 
   try {
     // Получение задачи
-    const tasks = tasksRepository.list();
+    const tasks = await tasksRepository.list();
     const task = tasks.find((t) => t.id === taskId);
     
     if (!task) {

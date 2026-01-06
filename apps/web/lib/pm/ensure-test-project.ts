@@ -28,7 +28,7 @@ export async function ensureTestProject(_userId: string, _email: string): Promis
     'Интеграция с платежной системой'
   ];
 
-  const projects = projectsRepository.list();
+  const projects = await projectsRepository.list();
   const seedProjects = projects.filter(
     (project) =>
       project.ownerId === DEFAULT_WORKSPACE_USER_ID &&
@@ -37,7 +37,7 @@ export async function ensureTestProject(_userId: string, _email: string): Promis
 
   for (const project of seedProjects) {
     // Remove tasks for the seeded project
-    const projectTasks = tasksRepository.list({ projectId: project.id });
+    const projectTasks = await tasksRepository.list({ projectId: project.id });
     for (const task of projectTasks) {
       tasksRepository.delete(task.id);
     }
@@ -63,9 +63,8 @@ export async function ensureTestProject(_userId: string, _email: string): Promis
   }
 
   // Clean up any stray seeded tasks that might remain without the project
-  const strayTasks = tasksRepository
-    .list()
-    .filter((task) => SEED_TASK_TITLES.includes(task.title));
+  const allTasks = await tasksRepository.list();
+  const strayTasks = allTasks.filter((task) => SEED_TASK_TITLES.includes(task.title));
 
   for (const task of strayTasks) {
     tasksRepository.delete(task.id);

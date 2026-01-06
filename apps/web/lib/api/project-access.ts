@@ -21,7 +21,7 @@ export async function getAccessibleProjects(
   email: string,
   options?: { archived?: boolean | null; workspaceId?: string | null }
 ): Promise<Project[]> {
-  const allProjects = projectsRepository.list(options);
+  const allProjects = await projectsRepository.list(options);
   
   // Check if user is admin (by UUID or email)
   const isAdmin = isAdminUserId(userId) || isDemoAdminEmail(email);

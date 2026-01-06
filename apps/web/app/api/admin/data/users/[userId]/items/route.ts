@@ -64,12 +64,11 @@ export async function GET(
     (u) => u.id === userId || u.email === userId
   );
 
-  const projects = projectsRepository
-    .list()
-    .filter((project) => project.ownerId === userId || project.ownerId === user?.email);
+  const allProjects = await projectsRepository.list();
+  const projects = allProjects.filter((project) => project.ownerId === userId || project.ownerId === user?.email);
   const projectIds = new Set(projects.map((p) => p.id));
 
-  const allTasks = tasksRepository.list();
+  const allTasks = await tasksRepository.list();
   const tasksAsOwner = allTasks.filter((task) => projectIds.has(task.projectId));
   const tasksAsAssignee = allTasks.filter((task) => task.assigneeId === userId);
 

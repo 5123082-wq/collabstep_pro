@@ -29,9 +29,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'confirmation_required' }, { status: 400 });
   }
 
+  const allProjectsBefore = await projectsRepository.list();
+  const allTasksBefore = await tasksRepository.list();
   const beforeStats = {
-    projects: projectsRepository.list().length,
-    tasks: tasksRepository.list().length,
+    projects: allProjectsBefore.length,
+    tasks: allTasksBefore.length,
   };
 
   let deletedProjects = 0;
@@ -39,15 +41,16 @@ export async function POST(req: NextRequest) {
 
   // If userId is provided, delete only that user's data
   if (body.userId) {
-    const userProjects = projectsRepository.list().filter(p => p.ownerId === body.userId);
-    const projectIds = userProjects.map(p => p.id);
+    const allProjects = await projectsRepository.list();
+    const userProjects = allProjects.filter((p) => p.ownerId === body.userId);
+    const projectIds = userProjects.map((p) => p.id);
 
     // Get all task IDs BEFORE deleting projects
     const deletedTaskIds = new Set<string>();
     for (const project of userProjects) {
-      const projectTasks = tasksRepository.list({ projectId: project.id });
+      const projectTasks = await tasksRepository.list({ projectId: project.id });
       deletedTasks += projectTasks.length;
-      projectTasks.forEach(t => deletedTaskIds.add(t.id));
+      projectTasks.forEach((t) => deletedTaskIds.add(t.id));
     }
 
     // Now delete projects (will cascade delete tasks)
@@ -99,11 +102,11 @@ export async function POST(req: NextRequest) {
     }
   } else {
     // Delete all projects and tasks
-    const allProjects = projectsRepository.list();
+    const allProjects = await projectsRepository.list();
 
     for (const project of allProjects) {
       // Count tasks for this project
-      const projectTasks = tasksRepository.list({ projectId: project.id });
+      const projectTasks = await tasksRepository.list({ projectId: project.id });
       deletedTasks += projectTasks.length;
 
       // Delete project (will cascade delete tasks)
@@ -114,7 +117,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Clean up any orphaned tasks (shouldn't happen, but just in case)
-    const remainingTasks = tasksRepository.list();
+    const remainingTasks = await tasksRepository.list();
     for (const task of remainingTasks) {
       tasksRepository.delete(task.id);
       deletedTasks++;
@@ -130,9 +133,11 @@ export async function POST(req: NextRequest) {
     memory.PROJECT_CHAT_MESSAGES = [];
   }
 
+  const allProjectsAfter = await projectsRepository.list();
+  const allTasksAfter = await tasksRepository.list();
   const afterStats = {
-    projects: projectsRepository.list().length,
-    tasks: tasksRepository.list().length,
+    projects: allProjectsAfter.length,
+    tasks: allTasksAfter.length,
   };
 
   return NextResponse.json({

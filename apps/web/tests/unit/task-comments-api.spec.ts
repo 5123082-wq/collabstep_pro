@@ -26,7 +26,7 @@ describe('Task Comments API', () => {
     'content-type': 'application/json'
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     resetFinanceMemory();
 
     // Создаем проект и задачу для тестов
@@ -39,7 +39,7 @@ describe('Task Comments API', () => {
     });
     projectId = project.id;
 
-    const tasks = tasksRepository.list({ projectId });
+    const tasks = await tasksRepository.list({ projectId });
     if (tasks.length === 0) {
       const task = tasksRepository.create({
         projectId,

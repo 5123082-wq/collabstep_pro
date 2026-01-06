@@ -26,7 +26,7 @@ describe('Finance API routes', () => {
   beforeEach(async () => {
     resetFinanceMemory();
     // Создаём проект для теста, если его нет
-    const existingProjects = projectsRepository.list();
+    const existingProjects = await projectsRepository.list();
     if (existingProjects.length === 0) {
       const project = projectsRepository.create({
         title: 'Test Project',

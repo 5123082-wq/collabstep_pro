@@ -1,5 +1,3 @@
-import { db } from '../db/config';
-import { projects as projectsTable } from '../db/schema';
 import { DEFAULT_WORKSPACE_ID } from '../data/memory';
 import { projectsRepository } from '../repositories/projects-repository';
 import { tasksRepository } from '../repositories/tasks-repository';
@@ -51,40 +49,6 @@ function addDays(baseDate: Date, offsetDays: number): string {
   const next = new Date(baseDate.getTime());
   next.setUTCDate(next.getUTCDate() + offsetDays);
   return next.toISOString();
-}
-
-async function upsertOrganizationProject(params: {
-  projectId: string;
-  organizationId: string;
-  ownerId: string;
-  title: string;
-  description?: string;
-  visibility: 'private' | 'public';
-}): Promise<void> {
-  const now = new Date();
-  await db
-    .insert(projectsTable)
-    .values({
-      id: params.projectId,
-      organizationId: params.organizationId,
-      ownerId: params.ownerId,
-      name: params.title,
-      description: params.description,
-      visibility: params.visibility === 'public' ? 'public' : 'private',
-      createdAt: now,
-      updatedAt: now
-    })
-    .onConflictDoUpdate({
-      target: projectsTable.id,
-      set: {
-        organizationId: params.organizationId,
-        ownerId: params.ownerId,
-        name: params.title,
-        description: params.description,
-        visibility: params.visibility === 'public' ? 'public' : 'private',
-        updatedAt: now
-      }
-    });
 }
 
 export class ProjectTemplateService {
@@ -147,22 +111,15 @@ export class ProjectTemplateService {
         ...(template.projectStage ? { stage: template.projectStage } : {}),
         visibility
       });
-
-      await upsertOrganizationProject({
-        projectId: project.id,
-        organizationId: params.organizationId,
-        ownerId: params.ownerId,
-        title: project.title,
-        ...(project.description ? { description: project.description } : {}),
-        visibility
-      });
+      // Note: Project is created in pm_projects (canonical table) via repository.
+      // The deprecated 'project' table (Drizzle) is no longer used per architecture decision.
     } catch (error) {
       // Rollback: delete project if it was created before the error
       if (project) {
         try {
           projectsRepository.delete(project.id);
         } catch (deleteError) {
-          console.error('[ProjectTemplateService] Failed to rollback project deletion after upsertOrganizationProject error:', deleteError);
+          console.error('[ProjectTemplateService] Failed to rollback project deletion:', deleteError);
         }
       }
       throw error;
