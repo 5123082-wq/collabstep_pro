@@ -8,7 +8,7 @@ export async function GET(request: Request) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }
 
-  const projects = projectsRepository.list();
+  const projects = await projectsRepository.list();
   const items = [];
   for (const project of projects) {
     // Filter out private projects the user doesn't have access to

@@ -112,7 +112,7 @@ export async function GET(
     }
 
     // task
-    const tasks = tasksRepository.list();
+    const tasks = await tasksRepository.list();
     const task = tasks.find((t) => t.id === parsed.id);
     if (!task) return jsonError('TASK_NOT_FOUND', { status: 404 });
     const hasAccess = await projectsRepository.hasAccess(task.projectId, auth.userId);
@@ -212,7 +212,7 @@ export async function POST(
     }
 
     // task
-    const tasks = tasksRepository.list();
+    const tasks = await tasksRepository.list();
     const task = tasks.find((t) => t.id === parsed.id);
     if (!task) return jsonError('TASK_NOT_FOUND', { status: 404 });
     const hasAccess = await projectsRepository.hasAccess(task.projectId, auth.userId);
@@ -289,7 +289,7 @@ export async function PATCH(
       return jsonOk({ message: enriched });
     }
 
-    const tasks = tasksRepository.list();
+    const tasks = await tasksRepository.list();
     const task = tasks.find((t) => t.id === parsed.id);
     if (!task) return jsonError('TASK_NOT_FOUND', { status: 404 });
     const hasAccess = await projectsRepository.hasAccess(task.projectId, auth.userId);
@@ -355,7 +355,7 @@ export async function DELETE(
       return jsonOk({ ok: true });
     }
 
-    const tasks = tasksRepository.list();
+    const tasks = await tasksRepository.list();
     const task = tasks.find((t) => t.id === parsed.id);
     if (!task) return jsonError('TASK_NOT_FOUND', { status: 404 });
     const hasAccess = await projectsRepository.hasAccess(task.projectId, auth.userId);

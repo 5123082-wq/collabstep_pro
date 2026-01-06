@@ -429,7 +429,7 @@ export async function collectStage2Projects(
   options: Stage2CollectionOptions = {}
 ): Promise<Stage2Context> {
   const normalizedFilters = normalizeFilters(filters);
-  const allTasks = tasksRepository.list();
+  const allTasks = await tasksRepository.list();
   const metricsMap = buildTaskMetrics(allTasks);
   const tasksByProject = groupTasksByProject(allTasks);
 
@@ -449,7 +449,7 @@ export async function collectStage2Projects(
     projectsFilter = undefined; // Получим все проекты, затем отфильтруем
   }
 
-  const allProjects = projectsRepository.list(projectsFilter);
+  const allProjects = await projectsRepository.list(projectsFilter);
   const ownersMap = new Map<string, ProjectsOverviewOwner>();
   const membersCache = new Map<string, ApiProjectMember[]>();
 

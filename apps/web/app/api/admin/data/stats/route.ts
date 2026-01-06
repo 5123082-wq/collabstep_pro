@@ -26,8 +26,8 @@ export async function GET() {
   }
 
   // Get all projects and tasks
-  const allProjects = projectsRepository.list();
-  const allTasks = tasksRepository.list();
+  const allProjects = await projectsRepository.list();
+  const allTasks = await tasksRepository.list();
 
   // Group projects by owner
   const projectsByOwner = new Map<string, { count: number; projects: OwnerProjectStats[] }>();

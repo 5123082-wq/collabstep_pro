@@ -239,7 +239,7 @@ export class OrganizationClosureService {
     // Подсчитать задачи
     let tasksCount = 0;
     for (const projectId of projectIds) {
-      const projectTasks = tasksRepository.list({ projectId });
+      const projectTasks = await tasksRepository.list({ projectId });
       tasksCount += projectTasks.length;
     }
 
@@ -299,7 +299,7 @@ export class OrganizationClosureService {
     let tasksCount = 0;
     let documentsCount = 0;
     for (const projectId of projectIds) {
-      const projectTasks = tasksRepository.list({ projectId });
+      const projectTasks = await tasksRepository.list({ projectId });
       tasksCount += projectTasks.length;
 
       const projectDocuments = documentsRepository.listByProject(projectId);

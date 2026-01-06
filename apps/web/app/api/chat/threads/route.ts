@@ -54,7 +54,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     }> = [];
 
     // Сначала определяем доступные проекты
-    const allProjects = projectsRepository.list();
+    const allProjects = await projectsRepository.list();
     const accessChecks = await Promise.all(
       allProjects.map(async (project) => ({
         project,
@@ -77,7 +77,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     }
 
     // Добавляем треды только для задач доступных проектов
-    for (const task of tasksRepository.list()) {
+    const allTasks = await tasksRepository.list();
+    for (const task of allTasks) {
       if (!accessibleProjectIds.has(task.projectId)) {
         continue;
       }

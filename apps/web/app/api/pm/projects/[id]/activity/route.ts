@@ -47,8 +47,8 @@ export async function GET(
   const activities: ActivityItem[] = [];
 
   // Берем только задачи, которые создавались или обновлялись за период, сортируем и ограничиваем
-  const projectTasks = tasksRepository
-    .listByProject(projectId)
+  const allProjectTasks = await tasksRepository.listByProject(projectId);
+  const projectTasks = allProjectTasks
     .filter((task) => {
       const createdAt = Date.parse(task.createdAt);
       const updatedAt = Date.parse(task.updatedAt || task.createdAt);

@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     }
 
     // Проверяем доступ ко всем задачам
-    const allTasks = tasksRepository.list();
+    const allTasks = await tasksRepository.list();
     const tasksToUpdate = allTasks.filter((t) => taskIds.includes(t.id));
 
     // Проверяем, что все задачи найдены
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
     }
 
     for (const task of tasksToUpdate) {
-      if (!projectsRepository.hasAccess(task.projectId, auth.userId)) {
+      if (!(await projectsRepository.hasAccess(task.projectId, auth.userId))) {
         console.error('[Bulk Update] No access to task:', task.id, 'projectId:', task.projectId, 'userId:', auth.userId);
         return jsonError(`No access to task ${task.id}`, { status: 403 });
       }

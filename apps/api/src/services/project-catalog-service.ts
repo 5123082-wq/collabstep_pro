@@ -63,7 +63,7 @@ function deduplicateLabels(values: string[] | undefined): string[] {
 
 export class ProjectCatalogService {
   async getProjects(options: { archived?: boolean | null; currentUserId?: string } = {}): Promise<CatalogProjectItem[]> {
-    const tasks = tasksRepository.list();
+    const tasks = await tasksRepository.list();
     const aggregation = new Map<string, { count: number; labels: Set<string> }>();
     for (const task of tasks) {
       const entry = aggregation.get(task.projectId);
@@ -81,7 +81,7 @@ export class ProjectCatalogService {
     }
 
     const currentUserId = options.currentUserId ?? DEFAULT_WORKSPACE_USER_ID;
-    const projects = projectsRepository.list({
+    const projects = await projectsRepository.list({
       archived: options.archived ?? null
     });
 
@@ -143,9 +143,9 @@ export class ProjectCatalogService {
         : []
     };
 
-    const projects = projectsRepository.list();
+    const projects = await projectsRepository.list();
     const tasksByProject = new Map<string, ProjectCardTaskStats & { labels: Set<string> }>();
-    const tasks = tasksRepository.list();
+    const tasks = await tasksRepository.list();
     const now = Date.now();
 
     for (const task of tasks) {

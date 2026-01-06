@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Получение задач проекта
-    const tasks = tasksRepository.listByProject(projectId);
+    const tasks = await tasksRepository.listByProject(projectId);
 
     // Получение информации об участниках
     const membersWithNames = members.map(m => {
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
     // Анализ загруженности
     const analysis: WorkloadAnalysis = await analyzeWorkload(
       aiClientAdapter,
-      tasks.map(t => ({
+      tasks.map((t) => ({
         id: t.id,
         title: t.title,
         ...(t.assigneeId ? { assigneeId: t.assigneeId } : {}),

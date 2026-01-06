@@ -211,6 +211,15 @@ export const organizationMembers = pgTable(
     })
 );
 
+/**
+ * @deprecated This table is deprecated and no longer used as the source of truth.
+ * Use `pm_projects` table instead (created dynamically via pm-pg-adapter.ts).
+ * 
+ * This table exists in the schema for backward compatibility but should not be used
+ * for new project creation or reading. All project operations should use pm_projects.
+ * 
+ * See: docs/architecture/adr/0001-canonical-database-tables.md
+ */
 export const projects = pgTable(
     "project",
     {

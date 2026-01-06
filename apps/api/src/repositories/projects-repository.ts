@@ -6,10 +6,12 @@ import {
   fetchProjectByIdFromPg,
   fetchProjectByKeyFromPg,
   fetchProjectMembersFromPg,
+  fetchProjectsFromPg,
   isPmDbEnabled,
   persistProjectMembersToPg,
   persistProjectToPg
 } from '../storage/pm-pg-adapter';
+import { cacheManager } from '../data/cache-manager';
 
 // Fire-and-forget hydration; repositories stay sync for serverless lambdas without blocking CJS builds
 void pmPgHydration;
@@ -77,9 +79,59 @@ export class ProjectsRepository {
     }
   }
 
-  list(options: { archived?: boolean | null; workspaceId?: string | null } = {}): Project[] {
-    this.normalizeProjectStorage();
+  async list(options: { archived?: boolean | null; workspaceId?: string | null } = {}): Promise<Project[]> {
     const { archived = null, workspaceId = null } = options;
+    
+    // Если БД включена, используем cache-aside паттерн с TTL
+    if (isPmDbEnabled()) {
+      try {
+        // Формируем ключ кэша на основе параметров
+        const cacheKey = workspaceId 
+          ? `projects:workspace:${workspaceId}:archived:${archived ?? 'all'}`
+          : `projects:all:archived:${archived ?? 'all'}`;
+        
+        // Проверяем кэш
+        const cached = cacheManager.getProjects(cacheKey);
+        if (cached) {
+          // Фильтруем по workspaceId если нужно (кэш может содержать все проекты)
+          let items = cached;
+          if (typeof workspaceId === 'string' && workspaceId.trim()) {
+            const targetWorkspaceId = workspaceId.trim();
+            items = items.filter((project) => project.workspaceId === targetWorkspaceId);
+          }
+          return items.map(cloneProject);
+        }
+
+        // Кэш промах - читаем из БД
+        const dbProjects = await fetchProjectsFromPg(options);
+        
+        // Сохраняем в кэш
+        cacheManager.setProjects(cacheKey, dbProjects);
+        
+        // Также обновляем память для обратной совместимости (но это не источник истины)
+        if (memory.PROJECTS.length === 0) {
+          memory.PROJECTS = dbProjects;
+        } else {
+          // Синхронизируем: добавляем новые проекты из БД, обновляем существующие
+          for (const dbProject of dbProjects) {
+            const index = memory.PROJECTS.findIndex(p => p.id === dbProject.id);
+            if (index >= 0) {
+              memory.PROJECTS[index] = dbProject;
+            } else {
+              memory.PROJECTS.push(dbProject);
+            }
+          }
+        }
+        this.normalizeProjectStorage();
+        return dbProjects.map(cloneProject);
+      } catch (error) {
+        console.error('[ProjectsRepository] Error loading projects from DB, falling back to memory:', error);
+        // Fallback to memory if DB fails
+      }
+    }
+    
+    // Fallback: читаем из памяти (для случаев когда БД не включена)
+    this.normalizeProjectStorage();
     let items = memory.PROJECTS;
     if (typeof workspaceId === 'string' && workspaceId.trim()) {
       const targetWorkspaceId = workspaceId.trim();
@@ -353,6 +405,8 @@ export class ProjectsRepository {
       void persistProjectToPg(project).catch((error) =>
         console.error('[ProjectsRepository] Failed to persist project', error)
       );
+      // Инвалидируем кэш проектов при создании
+      cacheManager.invalidateProjects(project.workspaceId);
     }
 
     return cloneProject(project);
@@ -466,6 +520,8 @@ export class ProjectsRepository {
       void persistProjectToPg(next).catch((error) =>
         console.error('[ProjectsRepository] Failed to persist project update', error)
       );
+      // Инвалидируем кэш проектов при обновлении
+      cacheManager.invalidateProjects(next.workspaceId);
     }
 
     return cloneProject(next);
@@ -477,6 +533,9 @@ export class ProjectsRepository {
       return false;
     }
 
+    const project = memory.PROJECTS[idx];
+    const workspaceId = project?.workspaceId;
+
     memory.PROJECTS.splice(idx, 1);
     memory.TASKS = memory.TASKS.filter((task) => task.projectId !== id);
     memory.ITERATIONS = memory.ITERATIONS.filter((iteration) => iteration.projectId !== id);
@@ -486,6 +545,12 @@ export class ProjectsRepository {
       void deleteProjectFromPg(id).catch((error) =>
         console.error('[ProjectsRepository] Failed to delete project from Postgres', error)
       );
+      // Инвалидируем кэш проектов при удалении
+      if (workspaceId) {
+        cacheManager.invalidateProjects(workspaceId);
+      }
+      // Также инвалидируем кэш задач для этого проекта
+      cacheManager.invalidateTasks(id);
     }
 
     return true;

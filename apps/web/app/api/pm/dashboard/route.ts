@@ -84,7 +84,7 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
   const draftProjectsByOwner = buildOwnerProjects(draftProjects);
 
   // Get all tasks from user's projects
-  const allTasks = tasksRepository.list();
+  const allTasks = await tasksRepository.list();
   const userProjectIds = new Set(userProjects.map((p) => p.id));
   const accessibleTasks = allTasks.filter((task) =>
     userProjectIds.has(task.projectId)

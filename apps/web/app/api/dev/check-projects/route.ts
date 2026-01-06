@@ -12,12 +12,12 @@ export async function GET(request: NextRequest) {
   }
 
   const auth = getAuthFromRequest(request);
-  const allProjects = projectsRepository.list();
-  const allTasks = tasksRepository.list();
+  const allProjects = await projectsRepository.list();
+  const allTasks = await tasksRepository.list();
 
   // Проверяем доступ для каждого проекта
-  const projectsWithAccess = allProjects.map((p) => {
-    const hasAccess = auth ? projectsRepository.hasAccess(p.id, auth.userId) : false;
+  const projectsWithAccess = await Promise.all(allProjects.map(async (p) => {
+    const hasAccess = auth ? await projectsRepository.hasAccess(p.id, auth.userId) : false;
     return {
       id: p.id,
       key: p.key,
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       hasAccess,
       currentUserId: auth?.userId
     };
-  });
+  }));
 
   return jsonOk({
     currentUser: auth?.userId || 'not authenticated',

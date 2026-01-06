@@ -5,7 +5,7 @@ import {
 } from '../db/schema';
 import type { Organization, OrganizationMember } from '../types';
 import type { OrganizationMembership, OrganizationsRepository, NewOrganization, NewOrganizationMember } from './organizations-repository.interface';
-import { memory } from '../data/memory';
+import { memory, DEFAULT_ACCOUNT_ID, TEST_ADMIN_USER_ID } from '../data/memory';
 
 // Try to import db - if it fails, we'll use memory repository
 type DbType = typeof import('../db/config').db;
@@ -91,6 +91,75 @@ export class OrganizationsDbRepository implements OrganizationsRepository {
             })
             .from(organizations)
             .where(eq(organizations.id, id));
+        
+        // Auto-sync demo organization if not found and it's the default org ID
+        if (!row && id === 'acct-collabverse') {
+            console.log('[OrganizationsDbRepository] Demo organization not found in DB, auto-syncing...');
+            try {
+                await dbInstance.transaction(async (tx) => {
+                    // Create organization
+                    const [createdOrg] = await tx
+                        .insert(organizations)
+                        .values({
+                            id: DEFAULT_ACCOUNT_ID,
+                            ownerId: TEST_ADMIN_USER_ID,
+                            name: 'Collabverse Demo Org',
+                            description: 'Демонстрационная организация',
+                            type: 'closed',
+                            isPublicInDirectory: true,
+                            status: 'active',
+                        })
+                        .returning();
+
+                    if (!createdOrg) {
+                        throw new Error('Failed to create demo organization');
+                    }
+
+                    // Create owner membership
+                    await tx.insert(organizationMembers).values({
+                        organizationId: DEFAULT_ACCOUNT_ID,
+                        userId: TEST_ADMIN_USER_ID,
+                        role: 'owner',
+                        status: 'active',
+                        isPrimary: true,
+                    });
+
+                    console.log('[OrganizationsDbRepository] ✅ Demo organization auto-synced to DB');
+                });
+
+                // Retry query after creation
+                const [newRow] = await dbInstance
+                    .select({
+                        id: organizations.id,
+                        ownerId: organizations.ownerId,
+                        name: organizations.name,
+                        description: organizations.description,
+                        type: organizations.type,
+                        isPublicInDirectory: organizations.isPublicInDirectory,
+                        createdAt: organizations.createdAt,
+                        updatedAt: organizations.updatedAt,
+                    })
+                    .from(organizations)
+                    .where(eq(organizations.id, id));
+
+                if (newRow) {
+                    return {
+                        id: newRow.id,
+                        ownerId: newRow.ownerId,
+                        name: newRow.name,
+                        description: newRow.description ?? undefined,
+                        type: newRow.type,
+                        isPublicInDirectory: newRow.isPublicInDirectory,
+                        status: 'active' as const,
+                        createdAt: newRow.createdAt ?? new Date(),
+                        updatedAt: newRow.updatedAt ?? new Date(),
+                    } as Organization;
+                }
+            } catch (error) {
+                console.error('[OrganizationsDbRepository] Error auto-syncing demo organization:', error);
+                // Continue and return null if sync fails
+            }
+        }
         
         if (!row) return null;
         

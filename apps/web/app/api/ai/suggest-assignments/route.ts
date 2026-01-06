@@ -90,10 +90,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Подсчет текущей загруженности участников
-    const allProjectTasks = tasksRepository.listByProject(projectId);
+    const allProjectTasks = await tasksRepository.listByProject(projectId);
     const memberWorkload = new Map<string, number>();
     
-    allProjectTasks.forEach(t => {
+    allProjectTasks.forEach((t) => {
       if (t.assigneeId && t.status !== 'done') {
         memberWorkload.set(t.assigneeId, (memberWorkload.get(t.assigneeId) || 0) + 1);
       }

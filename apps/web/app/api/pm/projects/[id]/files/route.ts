@@ -96,7 +96,8 @@ export async function GET(
       );
 
     // Получение задач проекта для получения названий
-    const projectTasks = tasksRepository.list().filter((task) => task.projectId === projectId);
+    const allTasks = await tasksRepository.list();
+    const projectTasks = allTasks.filter((task) => task.projectId === projectId);
     const taskLookup = new Map(projectTasks.map((task) => [task.id, task] as const));
 
     // Получение комментариев для получения информации

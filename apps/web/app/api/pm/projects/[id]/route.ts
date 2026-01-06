@@ -28,7 +28,7 @@ export async function GET(
   }
 
   // Логируем все проекты в памяти для отладки
-  const allProjects = projectsRepository.list();
+  const allProjects = await projectsRepository.list();
   console.log(`[Project API GET] Looking for project: id=${params.id}, userId=${auth.userId}, totalProjects=${allProjects.length}`);
   if (allProjects.length > 0) {
     console.log(`[Project API GET] Available project IDs: [${allProjects.map(p => p.id).join(', ')}]`);
@@ -59,7 +59,7 @@ export async function GET(
 
   // Получаем все необходимые данные для трансформации проекта
   const members = await projectsRepository.listMembers(apiProject.id);
-  const allTasks = tasksRepository.list({ projectId: apiProject.id });
+  const allTasks = await tasksRepository.list({ projectId: apiProject.id });
   const metricsMap = buildTaskMetrics(allTasks);
   const resolvedMetrics = metricsMap.get(apiProject.id) ?? {
     total: 0,

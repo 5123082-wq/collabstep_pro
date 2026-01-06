@@ -12,10 +12,12 @@ import {
 } from '@collabverse/api';
 
 describe('financeService', () => {
-  const projectId = projectsRepository.list()[0]?.id ?? TEST_PROJECT_DEMO_ID;
+  let projectId: string;
 
   beforeEach(async () => {
     resetFinanceMemory();
+    const projects = await projectsRepository.list();
+    projectId = projects[0]?.id ?? TEST_PROJECT_DEMO_ID;
     await financeService.upsertBudget(
       projectId,
       {

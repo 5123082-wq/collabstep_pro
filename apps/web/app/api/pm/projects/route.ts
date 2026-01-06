@@ -107,8 +107,8 @@ export async function GET(request: NextRequest) {
 
 
     // Логирование для отладки
-    const allProjects = projectsRepository.list();
-    console.log(`[Projects API] User: ${auth.userId}, Total projects in memory: ${allProjects.length}, Accessible: ${overview.items.length}, Status filter: ${parsedFilters.status}`);
+    const allProjects = await projectsRepository.list();
+    console.log(`[Projects API] User: ${auth.userId}, Total projects in DB: ${allProjects.length}, Accessible: ${overview.items.length}, Status filter: ${parsedFilters.status}`);
 
     // Убеждаемся, что всегда возвращаем правильную структуру
     return NextResponse.json(

@@ -10,12 +10,12 @@ export class TaskDependenciesRepository {
   /**
    * List all dependencies, optionally filtered by project
    */
-  list(options: { projectId?: string } = {}): TaskDependency[] {
+  async list(options: { projectId?: string } = {}): Promise<TaskDependency[]> {
     let items = memory.TASK_DEPENDENCIES;
 
     if (options.projectId) {
       // Get all tasks for the project to filter dependencies
-      const projectTasks = tasksRepository.list({ projectId: options.projectId });
+      const projectTasks = await tasksRepository.list({ projectId: options.projectId });
       const taskIds = new Set(projectTasks.map((task) => task.id));
       
       items = items.filter(

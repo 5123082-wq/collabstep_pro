@@ -1,11 +1,10 @@
-import { db } from '../db/config';
-import { projects as projectsTable } from '../db/schema';
 import { DEFAULT_WORKSPACE_ID } from '../data/memory';
 import { projectsRepository } from '../repositories/projects-repository';
 import { tasksRepository } from '../repositories/tasks-repository';
 import { templateTasksRepository } from '../repositories/template-tasks-repository';
 import { templatesRepository } from '../repositories/templates-repository';
 import { userTemplatesRepository } from '../repositories/user-templates-repository';
+import { organizationsRepository } from '../repositories/organizations-repository';
 import type { Project, Task, ProjectTemplateTask } from '../types';
 
 type TemplateMeta = {
@@ -52,40 +51,6 @@ function addDays(baseDate: Date, offsetDays: number): string {
   return next.toISOString();
 }
 
-async function upsertOrganizationProject(params: {
-  projectId: string;
-  organizationId: string;
-  ownerId: string;
-  title: string;
-  description?: string;
-  visibility: 'private' | 'public';
-}): Promise<void> {
-  const now = new Date();
-  await db
-    .insert(projectsTable)
-    .values({
-      id: params.projectId,
-      organizationId: params.organizationId,
-      ownerId: params.ownerId,
-      name: params.title,
-      description: params.description,
-      visibility: params.visibility === 'public' ? 'public' : 'private',
-      createdAt: now,
-      updatedAt: now
-    })
-    .onConflictDoUpdate({
-      target: projectsTable.id,
-      set: {
-        organizationId: params.organizationId,
-        ownerId: params.ownerId,
-        name: params.title,
-        description: params.description,
-        visibility: params.visibility === 'public' ? 'public' : 'private',
-        updatedAt: now
-      }
-    });
-}
-
 export class ProjectTemplateService {
   async createProjectFromTemplate(params: {
     templateId: string;
@@ -107,6 +72,15 @@ export class ProjectTemplateService {
       throw new ProjectTemplateValidationError('Template not found', 404);
     }
 
+    // Validate organization exists BEFORE creating project to prevent orphaned projects
+    const organization = await organizationsRepository.findById(params.organizationId);
+    if (!organization) {
+      throw new ProjectTemplateValidationError(
+        `Organization not found: ${params.organizationId}`,
+        404
+      );
+    }
+
     // Validate selectedTaskIds BEFORE creating project to prevent orphaned projects
     const allTasks = await templateTasksRepository.listByTemplateId(template.id);
     const tasksById = new Map<string, ProjectTemplateTask>(
@@ -126,28 +100,33 @@ export class ProjectTemplateService {
     const visibility: Project['visibility'] =
       template.projectVisibility === 'public' ? 'public' : 'private';
 
-    const project = projectsRepository.create({
-      title: projectTitle,
-      description: projectDescription,
-      ownerId: params.ownerId,
-      workspaceId: DEFAULT_WORKSPACE_ID,
-      ...(template.projectType ? { type: template.projectType } : {}),
-      ...(template.projectStage ? { stage: template.projectStage } : {}),
-      visibility
-    });
-
+    let project: Project | null = null;
     try {
-      await upsertOrganizationProject({
-        projectId: project.id,
-        organizationId: params.organizationId,
+      project = projectsRepository.create({
+        title: projectTitle,
+        description: projectDescription,
         ownerId: params.ownerId,
-        title: project.title,
-        ...(project.description ? { description: project.description } : {}),
+        workspaceId: DEFAULT_WORKSPACE_ID,
+        ...(template.projectType ? { type: template.projectType } : {}),
+        ...(template.projectStage ? { stage: template.projectStage } : {}),
         visibility
       });
+      // Note: Project is created in pm_projects (canonical table) via repository.
+      // The deprecated 'project' table (Drizzle) is no longer used per architecture decision.
     } catch (error) {
-      projectsRepository.delete(project.id);
+      // Rollback: delete project if it was created before the error
+      if (project) {
+        try {
+          projectsRepository.delete(project.id);
+        } catch (deleteError) {
+          console.error('[ProjectTemplateService] Failed to rollback project deletion:', deleteError);
+        }
+      }
       throw error;
+    }
+
+    if (!project) {
+      throw new ProjectTemplateValidationError('Failed to create project', 500);
     }
 
     const selectedTaskIds = params.selectedTaskIds ?? allTasks.map((task) => task.id);
@@ -218,10 +197,15 @@ export class ProjectTemplateService {
       return { project, tasks: createdTasks };
     } catch (error) {
       // Rollback: delete project and organization linkage if task creation fails
-      try {
-        projectsRepository.delete(project.id);
-      } catch (deleteError) {
-        console.error('[ProjectTemplateService] Failed to rollback project deletion:', deleteError);
+      // This prevents orphaned projects when task creation fails
+      if (project) {
+        try {
+          console.error('[ProjectTemplateService] Task creation failed, rolling back project:', project.id, error);
+          projectsRepository.delete(project.id);
+        } catch (deleteError) {
+          console.error('[ProjectTemplateService] Failed to rollback project deletion:', deleteError);
+          // Re-throw the original error, not the delete error
+        }
       }
       throw error;
     }

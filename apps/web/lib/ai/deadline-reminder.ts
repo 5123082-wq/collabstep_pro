@@ -29,12 +29,12 @@ export interface TaskWithDeadline {
  * @param daysThreshold - Количество дней до дедлайна для напоминания (default: 3)
  * @returns Список задач с приближающимися дедлайнами
  */
-export function checkUpcomingDeadlines(daysThreshold = 3): TaskWithDeadline[] {
+export async function checkUpcomingDeadlines(daysThreshold = 3): Promise<TaskWithDeadline[]> {
   const now = Date.now();
   const thresholdMs = daysThreshold * 24 * 60 * 60 * 1000;
   const upcomingTasks: TaskWithDeadline[] = [];
 
-  const allTasks = tasksRepository.list();
+  const allTasks = await tasksRepository.list();
 
   for (const task of allTasks) {
     // Проверяем только незавершённые задачи с дедлайном
@@ -71,7 +71,7 @@ export function checkUpcomingDeadlines(daysThreshold = 3): TaskWithDeadline[] {
  * @returns Количество отправленных напоминаний
  */
 export async function sendDeadlineReminders(useAI = true): Promise<number> {
-  const upcomingTasks = checkUpcomingDeadlines(3);
+  const upcomingTasks = await checkUpcomingDeadlines(3);
   let sentCount = 0;
 
   for (const task of upcomingTasks) {
@@ -156,7 +156,7 @@ export async function runDeadlineCheck(): Promise<{
   errors: number;
 }> {
   try {
-    const upcomingTasks = checkUpcomingDeadlines(3);
+    const upcomingTasks = await checkUpcomingDeadlines(3);
     const remindedCount = await sendDeadlineReminders(true);
 
     return {
