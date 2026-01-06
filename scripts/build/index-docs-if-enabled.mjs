@@ -10,7 +10,13 @@
 
 import { execSync } from 'child_process';
 import { existsSync, statSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+// Корень репозитория: поднимаемся на 2 уровня вверх от scripts/build/
+const repoRoot = join(__dirname, '..', '..');
 
 const hasApiKey = !!process.env.AI_ASSISTANT_API_KEY;
 const isFeatureEnabled = process.env.NEXT_PUBLIC_FEATURE_AI_ASSISTANT === 'true';
@@ -27,7 +33,8 @@ if (!hasApiKey || !isFeatureEnabled) {
 }
 
 // Проверяем существование файла индексации
-const STORE_DIR = join(process.cwd(), '.ai-assistant');
+// Используем корень репозитория для хранения индексации
+const STORE_DIR = join(repoRoot, '.ai-assistant');
 const STORE_FILE = join(STORE_DIR, 'chunks.json');
 
 function shouldReindex() {
@@ -71,7 +78,7 @@ function shouldReindex() {
       try {
         const docsHash = execSync('git ls-files -s docs/ | git hash-object --stdin', {
           encoding: 'utf-8',
-          cwd: join(process.cwd(), '..', '..'),
+          cwd: repoRoot,
           shell: '/bin/sh',
         }).trim();
         
@@ -108,8 +115,8 @@ if (!shouldReindex()) {
 console.log('📚 Запуск индексации документации для AI ассистента...');
 
 try {
-  // Проверяем, что скрипт индексации существует
-  const indexScript = join(process.cwd(), 'scripts', 'build', 'index-assistant-docs.ts');
+  // Проверяем, что скрипт индексации существует (относительно корня репозитория)
+  const indexScript = join(repoRoot, 'scripts', 'build', 'index-assistant-docs.ts');
   if (!existsSync(indexScript)) {
     console.log('⚠️  Скрипт индексации не найден, пропускаем');
     process.exit(0);
@@ -117,9 +124,10 @@ try {
 
   // Запускаем индексацию
   // Используем npx tsx напрямую, чтобы гарантировать работу на Vercel
+  // Путь относительно корня репозитория
   execSync('npx tsx scripts/build/index-assistant-docs.ts', {
     stdio: 'inherit',
-    cwd: process.cwd(),
+    cwd: repoRoot,
     env: { ...process.env },
   });
   

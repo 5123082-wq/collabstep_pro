@@ -1,7 +1,23 @@
 import { NextResponse } from 'next/server';
 import { execSync } from 'child_process';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { join, resolve } from 'path';
+import { existsSync } from 'fs';
+
+// Находим корень репозитория (где находится pnpm-workspace.yaml)
+function findRepoRoot(startPath: string): string {
+  let current = resolve(startPath);
+  while (current !== resolve(current, '..')) {
+    if (existsSync(join(current, 'pnpm-workspace.yaml'))) {
+      return current;
+    }
+    current = resolve(current, '..');
+  }
+  // Fallback: если не нашли, возвращаем apps/web (текущий cwd)
+  return startPath;
+}
+
+const repoRoot = findRepoRoot(process.cwd());
 
 /**
  * POST /api/admin/ai-assistant/reindex
@@ -25,12 +41,14 @@ export async function POST() {
       const isWindows = process.platform === 'win32';
       
       // Формируем команду в зависимости от платформы
+      // Путь относительно корня репозитория
+      const scriptPath = join(repoRoot, 'scripts', 'build', 'index-assistant-docs.ts');
       const command = isWindows
-        ? `start /b npx tsx ../../scripts/build/index-assistant-docs.ts > "${logPath}" 2>&1`
-        : `npx tsx ../../scripts/build/index-assistant-docs.ts > "${logPath}" 2>&1 &`;
+        ? `start /b npx tsx "${scriptPath}" > "${logPath}" 2>&1`
+        : `npx tsx "${scriptPath}" > "${logPath}" 2>&1 &`;
       
       execSync(command, {
-        cwd: process.cwd(),
+        cwd: repoRoot,
         stdio: 'ignore',
         shell: isWindows ? undefined : '/bin/sh',
       });
@@ -61,10 +79,10 @@ export async function POST() {
  */
 export async function GET() {
   try {
-    const { existsSync, readFileSync, statSync } = await import('fs');
-    const { join } = await import('path');
+    const { readFileSync, statSync } = await import('fs');
     
-    const storeFile = join(process.cwd(), '.ai-assistant', 'chunks.json');
+    // Используем корень репозитория для хранения индексации
+    const storeFile = join(repoRoot, '.ai-assistant', 'chunks.json');
     
     if (!existsSync(storeFile)) {
       return NextResponse.json({
