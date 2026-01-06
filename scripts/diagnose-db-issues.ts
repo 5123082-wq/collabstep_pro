@@ -15,7 +15,8 @@ import {
   organizationMembers,
   projects as projectsTable
 } from '@collabverse/api/db/schema';
-import { tasksRepository } from '@collabverse/api';
+import { tasksRepository, isPmDbEnabled } from '@collabverse/api';
+import { sql as vercelSql } from '@vercel/postgres';
 import { eq, sql, isNull, and } from 'drizzle-orm';
 
 async function diagnoseDbIssues() {
@@ -93,12 +94,35 @@ async function diagnoseDbIssues() {
 
     // 4. Проверка "осиротевших" проектов (без задач)
     console.log('\n🔗 Проверка проектов без задач...');
-    // Задачи хранятся в памяти, а не в БД, поэтому используем репозиторий
-    const allTasks = tasksRepository.list();
+    // Задачи хранятся и в памяти, и в БД (таблица pm_tasks)
     const projectIdsWithTasks = new Set<string>();
-    for (const task of allTasks) {
-      if (task && task.projectId) {
-        projectIdsWithTasks.add(task.projectId);
+    
+    if (isPmDbEnabled()) {
+      try {
+        const TABLE_TASKS = 'pm_tasks';
+        const tasksFromDb = await vercelSql.query(`SELECT DISTINCT project_id FROM ${TABLE_TASKS} WHERE project_id IS NOT NULL`);
+        if (tasksFromDb.rows && Array.isArray(tasksFromDb.rows)) {
+          for (const row of tasksFromDb.rows) {
+            if (row && row.project_id && typeof row.project_id === 'string') {
+              projectIdsWithTasks.add(row.project_id);
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('   ⚠️  Не удалось загрузить задачи из БД, используем память:', error);
+        const allTasks = tasksRepository.list();
+        for (const task of allTasks) {
+          if (task && task.projectId) {
+            projectIdsWithTasks.add(task.projectId);
+          }
+        }
+      }
+    } else {
+      const allTasks = tasksRepository.list();
+      for (const task of allTasks) {
+        if (task && task.projectId) {
+          projectIdsWithTasks.add(task.projectId);
+        }
       }
     }
     const orphanedProjectsNoTasks = allProjects.filter((p) => !projectIdsWithTasks.has(p.id));
@@ -150,8 +174,19 @@ async function diagnoseDbIssues() {
 
     // 7. Статистика по задачам
     console.log('\n📊 Статистика по задачам...');
-    // Задачи хранятся в памяти, используем репозиторий
-    const allTasksForStats = tasksRepository.list();
+    // Задачи хранятся и в памяти, и в БД
+    let allTasksForStats: typeof tasksRepository.list() = [];
+    if (isPmDbEnabled()) {
+      try {
+        const TABLE_TASKS = 'pm_tasks';
+        const tasksFromDb = await vercelSql.query(`SELECT COUNT(*) as count FROM ${TABLE_TASKS}`);
+        const dbCount = tasksFromDb.rows[0]?.count || 0;
+        console.log(`   Всего задач в БД: ${dbCount}`);
+      } catch (error) {
+        console.warn('   ⚠️  Не удалось получить статистику из БД:', error);
+      }
+    }
+    allTasksForStats = tasksRepository.list();
     console.log(`   Всего задач в памяти: ${allTasksForStats.length}`);
 
     const tasksByProject = new Map<string, number>();

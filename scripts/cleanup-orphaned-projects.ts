@@ -13,8 +13,9 @@ import {
   organizations,
   projects as projectsTable
 } from '@collabverse/api/db/schema';
-import { tasksRepository } from '@collabverse/api';
-import { sql, isNull, and } from 'drizzle-orm';
+import { tasksRepository, isPmDbEnabled } from '@collabverse/api';
+import { sql } from '@vercel/postgres';
+import { sql as drizzleSql, isNull, and } from 'drizzle-orm';
 
 async function cleanupOrphanedProjects() {
   try {
@@ -41,12 +42,38 @@ async function cleanupOrphanedProjects() {
     console.log(`🔍 Найдено проектов с несуществующими организациями: ${projectsWithInvalidOrgs.length}`);
 
     // 3. Найти проекты без задач
-    // Задачи хранятся в памяти, а не в БД, поэтому используем репозиторий
-    const allTasks = tasksRepository.list();
+    // Задачи хранятся и в памяти, и в БД (таблица pm_tasks)
     const projectIdsWithTasks = new Set<string>();
-    for (const task of allTasks) {
-      if (task && task.projectId) {
-        projectIdsWithTasks.add(task.projectId);
+    
+    // Сначала проверяем БД, если она включена
+    if (isPmDbEnabled()) {
+      try {
+        const TABLE_TASKS = 'pm_tasks';
+        const tasksFromDb = await sql.query(`SELECT DISTINCT project_id FROM ${TABLE_TASKS} WHERE project_id IS NOT NULL`);
+        if (tasksFromDb.rows && Array.isArray(tasksFromDb.rows)) {
+          for (const row of tasksFromDb.rows) {
+            if (row && row.project_id && typeof row.project_id === 'string') {
+              projectIdsWithTasks.add(row.project_id);
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️  Не удалось загрузить задачи из БД, используем память:', error);
+        // Fallback на память
+        const allTasks = tasksRepository.list();
+        for (const task of allTasks) {
+          if (task && task.projectId) {
+            projectIdsWithTasks.add(task.projectId);
+          }
+        }
+      }
+    } else {
+      // Если БД не включена, используем только память
+      const allTasks = tasksRepository.list();
+      for (const task of allTasks) {
+        if (task && task.projectId) {
+          projectIdsWithTasks.add(task.projectId);
+        }
       }
     }
     const orphanedProjectsNoTasks = allProjects.filter((p) => !projectIdsWithTasks.has(p.id));
@@ -96,14 +123,36 @@ async function cleanupOrphanedProjects() {
       .where(sql`${projectsTable.id} = ANY(${projectIdsArray})`);
 
     // Удалить связанные задачи (если есть)
-    // Задачи хранятся в памяти, используем репозиторий
+    // Задачи хранятся и в памяти, и в БД (таблица pm_tasks)
     for (const projectId of projectIdsArray) {
+      let deletedCount = 0;
+      
+      // Удалить из памяти
       const projectTasks = tasksRepository.list({ projectId });
       for (const task of projectTasks) {
         tasksRepository.delete(task.id);
+        deletedCount++;
       }
-      if (projectTasks.length > 0) {
-        console.log(`   🗑️  Удалено задач для проекта ${projectId}: ${projectTasks.length}`);
+      
+      // Удалить из БД, если она включена
+      if (isPmDbEnabled()) {
+        try {
+          const TABLE_TASKS = 'pm_tasks';
+          const TABLE_TASK_COMMENTS = 'pm_task_comments';
+          // Удалить комментарии к задачам
+          await sql.query(`DELETE FROM ${TABLE_TASK_COMMENTS} WHERE project_id = $1`, [projectId]);
+          // Удалить задачи
+          const deleteResult = await sql.query(`DELETE FROM ${TABLE_TASKS} WHERE project_id = $1`, [projectId]);
+          if (deleteResult.rowCount && deleteResult.rowCount > 0) {
+            deletedCount = Math.max(deletedCount, deleteResult.rowCount);
+          }
+        } catch (error) {
+          console.warn(`   ⚠️  Не удалось удалить задачи из БД для проекта ${projectId}:`, error);
+        }
+      }
+      
+      if (deletedCount > 0) {
+        console.log(`   🗑️  Удалено задач для проекта ${projectId}: ${deletedCount}`);
       }
     }
 
