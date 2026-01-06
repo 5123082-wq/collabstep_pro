@@ -41,8 +41,8 @@
 - **AI функциональность**: [AI Quick Start](docs/ai/AI_QUICK_START.md), [AI Implementation Guide](docs/ai/AI_IMPLEMENTATION_GUIDE.md), [Проектное объяснение](docs/ai/ПРОЕКТ_ОБЪЯСНЕНИЕ.md)
 - **Финансы**: [Finance System Progress](docs/finance/README_FINANCE.md)
 - **Разработка**: [TypeScript errors fix guide](docs/guides/TYPESCRIPT_ERRORS_FIX_GUIDE.md), [Cheat Sheet](docs/getting-started/CHEAT_SHEET.md)
-- **Исследования пользователей**: [Users analysis summary](docs/research/users/USERS_ANALYSIS_SUMMARY.md) + полный отчёт в той же директории
-- **Справочник**: [Test users IDs](docs/reference/TEST_USERS_IDS.md), [Stage N AI completion](docs/archive/stages/STAGE_N_COMPLETION_REPORT.md)
+- **Справочник**: [Stage N AI completion](docs/archive/stages/STAGE_N_COMPLETION_REPORT.md)
+- **Архив (неактуально)**: [Users analysis](docs/archive/research/users/), [Test users IDs](docs/archive/reference/TEST_USERS_IDS.md)
 
 ## Переменные окружения
 

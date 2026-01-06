@@ -21,7 +21,9 @@ test-results
 debug-export.ndjson
 playwright-output*.txt
 test-output.txt
+.yandex-credentials.txt
 .cursor/
+assets/
 
 # Example code (not part of the main project)
 filebrowser-test/

@@ -35,6 +35,9 @@ jobs:
         run: npx playwright install --with-deps
       - run: pnpm -w lint
       - run: pnpm -w typecheck
-      - run: pnpm -w test
+      - name: Run tests
+        env:
+          POSTGRES_URL: postgresql://test:test@localhost:5432/testdb
+        run: pnpm -w test
       - run: pnpm docs:lint
       - run: pnpm docs:links
