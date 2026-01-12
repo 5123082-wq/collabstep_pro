@@ -4,7 +4,7 @@
 
 ## Начало работы
 
-- Прочитайте [быстрый старт](docs/getting-started/quick-start.md) для начала работы
+- Прочитайте [быстрый старт](docs/getting-started/QUICK_SETUP_GUIDE.md) для начала работы
 - Изучите [руководство по настройке](docs/getting-started/setup.md), чтобы подготовить окружение и переменные
 - Используйте `pnpm verify` перед пушем: команда запускает линт, typecheck, build, тесты, проверку маршрутов и симуляцию Vercel
 - Требования: Node.js 20, pnpm 9+
@@ -101,6 +101,6 @@ CI на GitHub запускает следующие команды:
 ## Документация
 
 - Карта документации: [docs/README.md](docs/README.md)
-- Быстрый старт: [docs/getting-started/quick-start.md](docs/getting-started/quick-start.md)
+- Быстрый старт: [docs/getting-started/QUICK_SETUP_GUIDE.md](docs/getting-started/QUICK_SETUP_GUIDE.md)
 - Настройка окружения: [docs/getting-started/setup.md](docs/getting-started/setup.md)
 - Системный анализ: [docs/architecture/system-analysis.md](docs/architecture/system-analysis.md)

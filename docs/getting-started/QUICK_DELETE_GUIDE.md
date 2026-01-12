@@ -208,5 +208,5 @@ docs/
 
 ## Дополнительная информация
 
-Полная документация: [docs/admin/data-management.md](../admin/data-management.md)
+Полная документация: [docs/modules/admin/admin-data-management.md](../modules/admin/admin-data-management.md)
 

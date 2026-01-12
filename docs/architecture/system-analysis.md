@@ -67,14 +67,20 @@ API endpoints для проектов и задач находятся в `/api/
 
 ### Предлагаемая реляционная модель
 
+**NEEDS_CONFIRMATION:** Эта модель описывает целевое состояние. Текущее состояние:
+- `organizations` и `organization_member` реализованы в БД
+- `pm_projects` использует `workspace_id` (текстовое поле) без FK на отдельную таблицу workspaces
+- Таблицы `accounts` и `user_accounts` в этой модели относятся к целевой реализации workspaces
+- См. [ADR-0005](../architecture/adr/0005-multi-account-model.md) для деталей текущего vs целевого состояния
+
 | Таблица                  | Ключевые поля                                                                                                                             | Связи                                                                    |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| `users`                  | `id`, `email`, `password_hash`, `display_name`, `locale`                                                                                  | 1:N с `sessions`, `user_accounts`, `project_members`, `task_assignments` |
-| `organizations`          | `id`, `name`, `primary_owner_id`                                                                                                          | 1:N с `accounts`, `projects`, `org_members`                              |
-| `org_members`            | `organization_id`, `user_id`, `role`                                                                                                      | Роли: owner/admin/member/observer; для прав доступа                      |
-| `accounts`               | `id`, `organization_id`, `account_type` (`workspace`/`personal`), `label`                                                                 | Определяет «рабочие пространства» для мультиаккаунта                     |
-| `user_accounts`          | `user_id`, `account_id`, `default_role`, `last_active_at`                                                                                 | Пользователь ↔ аккаунты, хранит роль в workspace                        |
-| `projects`               | `id`, `account_id`, `owner_id`, `title`, `description`, `stage`, `status`, `deadline`, `archived`, timestamps                             | FK на `accounts`, `users`                                                |
+| `users`                  | `id`, `email`, `password_hash`, `display_name`, `locale`                                                                                  | 1:N с `sessions`, `organization_members`, `project_members`, `task_assignments` |
+| `organizations`          | `id`, `name`, `primary_owner_id`                                                                                                          | 1:N с `org_members` (реализовано), `workspaces` (целевое состояние)      |
+| `org_members`            | `organization_id`, `user_id`, `role`                                                                                                      | Роли: owner/admin/member/viewer; для прав доступа (реализовано)          |
+| `accounts`               | `id`, `organization_id`, `account_type` (`workspace`/`personal`), `label`                                                                 | Определяет «рабочие пространства» для мультиаккаунта (целевое состояние) |
+| `user_accounts`          | `user_id`, `account_id`, `default_role`, `last_active_at`                                                                                 | Пользователь ↔ аккаунты, хранит роль в workspace (целевое состояние)     |
+| `projects` (pm_projects) | `id`, `workspace_id`, `owner_id`, `title`, `description`, `stage`, `status`, `deadline`, `archived`, timestamps                             | `workspace_id` текстовое поле без FK (текущее состояние)                 |
 | `project_members`        | `project_id`, `user_id`, `role` (`owner`/`admin`/`member`/`viewer`)                                                                       | Маппинг людей к проектам                                                 |
 | `project_templates`      | `id`, `title`, `summary`, `kind`, `visibility`, `author_account_id`                                                                       | Источник для `project_template_tasks`                                    |
 | `project_template_tasks` | `id`, `template_id`, `title`, `description`, `default_status`, `default_labels`, `offset_start_days`, `offset_due_days`                   | Переиспользуемые заготовки задач                                         |
@@ -95,9 +101,18 @@ API endpoints для проектов и задач находятся в `/api/
 
 ### Ключевые связи
 
-- Пользователь может состоять в нескольких организациях и аккаунтах, поддерживая мультиаккаунтный доступ.
-- Проект принадлежит аккаунту (workspace) и может ссылаться на шаблон/workflow.
-- Задачи поддерживают иерархию (`parent_task_id`), статусы из workflow и множественные назначения.
+**Текущее состояние:**
+- Пользователь может состоять в нескольких организациях через `organization_member` (реализовано).
+- Проект (`pm_projects`) использует `workspace_id` как текстовое поле без FK на отдельную таблицу workspaces.
+- Workspaces хранятся in-memory через `WorkspacesRepository` (см. [`apps/api/src/repositories/workspaces-repository.ts`](../../apps/api/src/repositories/workspaces-repository.ts)).
+
+**Целевое состояние:**
+- Пользователь может состоять в нескольких организациях и workspace через `user_accounts`.
+- Проект будет принадлежать workspace через FK на таблицу `workspaces`.
+- См. [ADR-0005](../architecture/adr/0005-multi-account-model.md) для деталей.
+
+**Общие связи:**
+- Задачи (`pm_tasks`) поддерживают иерархию (`parent_task_id`), статусы из workflow и множественные назначения.
 - Документы и файлы связаны через универсальную таблицу `project_files`, что покрывает секции «Документы и файлы» в меню.
 
 ## API контракты для бэкенда (предложение)
@@ -154,9 +169,11 @@ API сохраняет обратную совместимость с текущ
    - В Redis/БД хранить refresh-токены (`sessions`), что позволит отзыв сессий при выходе и переключении аккаунтов.
 
 2. **Мультиаккаунты**
-   - Ввести понятие «аккаунта» (workspace/организация). Пользователь хранит список `user_accounts`; переключение аккаунта обновляет `activeAccountId` в сессии и возвращает новый access-token.
-   - Эндпоинт `POST /api/auth/switch` валидирует принадлежность пользователя к `accountId`, записывает событие в `sessions` и обновляет cookie.
-   - UI может читать список аккаунтов через `GET /api/accounts` и синхронизировать выбор (например, через `localStorage`/Zustand).
+   - **Текущее состояние:** Переключение организаций реализовано через `OrganizationContext` и `OrganizationSwitcher`. Workspaces хранятся in-memory.
+   - **Целевое состояние:** Ввести понятие «workspace» как отдельной таблицы в БД. Пользователь хранит список `user_accounts`; переключение workspace обновляет `activeWorkspaceId` в сессии.
+   - Эндпоинт `POST /api/auth/switch` валидирует принадлежность пользователя к workspace, записывает событие в `sessions` и обновляет cookie.
+   - UI может читать список workspace через `GET /api/workspaces` и синхронизировать выбор (например, через `localStorage`/Zustand).
+   - См. [ADR-0005](../architecture/adr/0005-multi-account-model.md) для деталей текущего vs целевого состояния.
 
 3. **Роли и разрешения**
    - Роль пользователя вычисляется как комбинация `org_members.role` и `project_members.role`, мапится на фронтовые `UserRole` для существующих проверок (`canAccessFinance`, `canAccessAdmin`).【F:apps/web/lib/auth/roles.ts†L86-L100】

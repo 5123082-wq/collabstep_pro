@@ -43,7 +43,7 @@ FEATURE_PROJECTS_V1=1
 AUTH_DEV=on
 FIN_EXPENSES_STORAGE=memory
 DEMO_ADMIN_EMAIL=admin.demo@collabverse.test
-DEMO_ADMIN_PASSWORD=demo-admin
+DEMO_ADMIN_PASSWORD=admin.demo
 DEMO_USER_EMAIL=user.demo@collabverse.test
 DEMO_USER_PASSWORD=demo-user
 ```

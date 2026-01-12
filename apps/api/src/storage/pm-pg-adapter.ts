@@ -1,8 +1,39 @@
-import { sql } from '@vercel/postgres';
+import { sql as vercelSql } from '@vercel/postgres';
+import postgres from 'postgres';
 import type { Project, ProjectChatMessage, ProjectMember, Task, TaskComment } from '../types';
 import { memory } from '../data/memory';
 
 const LOG_PREFIX = '[pm-pg]';
+const LOCAL_PG_REGEX = /^postgres(?:ql)?:\/\/(localhost|127\.0\.0\.1)/;
+const shouldUseLocalPg =
+  process.env.USE_LOCAL_PG === 'true' ||
+  (!!process.env.POSTGRES_URL && LOCAL_PG_REGEX.test(process.env.POSTGRES_URL ?? ''));
+const sqlClient = shouldUseLocalPg && process.env.POSTGRES_URL
+  ? postgres(process.env.POSTGRES_URL, { ssl: 'prefer' })
+  : vercelSql;
+
+function hasQuery(
+  client: typeof vercelSql | ReturnType<typeof postgres>
+): client is typeof vercelSql {
+  return typeof (client as typeof vercelSql).query === 'function';
+}
+
+async function runQuery(
+  text: string,
+  params?: unknown[]
+): Promise<{ rows: Record<string, unknown>[] }> {
+  if (hasQuery(sqlClient)) {
+    return sqlClient.query(text, params as unknown[]);
+  }
+
+  // postgres-js unsafe() requires specific parameter types that don't match unknown[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rows = await (sqlClient as ReturnType<typeof postgres>).unsafe(
+    text,
+    (params ?? []) as any[] // eslint-disable-line @typescript-eslint/no-explicit-any
+  );
+  return { rows };
+}
 
 const TABLE_PROJECTS = 'pm_projects';
 const TABLE_PROJECT_MEMBERS = 'pm_project_members';
@@ -35,7 +66,7 @@ export async function ensurePmTables(): Promise<void> {
     return;
   }
 
-  await sql.query(`
+  await runQuery(`
     CREATE TABLE IF NOT EXISTS ${TABLE_PROJECTS} (
       id TEXT PRIMARY KEY,
       workspace_id TEXT NOT NULL,
@@ -57,9 +88,9 @@ export async function ensurePmTables(): Promise<void> {
   `);
 
   // Ensure new columns are present for existing installations
-  await sql.query(`ALTER TABLE ${TABLE_PROJECTS} ADD COLUMN IF NOT EXISTS owner_number INTEGER`);
+  await runQuery(`ALTER TABLE ${TABLE_PROJECTS} ADD COLUMN IF NOT EXISTS owner_number INTEGER`);
 
-  await sql.query(`
+  await runQuery(`
     CREATE TABLE IF NOT EXISTS ${TABLE_PROJECT_MEMBERS} (
       project_id TEXT NOT NULL,
       user_id TEXT NOT NULL,
@@ -68,7 +99,7 @@ export async function ensurePmTables(): Promise<void> {
     );
   `);
 
-  await sql.query(`
+  await runQuery(`
     CREATE TABLE IF NOT EXISTS ${TABLE_TASKS} (
       id TEXT PRIMARY KEY,
       project_id TEXT NOT NULL,
@@ -94,7 +125,7 @@ export async function ensurePmTables(): Promise<void> {
     );
   `);
 
-  await sql.query(`
+  await runQuery(`
     CREATE TABLE IF NOT EXISTS ${TABLE_TASK_COMMENTS} (
       id TEXT PRIMARY KEY,
       project_id TEXT NOT NULL,
@@ -109,7 +140,7 @@ export async function ensurePmTables(): Promise<void> {
     );
   `);
 
-  await sql.query(`
+  await runQuery(`
     CREATE TABLE IF NOT EXISTS ${TABLE_PROJECT_CHAT_MESSAGES} (
       id TEXT PRIMARY KEY,
       project_id TEXT NOT NULL,
@@ -235,18 +266,23 @@ export async function hydrateMemoryFromPg(): Promise<void> {
 
   await ensurePmTables();
 
-  const projectsRows = await sql.query(`SELECT * FROM ${TABLE_PROJECTS}`);
-  const membersRows = await sql.query(`SELECT * FROM ${TABLE_PROJECT_MEMBERS}`);
-  const tasksRows = await sql.query(`SELECT * FROM ${TABLE_TASKS}`);
-  const commentsRows = await sql.query(`SELECT * FROM ${TABLE_TASK_COMMENTS}`);
-  const chatRows = await sql.query(`SELECT * FROM ${TABLE_PROJECT_CHAT_MESSAGES}`);
+  const projectsRows = await runQuery(`SELECT * FROM ${TABLE_PROJECTS}`);
+  const membersRows = await runQuery(`SELECT * FROM ${TABLE_PROJECT_MEMBERS}`);
+  const tasksRows = await runQuery(`SELECT * FROM ${TABLE_TASKS}`);
+  const commentsRows = await runQuery(`SELECT * FROM ${TABLE_TASK_COMMENTS}`);
+  const chatRows = await runQuery(`SELECT * FROM ${TABLE_PROJECT_CHAT_MESSAGES}`);
 
   memory.PROJECTS = projectsRows.rows.map(mapProjectRow);
   memory.PROJECT_MEMBERS = {};
   for (const row of membersRows.rows) {
-    const list = memory.PROJECT_MEMBERS[row.project_id] ?? [];
-    list.push({ userId: row.user_id, role: row.role });
-    memory.PROJECT_MEMBERS[row.project_id] = list;
+    const projectId = String(row.project_id);
+    const list = memory.PROJECT_MEMBERS[projectId] ?? [];
+    const role = String(row.role);
+    // Validate role type
+    if (role === 'owner' || role === 'admin' || role === 'member' || role === 'viewer') {
+      list.push({ userId: String(row.user_id), role });
+      memory.PROJECT_MEMBERS[projectId] = list;
+    }
   }
   memory.TASKS = tasksRows.rows.map(mapTaskRow);
   memory.TASK_COMMENTS = commentsRows.rows.map(mapCommentRow);
@@ -261,7 +297,7 @@ export async function hydrateMemoryFromPg(): Promise<void> {
 export async function persistProjectToPg(project: Project): Promise<void> {
   if (!isPmDbEnabled()) return;
   await ensurePmTables();
-  await sql.query(`
+  await runQuery(`
     INSERT INTO ${TABLE_PROJECTS} (
       id, workspace_id, key, title, description, owner_id, owner_number, status, visibility,
       budget_planned, budget_spent, workflow_id, archived, stage, deadline, created_at, updated_at
@@ -310,7 +346,7 @@ export async function persistProjectMembersToPg(projectId: string, members: Proj
   if (!isPmDbEnabled()) return;
   await ensurePmTables();
   if (members.length === 0) {
-    await sql.query(`DELETE FROM ${TABLE_PROJECT_MEMBERS} WHERE project_id = $1`, [projectId]);
+    await runQuery(`DELETE FROM ${TABLE_PROJECT_MEMBERS} WHERE project_id = $1`, [projectId]);
     return;
   }
   const values = members.map((_member, idx) => {
@@ -318,7 +354,7 @@ export async function persistProjectMembersToPg(projectId: string, members: Proj
     return `($${baseIdx + 1}, $${baseIdx + 2}, $${baseIdx + 3})`;
   }).join(', ');
   const params = members.flatMap(member => [projectId, member.userId, member.role]);
-  await sql.query(`
+  await runQuery(`
       INSERT INTO ${TABLE_PROJECT_MEMBERS} (project_id, user_id, role)
       VALUES ${values}
       ON CONFLICT (project_id, user_id) DO UPDATE SET role = EXCLUDED.role;
@@ -328,18 +364,18 @@ export async function persistProjectMembersToPg(projectId: string, members: Proj
 export async function deleteProjectFromPg(projectId: string): Promise<void> {
   if (!isPmDbEnabled()) return;
   await ensurePmTables();
-  await sql.query(`DELETE FROM ${TABLE_PROJECT_CHAT_MESSAGES} WHERE project_id = $1`, [projectId]);
-  await sql.query(`DELETE FROM ${TABLE_TASK_COMMENTS} WHERE project_id = $1`, [projectId]);
-  await sql.query(`DELETE FROM ${TABLE_TASKS} WHERE project_id = $1`, [projectId]);
-  await sql.query(`DELETE FROM ${TABLE_PROJECT_MEMBERS} WHERE project_id = $1`, [projectId]);
-  await sql.query(`DELETE FROM ${TABLE_PROJECTS} WHERE id = $1`, [projectId]);
+  await runQuery(`DELETE FROM ${TABLE_PROJECT_CHAT_MESSAGES} WHERE project_id = $1`, [projectId]);
+  await runQuery(`DELETE FROM ${TABLE_TASK_COMMENTS} WHERE project_id = $1`, [projectId]);
+  await runQuery(`DELETE FROM ${TABLE_TASKS} WHERE project_id = $1`, [projectId]);
+  await runQuery(`DELETE FROM ${TABLE_PROJECT_MEMBERS} WHERE project_id = $1`, [projectId]);
+  await runQuery(`DELETE FROM ${TABLE_PROJECTS} WHERE id = $1`, [projectId]);
 }
 
 export async function persistTaskToPg(task: Task): Promise<void> {
   if (!isPmDbEnabled()) return;
   await ensurePmTables();
   const labelsJson = Array.isArray(task.labels) ? JSON.stringify(task.labels) : null;
-  await sql.query(`
+  await runQuery(`
     INSERT INTO ${TABLE_TASKS} (
       id, project_id, number, parent_id, title, description, status, iteration_id,
       assignee_id, start_at, start_date, due_at, priority, labels,
@@ -382,8 +418,8 @@ export async function persistTaskToPg(task: Task): Promise<void> {
 export async function deleteTaskFromPg(taskId: string): Promise<void> {
   if (!isPmDbEnabled()) return;
   await ensurePmTables();
-  await sql.query(`DELETE FROM ${TABLE_TASK_COMMENTS} WHERE task_id = $1`, [taskId]);
-  await sql.query(`DELETE FROM ${TABLE_TASKS} WHERE id = $1`, [taskId]);
+  await runQuery(`DELETE FROM ${TABLE_TASK_COMMENTS} WHERE task_id = $1`, [taskId]);
+  await runQuery(`DELETE FROM ${TABLE_TASKS} WHERE id = $1`, [taskId]);
 }
 
 export async function persistCommentToPg(comment: TaskComment): Promise<void> {
@@ -391,7 +427,7 @@ export async function persistCommentToPg(comment: TaskComment): Promise<void> {
   await ensurePmTables();
   const mentionsJson = JSON.stringify(comment.mentions ?? []);
   const attachmentsJson = JSON.stringify(comment.attachments ?? []);
-  await sql.query(`
+  await runQuery(`
     INSERT INTO ${TABLE_TASK_COMMENTS} (
       id, project_id, task_id, parent_id, body, mentions, attachments, author_id, created_at, updated_at
     )
@@ -417,13 +453,13 @@ export async function persistCommentToPg(comment: TaskComment): Promise<void> {
 export async function deleteCommentFromPg(commentId: string): Promise<void> {
   if (!isPmDbEnabled()) return;
   await ensurePmTables();
-  await sql.query(`DELETE FROM ${TABLE_TASK_COMMENTS} WHERE id = $1`, [commentId]);
+  await runQuery(`DELETE FROM ${TABLE_TASK_COMMENTS} WHERE id = $1`, [commentId]);
 }
 
 export async function fetchTaskByIdFromPg(taskId: string): Promise<Task | null> {
   if (!isPmDbEnabled()) return null;
   await ensurePmTables();
-  const result = await sql.query(`SELECT * FROM ${TABLE_TASKS} WHERE id = $1 LIMIT 1`, [taskId]);
+  const result = await runQuery(`SELECT * FROM ${TABLE_TASKS} WHERE id = $1 LIMIT 1`, [taskId]);
   const row = result.rows[0];
   return row ? mapTaskRow(row) : null;
 }
@@ -452,14 +488,14 @@ export async function fetchProjectsFromPg(options: { archived?: boolean | null; 
   
   query += ` ORDER BY created_at DESC`;
   
-  const result = await sql.query(query, params);
+  const result = await runQuery(query, params);
   return result.rows.map(mapProjectRow);
 }
 
 export async function fetchProjectByIdFromPg(projectId: string): Promise<Project | null> {
   if (!isPmDbEnabled()) return null;
   await ensurePmTables();
-  const result = await sql.query(`SELECT * FROM ${TABLE_PROJECTS} WHERE id = $1 LIMIT 1`, [projectId]);
+  const result = await runQuery(`SELECT * FROM ${TABLE_PROJECTS} WHERE id = $1 LIMIT 1`, [projectId]);
   const row = result.rows[0];
   return row ? mapProjectRow(row) : null;
 }
@@ -467,7 +503,7 @@ export async function fetchProjectByIdFromPg(projectId: string): Promise<Project
 export async function fetchProjectByKeyFromPg(workspaceId: string, key: string): Promise<Project | null> {
   if (!isPmDbEnabled()) return null;
   await ensurePmTables();
-  const result = await sql.query(
+  const result = await runQuery(
     `SELECT * FROM ${TABLE_PROJECTS} WHERE workspace_id = $1 AND key = $2 LIMIT 1`,
     [workspaceId, key.toUpperCase()]
   );
@@ -478,7 +514,7 @@ export async function fetchProjectByKeyFromPg(workspaceId: string, key: string):
 export async function fetchProjectMembersFromPg(projectId: string): Promise<ProjectMember[]> {
   if (!isPmDbEnabled()) return [];
   await ensurePmTables();
-  const result = await sql.query(
+  const result = await runQuery(
     `SELECT * FROM ${TABLE_PROJECT_MEMBERS} WHERE project_id = $1`,
     [projectId]
   );
@@ -517,14 +553,14 @@ export async function fetchTasksFromPg(options: { projectId?: string; status?: s
   
   query += ` ORDER BY number ASC, created_at ASC`;
   
-  const result = await sql.query(query, params);
+  const result = await runQuery(query, params);
   return result.rows.map(mapTaskRow);
 }
 
 export async function fetchCommentsByTaskFromPg(projectId: string, taskId: string): Promise<TaskComment[]> {
   if (!isPmDbEnabled()) return [];
   await ensurePmTables();
-  const result = await sql.query(`
+  const result = await runQuery(`
     SELECT * FROM ${TABLE_TASK_COMMENTS}
     WHERE project_id = $1 AND task_id = $2
   `, [projectId, taskId]);
@@ -535,7 +571,7 @@ export async function persistChatMessageToPg(message: ProjectChatMessage): Promi
   if (!isPmDbEnabled()) return;
   await ensurePmTables();
   const attachmentsJson = JSON.stringify(message.attachments ?? []);
-  await sql.query(
+  await runQuery(
     `
     INSERT INTO ${TABLE_PROJECT_CHAT_MESSAGES} (
       id, project_id, body, attachments, author_id, created_at, updated_at
@@ -563,7 +599,7 @@ export async function persistChatMessageToPg(message: ProjectChatMessage): Promi
 export async function deleteChatMessageFromPg(messageId: string): Promise<void> {
   if (!isPmDbEnabled()) return;
   await ensurePmTables();
-  await sql.query(`DELETE FROM ${TABLE_PROJECT_CHAT_MESSAGES} WHERE id = $1`, [messageId]);
+  await runQuery(`DELETE FROM ${TABLE_PROJECT_CHAT_MESSAGES} WHERE id = $1`, [messageId]);
 }
 
 export async function fetchChatMessagesByProjectFromPg(
@@ -571,7 +607,7 @@ export async function fetchChatMessagesByProjectFromPg(
 ): Promise<ProjectChatMessage[]> {
   if (!isPmDbEnabled()) return [];
   await ensurePmTables();
-  const result = await sql.query(
+  const result = await runQuery(
     `SELECT * FROM ${TABLE_PROJECT_CHAT_MESSAGES} WHERE project_id = $1`,
     [projectId]
   );
@@ -583,7 +619,7 @@ export async function fetchChatMessageByIdFromPg(
 ): Promise<ProjectChatMessage | null> {
   if (!isPmDbEnabled()) return null;
   await ensurePmTables();
-  const result = await sql.query(
+  const result = await runQuery(
     `SELECT * FROM ${TABLE_PROJECT_CHAT_MESSAGES} WHERE id = $1 LIMIT 1`,
     [messageId]
   );

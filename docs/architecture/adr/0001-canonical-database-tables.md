@@ -2,7 +2,9 @@
 
 **Статус:** Принято  
 **Дата:** 2026-01-05  
-**Авторы:** Database Optimization Plan
+**Владелец:** engineering  
+**Авторы:** Database Optimization Plan  
+**Последнее обновление:** 2026-01-07
 
 ## Контекст
 
@@ -71,7 +73,6 @@
 
 ## Связанные документы
 
-- `docs/audit/DATA_LOCATION_AUDIT_REPORT.md` - отчет аудита данных
-- `docs/architecture/database-architecture.md` - архитектура БД
-- `apps/api/src/storage/pm-pg-adapter.ts` - адаптер для работы с pm таблицами
-
+- [`../../audit/DATA_LOCATION_AUDIT_REPORT.md`](../../audit/DATA_LOCATION_AUDIT_REPORT.md) - отчет аудита данных
+- [`../database-architecture.md`](../database-architecture.md) - архитектура БД
+- [`../../../apps/api/src/storage/pm-pg-adapter.ts`](../../../apps/api/src/storage/pm-pg-adapter.ts) - адаптер для работы с pm таблицами

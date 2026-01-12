@@ -39,6 +39,7 @@
     "docs:lint": "markdownlint '**/*.md' --ignore node_modules",
     "docs:links": "node scripts/docs/check-docs-links.mjs",
     "reset:ai-agents": "tsx scripts/utils/reset-ai-agents.ts",
+    "pr": "bash scripts/utils/create-pr.sh",
     "prepare": "husky install",
     "vercel-build": "pnpm -w typecheck && pnpm -C apps/web build"
   },

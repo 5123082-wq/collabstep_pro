@@ -43,6 +43,7 @@ const nextConfig = {
         assert: false,
         os: false,
         path: false,
+        perf_hooks: false,
       };
     }
 

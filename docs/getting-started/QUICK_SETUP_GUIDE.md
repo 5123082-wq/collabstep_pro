@@ -302,4 +302,4 @@ cd apps/api && pnpm drizzle-kit studio
 - **[VERCEL_POSTGRES_SETUP_CHECKLIST.md](./VERCEL_POSTGRES_SETUP_CHECKLIST.md)** — Полный чеклист настройки
 - **[vercel-postgres-setup.md](./vercel-postgres-setup.md)** — Подробная инструкция по настройке
 - **[Руководство по очистке базы данных](../runbooks/DATABASE_CLEANUP_GUIDE.md)** — Очистка БД и настройка администратора
-- **[Быстрый старт](./quick-start.md)** — Общее руководство по началу работы с проектом
+- **[Быстрый старт](./QUICK_SETUP_GUIDE.md)** — Общее руководство по началу работы с проектом
