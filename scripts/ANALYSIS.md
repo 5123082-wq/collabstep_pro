@@ -62,7 +62,8 @@
 
 ## Скрипты, которые нужно оставить (актуальные)
 
-### Активно используемые в package.json:
+### Активно используемые в package.json
+
 - `dev-simple.sh`, `dev-full.sh` - запуск разработки
 - `ensure-env.mjs` - проверка окружения
 - `check-app-routes.mjs`, `verify-routes.mjs`, `verify-preflight.mjs` - проверка маршрутов
@@ -73,7 +74,8 @@
 - `flags-snapshot.mjs` - снимок feature flags
 - `run-vercel-build.mjs` - симуляция Vercel сборки
 
-### Полезные для работы с БД:
+### Полезные для работы с БД
+
 - `comprehensive-data-audit.ts` - комплексный аудит
 - `audit-users.ts` - аудит пользователей
 - `check-organization-status.ts` - проверка статуса организаций (используется в runbooks)
@@ -89,6 +91,7 @@
 - `clear-all-data.ts` - полная очистка данных
 - `cleanup-users-db.ts` - очистка пользователей (используется в setup guide)
 
-### Миграции:
+### Миграции
+
 - Все скрипты миграций нужно оставить (они могут понадобиться для отката или повторного применения)
 

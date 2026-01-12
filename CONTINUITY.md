@@ -34,6 +34,65 @@
 
 ### Now
 
+- ✅ **РЕОРГАНИЗАЦИЯ ДОКУМЕНТАЦИИ: ЗАВЕРШЕНА** (2026-01-07):
+  - ✅ Удалена временная папка `docs version 2` (была стартер-паком для миграции, больше не нужна)
+  - ✅ Фаза 1 завершена: создана структура, шаблоны, правила (2026-01-06)
+  - ✅ Фаза 2 завершена: создан полный инвентарь документации (2026-01-06)
+  - ✅ Фаза 3 завершена: миграция платформенных документов (2026-01-06)
+  - ✅ Фаза 4 завершена: Миграция модуля PM Core (2026-01-06)
+  - ✅ Фаза 5 завершена: Миграция остальных модулей (2026-01-07)
+  - ✅ Фаза 6 завершена: Архитектурная документация (2026-01-07)
+  - ✅ Фаза 7 завершена: Playbooks и процессы (2026-01-07)
+  - ✅ **Фаза 8 завершена:** Финальная проверка и интеграция (2026-01-07)
+    - ✅ Проверены все ссылки (внутренние, на код, внешние)
+    - ✅ Обновлены индексы (README.md, INDEX.md)
+    - ✅ Архивированы устаревшие документы
+    - ✅ Настроен CI для проверки ссылок
+    - ✅ Выполнены финальные Quality Gates
+    - ✅ Создан `docs/modules/pm-core/_module.md` - основной документ модуля (P0)
+    - ✅ Создан `docs/modules/pm-core/_implementation-plan.md` - план реализации (P0)
+    - ✅ Создан `docs/modules/pm-core/projects.md` - документация по проектам (P1)
+    - ✅ Создан `docs/modules/pm-core/tasks.md` - документация по задачам (P1)
+    - ✅ Создан `docs/modules/pm-core/comments.md` - документация по комментариям (P2)
+    - ✅ Создан `docs/modules/pm-core/notifications.md` - документация по уведомлениям (P2)
+    - ✅ Создан `docs/modules/pm-core/chat.md` - документация по чату (P3)
+    - ✅ Создан `docs/modules/pm-core/files.md` - документация по файлам (P2)
+    - ✅ Создан `docs/modules/pm-core/kanban.md` - документация по Kanban (P2)
+    - ✅ Создан `docs/modules/pm-core/websocket.md` - документация по WebSocket (P2)
+    - ✅ Создан `docs/modules/pm-core/access.md` - документация по доступу (P2)
+    - ✅ Создан `docs/modules/pm-core/teams.md` - документация по командам (P2)
+    - ✅ Создан `docs/modules/pm-core/dashboard.md` - документация по дашборду (P2)
+    - ✅ Обновлен `docs/_inventory/coverage.md` - pm-core теперь 100% заполнено
+    - ✅ Обновлен `docs/_inventory/gaps.md` - закрыты все пробелы PM Core (13 документов)
+    - ✅ Обновлен `docs/reorganization/PLAN_DOCUMENTATION_REORGANIZATION.md` - Фаза 4 отмечена как завершенная
+    - ✅ **Фаза 5 завершена:** Миграция остальных модулей (2026-01-07)
+      - ✅ Созданы все документы Marketplace (7 документов)
+      - ✅ Созданы все документы AI Hub (9 документов)
+      - ✅ Созданы все документы Marketing (5 документов)
+      - ✅ Создан базовый документ Performers (1 документ)
+      - ✅ Создан базовый документ Community (1 документ)
+      - ✅ Обновлен `docs/_inventory/coverage.md` - все модули теперь документированы
+      - ✅ Обновлен `docs/_inventory/gaps.md` - закрыты пробелы модулей
+      - ✅ Обновлен `docs/reorganization/PLAN_DOCUMENTATION_REORGANIZATION.md` - Фаза 5 отмечена как завершенная
+    - ✅ **Фаза 6 завершена:** Архитектурная документация (2026-01-07)
+      - ✅ Создан `docs/architecture/arc42.md` - заполнены все 12 секций arc42
+      - ✅ Созданы ADR документы: 0002-cache-aside-pattern, 0003-nextjs-app-router, 0004-websocket-realtime, 0005-multi-account-model
+      - ✅ Обновлен `docs/architecture/adr/0001-canonical-database-tables.md` - проверен и актуализирован
+      - ✅ Создан `docs/architecture/adr/README.md` - индекс всех ADR документов
+      - ✅ Создан `docs/architecture/decisions/README.md` - переадресация на ADR индекс
+      - ✅ Обновлен `docs/architecture/database-architecture.md` - добавлены ссылки на ADR
+      - ✅ Обновлен `docs/architecture/system-analysis.md` - добавлены пометки NEEDS_CONFIRMATION для синхронизации
+      - ✅ Все документы прошли markdownlint проверку (исправлены code blocks)
+      - ✅ Создан отчет о верификации: `docs/reorganization/phases/phase-6-verification-report.md`
+      - ✅ Обновлен `docs/reorganization/PLAN_DOCUMENTATION_REORGANIZATION.md` - Фаза 6 отмечена как завершенная
+      - ✅ **Фаза 7 завершена:** Playbooks и процессы (2026-01-07)
+        - ✅ Создан `docs/playbooks/docs-pr-checklist.md` - чеклист для PR с проверками на ROADMAP и планы
+        - ✅ Создан `docs/playbooks/docs-migration-guide.md` - практическое руководство по работе с документацией
+        - ✅ Создан `docs/playbooks/agent-docs-guide.md` - руководство для AI агентов
+        - ✅ Обновлен `docs/playbooks/release-process.md` - добавлены ссылки на новые playbooks
+        - ✅ Обновлен `docs/reorganization/PLAN_DOCUMENTATION_REORGANIZATION.md` - Фаза 7 отмечена как завершенная
+        - ⏳ **Фаза 8 готова к выполнению:** Финальная проверка и интеграция
+
 - ✅ **НАСТРОЙКА ЛОКАЛЬНОГО ТЕСТИРОВАНИЯ: Полная инфраструктура для локального запуска тестов** (2026-01-06):
   - Исправлен `apps/api/drizzle.config.ts` для поддержки `POSTGRES_URL` как fallback
   - Созданы скрипты: `test:local:setup`, `test:local`, `test:local:cleanup`, `test:local:env`

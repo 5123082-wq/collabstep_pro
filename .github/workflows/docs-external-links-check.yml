@@ -1,0 +1,28 @@
+name: Docs External Links Check (Scheduled)
+
+on:
+  schedule:
+    # Run weekly on Monday at 2 AM UTC
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+
+jobs:
+  check-external-links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Check external links (with OpenAI)
+        run: MLC_CHECK_OPENAI=true pnpm docs:links
+        continue-on-error: true
+      - name: Report results
+        if: failure()
+        run: |
+          echo "Some external links may be broken. Check the logs above."
+          echo "This is a non-blocking check - PRs are not affected."
+

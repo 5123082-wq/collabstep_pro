@@ -1,7 +1,8 @@
 # Архитектура базы данных Collabverse
 
-**Последнее обновление:** 2026-01-05  
-**Статус:** Актуально
+**Последнее обновление:** 2026-01-07  
+**Статус:** Актуально  
+**Владелец:** engineering
 
 ## Обзор
 
@@ -22,7 +23,7 @@
 **Deprecated таблицы:**
 
 - `project` (Drizzle схема) - **НЕ ИСПОЛЬЗУЕТСЯ**, помечена как `@deprecated`
-  - См. [ADR-0001](adr/0001-canonical-database-tables.md)
+  - См. [ADR-0001: Канонические таблицы](./adr/0001-canonical-database-tables.md) для деталей
 
 ### Пользователи и организации
 
@@ -45,18 +46,22 @@
 
 ### Cache-aside паттерн
 
+**Принцип:** Память используется только как кэш для оптимизации чтения данных. БД — единственный источник истины.
+
 **Чтение:**
-```
+```text
 1. Проверка кэша (память)
 2. Если промах → чтение из БД
 3. Запись в кэш для последующих запросов
 ```
 
 **Запись:**
-```
+```text
 1. Запись в БД
 2. Инвалидация кэша (или обновление кэша)
 ```
+
+**Детали:** См. [ADR-0002: Cache-aside паттерн](./adr/0002-cache-aside-pattern.md) для полного описания решения и его последствий.
 
 ### Репозитории
 
@@ -94,6 +99,8 @@ pnpm --filter @collabverse/api db:push
 Таблицы `pm_projects`, `pm_tasks` и другие создаются автоматически при первом обращении через `ensurePmTables()` в `pm-pg-adapter.ts`.
 
 **Не требуют миграций** - создаются через `CREATE TABLE IF NOT EXISTS`.
+
+**Важно:** Эти таблицы являются каноническими для проектов и задач. См. [ADR-0001: Канонические таблицы](./adr/0001-canonical-database-tables.md).
 
 ## Переменные окружения
 
@@ -227,10 +234,55 @@ const projects = await projectsRepository.list({ organizationId });
 
 **Решение:** Убедись, что используется `ProjectsRepository.create()`, который записывает в `pm_projects`.
 
+## Связи между таблицами
+
+### Основные связи
+
+**Пользователи и организации:**
+- `user` → `organization_member` → `organization` (многие ко многим)
+- `user` → `account` (NextAuth OAuth аккаунты, один ко многим)
+- `user` → `user_subscription` (лимиты подписки, один к одному)
+
+**Проекты и задачи (pm_*):**
+- `pm_projects.workspace_id` — логический идентификатор workspace (FK отсутствует)
+- `pm_projects` → `pm_tasks` (один ко многим)
+- `pm_tasks` → `pm_tasks` (self-reference для иерархии через `parent_task_id`)
+- `pm_projects` → `pm_project_members` → `user` (многие ко многим)
+- `pm_tasks` → `pm_task_comments` (один ко многим)
+
+**Шаблоны:**
+- `user_project_templates` → `project_template_tasks` (один ко многим)
+
+**Файлы:**
+- `organization` → `file` (один ко многим)
+- `file` → `attachment` (один ко многим)
+- `file.folder_id` → `folder` (опциональная связь)
+- `file.project_id` ссылается на deprecated `project` (NEEDS_CONFIRMATION миграции к `pm_projects`)
+
+**Диаграмма (упрощенная):** pm_* таблицы создаются динамически, `workspace_id` не имеет FK.
+```mermaid
+erDiagram
+  user ||--o{ organization_member : has
+  organization ||--o{ organization_member : includes
+  pm_projects ||--o{ pm_tasks : contains
+  pm_projects ||--o{ pm_project_members : includes
+  pm_tasks ||--o{ pm_task_comments : has
+  organization ||--o{ file : owns
+  file ||--o{ attachment : uses
+```
+
+Подробнее о реляционной модели см. [`./system-analysis.md`](./system-analysis.md#доменные-сущности-и-связи).
+
 ## Связанные документы
 
-- [ADR-0001: Канонические таблицы](adr/0001-canonical-database-tables.md)
-- [Отчет аудита данных](../../audit/DATA_LOCATION_AUDIT_REPORT.md)
-- [Правила работы с БД](../../../.cursor/rules/database.mdc)
-- [Руководство по очистке БД](../../runbooks/DATABASE_CLEANUP_GUIDE.md)
+### ADR решения
 
+- [ADR-0001: Канонические таблицы](./adr/0001-canonical-database-tables.md) - решение о канонических таблицах `pm_projects` и `pm_tasks`
+- [ADR-0002: Cache-aside паттерн](./adr/0002-cache-aside-pattern.md) - решение об использовании cache-aside паттерна для чтения данных
+- [ADR-0005: Мультиаккаунт](./adr/0005-multi-account-model.md) - решение о модели мультиаккаунта через Organizations и Workspaces
+
+### Другие документы
+
+- [Системный анализ](./system-analysis.md) - детальный анализ системы и реляционная модель
+- [Отчет аудита данных](../audit/DATA_LOCATION_AUDIT_REPORT.md) - аудит расположения данных
+- [Руководство по очистке БД](../runbooks/DATABASE_CLEANUP_GUIDE.md) - руководство по очистке БД

@@ -1,13 +1,22 @@
 # Индекс документации Collabverse
 
-> **Последнее обновление:** 2026-01-05  
-> **Версия:** 1.0
+> **Последнее обновление:** 2026-01-07  
+> **Версия:** 2.0  
+> **Статус реорганизации:** ✅ Завершена
 
 Полный индекс всей документации проекта Collabverse. Используйте этот документ для быстрой навигации по всей документации.
 
 ---
 
 ## Быстрая навигация
+
+### По структуре документации
+
+- [Пользовательская документация](#пользовательская-документация-левое-меню) — структура как в левом меню приложения
+- [Platform документация](#platform-документация) — платформенные документы
+- [Модульная документация](#модульная-документация) — документация по модулям
+- [Архитектурная документация](#архитектурная-документация) — архитектура и ADR
+- [Playbooks и процессы](#playbooks-и-процессы) — процессы работы с документацией
 
 ### По категориям
 
@@ -29,11 +38,244 @@
 
 ---
 
+## Пользовательская документация (левое меню)
+
+Порядок разделов совпадает с левым меню приложения. Внутри разделов документы сгруппированы по назначению.
+
+### Общая навигация
+
+- Навигация приложения (левое/верхнее/правое меню, кнопка "Создать") — planned
+
+### Рабочий стол
+
+- [Обзор рабочего стола](modules/dashboard/dashboard-overview.md)
+
+### Проекты и задачи
+
+- [Проекты](modules/projects-tasks/projects-tasks-projects.md)
+- [Задачи](modules/projects-tasks/projects-tasks-tasks.md)
+- [Метрики](modules/projects-tasks/projects-tasks-metrics.md)
+- Мои шаблоны — planned
+- Архив — planned
+- Дополнительно: [Обзор](modules/projects-tasks/projects-tasks-overview.md), [Доступ](modules/projects-tasks/projects-tasks-access.md), [Файлы](modules/projects-tasks/projects-tasks-files.md), [Комментарии](modules/projects-tasks/projects-tasks-comments.md), [Чат](modules/projects-tasks/projects-tasks-chat.md), [Уведомления](modules/projects-tasks/projects-tasks-notifications.md), [Kanban](modules/projects-tasks/projects-tasks-kanban.md), [WebSocket](modules/projects-tasks/projects-tasks-websocket.md), [Команды](modules/projects-tasks/projects-tasks-teams.md), [План реализации](modules/projects-tasks/projects-tasks-implementation-plan.md)
+
+### Маркетплейс
+
+- [Каталог шаблонов](modules/marketplace/marketplace-templates.md)
+- [Готовые проекты](modules/marketplace/marketplace-ready-projects.md)
+- [Пакеты услуг](modules/marketplace/marketplace-services.md)
+- [Категории и подборки](modules/marketplace/marketplace-categories.md)
+- [Избранное](modules/marketplace/marketplace-favorites.md)
+- [Корзина](modules/marketplace/marketplace-cart.md)
+- [Мои заказы](modules/marketplace/marketplace-orders.md)
+- [Опубликовать](modules/marketplace/marketplace-publish.md)
+- [Мои продажи](modules/marketplace/marketplace-seller.md)
+- Дополнительно: [Обзор](modules/marketplace/marketplace-overview.md)
+
+### Исполнители
+
+- [Специалисты](modules/performers/performers-specialists.md)
+- [Команды и подрядчики](modules/performers/performers-teams.md)
+- [Вакансии и задачи](modules/performers/performers-vacancies.md)
+- [Мои вакансии](modules/performers/performers-my-vacancies.md)
+- [Отклики и приглашения](modules/performers/performers-responses.md)
+- Дополнительно: [Обзор](modules/performers/performers-overview.md)
+
+### Маркетинг
+
+- [Обзор](modules/marketing/marketing-overview.md)
+- [Кампании и реклама](modules/marketing/marketing-campaigns.md)
+- Исследования — planned
+- Контент & SEO — planned
+- Аналитика & Интеграции — [Аналитика](modules/marketing/marketing-analytics.md), [Интеграции](modules/marketing/marketing-integrations.md), [Дашборды](modules/marketing/marketing-dashboards.md)
+
+### AI-хаб
+
+- [Генерации](modules/ai-hub/ai-hub-generations.md)
+- История — planned
+- [Промпты](modules/ai-hub/ai-hub-prompts.md)
+- [Агенты](modules/ai-hub/ai-hub-agents.md)
+- Дополнительно: [Обзор](modules/ai-hub/ai-hub-overview.md), [Ассистент](modules/ai-hub/ai-hub-assistant.md), [Быстрый старт](modules/ai-hub/ai-hub-quick-start.md), [Настройка](modules/ai-hub/ai-hub-setup.md), [Интеграция](modules/ai-hub/ai-hub-integration.md), [План реализации](modules/ai-hub/ai-hub-implementation-plan.md)
+
+### Комьюнити
+
+- Питч — planned
+- Комнаты — planned
+- События — planned
+- Рейтинг — planned
+- Дополнительно: [Обзор](modules/community/community-overview.md)
+
+### Финансы
+
+- Расходы — planned
+- Кошелёк — planned
+- Эскроу — planned
+- Счета — planned
+- Тарифы — planned
+- Споры — planned
+- Дополнительно: [Обзор](modules/finance/finance-overview.md)
+
+### Документы
+
+- [Файлы](modules/docs/docs-files.md)
+- [Контракты](modules/docs/docs-contracts.md)
+- [Бренд-репозиторий](modules/docs/docs-brand-repo.md)
+- Дополнительно: [Обзор](modules/docs/docs-overview.md)
+
+### Организация
+
+- Команда — planned
+- Настройки — planned
+- Финансы — planned
+- Дополнительно: [Обзор](modules/organization/organization-overview.md)
+
+### Поддержка
+
+- База знаний — planned
+- Тикеты — planned
+- Чат — planned
+- Дополнительно: [Обзор](modules/support/support-overview.md)
+
+### Админка
+
+- [Обзор](modules/admin/admin-overview.md)
+- Фичи & Разделы — planned
+- Пользователи — planned
+- Роли & Разрешения — planned
+- Сегменты — planned
+- Аудит — planned
+- Релизы — planned
+- AI-агенты — planned
+- Индексация AI — planned
+- Support Tools — planned
+- Шаблоны проектов — planned
+- Дополнительно: [Управление данными](modules/admin/admin-data-management.md)
+
+## Platform документация
+
+Платформенные документы описывают общую архитектуру, терминологию и процессы платформы.
+
+### Основные документы
+
+- **[Обзор платформы](platform/overview.md)** — описание платформы, модули, архитектура
+- **[Авторизация и регистрация](platform/authentication.md)** — вход, регистрация, сессии
+- **[Организации и workspace](modules/organization/organization-overview.md)** — модель организаций и членства
+- **[Глоссарий](platform/glossary.md)** — определения терминов платформы
+- **[Роли и права доступа](platform/roles-permissions.md)** — матрица прав доступа
+- **[События аналитики](platform/analytics-events.md)** — каталог событий аналитики
+- **[Видение и scope](platform/vision-scope.md)** — видение платформы и границы
+- **[Начало работы](platform/getting-started.md)** — быстрый старт и настройка
+- **[История изменений](platform/changelog.md)** — changelog платформы
+
+### Ключевые разделы платформы (документация в работе)
+
+- **Auth & регистрация** — [Авторизация и регистрация](platform/authentication.md)
+- **Организации и workspace** — [Организации и workspace](modules/organization/organization-overview.md)
+- **Администрирование** — [Администрирование платформы](modules/admin/admin-overview.md)
+- **Финансы** — [Финансовая система](modules/finance/finance-overview.md)
+- **Support/обращения** — [Поддержка и обращения](modules/support/support-overview.md)
+
+---
+
+## Модульная документация
+
+Документация по модулям платформы.
+
+### Проекты и задачи (PM Core)
+
+- **[Обзор раздела](modules/projects-tasks/projects-tasks-overview.md)** — основной документ модуля
+- **[План реализации](modules/projects-tasks/projects-tasks-implementation-plan.md)** — план реализации модуля
+- **[Проекты](modules/projects-tasks/projects-tasks-projects.md)** — управление проектами
+- **[Задачи](modules/projects-tasks/projects-tasks-tasks.md)** — управление задачами
+- **[Kanban](modules/projects-tasks/projects-tasks-kanban.md)** — Kanban доски
+- **[Команды](modules/projects-tasks/projects-tasks-teams.md)** — команды и исполнители
+- **[Доступ](modules/projects-tasks/projects-tasks-access.md)** — модель доступа к проектам
+- **[Файлы](modules/projects-tasks/projects-tasks-files.md)** — управление файлами
+- **[WebSocket](modules/projects-tasks/projects-tasks-websocket.md)** — real-time обновления
+- **[Метрики](modules/projects-tasks/projects-tasks-metrics.md)** — дашборд workspace
+- **[Уведомления](modules/projects-tasks/projects-tasks-notifications.md)** — система уведомлений
+
+### Маркетплейс
+
+- **[Обзор раздела](modules/marketplace/marketplace-overview.md)** — основной документ модуля
+- **[Каталог шаблонов](modules/marketplace/marketplace-templates.md)** — витрина шаблонов
+- **[Избранное](modules/marketplace/marketplace-favorites.md)** — сохранённые шаблоны
+- **[Корзина](modules/marketplace/marketplace-cart.md)** — оформление покупок
+- **[Готовые проекты](modules/marketplace/marketplace-ready-projects.md)** — витрина проектов
+- **[Пакеты услуг](modules/marketplace/marketplace-services.md)** — предложения услуг
+- **[Категории и подборки](modules/marketplace/marketplace-categories.md)** — навигация по витрине
+- **[Мои заказы](modules/marketplace/marketplace-orders.md)** — история покупок
+- **[Опубликовать](modules/marketplace/marketplace-publish.md)** — мастер публикации
+- **[Мои продажи](modules/marketplace/marketplace-seller.md)** — кабинет продавца
+
+### AI-хаб
+
+- **[Обзор раздела](modules/ai-hub/ai-hub-overview.md)** — основной документ модуля
+- **[План реализации](modules/ai-hub/ai-hub-implementation-plan.md)** — план реализации модуля
+- **[Интеграция](modules/ai-hub/ai-hub-integration.md)** — интеграция AI
+- **[Быстрый старт](modules/ai-hub/ai-hub-quick-start.md)** — быстрый старт
+- **[Настройка](modules/ai-hub/ai-hub-setup.md)** — настройка AI
+- **[Ассистент](modules/ai-hub/ai-hub-assistant.md)** — AI ассистент
+
+### Маркетинг
+
+- **[Обзор раздела](modules/marketing/marketing-overview.md)** — основной документ модуля
+
+### Исполнители
+
+- **[Обзор раздела](modules/performers/performers-overview.md)** — основной документ модуля
+- **[Специалисты](modules/performers/performers-specialists.md)** — каталог специалистов
+- **[Команды и подрядчики](modules/performers/performers-teams.md)** — команды и подрядчики
+- **[Вакансии и задачи](modules/performers/performers-vacancies.md)** — каталог вакансий
+- **[Мои вакансии](modules/performers/performers-my-vacancies.md)** — вакансии организации
+- **[Отклики и приглашения](modules/performers/performers-responses.md)** — отклики и инвайты
+
+### Комьюнити
+
+- **[Обзор раздела](modules/community/community-overview.md)** — основной документ модуля (планируется)
+
+### Рабочий стол
+
+- **[Обзор раздела](modules/dashboard/dashboard-overview.md)** — входная точка и сводные виджеты
+
+### Документы
+
+- **[Обзор раздела](modules/docs/docs-overview.md)** — документы, контракты и бренд‑материалы
+
+---
+
+## Архитектурная документация
+
+- **[Arc42](architecture/arc42.md)** — архитектурная документация по стандарту Arc42
+- **[Архитектура БД](architecture/database-architecture.md)** — структура базы данных
+- **[Системный анализ](architecture/system-analysis.md)** — обзор архитектуры, доменных сущностей и API
+
+### Архитектурные решения (ADR)
+
+- **[ADR-0001: Канонические таблицы](architecture/adr/0001-canonical-database-tables.md)** — архитектурное решение о таблицах БД
+- **[ADR-0002: Cache-aside паттерн](architecture/adr/0002-cache-aside-pattern.md)** — паттерн кэширования
+- **[ADR-0003: Next.js App Router](architecture/adr/0003-nextjs-app-router.md)** — использование App Router
+- **[ADR-0004: WebSocket real-time](architecture/adr/0004-websocket-realtime.md)** — real-time обновления
+- **[ADR-0005: Multi-account модель](architecture/adr/0005-multi-account-model.md)** — модель множественных аккаунтов
+
+---
+
+## Playbooks и процессы
+
+Процессы и чеклисты для работы с документацией.
+
+- **[Чеклист для PR](playbooks/docs-pr-checklist.md)** — проверка документации перед PR
+- **[Руководство по миграции](playbooks/docs-migration-guide.md)** — как работать с новой документацией
+- **[Руководство для агентов](playbooks/agent-docs-guide.md)** — правила для AI агентов
+- **[Процесс релиза](playbooks/release-process.md)** — процесс релиза и обновления документации
+
+---
+
 ## Начало работы
 
 ### Быстрый старт
 
-- **[Быстрый старт](getting-started/quick-start.md)** - Начните работу за 5 минут
+- **[Быстрый старт](platform/getting-started.md)** - Начните работу за 5 минут
 - **[Быстрое руководство по настройке Vercel Postgres](getting-started/QUICK_SETUP_GUIDE.md)** - Настройка БД за 5 минут
 
 ### Настройка окружения
@@ -90,20 +332,20 @@
 
 ### Планы реализации
 
-- **[План улучшения формы создания проекта](development/plans/project-creation-implementation-plan.md)** - План работ по улучшению формы
+- **[План улучшения формы создания проекта (архив)](development/plans/project-creation-implementation-plan.md)** - План работ по улучшению формы
 - **[План закрытия организаций](development/plans/organization-closure-implementation-plan.md)** - План реализации функционала закрытия
-- **[План приглашений и сообщений](development/plans/invites-messaging-implementation-plan.md)** - План реализации системы приглашений
-- **[План дашборда workspace](development/plans/workspace-dashboard-implementation-plan.md)** - План разработки дашборда
-- **[План проектов](development/plans/projects-implementation-plan.md)** - План реализации модуля проектов
+- **[План приглашений и сообщений (архив)](development/plans/invites-messaging-implementation-plan.md)** - План реализации системы приглашений
+- **[План дашборда workspace (архив)](archive/2026-01-07-pm-core-migration/plans/workspace-dashboard-implementation-plan.md)** - План разработки дашборда
+- **[План проектов (архив)](archive/2026-01-07-pm-core-migration/plans/projects-implementation-plan.md)** - План реализации модуля проектов
 - **[План финансовой системы](development/plans/financial-system-implementation-plan.md)** - План разработки финансового модуля
 
 ### Руководства по разработке
 
-- **[Мастер-гайд по проектам](development/guides/projects-master-guide.md)** - Полное руководство по модулю проектов
-- **[Workflow проектов, задач, файлов](development/guides/PROJECT_TASK_FILE_WORKFLOW.md)** - Описание workflow между модулями
-- **[Использование WebSocket](development/guides/websocket-usage.md)** - Руководство по работе с WebSocket
+- **[Мастер-гайд по проектам](modules/projects-tasks/projects-tasks-projects.md)** - Полное руководство по модулю проектов
+- **[Workflow проектов, задач, файлов](modules/projects-tasks/projects-tasks-tasks.md)** - Описание workflow между модулями
+- **[Использование WebSocket](modules/projects-tasks/projects-tasks-websocket.md)** - Руководство по работе с WebSocket
 - **[Runbook по E2E тестам](development/guides/playwright-e2e-triage-runbook.md)** - Руководство по работе с E2E тестами
-- **[Концепция команд и исполнителей](development/guides/komanda.md)** - Концептуальный документ о командах и исполнителях
+- **[Концепция команд и исполнителей](modules/projects-tasks/projects-tasks-teams.md)** - Концептуальный документ о командах и исполнителях
 
 ### Технические отчёты
 
@@ -126,21 +368,16 @@
 
 ### Kanban
 
-- **[Быстрая справка Kanban (React)](development/KANBAN/KANBAN_QUICK_REFERENCE_REACT.md)** - Референс по использованию Канбана
-- **[Адаптация drag & drop](development/KANBAN/KANBAN_DRAG_DROP_ADAPTED.md)** - Описание реализации DnD
+- **[Kanban](modules/projects-tasks/projects-tasks-kanban.md)** - Документация по Kanban доскам
 
 ### Модель доступа к проектам
 
-- **[Главный план реализации](development/projects-access-model/main-implementation-plan.md)** - План системы прав доступа
-- **[План UI модели доступа](development/projects-access-model/UI_IMPLEMENTATION_PLAN.md)** - План UI для системы доступа
-- **[Руководство по верификации](development/projects-access-model/VERIFICATION_GUIDE.md)** - Инструкция по проверке модели доступа
-- **[Резюме модели доступа](development/projects-access-model/SUMMARY_RU.md)** - Краткое резюме реализации
-- **[Отчёт о завершении](development/projects-access-model/COMPLETION_REPORT.md)** - Отчёт о завершении реализации
+- **[Модель доступа](modules/projects-tasks/projects-tasks-access.md)** - Роли, права и проверка доступа
 
 ### Анализ
 
-- **[Структура шаблона "Бренд-пакет"](analysis/brand-package-template-structure.md)** - Анализ структуры шаблона
-- **[Текущее состояние шаблонов](analysis/project-templates-current-state.md)** - Анализ шаблонов проектов
+- **[Структура шаблона "Бренд-пакет" (архив)](archive/2026-01-07-marketplace-migration/brand-package-template-structure.md)** - Анализ структуры шаблона
+- **[Текущее состояние шаблонов (архив)](archive/2026-01-07-marketplace-migration/project-templates-current-state.md)** - Анализ шаблонов проектов
 
 ---
 
@@ -164,15 +401,15 @@
 
 ### Руководства
 
-- **[Полное руководство по AI](ai/AI_IMPLEMENTATION_GUIDE.md)** - Архитектура, API, интеграция, настройка
-- **[Быстрый старт AI](ai/AI_QUICK_START.md)** - Краткая инструкция для начала работы
-- **[Настройка ключей AI](ai/AI_KEYS_SETUP.md)** - Инструкция по настройке API ключей
-- **[Руководство пользователя AI](ai/AI_ASSISTANT_USER_GUIDE.md)** - Инструкция для пользователей
+- **[Интеграция AI](modules/ai-hub/ai-hub-integration.md)** - Архитектура, API, интеграция
+- **[Быстрый старт AI](modules/ai-hub/ai-hub-quick-start.md)** - Краткая инструкция для начала работы
+- **[Настройка ключей AI](modules/ai-hub/ai-hub-setup.md)** - Инструкция по настройке API ключей
+- **[Руководство пользователя AI](modules/ai-hub/ai-hub-assistant.md)** - Инструкция для пользователей
 
 ### Планы и контекст
 
-- **[План реализации AI ассистента](ai/AI_ASSISTANT_IMPLEMENTATION_PLAN.md)** - План разработки AI ассистента
-- **[Объяснение проекта для AI](ai/ПРОЕКТ_ОБЪЯСНЕНИЕ.md)** - Контекст для AI агентов
+- **[План реализации AI ассистента](modules/ai-hub/ai-hub-implementation-plan.md)** - План разработки AI ассистента
+- **[Объяснение проекта для AI (архив)](archive/2026-01-07-ai-hub-migration/ПРОЕКТ_ОБЪЯСНЕНИЕ.md)** - Контекст для AI агентов
 
 ---
 
@@ -180,32 +417,48 @@
 
 ### Референсы
 
-- **[ID тестовых пользователей](reference/TEST_USERS_IDS.md)** - Справочник ID для тестирования
-
-### Руководства
-
-- **[Руководство по исправлению TS ошибок](guides/TYPESCRIPT_ERRORS_FIX_GUIDE.md)** - Помощь при ошибках TypeScript
+- **[ID тестовых пользователей](archive/reference/TEST_USERS_IDS.md)** - Справочник ID для тестирования (архив)
 
 ### Администрирование
 
-- **[Управление данными](admin/data-management.md)** - Админские функции управления данными
+- **[Администрирование платформы](modules/admin/admin-overview.md)** - Обзор админ-панели
+- **[Управление данными](modules/admin/admin-data-management.md)** - Админские функции управления данными
 
 ### Финансы
 
-- **[Финансовая система](finance/README_FINANCE.md)** - Описание финансового модуля
+- **[Финансовая система](modules/finance/finance-overview.md)** - Описание финансового модуля
 
 ### Исследования
 
-- **[Анализ пользователей](research/users/USERS_ANALYSIS.md)** - Полный анализ пользователей системы
-- **[Краткая сводка анализа](research/users/USERS_ANALYSIS_SUMMARY.md)** - Краткое резюме анализа пользователей
-- **[Полный анализ пользователей](research/users/USERS_FULL_ANALYSIS.md)** - Детальный анализ всех пользователей
+- **[Анализ пользователей](archive/research/users/USERS_ANALYSIS.md)** - Полный анализ пользователей системы (архив)
+- **[Краткая сводка анализа](archive/research/users/USERS_ANALYSIS_SUMMARY.md)** - Краткое резюме анализа пользователей (архив)
+- **[Полный анализ пользователей](archive/research/users/USERS_FULL_ANALYSIS.md)** - Детальный анализ всех пользователей (архив)
 
 ### Другие документы
 
 - **[Объяснение env файлов](ENV_FILES_EXPLANATION.md)** - Описание переменных окружения
 - **[Использование CONTINUITY.md](CONTINUITY_USAGE.md)** - Инструкция по работе с CONTINUITY.md
 - **[История изменений](CHANGELOG.md)** - История изменений документации
-- **[Описание платформы](02-Platforma-Opisanie.md)** - UX потоки, сценарии использования
+- **[Описание платформы (архив)](archive/2026-01-07-platform-migration/02-Platforma-Opisanie.md)** - UX потоки, сценарии использования
+
+### Реорганизация документации
+
+- **[План реорганизации](reorganization/PLAN_DOCUMENTATION_REORGANIZATION.md)** - План реорганизации документации (8 фаз)
+- **[README реорганизации](reorganization/README.md)** - Обзор процесса реорганизации
+- **[Индекс фаз](reorganization/phases/INDEX.md)** - Индекс всех фаз реорганизации
+
+**Статус реорганизации:**
+
+- ✅ Фаза 1: Подготовка структуры (завершена 2026-01-06)
+- ✅ Фаза 2: Инвентаризация (завершена 2026-01-06)
+- ✅ Фаза 3: Миграция платформенных документов (завершена 2026-01-06)
+- ✅ Фаза 4: Миграция модуля PM Core (завершена 2026-01-06)
+- ✅ Фаза 5: Миграция остальных модулей (завершена 2026-01-07)
+- ✅ Фаза 6: Архитектурная документация (завершена 2026-01-07)
+- ✅ Фаза 7: Playbooks и процессы (завершена 2026-01-07)
+- ✅ Фаза 8: Финальная проверка (завершена 2026-01-07)
+
+**Реорганизация завершена!**
 
 ---
 
@@ -219,7 +472,7 @@
 
 **Начните здесь:**
 
-1. **[Быстрый старт](getting-started/quick-start.md)** - Начните работу за 5 минут
+1. **[Быстрый старт](platform/getting-started.md)** - Начните работу за 5 минут
 2. **[Настройка окружения](getting-started/setup.md)** - Подробное руководство по установке
 3. **[Системный анализ](architecture/system-analysis.md)** - Поймите архитектуру системы
 4. **[Шпаргалка](getting-started/CHEAT_SHEET.md)** - Быстрая справка по командам
@@ -241,11 +494,10 @@
 
 **Основные ресурсы:**
 
-1. **[Мастер-гайд по проектам](development/projects-master-guide.md)** - Работа с модулем проектов
-2. **[Workflow проектов, задач, файлов](development/PROJECT_TASK_FILE_WORKFLOW.md)** - Понимание workflow
-3. **[Руководство по исправлению TS ошибок](guides/TYPESCRIPT_ERRORS_FIX_GUIDE.md)** - Решение проблем TypeScript
-4. **[Использование WebSocket](development/websocket-usage.md)** - Работа с WebSocket
-5. **[Полное руководство по AI](ai/AI_IMPLEMENTATION_GUIDE.md)** - Интеграция AI функциональности
+1. **[Мастер-гайд по проектам](modules/projects-tasks/projects-tasks-projects.md)** - Работа с модулем проектов
+2. **[Workflow проектов, задач, файлов](modules/projects-tasks/projects-tasks-tasks.md)** - Понимание workflow
+3. **[Использование WebSocket](modules/projects-tasks/projects-tasks-websocket.md)** - Работа с WebSocket
+4. **[Интеграция AI](modules/ai-hub/ai-hub-integration.md)** - Интеграция AI функциональности
 
 ---
 
@@ -269,19 +521,19 @@
 - [Архитектура БД](architecture/database-architecture.md)
 - [Настройка Vercel Postgres](getting-started/vercel-postgres-setup.md)
 - [Очистка БД](runbooks/DATABASE_CLEANUP_GUIDE.md)
-- [Оптимизация БД](development/database-optimization-next-steps.md)
+- [Оптимизация БД](development/reports/database-optimization-next-steps.md)
 
 **Проекты и задачи:**
 
-- [Мастер-гайд по проектам](development/projects-master-guide.md)
-- [Workflow проектов](development/PROJECT_TASK_FILE_WORKFLOW.md)
+- [Мастер-гайд по проектам](modules/projects-tasks/projects-tasks-projects.md)
+- [Workflow проектов](modules/projects-tasks/projects-tasks-tasks.md)
 - [Runbook проектов](runbooks/cursor_runbook_projects_tasks_v1.md)
 
 **AI функциональность:**
 
-- [Полное руководство по AI](ai/AI_IMPLEMENTATION_GUIDE.md)
-- [Быстрый старт AI](ai/AI_QUICK_START.md)
-- [Настройка ключей AI](ai/AI_KEYS_SETUP.md)
+- [Интеграция AI](modules/ai-hub/ai-hub-integration.md)
+- [Быстрый старт AI](modules/ai-hub/ai-hub-quick-start.md)
+- [Настройка ключей AI](modules/ai-hub/ai-hub-setup.md)
 
 **Компоненты:**
 
@@ -304,4 +556,5 @@
 **Связанные документы:**
 
 - [README документации](README.md) - Обзор документации
-- [Анализ документации](DOCUMENTATION_ANALYSIS.md) - Структурный анализ всей документации
+- [План реорганизации](reorganization/PLAN_DOCUMENTATION_REORGANIZATION.md) - План реорганизации документации
+- [Анализ документации](archive/analysis/2026-01-05-documentation-analysis.md) - Структурный анализ всей документации (архив)

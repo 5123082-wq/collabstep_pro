@@ -20,7 +20,7 @@
   - `pnpm -w typecheck`
   - `pnpm -w test`
   - `CI=1 pnpm test:e2e -- --workers=1` (хотя бы в “детерминированном” режиме)
-  - (опционально, если хотите максимально близко к Vercel) `node scripts/run-vercel-build.mjs`
+  - (опционально, если хотите максимально близко к Vercel) `node scripts/build/run-vercel-build.mjs`
 
 ### Важные источники истины (куда смотреть за контекстом)
 

@@ -275,7 +275,7 @@ lsof -i :5432
 
 ## 🔗 Связанные документы
 
-- [Локальный запуск тестов](../getting-started/local-testing.md) — полная документация
+- [Локальный запуск тестов](../../getting-started/local-testing.md) — полная документация
 - [CI Tests Database Fix Recommendations](CI_TESTS_DATABASE_FIX_RECOMMENDATIONS.md) — анализ проблемы
 - [CI Database Setup Analysis](CI_DATABASE_SETUP_ANALYSIS.md) — анализ работы другого агента
 

@@ -28,9 +28,9 @@
 ## Документация
 
 - **[Карта документации](docs/README.md)** — полный обзор всей документации
-- **[Быстрый старт](docs/getting-started/quick-start.md)** — начните работу за 5 минут
+- **[Быстрый старт](docs/platform/getting-started.md)** — начните работу за 5 минут
 - **[Настройка окружения](docs/getting-started/setup.md)** — подробное руководство
-- **[Настройка AI (OpenAI)](docs/ai/AI_KEYS_SETUP.md)** — подключение AI (ключи и доступ) 🤖
+- **[Настройка AI (OpenAI)](docs/modules/ai-hub/setup.md)** — подключение AI (ключи и доступ) 🤖
 - **[Архитектура](docs/architecture/system-analysis.md)** — системный обзор
 
 ## Ключевые документы
@@ -38,7 +38,7 @@
 - **Запуск и проверка**: [QUICK_SETUP_GUIDE](docs/getting-started/QUICK_SETUP_GUIDE.md), [VERIFICATION_CHECKLIST](docs/getting-started/VERIFICATION_CHECKLIST.md), [VERCEL_POSTGRES_SETUP_CHECKLIST](docs/getting-started/VERCEL_POSTGRES_SETUP_CHECKLIST.md)
 - **Качество и аудит**: [FIXES_ACTION_PLAN](docs/audit/FIXES_ACTION_PLAN.md), [CODE_AUDIT](docs/audit/CODE_AUDIT.md), [CLEANUP_SUMMARY](docs/audit/CLEANUP_SUMMARY.md)
 - **Runbooks**: [DATABASE_CLEANUP_GUIDE](docs/runbooks/DATABASE_CLEANUP_GUIDE.md), [cursor projects/tasks runbook](docs/runbooks/cursor_runbook_projects_tasks_v1.md)
-- **AI функциональность**: [AI Quick Start](docs/ai/AI_QUICK_START.md), [AI Implementation Guide](docs/ai/AI_IMPLEMENTATION_GUIDE.md), [Проектное объяснение](docs/ai/ПРОЕКТ_ОБЪЯСНЕНИЕ.md)
+- **AI функциональность**: [AI Quick Start](docs/modules/ai-hub/quick-start.md), [AI Integration Guide](docs/modules/ai-hub/integration.md), [Проектное объяснение (архив)](docs/archive/2026-01-07-ai-hub-migration/ПРОЕКТ_ОБЪЯСНЕНИЕ.md)
 - **Финансы**: [Finance System Progress](docs/finance/README_FINANCE.md)
 - **Разработка**: [TypeScript errors fix guide](docs/guides/TYPESCRIPT_ERRORS_FIX_GUIDE.md), [Cheat Sheet](docs/getting-started/CHEAT_SHEET.md)
 - **Справочник**: [Stage N AI completion](docs/archive/stages/STAGE_N_COMPLETION_REPORT.md)
@@ -83,7 +83,7 @@ NEXTAUTH_URL=http://localhost:3000
 
 FIN_EXPENSES_STORAGE=memory
 DEMO_ADMIN_EMAIL=admin.demo@collabverse.test
-DEMO_ADMIN_PASSWORD=demo-admin
+DEMO_ADMIN_PASSWORD=admin.demo
 DEMO_USER_EMAIL=user.demo@collabverse.test
 DEMO_USER_PASSWORD=demo-user
 ```
@@ -152,7 +152,7 @@ DEMO_USER_PASSWORD=demo-user
 
 ```text
    DEMO_ADMIN_EMAIL=admin.demo@collabverse.test
-   DEMO_ADMIN_PASSWORD=demo-admin
+   DEMO_ADMIN_PASSWORD=admin.demo
    DEMO_USER_EMAIL=user.demo@collabverse.test
    DEMO_USER_PASSWORD=demo-user
 ```

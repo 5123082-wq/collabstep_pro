@@ -33,6 +33,38 @@
     {
       "pattern": "^https://platform\\.openai\\.com",
       "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
+    },
+    {
+      "pattern": "^https://platform\\.openai\\.com",
+      "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
+    },
+    {
+      "pattern": "^https://platform\\.openai\\.com",
+      "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
+    },
+    {
+      "pattern": "^https://platform\\.openai\\.com",
+      "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
+    },
+    {
+      "pattern": "^https://platform\\.openai\\.com",
+      "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
+    },
+    {
+      "pattern": "^https://platform\\.openai\\.com",
+      "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
+    },
+    {
+      "pattern": "^https://platform\\.openai\\.com",
+      "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
+    },
+    {
+      "pattern": "^https://platform\\.openai\\.com",
+      "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
+    },
+    {
+      "pattern": "^https://platform\\.openai\\.com",
+      "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
     }
   ],
   "retryOn429": true,

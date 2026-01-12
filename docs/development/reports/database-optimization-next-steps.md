@@ -249,8 +249,8 @@
 
 ## Связанные документы
 
-- [Архитектура БД](../architecture/database-architecture.md)
-- [ADR-0001: Канонические таблицы](../architecture/adr/0001-canonical-database-tables.md)
+- [Архитектура БД](../../architecture/database-architecture.md)
+- [ADR-0001: Канонические таблицы](../../architecture/adr/0001-canonical-database-tables.md)
 - [Отчет аудита](../../audit/DATA_LOCATION_AUDIT_REPORT.md)
 - [Правила работы с БД](../../../.cursor/rules/database.mdc)
 

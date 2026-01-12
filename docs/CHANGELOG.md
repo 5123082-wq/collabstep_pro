@@ -57,15 +57,15 @@
 - `apps/web/components/pm/ProjectAIAgents.tsx`
 - `apps/web/tests/unit/ai-service.spec.ts`
 - `apps/web/tests/e2e/ai-assistant.spec.ts`
-- `docs/ai/AI_KEYS_SETUP.md` — подробное руководство по настройке OpenAI
-- `docs/ai/AI_QUICK_START.md` — быстрая инструкция по настройке
+- `docs/modules/ai-hub/ai-hub-setup.md` — подробное руководство по настройке OpenAI
+- `docs/modules/ai-hub/ai-hub-quick-start.md` — быстрая инструкция по настройке
 
 **Обновлено:**
 
 - `apps/web/package.json` — добавлена зависимость `openai@4.68.0`
 - `apps/web/components/pm/CreateTaskModal.tsx` — интегрирован TaskAIActions
 - `apps/web/app/(app)/pm/projects/[id]/page.tsx` — добавлена вкладка "AI-агенты"
-- `docs/development/projects-master-guide.md` — добавлен полный отчет Stage M
+- `docs/modules/projects-tasks/projects-tasks-projects.md` — добавлен полный отчет Stage M
 - `docs/development/stages/stage-M-ai-basic.md` — статус изменен на "ЗАВЕРШЁН"
 - `README.md` — добавлена ссылка на руководство по настройке AI
 
@@ -81,7 +81,7 @@
    NEXT_PUBLIC_FEATURE_AI_V1=true
    ```
 
-**Документация:** [docs/ai/AI_KEYS_SETUP.md](ai/AI_KEYS_SETUP.md)
+**Документация:** [docs/modules/ai-hub/ai-hub-setup.md](modules/ai-hub/ai-hub-setup.md)
 
 ---
 
@@ -115,7 +115,7 @@
 
 **Обновлено:**
 
-- `docs/development/projects-master-guide.md` — добавлен отчет о завершении Stage J
+- `docs/modules/projects-tasks/projects-tasks-projects.md` — добавлен отчет о завершении Stage J
 - `docs/development/stages/stage-J-chat-files.md` — статус изменен на "ЗАВЕРШЁН"
 - `apps/api/src/types.ts` — добавлен `ProjectChatMessage` и `'project_chat'` в `AttachmentEntityType`
 - `apps/web/lib/notifications/event-generator.ts` — добавлена функция `notifyChatMessageAdded`
@@ -157,7 +157,7 @@
 
 **Обновлено:**
 
-- `docs/development/projects-master-guide.md` — добавлен отчет о завершении Stage I
+- `docs/modules/projects-tasks/projects-tasks-projects.md` — добавлен отчет о завершении Stage I
 - `docs/development/stages/stage-I-notifications.md` — статус изменен на "ЗАВЕРШЁН"
 
 ### Интеграция (Stage I)

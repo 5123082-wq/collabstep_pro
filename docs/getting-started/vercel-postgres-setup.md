@@ -71,7 +71,7 @@ FIN_EXPENSES_STORAGE=db
 # Демо-аккаунты (опционально)
 
 DEMO_ADMIN_EMAIL=admin.demo@collabverse.test
-DEMO_ADMIN_PASSWORD=demo-admin
+DEMO_ADMIN_PASSWORD=admin.demo
 DEMO_USER_EMAIL=user.demo@collabverse.test
 DEMO_USER_PASSWORD=demo-user
 ```

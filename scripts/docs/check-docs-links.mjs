@@ -15,7 +15,8 @@ import { dirname, join } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const rootDir = join(__dirname, '..');
+// Скрипт находится в scripts/docs/, поэтому нужно подняться на 2 уровня вверх
+const rootDir = join(__dirname, '..', '..');
 const configPath = join(rootDir, '.mlc.config.json');
 const backupPath = join(rootDir, '.mlc.config.json.backup');
 
