@@ -76,6 +76,6 @@
 ---
 
 **Связанные документы:**
-- [Обзор платформы](./overview.md)
-- [Роли и права доступа](./roles-permissions.md)
-- [Закрытие организации: спецификация](../development/organization-closure/organization-closure-specification.md)
+- [Обзор платформы](../../platform/overview.md)
+- [Роли и права доступа](../../platform/roles-permissions.md)
+- [Закрытие организации: спецификация](../../development/organization-closure/organization-closure-specification.md)
