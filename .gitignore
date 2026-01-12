@@ -30,3 +30,9 @@ filebrowser-test/
 
 # Archived documentation (not for git)
 docs/archive/
+
+# Development documentation (local only, not for git)
+docs/development/
+docs/_audit/
+docs/audit/
+docs/reorganization/
