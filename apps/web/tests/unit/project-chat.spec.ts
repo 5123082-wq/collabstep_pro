@@ -8,13 +8,14 @@ import {
 } from '@collabverse/api';
 import { GET as getChatMessages, POST as createChatMessage } from '@/app/api/pm/projects/[id]/chat/route';
 import { NextRequest } from 'next/server';
+import { makeTestUserId } from './utils/test-ids';
 
 describe('Project Chat API', () => {
   let projectId: string;
   const adminEmail = 'admin.demo@collabverse.test';
   const userId = TEST_ADMIN_USER_ID;
-  const viewerEmail = 'viewer@example.com';
-  const viewerUserId = 'viewer-user-id-1';
+  let viewerEmail: string;
+  let viewerUserId: string;
   const session = encodeDemoSession({
     email: adminEmail,
     userId,
@@ -28,6 +29,10 @@ describe('Project Chat API', () => {
 
   beforeEach(async () => {
     resetFinanceMemory();
+
+    const viewer = makeTestUserId('viewer');
+    viewerEmail = viewer.email;
+    viewerUserId = viewer.id;
 
     // Создаем проект для тестов
     const project = projectsRepository.create({

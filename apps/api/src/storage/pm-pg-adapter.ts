@@ -4,12 +4,20 @@ import type { Project, ProjectChatMessage, ProjectMember, Task, TaskComment } fr
 import { memory } from '../data/memory';
 
 const LOG_PREFIX = '[pm-pg]';
-const LOCAL_PG_REGEX = /^postgres(?:ql)?:\/\/(localhost|127\.0\.0\.1)/;
-const shouldUseLocalPg =
-  process.env.USE_LOCAL_PG === 'true' ||
-  (!!process.env.POSTGRES_URL && LOCAL_PG_REGEX.test(process.env.POSTGRES_URL ?? ''));
-const sqlClient = shouldUseLocalPg && process.env.POSTGRES_URL
-  ? postgres(process.env.POSTGRES_URL, { ssl: 'prefer' })
+const postgresUrl = process.env.POSTGRES_URL;
+const isLocalPgUrl =
+  !!postgresUrl &&
+  (() => {
+    try {
+      const host = new URL(postgresUrl).hostname;
+      return host === 'localhost' || host === '127.0.0.1';
+    } catch {
+      return false;
+    }
+  })();
+const shouldUseLocalPg = process.env.USE_LOCAL_PG === 'true' || isLocalPgUrl;
+const sqlClient = shouldUseLocalPg && postgresUrl
+  ? postgres(postgresUrl, { ssl: 'prefer' })
   : vercelSql;
 
 function hasQuery(

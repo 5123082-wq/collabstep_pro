@@ -10,7 +10,6 @@ import {
   files,
   organizationMembers,
   organizations,
-  organizationStorageUsage,
   projects,
   users
 } from '@collabverse/api/db/schema';
@@ -19,6 +18,7 @@ import { NextRequest } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { put } from '@vercel/blob';
+import { resetTestDb } from './utils/db-cleaner';
 
 jest.mock('@vercel/blob', () => ({
   put: jest.fn()
@@ -44,13 +44,7 @@ describe('Project Files API', () => {
   beforeEach(async () => {
     resetFinanceMemory();
 
-    await db.delete(attachments);
-    await db.delete(files);
-    await db.delete(organizationStorageUsage);
-    await db.delete(projects);
-    await db.delete(organizationMembers);
-    await db.delete(organizations);
-    await db.delete(users);
+    await resetTestDb();
 
     process.env.BLOB_READ_WRITE_TOKEN = 'test-blob-token';
     mockPut.mockResolvedValue({

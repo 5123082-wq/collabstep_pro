@@ -5,6 +5,9 @@ import {
   walletRepository,
 } from '@collabverse/api';
 import { amountToCents } from '@collabverse/api/utils/money';
+import { resetFinanceMemory } from '@collabverse/api';
+import { resetTestDb } from '../utils/db-cleaner';
+import { makeTestUserId } from '../utils/test-ids';
 
 // Skip tests if POSTGRES_URL is not set (e.g., in CI without database)
 const hasDatabase =
@@ -17,13 +20,16 @@ describeIfDb('WalletClosureChecker', () => {
   let testOwnerId: string;
 
   beforeEach(async () => {
+    resetFinanceMemory();
+    await resetTestDb();
     checker = new WalletClosureChecker();
 
     // Создать тестового владельца организации
-    testOwnerId = 'test-owner-' + Date.now();
+    const owner = makeTestUserId('owner');
+    testOwnerId = owner.id;
     await usersRepository.create({
-      id: testOwnerId,
-      email: `owner-${Date.now()}@test.com`,
+      id: owner.id,
+      email: owner.email,
       name: 'Test Owner',
     });
 

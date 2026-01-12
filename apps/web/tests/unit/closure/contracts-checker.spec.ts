@@ -5,6 +5,9 @@ import {
   contractsRepository,
 } from '@collabverse/api';
 import { amountToCents } from '@collabverse/api/utils/money';
+import { resetFinanceMemory } from '@collabverse/api';
+import { resetTestDb } from '../utils/db-cleaner';
+import { makeTestId, makeTestUserId } from '../utils/test-ids';
 
 // Skip tests if POSTGRES_URL is not set (e.g., in CI without database)
 const hasDatabase =
@@ -19,21 +22,25 @@ describeIfDb('ContractsClosureChecker', () => {
   let testTaskId: string;
 
   beforeEach(async () => {
+    resetFinanceMemory();
+    await resetTestDb();
     checker = new ContractsClosureChecker();
 
     // Создать тестового владельца организации
-    testOwnerId = 'test-owner-' + Date.now();
+    const owner = makeTestUserId('owner');
+    testOwnerId = owner.id;
     await usersRepository.create({
-      id: testOwnerId,
-      email: `owner-${Date.now()}@test.com`,
+      id: owner.id,
+      email: owner.email,
       name: 'Test Owner',
     });
 
     // Создать тестового исполнителя
-    testPerformerId = 'test-performer-' + Date.now();
+    const performer = makeTestUserId('performer');
+    testPerformerId = performer.id;
     await usersRepository.create({
-      id: testPerformerId,
-      email: `performer-${Date.now()}@test.com`,
+      id: performer.id,
+      email: performer.email,
       name: 'Test Performer',
     });
 
@@ -47,7 +54,7 @@ describeIfDb('ContractsClosureChecker', () => {
     testOrgId = testOrg.id;
 
     // Создать тестовую задачу (ID для контракта)
-    testTaskId = 'test-task-' + Date.now();
+    testTaskId = makeTestId('task');
   });
 
   afterEach(async () => {

@@ -8,6 +8,9 @@ import {
   documentsRepository,
   filesRepository,
 } from '@collabverse/api';
+import { resetFinanceMemory } from '@collabverse/api';
+import { resetTestDb } from '../utils/db-cleaner';
+import { makeTestId, makeTestUserId } from '../utils/test-ids';
 
 // Skip tests if POSTGRES_URL is not set (e.g., in CI without database)
 const hasDatabase =
@@ -20,11 +23,14 @@ describeIfDb('Organization Closure Integration', () => {
   let testProjectId: string;
 
   beforeEach(async () => {
+    resetFinanceMemory();
+    await resetTestDb();
     // Создать тестового владельца организации
-    testOwnerId = 'test-owner-' + Date.now();
+    const owner = makeTestUserId('owner');
+    testOwnerId = owner.id;
     await usersRepository.create({
-      id: testOwnerId,
-      email: `owner-${Date.now()}@test.com`,
+      id: owner.id,
+      email: owner.email,
       name: 'Test Owner',
     });
 
@@ -39,7 +45,7 @@ describeIfDb('Organization Closure Integration', () => {
 
     // Создать тестовый проект
     const testProject = await dbProjectsRepository.create({
-      name: 'Test Project',
+      name: `Test Project ${makeTestId('proj')}`,
       organizationId: testOrgId,
       ownerId: testOwnerId,
     });

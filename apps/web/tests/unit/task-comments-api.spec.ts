@@ -26,6 +26,20 @@ describe('Task Comments API', () => {
     'content-type': 'application/json'
   };
 
+  const originalUseDbStorage = process.env.USE_DB_STORAGE;
+
+  beforeAll(() => {
+    process.env.USE_DB_STORAGE = 'false';
+  });
+
+  afterAll(() => {
+    if (originalUseDbStorage === undefined) {
+      delete process.env.USE_DB_STORAGE;
+      return;
+    }
+    process.env.USE_DB_STORAGE = originalUseDbStorage;
+  });
+
   beforeEach(async () => {
     resetFinanceMemory();
 
