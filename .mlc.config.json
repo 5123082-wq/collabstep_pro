@@ -19,52 +19,24 @@
       "description": "Google Cloud Console often blocks automated link checks."
     },
     {
-      "pattern": "^https://platform\\.openai\\.com",
-      "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
+      "pattern": "^https://support\\.upwork\\.com",
+      "description": "Upwork support pages block automated link checks (403 Forbidden)"
     },
     {
-      "pattern": "^https://platform\\.openai\\.com",
-      "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
+      "pattern": "^https://help\\.fiverr\\.com",
+      "description": "Fiverr help pages block automated link checks (403 Forbidden)"
     },
     {
-      "pattern": "^https://platform\\.openai\\.com",
-      "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
+      "pattern": "^https://www\\.fiverr\\.com",
+      "description": "Fiverr pages block automated link checks (403 Forbidden)"
     },
     {
-      "pattern": "^https://platform\\.openai\\.com",
-      "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
+      "pattern": "^https://www\\.reddit\\.com",
+      "description": "Reddit pages block automated link checks (403 Forbidden)"
     },
     {
-      "pattern": "^https://platform\\.openai\\.com",
-      "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
-    },
-    {
-      "pattern": "^https://platform\\.openai\\.com",
-      "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
-    },
-    {
-      "pattern": "^https://platform\\.openai\\.com",
-      "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
-    },
-    {
-      "pattern": "^https://platform\\.openai\\.com",
-      "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
-    },
-    {
-      "pattern": "^https://platform\\.openai\\.com",
-      "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
-    },
-    {
-      "pattern": "^https://platform\\.openai\\.com",
-      "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
-    },
-    {
-      "pattern": "^https://platform\\.openai\\.com",
-      "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
-    },
-    {
-      "pattern": "^https://platform\\.openai\\.com",
-      "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
+      "pattern": "^https://www\\.toptal\\.com",
+      "description": "Toptal pages block automated link checks (403 Forbidden)"
     }
   ],
   "retryOn429": true,
