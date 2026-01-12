@@ -12,7 +12,6 @@ import {
   folders,
   organizationMembers,
   organizations,
-  organizationStorageUsage,
   projects,
   users
 } from '@collabverse/api/db/schema';
@@ -22,6 +21,7 @@ import { NextRequest } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { generateClientTokenFromReadWriteToken } from '@vercel/blob/client';
 import { and, eq } from 'drizzle-orm';
+import { resetTestDb } from './utils/db-cleaner';
 
 // Мокаем generateClientTokenFromReadWriteToken
 jest.mock('@vercel/blob/client', () => ({
@@ -50,14 +50,7 @@ describe('Direct Upload API', () => {
   beforeEach(async () => {
     resetFinanceMemory();
 
-    await db.delete(attachments);
-    await db.delete(files);
-    await db.delete(folders);
-    await db.delete(organizationStorageUsage);
-    await db.delete(projects);
-    await db.delete(organizationMembers);
-    await db.delete(organizations);
-    await db.delete(users);
+    await resetTestDb();
 
     // Создаем пользователя и организацию в БД
     await db

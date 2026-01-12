@@ -1,9 +1,10 @@
 import { encodeDemoSession } from '@/lib/auth/demo-session';
 import { organizationsRepository, memory, resetFinanceMemory, TEST_ADMIN_USER_ID } from '@collabverse/api';
 import { db } from '@collabverse/api/db/config';
-import { organizationMembers, organizations, projects, users } from '@collabverse/api/db/schema';
+import { organizationMembers, organizations, users } from '@collabverse/api/db/schema';
 import { NextRequest } from 'next/server';
 import { randomUUID } from 'node:crypto';
+import { resetTestDb } from './utils/db-cleaner';
 
 const FEATURE_PM_NAV_KEY = 'NEXT_PUBLIC_FEATURE_PM_NAV_PROJECTS_AND_TASKS';
 const FEATURE_PM_LIST_KEY = 'NEXT_PUBLIC_FEATURE_PM_PROJECTS_LIST';
@@ -63,10 +64,7 @@ describe('POST /api/pm/projects', () => {
     resetFinanceMemory();
     memory.PROJECTS = [];
 
-    await db.delete(projects);
-    await db.delete(organizationMembers);
-    await db.delete(organizations);
-    await db.delete(users);
+    await resetTestDb();
 
     await db.insert(users).values({
       id: userId,

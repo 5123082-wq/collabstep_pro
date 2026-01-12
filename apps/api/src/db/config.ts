@@ -21,9 +21,18 @@ if (postgresUrl) {
   throw new Error('AUTH_STORAGE=db requires POSTGRES_URL to be set.');
 }
 
-const shouldUseLocalPg =
-  process.env.USE_LOCAL_PG === 'true' ||
-  (!!postgresUrl && /^postgres(?:ql)?:\/\/(localhost|127\.0\.0\.1)/.test(postgresUrl));
+const isLocalPgUrl =
+  !!postgresUrl &&
+  (() => {
+    try {
+      const host = new URL(postgresUrl).hostname;
+      return host === 'localhost' || host === '127.0.0.1';
+    } catch {
+      return false;
+    }
+  })();
+
+const shouldUseLocalPg = process.env.USE_LOCAL_PG === 'true' || isLocalPgUrl;
 
 // Для локального Postgres используем драйвер postgres-js, иначе — vercel-postgres (Neon).
 const dbClient = shouldUseLocalPg && postgresUrl

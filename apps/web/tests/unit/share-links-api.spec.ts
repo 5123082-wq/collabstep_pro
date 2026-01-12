@@ -10,6 +10,7 @@ import { GET as downloadShare } from '@/app/api/share/[token]/download/route';
 import { NextRequest } from 'next/server';
 import { db } from '@collabverse/api/db/config';
 import { files, organizations, users } from '@collabverse/api/db/schema';
+import { resetTestDb } from './utils/db-cleaner';
 
 // Mock fetch for blob requests
 global.fetch = jest.fn();
@@ -30,10 +31,7 @@ describe('Share Links API', () => {
   };
 
   beforeEach(async () => {
-    // Clean up existing data
-    await db.delete(files);
-    await db.delete(organizations);
-    await db.delete(users);
+    await resetTestDb();
 
     // Create test user
     const [user] = await db
@@ -87,9 +85,7 @@ describe('Share Links API', () => {
   });
 
   afterEach(async () => {
-    await db.delete(files);
-    await db.delete(organizations);
-    await db.delete(users);
+    await resetTestDb();
     jest.clearAllMocks();
   });
 

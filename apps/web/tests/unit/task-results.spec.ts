@@ -18,6 +18,7 @@ import { GET as getTaskResults, POST as setTaskResults } from '@/app/api/pm/task
 import { NextRequest } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { eq, and } from 'drizzle-orm';
+import { resetTestDb } from './utils/db-cleaner';
 
 describe('Task Results API', () => {
   let projectId: string;
@@ -38,12 +39,7 @@ describe('Task Results API', () => {
   beforeEach(async () => {
     resetFinanceMemory();
 
-    await db.delete(files);
-    await db.delete(folders);
-    await db.delete(projects);
-    await db.delete(organizationMembers);
-    await db.delete(organizations);
-    await db.delete(users);
+    await resetTestDb();
 
     await db
       .insert(users)
@@ -373,4 +369,3 @@ describe('Task Results API', () => {
     });
   });
 });
-

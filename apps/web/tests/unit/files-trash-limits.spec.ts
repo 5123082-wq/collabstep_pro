@@ -7,7 +7,6 @@ import {
 } from '@collabverse/api';
 import { db } from '@collabverse/api/db/config';
 import {
-  attachments,
   fileTrash,
   files,
   organizationMembers,
@@ -25,6 +24,7 @@ import { POST as getUploadUrl } from '@/app/api/files/upload-url/route';
 import { NextRequest } from 'next/server';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
+import { resetTestDb } from './utils/db-cleaner';
 
 describe('File limits and trash', () => {
   let projectId: string;
@@ -49,16 +49,7 @@ describe('File limits and trash', () => {
   beforeEach(async () => {
     resetFinanceMemory();
 
-    await db.delete(attachments);
-    await db.delete(fileTrash);
-    await db.delete(files);
-    await db.delete(organizationStorageUsage);
-    await db.delete(organizationSubscriptions);
-    await db.delete(subscriptionPlans);
-    await db.delete(projects);
-    await db.delete(organizationMembers);
-    await db.delete(organizations);
-    await db.delete(users);
+    await resetTestDb();
 
     await db
       .insert(users)

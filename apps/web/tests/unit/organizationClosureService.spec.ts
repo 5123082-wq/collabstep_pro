@@ -4,6 +4,9 @@ import {
   organizationArchivesRepository,
   type Organization,
 } from '@collabverse/api';
+import { resetFinanceMemory } from '@collabverse/api';
+import { resetTestDb } from './utils/db-cleaner';
+import { makeTestUserId } from './utils/test-ids';
 
 describe('OrganizationClosureService', () => {
   let testOrgId: string;
@@ -11,8 +14,11 @@ describe('OrganizationClosureService', () => {
   let testOrg: Organization;
 
   beforeEach(async () => {
+    resetFinanceMemory();
+    await resetTestDb();
+    const owner = makeTestUserId('owner');
+    testOwnerId = owner.id;
     // Создать тестовую организацию
-    testOwnerId = 'test-owner-' + Date.now();
     testOrg = await organizationsRepository.create({
       name: 'Test Organization',
       ownerId: testOwnerId,
