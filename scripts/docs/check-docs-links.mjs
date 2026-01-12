@@ -59,9 +59,17 @@ try {
   writeFileSync(configPath, JSON.stringify(config, null, 2));
 
   // Запускаем проверку ссылок
+  const ignorePaths = [
+    '-not -path "./node_modules/*"',
+    '-not -path "./apps/*/node_modules/*"',
+    '-not -path "./docs/archive/*"',
+    '-not -path "./docs/archive/**"',
+    '-not -path "./CONTINUITY.md"',
+  ];
+
   console.log('\n🔍 Запуск проверки ссылок...\n');
   execSync(
-    'find . -name "*.md" -not -path "./node_modules/*" -not -path "./apps/*/node_modules/*" -print0 | xargs -0 -n1 markdown-link-check -c .mlc.config.json',
+    `find . -name "*.md" ${ignorePaths.join(' ')} -print0 | xargs -0 -n1 markdown-link-check -c .mlc.config.json`,
     {
       stdio: 'inherit',
       cwd: rootDir,

@@ -248,4 +248,4 @@ pnpm dev
 ## Дополнительные ресурсы
 
 - [Админ-панель README](https://github.com/5123082-wq/collabstep_pro/blob/main/apps/web/app/%28app%29/admin/README.md)
-- [Системный анализ (API обзор)](../architecture/system-analysis.md)
+- [Системный анализ (API обзор)](../../architecture/system-analysis.md)

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import Image from 'next/image';
 import { useFileManagerStore } from '@/stores/file-manager-store';
 
 type FilePreviewModalProps = {
@@ -186,15 +187,22 @@ export default function FilePreviewModal({ onDownload, onShare }: FilePreviewMod
       {/* Content */}
       <div className="flex h-full w-full items-center justify-center overflow-auto p-20">
         {isImage && (
-          <img
-            src={file.storageUrl}
-            alt={file.filename}
-            className="max-h-full max-w-full object-contain transition-transform"
+          <div
+            className="relative h-full w-full max-h-full max-w-full"
             style={{
               transform: `scale(${zoom}) rotate(${rotation}deg)`,
             }}
-            draggable={false}
-          />
+          >
+            <Image
+              src={file.storageUrl}
+              alt={file.filename}
+              fill
+              sizes="100vw"
+              className="object-contain"
+              draggable={false}
+              unoptimized
+            />
+          </div>
         )}
 
         {isPdf && (
@@ -221,10 +229,13 @@ export default function FilePreviewModal({ onDownload, onShare }: FilePreviewMod
               }`}
             >
               {f.mimeType.startsWith('image/') ? (
-                <img
+                <Image
                   src={f.storageUrl}
                   alt={f.filename}
+                  width={48}
+                  height={48}
                   className="h-full w-full object-cover"
+                  unoptimized
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center bg-neutral-800 text-xs text-neutral-400">

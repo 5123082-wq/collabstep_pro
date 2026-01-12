@@ -1,6 +1,7 @@
 'use client';
 
 import { memo, useCallback } from 'react';
+import Image from 'next/image';
 import { Trash2 } from 'lucide-react';
 import { useFileManagerStore, type FileObject } from '@/stores/file-manager-store';
 
@@ -198,11 +199,14 @@ function FileListingItemComponent({
       {/* File preview / icon */}
       <div className="flex aspect-square items-center justify-center rounded-lg bg-neutral-800/50">
         {file.mimeType.startsWith('image/') ? (
-          <img
+          <Image
             src={file.storageUrl}
             alt={file.filename}
+            width={160}
+            height={160}
             className="h-full w-full rounded-lg object-cover"
             loading="lazy"
+            unoptimized
           />
         ) : (
           <span className="text-4xl">{getFileEmoji(file.mimeType)}</span>

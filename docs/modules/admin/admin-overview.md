@@ -79,4 +79,4 @@
 
 **Связанные документы:**
 - [Управление данными](./admin-data-management.md)
-- [Обзор платформы](../platform/overview.md)
+- [Обзор платформы](../../platform/overview.md)

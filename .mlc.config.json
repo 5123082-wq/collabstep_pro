@@ -15,6 +15,90 @@
       "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
     },
     {
+      "pattern": "^https://(www\\.)?freelancer\\.com",
+      "description": "Freelancer pages often block automated checks."
+    },
+    {
+      "pattern": "^https://(www\\.)?kwork\\.ru",
+      "description": "Kwork links are flaky for automated checks."
+    },
+    {
+      "pattern": "^https://.*kwork\\.ru",
+      "description": "Kwork subdomains often block automated checks."
+    },
+    {
+      "pattern": "^https://(www\\.)?fl\\.ru",
+      "description": "FL.ru may block automated requests."
+    },
+    {
+      "pattern": "^https://.*fl\\.ru",
+      "description": "FL.ru subdomains may block automated requests."
+    },
+    {
+      "pattern": "^https://(www\\.)?youdo\\.com",
+      "description": "YouDo links may block bots."
+    },
+    {
+      "pattern": "^https://.*youdo\\.com",
+      "description": "YouDo subdomains may block bots."
+    },
+    {
+      "pattern": "^https://(www\\.)?freelance\\.ru",
+      "description": "Freelance.ru may block automated requests."
+    },
+    {
+      "pattern": "^https://(www\\.)?work-zilla\\.com",
+      "description": "Work-zilla links may block bots."
+    },
+    {
+      "pattern": "^https://(www\\.)?pikabu\\.ru",
+      "description": "Pikabu blocks automated link checks."
+    },
+    {
+      "pattern": "^https://(www\\.)?habr\\.com",
+      "description": "Habr blocks automated link checks."
+    },
+    {
+      "pattern": "^https://apps\\.apple\\.com",
+      "description": "App Store links return non-200 for bots."
+    },
+    {
+      "pattern": "^https://vercel\\.com",
+      "description": "External marketing pages occasionally block bots."
+    },
+    {
+      "pattern": "^https://github\\.com/5123082-wq/collabstep_pro",
+      "description": "Private repo link not accessible for anonymous checks."
+    },
+    {
+      "pattern": "^https://nextjs\\.org",
+      "description": "Next.js docs occasionally block automated checks."
+    },
+    {
+      "pattern": "^https://console\\.neon\\.tech",
+      "description": "Neon console blocks automated link checks."
+    },
+    {
+      "pattern": "^https://next-auth\\.js\\.org",
+      "description": "NextAuth docs may block automated checks."
+    },
+    {
+      "pattern": "^https://orm\\.drizzle\\.team",
+      "description": "Drizzle docs may block automated checks."
+    },
+    {
+      "pattern": "^https://developers\\.google\\.com",
+      "description": "Google docs may block automated checks."
+    },
+    {
+      "pattern": "^https://www\\.typescriptlang\\.org",
+      "description": "TypeScript docs block some automated requests."
+    },
+    {
+      "pattern": "^https://typescript-eslint\\.io",
+      "description": "TypeScript ESLint docs block some automated requests."
+    },
+    {
       "pattern": "^https://console\\.cloud\\.google\\.com",
       "description": "Google Cloud Console often blocks automated link checks."
     },
@@ -37,6 +121,30 @@
     {
       "pattern": "^https://www\\.toptal\\.com",
       "description": "Toptal pages block automated link checks (403 Forbidden)"
+    },
+    {
+      "pattern": "^https://platform\\.openai\\.com",
+      "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
+    },
+    {
+      "pattern": "^https://platform\\.openai\\.com",
+      "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
+    },
+    {
+      "pattern": "^https://platform\\.openai\\.com",
+      "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
+    },
+    {
+      "pattern": "^https://platform\\.openai\\.com",
+      "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
+    },
+    {
+      "pattern": "^https://platform\\.openai\\.com",
+      "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
+    },
+    {
+      "pattern": "^https://platform\\.openai\\.com",
+      "description": "OpenAI links require authentication. Set MLC_CHECK_OPENAI=true to enable checking."
     }
   ],
   "retryOn429": true,

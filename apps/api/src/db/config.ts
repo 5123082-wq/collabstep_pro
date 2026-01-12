@@ -1,4 +1,6 @@
-import { drizzle } from 'drizzle-orm/vercel-postgres';
+import { drizzle as drizzlePostgresJs } from 'drizzle-orm/postgres-js';
+import { drizzle as drizzleVercel } from 'drizzle-orm/vercel-postgres';
+import postgres from 'postgres';
 import { sql } from '@vercel/postgres';
 import * as schema from './schema';
 
@@ -19,5 +21,14 @@ if (postgresUrl) {
   throw new Error('AUTH_STORAGE=db requires POSTGRES_URL to be set.');
 }
 
-export const db = drizzle(sql, { schema });
+const shouldUseLocalPg =
+  process.env.USE_LOCAL_PG === 'true' ||
+  (!!postgresUrl && /^postgres(?:ql)?:\/\/(localhost|127\.0\.0\.1)/.test(postgresUrl));
+
+// Для локального Postgres используем драйвер postgres-js, иначе — vercel-postgres (Neon).
+const dbClient = shouldUseLocalPg && postgresUrl
+  ? drizzlePostgresJs(postgres(postgresUrl, { ssl: 'prefer' }), { schema })
+  : drizzleVercel(sql, { schema });
+
+export const db = dbClient;
 export type Database = typeof db;

@@ -447,7 +447,7 @@
 **Ссылки:**
 
 - [Техническая спецификация - Cron Jobs](../organization-closure/organization-closure-specification.md#cron-jobs)
-- [Отчет по этапу 8](../archive/development/2025-01-15-organization-closure/stage-8-report.md) (архив)
+- [Отчет по этапу 8](../../archive/development/2025-01-15-organization-closure/stage-8-report.md) (архив)
 
 ---
 
