@@ -245,7 +245,7 @@ export class TasksRepository {
     return enrichTask(task);
   }
 
-  update(id: string, patch: Partial<Pick<Task, 'title' | 'description' | 'status' | 'assigneeId' | 'priority' | 'startAt' | 'startDate' | 'dueAt' | 'labels' | 'estimatedTime' | 'storyPoints' | 'loggedTime' | 'iterationId' | 'parentId' | 'price' | 'currency'>>): Task | null {
+  async update(id: string, patch: Partial<Pick<Task, 'title' | 'description' | 'status' | 'assigneeId' | 'priority' | 'startAt' | 'startDate' | 'dueAt' | 'labels' | 'estimatedTime' | 'storyPoints' | 'loggedTime' | 'iterationId' | 'parentId' | 'price' | 'currency'>>): Promise<Task | null> {
     const idx = memory.TASKS.findIndex((task) => task.id === id);
     if (idx === -1) {
       return null;
@@ -339,11 +339,15 @@ export class TasksRepository {
     memory.TASKS[idx] = updated;
     if (isPmDbEnabled()) {
       console.log('[TasksRepository] DB enabled, persisting task update:', updated.id, 'status:', updated.status);
-      void persistTaskToPg(updated).catch((error) =>
-        console.error('[TasksRepository] Failed to persist task update', error)
-      );
-      // Инвалидируем кэш задач при обновлении
-      cacheManager.invalidateTasks(updated.projectId);
+      try {
+        await persistTaskToPg(updated);
+        // Инвалидируем кэш задач только после успешного сохранения
+        cacheManager.invalidateTasks(updated.projectId);
+      } catch (error) {
+        console.error('[TasksRepository] Failed to persist task update', error);
+        // Продолжаем выполнение, но логируем ошибку
+        // В будущем можно добавить retry или другую обработку ошибок
+      }
     } else {
       console.warn('[TasksRepository] DB not enabled, task update only in memory:', updated.id, 'status:', updated.status);
     }
