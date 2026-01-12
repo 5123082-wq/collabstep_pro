@@ -1,7 +1,7 @@
 import { encodeDemoSession } from '@/lib/auth/demo-session';
 import { organizationsRepository, memory, resetFinanceMemory, TEST_ADMIN_USER_ID } from '@collabverse/api';
 import { db } from '@collabverse/api/db/config';
-import { organizationMembers, organizations, projects, users } from '@collabverse/api/db/schema';
+import { organizationMembers, organizations, users } from '@collabverse/api/db/schema';
 import { NextRequest } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { resetTestDb } from './utils/db-cleaner';
