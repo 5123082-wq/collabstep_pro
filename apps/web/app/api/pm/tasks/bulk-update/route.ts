@@ -177,7 +177,7 @@ export async function POST(req: NextRequest) {
       // Обновление задачи
       if (Object.keys(updates).length > 0) {
         const before = { ...task };
-        const updated = tasksRepository.update(task.id, updates);
+        const updated = await tasksRepository.update(task.id, updates);
 
         if (updated) {
           updatedCount++;

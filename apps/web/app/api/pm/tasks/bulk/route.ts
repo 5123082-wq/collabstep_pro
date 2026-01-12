@@ -124,7 +124,7 @@ export async function POST(request: Request) {
       }
 
       console.log('[Bulk Update] Updating task:', taskId, 'with patch:', patch);
-      const updated = tasksRepository.update(taskId, patch);
+      const updated = await tasksRepository.update(taskId, patch);
       if (!updated) {
         console.error('[Bulk Update] Task not found or update failed:', taskId);
         // Продолжаем обработку других задач, но логируем ошибку

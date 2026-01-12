@@ -281,7 +281,7 @@ export class DeletionService {
 
     if (!options.skipReparent) {
       for (const childId of childIds) {
-        tasksRepository.update(childId, { parentId: null });
+        await tasksRepository.update(childId, { parentId: null });
       }
     }
 
