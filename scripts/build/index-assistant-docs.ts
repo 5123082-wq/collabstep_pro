@@ -22,7 +22,7 @@ import OpenAI from 'openai';
 config({ path: join(process.cwd(), '.env.local') });
 
 // Импортируем конфигурацию индексации
-import { loadIndexingConfig, getEnabledDocuments, updateDocumentIndexDate } from '../lib/ai-assistant/indexing-config';
+import { loadIndexingConfig, getEnabledDocuments, updateDocumentIndexDate } from '../../apps/web/lib/ai-assistant/indexing-config';
 
 const DOCS_DIR = join(process.cwd(), '..', '..', 'docs');
 const CHUNK_SIZE = 800;

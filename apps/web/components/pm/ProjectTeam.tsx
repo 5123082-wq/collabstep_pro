@@ -7,7 +7,7 @@ import { type Project, type ProjectMember } from '@/types/pm';
 import { trackEvent } from '@/lib/telemetry';
 import { toast } from '@/lib/ui/toast';
 import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
-import { isAdminUserId } from '@collabverse/api';
+import { isAdminUserId } from '@/lib/utils/admin';
 
 type ProjectTeamProps = {
   project: Project;
