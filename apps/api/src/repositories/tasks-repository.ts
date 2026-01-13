@@ -256,6 +256,7 @@ export class TasksRepository {
       return null;
     }
 
+    const originalTask = current;
     const updated: Task = {
       ...current,
       updatedAt: new Date().toISOString()
@@ -336,22 +337,23 @@ export class TasksRepository {
       updated.currency = patch.currency ?? null;
     }
 
+    memory.TASKS[idx] = updated;
+
     if (isPmDbEnabled()) {
       console.log('[TasksRepository] DB enabled, persisting task update:', updated.id, 'status:', updated.status);
       try {
         await persistTaskToPg(updated);
-        memory.TASKS[idx] = updated;
         // Инвалидируем кэш задач только после успешного сохранения
         cacheManager.invalidateTasks(updated.projectId);
         console.log('[TasksRepository] ✅ Task successfully persisted:', updated.id, 'status:', updated.status);
       } catch (error) {
+        memory.TASKS[idx] = originalTask;
         console.error('[TasksRepository] Failed to persist task update', error);
-        console.error('[TasksRepository] ❌ Failed to persist task update, rolling back:', error);
+        console.error('[TasksRepository] ❌ Failed to persist, rolled back memory:', error);
         throw error;
       }
     } else {
-      console.warn('[TasksRepository] DB not enabled, updating task in memory only:', updated.id, 'status:', updated.status);
-      memory.TASKS[idx] = updated;
+      console.warn('[TasksRepository] ⚠️ DB not enabled, task updated in memory only:', updated.id, 'status:', updated.status);
     }
 
     return enrichTask(memory.TASKS[idx]);
