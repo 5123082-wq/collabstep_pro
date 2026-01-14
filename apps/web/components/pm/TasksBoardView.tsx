@@ -372,17 +372,20 @@ export default function TasksBoardView({ tasks: initialTasks, loading, filters, 
           throw new Error(errorData.error || `Failed to update task: ${response.status}`);
         }
 
-        const data = await response.json();
-        console.log('[TasksBoard] API Response:', data);
+        const responseData = await response.json();
+        console.log('[TasksBoard] API Response:', responseData);
         
-        if (data.tasks && data.tasks.length > 0) {
-          const serverTask = data.tasks[0];
+        // API возвращает { ok: true, data: { updated: number, tasks: Task[] } }
+        const tasks = responseData?.data?.tasks || responseData?.tasks;
+        
+        if (tasks && Array.isArray(tasks) && tasks.length > 0) {
+          const serverTask = tasks[0];
           console.log('[TasksBoard] Updating task from server:', serverTask);
           setTasks(prevTasks => 
             prevTasks.map(t => t.id === taskId ? serverTask : t)
           );
         } else {
-          console.warn('[TasksBoard] No tasks in API response, keeping optimistic update');
+          console.warn('[TasksBoard] No tasks in API response, keeping optimistic update. Response:', responseData);
         }
 
         trackEvent('pm_task_updated', { taskId, status: newStatus });

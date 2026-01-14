@@ -34,6 +34,15 @@
 
 ### Now
 
+- ✅ **ИСПРАВЛЕНИЕ DRAG&DROP: Сохранение статуса задач** (2026-01-12):
+  - Проблема: статус задачи не сохранялся после drag&drop в serverless (Vercel)
+  - Причина: `tasksRepository.update()` вызывал `persistTaskToPg()` через `void` и не ждал завершения → промис убивался вместе с функцией
+  - Исправление: метод `update()` сделан async, добавлен `await persistTaskToPg()`, все вызовы обновлены с `await`
+  - Файлы: `tasks-repository.ts`, `bulk/route.ts`, `bulk-update/route.ts`, `deletion-service.ts`
+  - Проверки: lint ✅, typecheck ✅, routes ✅
+  - PR #41 создан: https://github.com/5123082-wq/collabstep_pro/pull/41
+  - Отчёт: `docs/development/reports/drag-drop-status-persistence-issue.md`
+
 - ✅ **РЕОРГАНИЗАЦИЯ ДОКУМЕНТАЦИИ: ЗАВЕРШЕНА** (2026-01-07):
   - ✅ Удалена временная папка `docs version 2` (была стартер-паком для миграции, больше не нужна)
   - ✅ Фаза 1 завершена: создана структура, шаблоны, правила (2026-01-06)
@@ -288,6 +297,19 @@
 - **Документация**: `docs/runbooks/USER_DATA_RECOVERY.md`
 
 ## Last updated
+
+- 2026-01-12 — **PR #41 создан: исправление сохранения статуса задач при drag&drop** ✅
+  - Метод `tasksRepository.update()` сделан async с await для `persistTaskToPg()`
+  - Исправлена race condition в serverless окружении
+  - Все проверки пройдены (lint, typecheck, routes)
+  - PR: https://github.com/5123082-wq/collabstep_pro/pull/41
+
+- 2026-01-07 — **PR #40 создан: стабилизация тестов** ✅
+  - Улучшения очистки данных в тестах
+  - Утилиты для генерации уникальных ID и очистки БД
+  - Обновления конфигурации БД и адаптеров хранилища
+  - PR: https://github.com/5123082-wq/collabstep_pro/pull/40
+  - Проверки: lint ✅, typecheck ✅
 
 - 2026-01-05 — **PR #37 создан: реорганизация документации и скриптов** ✅
   - Все изменения отправлены на сервер
