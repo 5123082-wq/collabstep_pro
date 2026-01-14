@@ -1,6 +1,6 @@
 'use client';
 
-import { SpeedInsights } from '@vercel/speed-insights/next';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { usePathname } from 'next/navigation';
 
 /**
