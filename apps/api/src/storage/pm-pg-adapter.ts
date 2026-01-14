@@ -197,6 +197,26 @@ function mapProjectRow(row: Record<string, unknown>): Project {
   };
 }
 
+function normalizePgTimestamp(value: unknown): string {
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  if (typeof value === 'string') {
+    const parsed = Date.parse(value);
+    if (!Number.isNaN(parsed)) {
+      return new Date(parsed).toISOString();
+    }
+    return value;
+  }
+  if (typeof value === 'number') {
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) {
+      return date.toISOString();
+    }
+  }
+  return new Date().toISOString();
+}
+
 function mapTaskRow(row: Record<string, unknown>): Task {
   const labelsValue = row.labels;
   const labels: string[] | undefined = Array.isArray(labelsValue) && labelsValue.length > 0 
@@ -215,8 +235,8 @@ function mapTaskRow(row: Record<string, unknown>): Task {
     loggedTime: row.logged_time !== null && row.logged_time !== undefined ? Number(row.logged_time) : null,
     price: row.price ? String(row.price) : null,
     currency: row.currency ? String(row.currency) : null,
-    createdAt: String(row.created_at ?? new Date().toISOString()),
-    updatedAt: String(row.updated_at ?? new Date().toISOString())
+    createdAt: normalizePgTimestamp(row.created_at),
+    updatedAt: normalizePgTimestamp(row.updated_at)
   };
   
   if (row.iteration_id) task.iterationId = String(row.iteration_id);
@@ -383,6 +403,8 @@ export async function persistTaskToPg(task: Task): Promise<void> {
   if (!isPmDbEnabled()) return;
   await ensurePmTables();
   const labelsJson = Array.isArray(task.labels) ? JSON.stringify(task.labels) : null;
+  const createdAt = normalizePgTimestamp(task.createdAt);
+  const updatedAt = normalizePgTimestamp(task.updatedAt);
   await runQuery(`
     INSERT INTO ${TABLE_TASKS} (
       id, project_id, number, parent_id, title, description, status, iteration_id,
@@ -419,7 +441,7 @@ export async function persistTaskToPg(task: Task): Promise<void> {
     task.assigneeId ?? null, task.startAt ?? null, task.startDate ?? null,
     task.dueAt ?? null, task.priority ?? null, labelsJson,
     task.estimatedTime ?? null, task.storyPoints ?? null, task.loggedTime ?? null,
-    task.price ?? null, task.currency ?? null, task.createdAt, task.updatedAt
+    task.price ?? null, task.currency ?? null, createdAt, updatedAt
   ]);
 }
 

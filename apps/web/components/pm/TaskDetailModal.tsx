@@ -131,21 +131,47 @@ export default function TaskDetailModal({
       if (!taskData) return;
       setSavingField(Object.keys(patch)[0] ?? null);
 
-      const requestPatch = { ...patch };
+      // Создаем очищенный объект для запроса, удаляя undefined и пустые строки
+      const requestPatch: Record<string, unknown> = {};
       const localPatch: Partial<Task> = {};
 
       if ('status' in patch && patch.status !== undefined) {
+        requestPatch.status = patch.status;
         localPatch.status = patch.status;
       }
       if ('priority' in patch && patch.priority !== undefined) {
+        requestPatch.priority = patch.priority;
         localPatch.priority = patch.priority;
       }
-      if ('dueAt' in patch && patch.dueAt !== null && patch.dueAt !== undefined) {
-        localPatch.dueAt = patch.dueAt;
+      if ('dueAt' in patch) {
+        if (patch.dueAt !== null && patch.dueAt !== undefined) {
+          requestPatch.dueAt = patch.dueAt;
+          localPatch.dueAt = patch.dueAt;
+        } else {
+          // Явно передаем null для удаления дедлайна
+          requestPatch.dueAt = null;
+        }
       }
-      if ('assigneeId' in patch && patch.assigneeId !== null && patch.assigneeId !== '') {
-        localPatch.assigneeId = patch.assigneeId;
+      if ('assigneeId' in patch) {
+        if (patch.assigneeId !== null && patch.assigneeId !== undefined && patch.assigneeId !== '') {
+          requestPatch.assigneeId = patch.assigneeId;
+          localPatch.assigneeId = patch.assigneeId;
+        } else {
+          // Явно передаем null для удаления исполнителя
+          requestPatch.assigneeId = null;
+        }
       }
+
+      // Проверяем, что есть хотя бы одно поле для обновления
+      if (Object.keys(requestPatch).length === 0) {
+        console.warn('[TaskDetailModal] No fields to update');
+        return;
+      }
+
+      console.log('[TaskDetailModal] Sending update request:', {
+        taskId: taskData.id,
+        updates: requestPatch
+      });
 
       try {
         const response = await fetch('/api/pm/tasks/bulk', {
@@ -159,7 +185,13 @@ export default function TaskDetailModal({
 
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) {
-          const message = payload?.error || 'Не удалось обновить задачу';
+          console.error('[TaskDetailModal] API Error:', {
+            status: response.status,
+            statusText: response.statusText,
+            payload,
+            requestBody: { taskIds: [taskData.id], updates: requestPatch }
+          });
+          const message = payload?.error || payload?.details || `Не удалось обновить задачу (${response.status})`;
           throw new Error(message);
         }
 

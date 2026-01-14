@@ -72,19 +72,26 @@ export async function POST(request: Request) {
       const taskBefore = tasksRepository.findById(taskId);
       const patch: Parameters<typeof tasksRepository.update>[1] = {};
 
-      if ('status' in updates && updates.status) {
+      if ('status' in updates) {
         const statusValue = updates.status;
         // Валидация статуса
         const validStatuses: TaskStatus[] = ['new', 'in_progress', 'review', 'done', 'blocked'];
-        if (typeof statusValue === 'string' && validStatuses.includes(statusValue as TaskStatus)) {
+        if (statusValue && typeof statusValue === 'string' && validStatuses.includes(statusValue as TaskStatus)) {
           patch.status = statusValue as TaskStatus;
-        } else {
-          console.error('[Bulk Update] Invalid status value:', statusValue);
-          // Не добавляем статус в patch, если он невалидный
+        } else if (statusValue !== null && statusValue !== undefined) {
+          // Если статус передан, но невалидный - это ошибка
+          console.error('[Bulk Update] Invalid status value:', statusValue, 'Valid statuses:', validStatuses);
+          return jsonError(`Invalid status value: ${statusValue}. Valid statuses: ${validStatuses.join(', ')}`, { status: 400 });
         }
+        // Если statusValue === null или undefined, просто не добавляем его в patch
       }
       if ('assigneeId' in updates) {
-        patch.assigneeId = updates.assigneeId || undefined;
+        // Явно обрабатываем null для удаления исполнителя
+        if (updates.assigneeId === null || updates.assigneeId === '') {
+          patch.assigneeId = null;
+        } else if (updates.assigneeId) {
+          patch.assigneeId = updates.assigneeId;
+        }
       }
       if ('priority' in updates && updates.priority) {
         patch.priority = updates.priority;
@@ -167,8 +174,11 @@ export async function POST(request: Request) {
     if (error instanceof Error) {
       console.error('[Bulk Update] Error message:', error.message);
       console.error('[Bulk Update] Error stack:', error.stack);
+      return jsonError(error.message || 'INVALID_REQUEST', {
+        status: 400,
+        ...(error.stack ? { details: error.stack } : {})
+      });
     }
     return jsonError('INVALID_REQUEST', { status: 400 });
   }
 }
-

@@ -43,6 +43,10 @@ export type CreateTaskInput = {
   updatedAt?: string;
 };
 
+type TaskUpdatePatch = Partial<Omit<Pick<Task, 'title' | 'description' | 'status' | 'assigneeId' | 'priority' | 'startAt' | 'startDate' | 'dueAt' | 'labels' | 'estimatedTime' | 'storyPoints' | 'loggedTime' | 'iterationId' | 'parentId' | 'price' | 'currency'>, 'assigneeId'>> & {
+  assigneeId?: string | null;
+};
+
 function enrichTask(task: Task): Task {
   const { labels, ...rest } = task;
   const clone: Task = { ...(rest as Task) };
@@ -245,7 +249,7 @@ export class TasksRepository {
     return enrichTask(task);
   }
 
-  async update(id: string, patch: Partial<Pick<Task, 'title' | 'description' | 'status' | 'assigneeId' | 'priority' | 'startAt' | 'startDate' | 'dueAt' | 'labels' | 'estimatedTime' | 'storyPoints' | 'loggedTime' | 'iterationId' | 'parentId' | 'price' | 'currency'>>): Promise<Task | null> {
+  async update(id: string, patch: TaskUpdatePatch): Promise<Task | null> {
     const idx = memory.TASKS.findIndex((task) => task.id === id);
     if (idx === -1) {
       return null;
@@ -275,7 +279,11 @@ export class TasksRepository {
     }
 
     if ('assigneeId' in patch) {
-      updated.assigneeId = patch.assigneeId ?? undefined;
+      if (patch.assigneeId === null || patch.assigneeId === undefined || patch.assigneeId === '') {
+        delete updated.assigneeId;
+      } else {
+        updated.assigneeId = patch.assigneeId;
+      }
     }
 
     if (patch.priority && ['low', 'med', 'high', 'urgent'].includes(patch.priority)) {
