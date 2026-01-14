@@ -75,12 +75,55 @@ export async function GET() {
   // Sort by projects count (descending)
   usersData.sort((a, b) => b.projectsCount - a.projectsCount);
 
+  // Find orphaned tasks (tasks without existing projects)
+  const projectIds = new Set(allProjects.map(p => p.id));
+  const orphanedTasks = allTasks.filter(task => !projectIds.has(task.projectId));
+  
+  // Group orphaned tasks by projectId to show which projectIds are missing
+  const orphanedTasksByProjectId = new Map<string, Array<{ id: string; title: string; number: number }>>();
+  for (const task of orphanedTasks) {
+    if (!orphanedTasksByProjectId.has(task.projectId)) {
+      orphanedTasksByProjectId.set(task.projectId, []);
+    }
+    orphanedTasksByProjectId.get(task.projectId)!.push({
+      id: task.id,
+      title: task.title,
+      number: task.number
+    });
+  }
+
+  // Find orphaned projects (projects without owner in workspace users)
+  // This is less common, but we check for projects with invalid ownerIds
+  const userIds = new Set(memory.WORKSPACE_USERS.map(u => u.id).concat(memory.WORKSPACE_USERS.map(u => u.email)));
+  const orphanedProjects = allProjects.filter(project => !userIds.has(project.ownerId));
+
   return NextResponse.json({
     summary: {
       totalProjects: allProjects.length,
       totalTasks: allTasks.length,
       totalUsers: usersData.length,
+      orphanedTasks: orphanedTasks.length,
+      orphanedProjects: orphanedProjects.length,
     },
     users: usersData,
+    orphaned: {
+      tasks: {
+        count: orphanedTasks.length,
+        byProjectId: Array.from(orphanedTasksByProjectId.entries()).map(([projectId, tasks]) => ({
+          projectId,
+          tasksCount: tasks.length,
+          tasks: tasks.slice(0, 10), // Show first 10 tasks per projectId
+          hasMore: tasks.length > 10
+        }))
+      },
+      projects: orphanedProjects.map(p => ({
+        id: p.id,
+        key: p.key,
+        title: p.title,
+        ownerId: p.ownerId,
+        status: p.status,
+        createdAt: p.createdAt
+      }))
+    }
   });
 }
