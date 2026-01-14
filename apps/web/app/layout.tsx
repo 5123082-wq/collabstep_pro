@@ -8,6 +8,7 @@ import ThemeScript from '@/components/theme/ThemeScript';
 import { ThemeProvider } from '@/components/theme/ThemeContext';
 import { Toaster } from 'sonner';
 import { Insights } from '@/components/util/Insights';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 // Определяем базовый URL для метаданных
 const getMetadataBase = (): URL => {
@@ -38,6 +39,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <ConsoleFilter />
           {children}
           <Insights />
+          <SpeedInsights />
           <Toaster richColors position="top-right" />
         </ThemeProvider>
       </body>
