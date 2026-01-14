@@ -16,6 +16,7 @@
 - UI-страницы админ-панели присутствуют.
 - Часть API реализована в `/api/admin/*`.
 - Доступ ограничен ролями администратора (NEEDS_CONFIRMATION по правилам).
+- **Управление пользователями**: полный функционал редактирования статуса и ролей через UI.
 
 ## 3) Пользовательские маршруты (UI)
 
@@ -38,6 +39,8 @@
 
 - `GET /api/admin/users` — список пользователей
 - `GET /api/admin/users/[id]` — детали пользователя
+- `PATCH /api/admin/users/[id]` — обновление пользователя (статус, роли, testerAccess, notes)
+- `DELETE /api/admin/users/[id]` — удаление пользователя
 - `GET /api/admin/data/stats` — агрегаты по данным
 - `POST /api/admin/data/clear` — очистка данных
 - `GET /api/admin/data/users/[userId]/items` — данные пользователя
@@ -78,5 +81,6 @@
 ---
 
 **Связанные документы:**
+- [Управление пользователями](./admin-users-management.md)
 - [Управление данными](./admin-data-management.md)
 - [Обзор платформы](../../platform/overview.md)

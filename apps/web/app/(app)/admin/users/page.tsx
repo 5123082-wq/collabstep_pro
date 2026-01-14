@@ -63,13 +63,13 @@ function convertAdminUserToUser(adminUser: AdminUserView): User {
     id: adminUser.userId,
     email: getEmail(),
     displayName: getDisplayName(),
-    roles: adminUser.roles,
+    roles: Array.isArray(adminUser.roles) ? adminUser.roles : [],
     status: adminUser.status,
     lastLoginAt: adminUser.updatedAt, // Using updatedAt as lastLoginAt approximation
     createdAt: adminUser.updatedAt, // Using updatedAt as createdAt approximation
     isAI // Передаем флаг AI-агента
   };
-  console.log('[convertAdminUserToUser] Конвертирован пользователь:', converted.displayName, converted.email);
+  console.log('[convertAdminUserToUser] Конвертирован пользователь:', converted.displayName, converted.email, 'роли:', converted.roles);
   return converted;
 }
 
@@ -101,10 +101,12 @@ export default function AdminUsersPage() {
       const data = (await response.json()) as { items: AdminUserView[] };
       console.log('[AdminUsersPage] Загружено пользователей из API:', data.items.length);
       console.log('[AdminUsersPage] Список пользователей из API:', data.items.map(u => `${u.name} (${u.email || u.userId})`));
+      console.log('[AdminUsersPage] Роли пользователей из API:', data.items.map(u => ({ userId: u.userId, roles: u.roles })));
       const converted = data.items.map(convertAdminUserToUser);
       setUsers(converted);
       console.log('[AdminUsersPage] Установлено пользователей в state:', converted.length);
       console.log('[AdminUsersPage] Список пользователей в state:', converted.map(u => `${u.displayName} (${u.email})`));
+      console.log('[AdminUsersPage] Роли пользователей в state:', converted.map(u => ({ id: u.id, roles: u.roles })));
     } catch (err) {
       console.error('[AdminUsersPage] Ошибка загрузки:', err);
       setError(err instanceof Error ? err.message : 'Неизвестная ошибка');
@@ -347,7 +349,12 @@ export default function AdminUsersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-800">
-                {filteredUsers.map((user) => (
+                {filteredUsers.map((user) => {
+                  // Логирование для отладки
+                  if (!user.roles || user.roles.length === 0) {
+                    console.log('[AdminUsersPage] Пользователь без ролей:', user.id, user.displayName, user.email);
+                  }
+                  return (
                   <tr
                     key={user.id}
                     className={clsx(
@@ -395,15 +402,19 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1">
-                        {user.roles.map((role) => (
-                          <span
-                            key={role}
-                            className="inline-flex items-center gap-1 rounded-full bg-blue-500/20 px-2 py-1 text-xs font-medium text-blue-100"
-                          >
-                            <Shield className="h-3 w-3" />
-                            {role}
-                          </span>
-                        ))}
+                        {user.roles && user.roles.length > 0 ? (
+                          user.roles.map((role) => (
+                            <span
+                              key={role}
+                              className="inline-flex items-center gap-1 rounded-full bg-blue-500/20 px-2 py-1 text-xs font-medium text-blue-100"
+                            >
+                              <Shield className="h-3 w-3" />
+                              {role}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-xs text-neutral-500">Нет ролей</span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-neutral-400">
@@ -467,7 +478,13 @@ export default function AdminUsersPage() {
                           </button>
                         )}
                         <button
-                          onClick={() => setEditingUser(user)}
+                          onClick={() => {
+                            // Убеждаемся, что роли всегда массив
+                            setEditingUser({
+                              ...user,
+                              roles: Array.isArray(user.roles) ? [...user.roles] : []
+                            });
+                          }}
                           disabled={updatingIds.has(user.id)}
                           className={clsx(
                             'rounded-xl border border-neutral-800 bg-neutral-900/60 p-2 text-neutral-400 transition hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-indigo-100',
@@ -495,7 +512,8 @@ export default function AdminUsersPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -582,18 +600,67 @@ export default function AdminUsersPage() {
                 </select>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-neutral-300 mb-2">Роли платформы</label>
+                <div className="space-y-2 rounded-xl border border-neutral-800 bg-neutral-900/60 p-3">
+                  {[
+                    { value: 'productAdmin', label: 'Администратор продукта', description: 'Доступ к админ-панели, управление feature flags' },
+                    { value: 'featureAdmin', label: 'Администратор фич', description: 'Управление feature flags' },
+                    { value: 'supportAgent', label: 'Агент поддержки', description: 'Доступ к модулю поддержки' },
+                    { value: 'financeAdmin', label: 'Администратор финансов', description: 'Доступ к финансовому модулю' },
+                    { value: 'betaTester', label: 'Бета-тестер', description: 'Доступ к бета-фичам' },
+                    { value: 'viewer', label: 'Наблюдатель', description: 'Базовый просмотр' }
+                  ].map((role) => (
+                    <label
+                      key={role.value}
+                      className="flex items-start gap-3 cursor-pointer group"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={editingUser.roles.includes(role.value)}
+                        onChange={(e) => {
+                          const newRoles = e.target.checked
+                            ? [...editingUser.roles, role.value]
+                            : editingUser.roles.filter((r) => r !== role.value);
+                          setEditingUser({ ...editingUser, roles: newRoles });
+                        }}
+                        className="mt-1 h-4 w-4 rounded border-neutral-700 bg-neutral-800 text-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-0 transition"
+                      />
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-neutral-100 group-hover:text-indigo-200 transition">
+                          {role.label}
+                        </div>
+                        <div className="text-xs text-neutral-400">
+                          {role.description}
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                {editingUser.roles.length === 0 && (
+                  <p className="mt-2 text-xs text-neutral-500">
+                    У пользователя нет назначенных ролей
+                  </p>
+                )}
+              </div>
+
               <div className="flex gap-2 pt-4">
                 <button
                   onClick={async () => {
                     try {
+                      setUpdatingIds((prev) => new Set(prev).add(editingUser.id));
                       const response = await fetch(`/api/admin/users/${editingUser.id}`, {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ status: editingUser.status })
+                        body: JSON.stringify({
+                          status: editingUser.status,
+                          roles: editingUser.roles
+                        })
                       });
 
                       if (!response.ok) {
-                        throw new Error('Не удалось обновить пользователя');
+                        const errorData = (await response.json()) as { error?: string; details?: unknown };
+                        throw new Error(errorData.error || 'Не удалось обновить пользователя');
                       }
 
                       const data = (await response.json()) as { item: AdminUserView };
@@ -603,15 +670,36 @@ export default function AdminUsersPage() {
                       toast('Пользователь обновлён', 'success');
                     } catch (err) {
                       toast(err instanceof Error ? err.message : 'Ошибка при обновлении', 'warning');
+                    } finally {
+                      setUpdatingIds((prev) => {
+                        const next = new Set(prev);
+                        next.delete(editingUser.id);
+                        return next;
+                      });
                     }
                   }}
-                  className="flex-1 rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-4 py-2 text-sm font-medium text-indigo-100 transition hover:bg-indigo-500/20"
+                  disabled={updatingIds.has(editingUser.id)}
+                  className={clsx(
+                    "flex-1 rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-4 py-2 text-sm font-medium text-indigo-100 transition hover:bg-indigo-500/20",
+                    updatingIds.has(editingUser.id) && "cursor-not-allowed opacity-50"
+                  )}
                 >
-                  Сохранить
+                  {updatingIds.has(editingUser.id) ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
+                      Сохранение...
+                    </span>
+                  ) : (
+                    'Сохранить'
+                  )}
                 </button>
                 <button
                   onClick={() => setEditingUser(null)}
-                  className="flex-1 rounded-xl border border-neutral-800 bg-neutral-900/60 px-4 py-2 text-sm font-medium text-neutral-300 transition hover:bg-neutral-800"
+                  disabled={updatingIds.has(editingUser.id)}
+                  className={clsx(
+                    "flex-1 rounded-xl border border-neutral-800 bg-neutral-900/60 px-4 py-2 text-sm font-medium text-neutral-300 transition hover:bg-neutral-800",
+                    updatingIds.has(editingUser.id) && "cursor-not-allowed opacity-50"
+                  )}
                 >
                   Отмена
                 </button>
