@@ -2,7 +2,6 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import LoginForm from './login-form';
-import DemoAdminButton from './demo-admin-button';
 
 export const metadata: Metadata = {
   title: 'Вход в Collabverse',
@@ -25,12 +24,6 @@ export default function LoginPage() {
       <Suspense fallback={null}>
         <LoginForm />
       </Suspense>
-      <section className="mt-8 space-y-3">
-        <p className="text-center text-sm text-neutral-400">Попробуйте платформу без регистрации.</p>
-        <div className="space-y-2">
-          <DemoAdminButton />
-        </div>
-      </section>
       <p className="mt-6 text-center text-sm text-neutral-400">
         Нет аккаунта?{' '}
         <Link
