@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { adminService } from '@collabverse/api';
 import type { PlatformRole } from '@collabverse/api';
 import { getDemoSessionFromCookies } from '@/lib/auth/demo-session.server';
+import { isAdminUser } from '@/lib/auth/check-admin-role.server';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,12 +22,14 @@ const UserUpdateSchema = z
   });
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+  const isAdmin = await isAdminUser();
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+  
   const session = getDemoSessionFromCookies();
   if (!session) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  }
-  if (session.role !== 'admin') {
-    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
   const userData = await adminService.getUser(params.id);
@@ -38,16 +41,24 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  const isAdmin = await isAdminUser();
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+  
   const session = getDemoSessionFromCookies();
   if (!session) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
-  if (session.role !== 'admin') {
-    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
-  }
 
-  const parsed = UserUpdateSchema.safeParse(await req.json().catch(() => ({})));
+  const body = await req.json().catch(() => ({}));
+  console.log('[API /admin/users/[id] PATCH] Request body:', JSON.stringify(body, null, 2));
+  console.log('[API /admin/users/[id] PATCH] User ID:', params.id);
+  console.log('[API /admin/users/[id] PATCH] Actor ID:', session.userId);
+
+  const parsed = UserUpdateSchema.safeParse(body);
   if (!parsed.success) {
+    console.error('[API /admin/users/[id] PATCH] Validation error:', parsed.error.flatten());
     return NextResponse.json({ error: 'invalid_payload', details: parsed.error.flatten() }, { status: 400 });
   }
 
@@ -59,6 +70,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (parsed.data.roles !== undefined) {
     const rolesArray: PlatformRole[] = parsed.data.roles as unknown as PlatformRole[];
     cleanData.roles = rolesArray;
+    console.log('[API /admin/users/[id] PATCH] Roles to update:', rolesArray);
   }
   if (parsed.data.testerAccess !== undefined) {
     cleanData.testerAccess = parsed.data.testerAccess;
@@ -67,17 +79,21 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     cleanData.notes = parsed.data.notes;
   }
 
+  console.log('[API /admin/users/[id] PATCH] Clean data to send:', cleanData);
   const updated = await adminService.updateUser(params.id, cleanData, session.userId);
+  console.log('[API /admin/users/[id] PATCH] Updated user:', JSON.stringify({ userId: updated.userId, roles: updated.roles }, null, 2));
   return NextResponse.json({ item: updated });
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+  const isAdmin = await isAdminUser();
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+  
   const session = getDemoSessionFromCookies();
   if (!session) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  }
-  if (session.role !== 'admin') {
-    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
   // Нельзя удалить самого себя

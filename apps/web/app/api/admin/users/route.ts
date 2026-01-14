@@ -1,16 +1,13 @@
 import { NextResponse } from 'next/server';
 import { adminService } from '@collabverse/api';
-import { getDemoSessionFromCookies } from '@/lib/auth/demo-session.server';
+import { isAdminUser } from '@/lib/auth/check-admin-role.server';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const session = getDemoSessionFromCookies();
-    if (!session) {
-      return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-    }
-    if (session.role !== 'admin') {
+    const isAdmin = await isAdminUser();
+    if (!isAdmin) {
       return NextResponse.json({ error: 'forbidden' }, { status: 403 });
     }
 

@@ -4,6 +4,7 @@ import { adminUserControlsRepository } from '../repositories/admin-user-controls
 import { usersRepository } from '../repositories/users-repository';
 import { db } from '../db/config';
 import { userControls } from '../db/schema';
+import { eq } from 'drizzle-orm';
 import type {
   PlatformAudience,
   PlatformModule,
@@ -362,10 +363,72 @@ export class AdminService {
       cleanPatch.notes = patch.notes;
     }
 
-    adminUserControlsRepository.update(userId, {
-      ...cleanPatch,
-      updatedBy: actorId
-    });
+    // Если используется БД, сохраняем напрямую в БД
+    if (isDbStorage) {
+      try {
+        console.log('[AdminService.updateUser] Saving to DB, userId:', userId, 'patch:', cleanPatch);
+        const updateData: {
+          status?: string;
+          roles?: string[];
+          testerAccess?: string[];
+          notes?: string | null;
+          updatedAt?: Date;
+          updatedBy?: string;
+        } = {
+          updatedAt: new Date(),
+          updatedBy: actorId
+        };
+
+        if (cleanPatch.status !== undefined) {
+          updateData.status = cleanPatch.status;
+        }
+        if (cleanPatch.roles !== undefined) {
+          updateData.roles = cleanPatch.roles;
+          console.log('[AdminService.updateUser] Updating roles:', cleanPatch.roles);
+        }
+        if (cleanPatch.testerAccess !== undefined) {
+          updateData.testerAccess = cleanPatch.testerAccess;
+        }
+        if (cleanPatch.notes !== undefined) {
+          updateData.notes = cleanPatch.notes || null;
+        }
+
+        // Проверяем, существует ли запись
+        const [existing] = await db.select().from(userControls).where(eq(userControls.userId, userId)).limit(1);
+        console.log('[AdminService.updateUser] Existing record:', existing ? 'found' : 'not found');
+        
+        if (existing) {
+          // Обновляем существующую запись
+          console.log('[AdminService.updateUser] Updating existing record with data:', updateData);
+          await db.update(userControls).set(updateData).where(eq(userControls.userId, userId));
+          console.log('[AdminService.updateUser] Record updated successfully');
+        } else {
+          // Создаём новую запись
+          const insertData = {
+            userId,
+            status: cleanPatch.status || 'active',
+            roles: cleanPatch.roles || [],
+            testerAccess: cleanPatch.testerAccess || [],
+            notes: cleanPatch.notes || null,
+            updatedAt: new Date(),
+            updatedBy: actorId
+          };
+          console.log('[AdminService.updateUser] Creating new record with data:', insertData);
+          await db.insert(userControls).values(insertData);
+          console.log('[AdminService.updateUser] Record created successfully');
+        }
+      } catch (error) {
+        console.error('[AdminService.updateUser] Error saving to DB:', error);
+        throw error;
+      }
+    } else {
+      // Иначе сохраняем в память
+      console.log('[AdminService.updateUser] Saving to memory (not DB), userId:', userId, 'patch:', cleanPatch);
+      adminUserControlsRepository.update(userId, {
+        ...cleanPatch,
+        updatedBy: actorId
+      });
+    }
 
     if ('testerAccess' in patch) {
       this.syncModulesFromUserControls(actorId);

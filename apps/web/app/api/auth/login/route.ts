@@ -4,6 +4,12 @@ import { withSessionCookie } from '@/lib/auth/session-cookie';
 import { ensureDemoAccountsInitialized } from '@/lib/auth/init-demo-accounts';
 import { usersRepository } from '@collabverse/api';
 import { verifyPassword } from '@collabverse/api/utils/password';
+import { db } from '@collabverse/api/db/config';
+import { userControls } from '@collabverse/api/db/schema';
+import { eq } from 'drizzle-orm';
+
+const hasDbConnection = !!process.env.POSTGRES_URL || !!process.env.DATABASE_URL;
+const isDbStorage = process.env.AUTH_STORAGE === 'db' && hasDbConnection;
 
 const INVALID_MESSAGE = 'Неверная почта или пароль';
 
@@ -131,11 +137,32 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (!user) {
         return NextResponse.json({ error: INVALID_MESSAGE }, { status: 401 });
       }
+      
+      // Проверяем роли из базы данных (если используется БД)
+      let role: DemoRole = demoAccount.role;
+      if (isDbStorage) {
+        try {
+          const [control] = await db.select().from(userControls).where(eq(userControls.userId, user.id)).limit(1);
+          if (control && control.roles && Array.isArray(control.roles)) {
+            // Если у пользователя есть productAdmin или featureAdmin, он администратор
+            if (control.roles.includes('productAdmin') || control.roles.includes('featureAdmin')) {
+              role = 'admin';
+            } else {
+              // Если ролей нет, но это демо-админ по email, оставляем admin
+              role = demoAccount.role;
+            }
+          }
+        } catch (error) {
+          console.error('[Login] Error checking user controls for demo account:', error);
+          // В случае ошибки используем роль из демо-аккаунта
+        }
+      }
+      
       const userId = user.id;
       const sessionToken = encodeDemoSession({ 
         email: demoAccount.email, 
         userId,
-        role: demoAccount.role, 
+        role, 
         issuedAt: Date.now() 
       });
       const redirectPath = resolveReturnPath(payload.returnTo);
@@ -169,8 +196,30 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: INVALID_MESSAGE }, { status: 401 });
     }
 
-    // Определяем роль: если это админ по email, то admin, иначе user
-    const role: DemoRole = email.toLowerCase() === getDemoAccount('admin').email.toLowerCase() ? 'admin' : 'user';
+    // Определяем роль: проверяем роли из базы данных или по email
+    let role: DemoRole = 'user';
+    
+    // Проверяем роли из базы данных (если используется БД)
+    if (isDbStorage) {
+      try {
+        const [control] = await db.select().from(userControls).where(eq(userControls.userId, user.id)).limit(1);
+        if (control && control.roles && Array.isArray(control.roles)) {
+          // Если у пользователя есть productAdmin или featureAdmin, он администратор
+          if (control.roles.includes('productAdmin') || control.roles.includes('featureAdmin')) {
+            role = 'admin';
+          }
+        }
+      } catch (error) {
+        console.error('[Login] Error checking user controls:', error);
+        // В случае ошибки продолжаем с проверкой по email
+      }
+    }
+    
+    // Если роль не определена из БД, проверяем по email (для обратной совместимости)
+    if (role === 'user' && email.toLowerCase() === getDemoAccount('admin').email.toLowerCase()) {
+      role = 'admin';
+    }
+    
     const sessionToken = encodeDemoSession({ 
       email: user.email, 
       userId: user.id,
