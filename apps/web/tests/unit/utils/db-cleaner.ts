@@ -15,6 +15,7 @@ export async function resetTestDb(): Promise<void> {
       performer_cases,
       performer_portfolio_items,
       performer_profile,
+      "userControl",
       contract,
       attachment,
       share,
@@ -30,6 +31,6 @@ export async function resetTestDb(): Promise<void> {
       organization_member,
       organization,
       "user"
-    CASCADE
+    RESTART IDENTITY CASCADE
   `);
 }
