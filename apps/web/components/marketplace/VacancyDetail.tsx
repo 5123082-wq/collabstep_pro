@@ -3,8 +3,10 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Vacancy } from '@/lib/schemas/marketplace-vacancy';
+import { fetchVacancyAttachments, type VacancyAttachment } from '@/lib/performers/vacancy-attachments';
 import { toast } from '@/lib/ui/toast';
 import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
+import { ResponseForm } from '@/components/performers/ResponseForm';
 
 const EMPLOYMENT_LABEL: Record<'project' | 'part-time' | 'full-time', string> = {
   project: 'Проектная занятость',
@@ -47,7 +49,8 @@ type VacancyDetailProps = {
 
 export default function VacancyDetail({ vacancy }: VacancyDetailProps) {
   const [isRespondOpen, setRespondOpen] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
+  const [attachments, setAttachments] = useState<VacancyAttachment[]>([]);
+  const [isLoadingAttachments, setIsLoadingAttachments] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const detailSections = useMemo(
@@ -73,6 +76,23 @@ export default function VacancyDetail({ vacancy }: VacancyDetailProps) {
   }, [isRespondOpen]);
 
   useEffect(() => {
+    let isMounted = true;
+    setIsLoadingAttachments(true);
+
+    void (async () => {
+      const items = await fetchVacancyAttachments(vacancy.id);
+      if (isMounted) {
+        setAttachments(items);
+        setIsLoadingAttachments(false);
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [vacancy.id]);
+
+  useEffect(() => {
     if (!isRespondOpen) {
       if (previousFocusRef.current) {
         previousFocusRef.current.focus();
@@ -83,7 +103,7 @@ export default function VacancyDetail({ vacancy }: VacancyDetailProps) {
 
     previousFocusRef.current = document.activeElement as HTMLElement | null;
 
-    const firstInput = formRef.current?.querySelector('input, textarea') as HTMLElement | null;
+    const firstInput = dialogRef.current?.querySelector('input, textarea, select, button') as HTMLElement | null;
     firstInput?.focus();
 
     const dialogNode = dialogRef.current;
@@ -130,25 +150,12 @@ export default function VacancyDetail({ vacancy }: VacancyDetailProps) {
     return () => dialogNode.removeEventListener('keydown', handleTab);
   }, [isRespondOpen]);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const name = formData.get('name')?.toString().trim();
-    if (!name) {
-      toast('Введите имя, чтобы отправить отклик', 'warning');
-      return;
-    }
-    toast('Отклик отправлен', 'success');
-    setRespondOpen(false);
-    event.currentTarget.reset();
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <Link
-            href="/app/marketplace/vacancies"
+            href="/performers/vacancies"
             className="inline-flex items-center gap-2 text-sm text-indigo-200 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
           >
             ← Назад в каталог
@@ -207,6 +214,35 @@ export default function VacancyDetail({ vacancy }: VacancyDetailProps) {
           >
             <p className="text-sm text-neutral-300">{vacancy.testTask}</p>
           </ContentBlock>
+
+          <ContentBlock
+            as="section"
+            header={<ContentBlockTitle>Вложения</ContentBlockTitle>}
+          >
+            {isLoadingAttachments ? (
+              <p className="text-sm text-neutral-400">Загрузка вложений...</p>
+            ) : attachments.length > 0 ? (
+              <ul className="space-y-2 text-sm text-neutral-300">
+                {attachments.map((attachment) => (
+                  <li key={attachment.id} className="flex items-center justify-between gap-3">
+                    <a
+                      href={attachment.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="truncate text-indigo-200 transition hover:text-white"
+                    >
+                      {attachment.filename}
+                    </a>
+                    <span className="text-xs text-neutral-500">
+                      {(attachment.sizeBytes / 1024 / 1024).toFixed(1)} MB
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-neutral-400">Нет вложений.</p>
+            )}
+          </ContentBlock>
         </div>
 
         <aside className="space-y-4">
@@ -219,6 +255,10 @@ export default function VacancyDetail({ vacancy }: VacancyDetailProps) {
               <div className="flex justify-between gap-3">
                 <dt className="text-neutral-400">Дедлайн</dt>
                 <dd className="text-right">{formatDate(vacancy.deadline)}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-neutral-400">Часовой пояс</dt>
+                <dd className="text-right">{vacancy.timezone}</dd>
               </div>
               <div className="flex justify-between gap-3">
                 <dt className="text-neutral-400">Публикация</dt>
@@ -289,44 +329,9 @@ export default function VacancyDetail({ vacancy }: VacancyDetailProps) {
                 Esc
               </button>
             </div>
-            <form ref={formRef} className="mt-6 space-y-4" onSubmit={handleSubmit}>
-              <label className="flex flex-col gap-2 text-sm text-neutral-300">
-                <span>Имя</span>
-                <input
-                  name="name"
-                  type="text"
-                  required
-                  className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
-                />
-              </label>
-              <label className="flex flex-col gap-2 text-sm text-neutral-300">
-                <span>Контакты (email или мессенджер)</span>
-                <input
-                  name="contacts"
-                  type="text"
-                  required
-                  className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
-                />
-              </label>
-              <label className="flex flex-col gap-2 text-sm text-neutral-300">
-                <span>Комментарий</span>
-                <textarea
-                  name="comment"
-                  rows={3}
-                  className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
-                  placeholder="Например, чем заинтересовал проект"
-                />
-              </label>
-              <label className="flex flex-col gap-2 text-sm text-neutral-300">
-                <span>Ссылки на портфолио</span>
-                <textarea
-                  name="links"
-                  rows={2}
-                  className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
-                  placeholder="Behance, GitHub или другой ресурс"
-                />
-              </label>
-              <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+            <div className="mt-6 space-y-4">
+              <ResponseForm vacancyId={vacancy.id} onSuccess={() => setRespondOpen(false)} />
+              <div className="flex justify-end">
                 <button
                   type="button"
                   onClick={() => setRespondOpen(false)}
@@ -334,14 +339,8 @@ export default function VacancyDetail({ vacancy }: VacancyDetailProps) {
                 >
                   Отмена
                 </button>
-                <button
-                  type="submit"
-                  className="rounded-xl border border-indigo-500/50 bg-indigo-500/20 px-4 py-2 text-sm font-medium text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
-                >
-                  Отправить отклик
-                </button>
               </div>
-            </form>
+            </div>
           </ContentBlock>
         </div>
       )}

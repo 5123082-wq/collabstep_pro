@@ -1,43 +1,36 @@
+import { sql } from 'drizzle-orm';
 import { db } from '@collabverse/api/db/config';
-import {
-  attachments,
-  archivedDocuments,
-  contracts,
-  fileTrash,
-  files,
-  folders,
-  organizationArchives,
-  organizationMembers,
-  organizations,
-  organizationSubscriptions,
-  organizationStorageUsage,
-  projects,
-  shares,
-  subscriptionPlans,
-  users
-} from '@collabverse/api/db/schema';
 
 /**
- * Очищает БД для unit/API тестов с учётом порядка FK.
- * Важное правило платформы: не удаляем организации с активными контрактами,
- * поэтому сначала чистим таблицу контрактов.
+ * Очищает БД для unit/API тестов через TRUNCATE CASCADE.
+ * Это снижает риски FK-ошибок при параллельных тестах.
  */
 export async function resetTestDb(): Promise<void> {
-  await db.transaction(async (tx) => {
-    await tx.delete(contracts);
-    await tx.delete(attachments);
-    await tx.delete(shares);
-    await tx.delete(fileTrash);
-    await tx.delete(files);
-    await tx.delete(folders);
-    await tx.delete(archivedDocuments);
-    await tx.delete(organizationArchives);
-    await tx.delete(organizationStorageUsage);
-    await tx.delete(organizationSubscriptions);
-    await tx.delete(subscriptionPlans);
-    await tx.delete(projects);
-    await tx.delete(organizationMembers);
-    await tx.delete(organizations);
-    await tx.delete(users);
-  });
+  await db.execute(sql`
+    TRUNCATE TABLE
+      vacancy_attachments,
+      vacancy_responses,
+      vacancies,
+      performer_ratings,
+      performer_cases,
+      performer_portfolio_items,
+      performer_profile,
+      "userControl",
+      contract,
+      attachment,
+      share,
+      file_trash,
+      file,
+      folder,
+      archived_document,
+      organization_archive,
+      organization_storage_usage,
+      organization_subscription,
+      subscription_plan,
+      project,
+      organization_member,
+      organization,
+      "user"
+    RESTART IDENTITY CASCADE
+  `);
 }

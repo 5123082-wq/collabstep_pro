@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm';
+import { eq, and, or } from 'drizzle-orm';
 import { db } from '../db/config';
 import { performerProfiles, users } from '../db/schema';
 
@@ -95,7 +95,36 @@ export class PerformerProfilesRepository {
             user: r.user
         }));
     }
+
+    async findPublicByHandleOrUserId(
+        handleOrUserId: string
+    ): Promise<(PerformerProfile & { user: { name: string | null; image: string | null } }) | null> {
+        const [result] = await db
+            .select({
+                profile: performerProfiles,
+                user: {
+                    name: users.name,
+                    image: users.image
+                }
+            })
+            .from(performerProfiles)
+            .innerJoin(users, eq(performerProfiles.userId, users.id))
+            .where(
+                and(
+                    eq(performerProfiles.isPublic, true),
+                    or(eq(performerProfiles.handle, handleOrUserId), eq(performerProfiles.userId, handleOrUserId))
+                )
+            );
+
+        if (!result) {
+            return null;
+        }
+
+        return {
+            ...result.profile,
+            user: result.user
+        };
+    }
 }
 
 export const performerProfilesRepository = new PerformerProfilesRepository();
-

@@ -75,7 +75,8 @@
 ### Исполнители
 
 - [Специалисты](modules/performers/performers-specialists.md)
-- [Команды и подрядчики](modules/performers/performers-teams.md)
+- [Команды](modules/performers/performers-teams.md)
+- [Подрядчики](modules/performers/performers-contractors.md)
 - [Вакансии и задачи](modules/performers/performers-vacancies.md)
 - [Мои вакансии](modules/performers/performers-my-vacancies.md)
 - [Отклики и приглашения](modules/performers/performers-responses.md)
@@ -225,7 +226,8 @@
 
 - **[Обзор раздела](modules/performers/performers-overview.md)** — основной документ модуля
 - **[Специалисты](modules/performers/performers-specialists.md)** — каталог специалистов
-- **[Команды и подрядчики](modules/performers/performers-teams.md)** — команды и подрядчики
+- **[Команды](modules/performers/performers-teams.md)** — команды
+- **[Подрядчики](modules/performers/performers-contractors.md)** — подрядчики
 - **[Вакансии и задачи](modules/performers/performers-vacancies.md)** — каталог вакансий
 - **[Мои вакансии](modules/performers/performers-my-vacancies.md)** — вакансии организации
 - **[Отклики и приглашения](modules/performers/performers-responses.md)** — отклики и инвайты

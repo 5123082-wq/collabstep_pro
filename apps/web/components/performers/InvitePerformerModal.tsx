@@ -41,7 +41,7 @@ export function InvitePerformerModal({ open, onOpenChange, performer }: InvitePe
       void fetch('/api/organizations')
         .then(res => res.json())
         .then(data => {
-          const orgs = data.organizations || [];
+          const orgs = data?.data?.organizations ?? data?.organizations ?? [];
           setOrganizations(orgs);
           if (orgs.length > 0) setSelectedOrgId(orgs[0].id);
         })
@@ -55,7 +55,7 @@ export function InvitePerformerModal({ open, onOpenChange, performer }: InvitePe
       void fetch('/api/pm/projects')
         .then(res => res.json())
         .then(data => {
-          const projectsList = data.data?.projects || [];
+          const projectsList = data?.data?.projects ?? data?.projects ?? [];
           setProjects(projectsList);
           if (projectsList.length > 0) setSelectedProjectId(projectsList[0].id);
         })

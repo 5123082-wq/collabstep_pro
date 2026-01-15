@@ -149,12 +149,17 @@ export const performerProfiles = pgTable(
         employmentType: text("employment_type"), // Maybe enum?
         location: text("location"),
         timezone: text("timezone"),
+        languages: text("languages").array().default([]).notNull(),
+        workFormats: text("work_formats").array().default([]).notNull(),
+        portfolioEnabled: boolean("portfolio_enabled").default(false).notNull(),
+        handle: text("handle"),
         isPublic: boolean("is_public").default(false).notNull(),
         createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
         updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow(),
     },
     (table) => ({
         userIdIdx: index("performer_profile_user_id_idx").on(table.userId),
+        handleIdx: uniqueIndex("performer_profile_handle_idx").on(table.handle),
         // Add GIN index for skills later if needed
     })
 );
@@ -209,6 +214,138 @@ export const organizationMembers = pgTable(
         userIdIdx: index("organization_member_user_id_idx").on(table.userId),
         primaryUserIdx: index("organization_member_primary_user_idx").on(table.userId, table.isPrimary),
     })
+);
+
+// --- Performers: Vacancies and Responses ---
+
+export const vacancies = pgTable(
+    "vacancies",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        organizationId: text("organization_id")
+            .notNull()
+            .references(() => organizations.id, { onDelete: "cascade" }),
+        createdBy: text("created_by")
+            .notNull()
+            .references(() => users.id, { onDelete: "restrict" }),
+        title: text("title").notNull(),
+        summary: text("summary"),
+        description: text("description"),
+        level: text("level"),
+        employmentType: text("employment_type"),
+        workFormat: text("work_format").array().default([]).notNull(),
+        rewardType: text("reward_type"),
+        rewardData: jsonb("reward_data"),
+        language: text("language"),
+        timezone: text("timezone"),
+        deadline: timestamp("deadline", { mode: "date" }),
+        requirements: text("requirements").array().default([]).notNull(),
+        responsibilities: text("responsibilities").array().default([]).notNull(),
+        testTask: text("test_task"),
+        paymentNote: text("payment_note"),
+        contactName: text("contact_name"),
+        contactChannel: text("contact_channel"),
+        status: text("status").default("draft").notNull(),
+        createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+        updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow(),
+    },
+    (table) => ({
+        organizationIdIdx: index("vacancies_organization_id_idx").on(table.organizationId),
+        statusIdx: index("vacancies_status_idx").on(table.status),
+    })
+);
+
+export const vacancyResponses = pgTable(
+    "vacancy_responses",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        vacancyId: text("vacancy_id")
+            .notNull()
+            .references(() => vacancies.id, { onDelete: "cascade" }),
+        performerId: text("performer_id")
+            .notNull()
+            .references(() => users.id, { onDelete: "cascade" }),
+        message: text("message"),
+        status: text("status").default("pending").notNull(),
+        createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+        updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow(),
+    },
+    (table) => ({
+        vacancyIdIdx: index("vacancy_responses_vacancy_id_idx").on(table.vacancyId),
+        performerIdIdx: index("vacancy_responses_performer_id_idx").on(table.performerId),
+    })
+);
+
+// --- Performers: Ratings and Portfolio ---
+
+// Minimal table definition for FK references. Data is managed via pm-pg-adapter.
+export const pmProjects = pgTable(
+    "pm_projects",
+    {
+        id: text("id").primaryKey(),
+    }
+);
+
+export const performerRatings = pgTable(
+    "performer_ratings",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        performerId: text("performer_id")
+            .notNull()
+            .references(() => users.id, { onDelete: "cascade" }),
+        raterId: text("rater_id")
+            .notNull()
+            .references(() => users.id, { onDelete: "cascade" }),
+        projectId: text("project_id").references(() => pmProjects.id, { onDelete: "set null" }),
+        rating: integer("rating").notNull(),
+        review: text("review"),
+        createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+    },
+    (table) => ({
+        performerIdIdx: index("performer_ratings_performer_id_idx").on(table.performerId),
+    })
+);
+
+export const performerPortfolioItems = pgTable(
+    "performer_portfolio_items",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        performerId: text("performer_id")
+            .notNull()
+            .references(() => users.id, { onDelete: "cascade" }),
+        title: text("title").notNull(),
+        description: text("description"),
+        url: text("url"),
+        fileUrl: text("file_url"),
+        projectId: text("project_id").references(() => pmProjects.id, { onDelete: "set null" }),
+        order: integer("order").default(0).notNull(),
+        createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+    }
+);
+
+export const performerCases = pgTable(
+    "performer_cases",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        performerId: text("performer_id")
+            .notNull()
+            .references(() => users.id, { onDelete: "cascade" }),
+        title: text("title").notNull(),
+        description: text("description"),
+        projectId: text("project_id").references(() => pmProjects.id, { onDelete: "set null" }),
+        outcome: text("outcome"),
+        createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+    }
 );
 
 /**
@@ -547,6 +684,30 @@ export const attachments = pgTable(
         projectIdIdx: index("attachment_project_id_idx").on(table.projectId),
         entityIdx: index("attachment_entity_idx").on(table.linkedEntity, table.entityId),
         createdAtIdx: index("attachment_created_at_idx").on(table.createdAt),
+    })
+);
+
+export const vacancyAttachments = pgTable(
+    "vacancy_attachments",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        vacancyId: text("vacancy_id")
+            .notNull()
+            .references(() => vacancies.id, { onDelete: "cascade" }),
+        fileId: text("file_id")
+            .notNull()
+            .references(() => files.id, { onDelete: "cascade" }),
+        createdBy: text("created_by")
+            .notNull()
+            .references(() => users.id, { onDelete: "restrict" }),
+        createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+    },
+    (table) => ({
+        vacancyIdIdx: index("vacancy_attachments_vacancy_id_idx").on(table.vacancyId),
+        fileIdIdx: index("vacancy_attachments_file_id_idx").on(table.fileId),
+        createdAtIdx: index("vacancy_attachments_created_at_idx").on(table.createdAt),
     })
 );
 

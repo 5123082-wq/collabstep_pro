@@ -42,6 +42,7 @@ export const VacancySchema = z.object({
   format: z.array(z.enum(['remote', 'office', 'hybrid'])).min(1),
   reward: VacancyRewardSchema,
   language: z.string(),
+  timezone: z.string(),
   deadline: z
     .string()
     .refine((value) => !Number.isNaN(Date.parse(value)), 'Некорректная дата дедлайна'),

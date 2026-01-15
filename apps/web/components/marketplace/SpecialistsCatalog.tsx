@@ -211,6 +211,7 @@ export default function SpecialistsCatalog({ data, error, basePath }: Specialist
   const filtersRef = useRef(filters);
 
   const [searchDraft, setSearchDraft] = useState(filters.query ?? '');
+  const [showAllFilters, setShowAllFilters] = useState(false);
   const [rateMinDraft, setRateMinDraft] = useState(filters.rateMin !== null ? String(filters.rateMin) : '');
   const [rateMaxDraft, setRateMaxDraft] = useState(filters.rateMax !== null ? String(filters.rateMax) : '');
   const debouncedQuery = useDebouncedValue(searchDraft, 400);
@@ -364,20 +365,29 @@ export default function SpecialistsCatalog({ data, error, basePath }: Specialist
           <ContentBlockTitle
             description="Фильтруйте каталог по ролям, навыкам, языку и ставке."
             actions={
-              <button
-                type="button"
-                onClick={handleReset}
-                className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
-              >
-                Сбросить фильтры
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAllFilters((prev) => !prev)}
+                  className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                >
+                  {showAllFilters ? 'Скрыть фильтры' : 'Все фильтры'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                >
+                  Сбросить фильтры
+                </button>
+              </div>
             }
           >
             Поиск специалистов
           </ContentBlockTitle>
         }
       >
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-3">
           <label className="flex flex-col gap-2 text-sm text-neutral-300">
             <span className="text-xs uppercase tracking-wide text-neutral-500">Роль</span>
             <select
@@ -389,36 +399,6 @@ export default function SpecialistsCatalog({ data, error, basePath }: Specialist
               {roles.map((role) => (
                 <option key={role} value={role}>
                   {role}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-2 text-sm text-neutral-300">
-            <span className="text-xs uppercase tracking-wide text-neutral-500">Навыки</span>
-            <select
-              value={filters.skills.length > 0 ? filters.skills[0] : ''}
-              onChange={(event) => updateFilters({ skills: event.target.value ? [event.target.value] : [] })}
-              className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
-            >
-              <option value="">Все навыки</option>
-              {skills.map((skill) => (
-                <option key={skill} value={skill}>
-                  {skill}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-2 text-sm text-neutral-300">
-            <span className="text-xs uppercase tracking-wide text-neutral-500">Язык</span>
-            <select
-              value={filters.language ?? ''}
-              onChange={(event) => updateFilters({ language: event.target.value || null })}
-              className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
-            >
-              <option value="">Все языки</option>
-              {languages.map((language) => (
-                <option key={language} value={language}>
-                  {language.toUpperCase()}
                 </option>
               ))}
             </select>
@@ -436,43 +416,6 @@ export default function SpecialistsCatalog({ data, error, basePath }: Specialist
               <option value="hybrid">Гибрид</option>
             </select>
           </label>
-        </div>
-        <div className="mt-4 grid gap-4 md:grid-cols-3">
-          <div className="grid gap-2">
-            <span className="text-xs uppercase tracking-wide text-neutral-500">Ставка (₽/час)</span>
-            <div className="flex gap-2">
-              <input
-                type="number"
-                min={0}
-                inputMode="numeric"
-                value={rateMinDraft}
-                onChange={(event) => setRateMinDraft(event.target.value)}
-                placeholder="от"
-                className="w-full rounded-xl border border-neutral-800 bg-neutral-900/70 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
-              />
-              <input
-                type="number"
-                min={0}
-                inputMode="numeric"
-                value={rateMaxDraft}
-                onChange={(event) => setRateMaxDraft(event.target.value)}
-                placeholder="до"
-                className="w-full rounded-xl border border-neutral-800 bg-neutral-900/70 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
-              />
-            </div>
-          </div>
-        </div>
-        <div className="mt-4 grid gap-4 md:grid-cols-3">
-          <label className="flex flex-col gap-2 text-sm text-neutral-300 md:col-span-2">
-            <span className="text-xs uppercase tracking-wide text-neutral-500">Поиск</span>
-            <input
-              type="search"
-              value={searchDraft}
-              onChange={(event) => setSearchDraft(event.target.value)}
-              placeholder="Например: research или Swift"
-              className="w-full rounded-xl border border-neutral-800 bg-neutral-900/70 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
-            />
-          </label>
           <label className="flex flex-col gap-2 text-sm text-neutral-300">
             <span className="text-xs uppercase tracking-wide text-neutral-500">Сортировка</span>
             <select
@@ -486,6 +429,76 @@ export default function SpecialistsCatalog({ data, error, basePath }: Specialist
             </select>
           </label>
         </div>
+        <div className="mt-4 grid gap-4 md:grid-cols-3">
+          <label className="flex flex-col gap-2 text-sm text-neutral-300 md:col-span-2">
+            <span className="text-xs uppercase tracking-wide text-neutral-500">Поиск</span>
+            <input
+              type="search"
+              value={searchDraft}
+              onChange={(event) => setSearchDraft(event.target.value)}
+              placeholder="Например: research или Swift"
+              className="w-full rounded-xl border border-neutral-800 bg-neutral-900/70 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
+            />
+          </label>
+          <div className="hidden md:block" />
+        </div>
+        {showAllFilters ? (
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            <label className="flex flex-col gap-2 text-sm text-neutral-300">
+              <span className="text-xs uppercase tracking-wide text-neutral-500">Навыки</span>
+              <select
+                value={filters.skills.length > 0 ? filters.skills[0] : ''}
+                onChange={(event) => updateFilters({ skills: event.target.value ? [event.target.value] : [] })}
+                className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
+              >
+                <option value="">Все навыки</option>
+                {skills.map((skill) => (
+                  <option key={skill} value={skill}>
+                    {skill}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-2 text-sm text-neutral-300">
+              <span className="text-xs uppercase tracking-wide text-neutral-500">Язык</span>
+              <select
+                value={filters.language ?? ''}
+                onChange={(event) => updateFilters({ language: event.target.value || null })}
+                className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
+              >
+                <option value="">Все языки</option>
+                {languages.map((language) => (
+                  <option key={language} value={language}>
+                    {language.toUpperCase()}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="grid gap-2">
+              <span className="text-xs uppercase tracking-wide text-neutral-500">Ставка (₽/час)</span>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  inputMode="numeric"
+                  value={rateMinDraft}
+                  onChange={(event) => setRateMinDraft(event.target.value)}
+                  placeholder="от"
+                  className="w-full rounded-xl border border-neutral-800 bg-neutral-900/70 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
+                />
+                <input
+                  type="number"
+                  min={0}
+                  inputMode="numeric"
+                  value={rateMaxDraft}
+                  onChange={(event) => setRateMaxDraft(event.target.value)}
+                  placeholder="до"
+                  className="w-full rounded-xl border border-neutral-800 bg-neutral-900/70 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+        ) : null}
       </ContentBlock>
 
       <div ref={listRef} className="flex items-center justify-between text-sm text-neutral-400">

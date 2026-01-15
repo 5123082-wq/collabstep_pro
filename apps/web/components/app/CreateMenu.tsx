@@ -20,7 +20,7 @@ type CreateAction = {
   modalComponent?: string;
 };
 
-type CreateContext = 'pm' | 'marketplace' | 'finance' | 'community' | 'ai-hub' | 'default';
+type CreateContext = 'pm' | 'marketplace' | 'performers' | 'finance' | 'community' | 'ai-hub' | 'default';
 
 const CONTEXT_ACTIONS: Record<CreateContext, CreateAction[]> = {
   pm: [
@@ -43,18 +43,20 @@ const CONTEXT_ACTIONS: Record<CreateContext, CreateAction[]> = {
   ],
   marketplace: [
     {
-      id: 'vacancy',
-      label: 'Вакансия',
-      description: 'Создайте новую вакансию в маркетплейсе',
-      intent: 'modal',
-      modalComponent: 'createVacancy'
-    },
-    {
       id: 'service',
       label: 'Услуга',
       description: 'Добавьте новую услугу в каталог',
       intent: 'modal',
       modalComponent: 'createService'
+    }
+  ],
+  performers: [
+    {
+      id: 'vacancy',
+      label: 'Вакансия',
+      description: 'Разместите новую вакансию в каталоге исполнителей',
+      intent: 'modal',
+      modalComponent: 'createVacancy'
     }
   ],
   finance: [
@@ -99,6 +101,7 @@ function resolveContext(pathname: string | null): CreateContext {
   // Проверяем PM ПЕРЕД projects, так как /pm/projects должен быть в контексте pm
   // Также проверяем /pm (без слэша) для дашборда
   if (pathname.startsWith('/pm')) return 'pm';
+  if (pathname.startsWith('/performers')) return 'performers';
   if (pathname.startsWith('/market/')) return 'marketplace';
   if (pathname.startsWith('/finance')) return 'finance';
   if (pathname.startsWith('/community')) return 'community';

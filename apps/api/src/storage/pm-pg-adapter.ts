@@ -95,7 +95,28 @@ export async function ensurePmTables(): Promise<void> {
     );
   `);
 
-  // Ensure new columns are present for existing installations
+  // Ensure all columns are present for existing installations
+  await runQuery(`ALTER TABLE ${TABLE_PROJECTS} ADD COLUMN IF NOT EXISTS workspace_id TEXT`);
+  await runQuery(`UPDATE ${TABLE_PROJECTS} SET workspace_id = 'default' WHERE workspace_id IS NULL`);
+  await runQuery(`ALTER TABLE ${TABLE_PROJECTS} ADD COLUMN IF NOT EXISTS key TEXT`);
+  await runQuery(`UPDATE ${TABLE_PROJECTS} SET key = id WHERE key IS NULL`);
+  await runQuery(`ALTER TABLE ${TABLE_PROJECTS} ADD COLUMN IF NOT EXISTS title TEXT`);
+  await runQuery(`UPDATE ${TABLE_PROJECTS} SET title = 'Untitled' WHERE title IS NULL`);
+  await runQuery(`ALTER TABLE ${TABLE_PROJECTS} ADD COLUMN IF NOT EXISTS description TEXT`);
+  await runQuery(`ALTER TABLE ${TABLE_PROJECTS} ADD COLUMN IF NOT EXISTS owner_id TEXT`);
+  await runQuery(`UPDATE ${TABLE_PROJECTS} SET owner_id = 'unknown' WHERE owner_id IS NULL`);
+  await runQuery(`ALTER TABLE ${TABLE_PROJECTS} ADD COLUMN IF NOT EXISTS status TEXT`);
+  await runQuery(`UPDATE ${TABLE_PROJECTS} SET status = 'active' WHERE status IS NULL`);
+  await runQuery(`ALTER TABLE ${TABLE_PROJECTS} ADD COLUMN IF NOT EXISTS visibility TEXT`);
+  await runQuery(`UPDATE ${TABLE_PROJECTS} SET visibility = 'private' WHERE visibility IS NULL`);
+  await runQuery(`ALTER TABLE ${TABLE_PROJECTS} ADD COLUMN IF NOT EXISTS budget_planned NUMERIC`);
+  await runQuery(`ALTER TABLE ${TABLE_PROJECTS} ADD COLUMN IF NOT EXISTS budget_spent NUMERIC`);
+  await runQuery(`ALTER TABLE ${TABLE_PROJECTS} ADD COLUMN IF NOT EXISTS workflow_id TEXT`);
+  await runQuery(`ALTER TABLE ${TABLE_PROJECTS} ADD COLUMN IF NOT EXISTS archived BOOLEAN DEFAULT FALSE`);
+  await runQuery(`ALTER TABLE ${TABLE_PROJECTS} ADD COLUMN IF NOT EXISTS stage TEXT`);
+  await runQuery(`ALTER TABLE ${TABLE_PROJECTS} ADD COLUMN IF NOT EXISTS deadline TEXT`);
+  await runQuery(`ALTER TABLE ${TABLE_PROJECTS} ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW()`);
+  await runQuery(`ALTER TABLE ${TABLE_PROJECTS} ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW()`);
   await runQuery(`ALTER TABLE ${TABLE_PROJECTS} ADD COLUMN IF NOT EXISTS owner_number INTEGER`);
 
   await runQuery(`

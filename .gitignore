@@ -37,3 +37,7 @@ docs/_audit/
 docs/audit/
 docs/reorganization/
 docs/runbooks/
+
+# Local agent prompts
+AGENT_THINKING_PROMPT.md
+AGENTS.md

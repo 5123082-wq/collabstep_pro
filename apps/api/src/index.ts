@@ -161,6 +161,38 @@ export {
   MarketingClosureChecker,
 } from './services/closure';
 export { performerProfilesRepository, type PerformerProfile } from './repositories/performer-profiles-repository';
+export {
+  VacanciesRepository,
+  vacanciesRepository,
+  type DbVacancy,
+  type NewVacancy,
+  type VacancyStatus
+} from './repositories/vacancies-repository';
+export {
+  VacancyResponsesRepository,
+  vacancyResponsesRepository,
+  type DbVacancyResponse,
+  type NewVacancyResponse,
+  type VacancyResponseStatus
+} from './repositories/vacancy-responses-repository';
+export {
+  PerformerRatingsRepository,
+  performerRatingsRepository,
+  type DbPerformerRating,
+  type NewPerformerRating
+} from './repositories/performer-ratings-repository';
+export {
+  PerformerPortfolioRepository,
+  performerPortfolioRepository,
+  type DbPerformerPortfolioItem,
+  type NewPerformerPortfolioItem
+} from './repositories/performer-portfolio-repository';
+export {
+  PerformerCasesRepository,
+  performerCasesRepository,
+  type DbPerformerCase,
+  type NewPerformerCase
+} from './repositories/performer-cases-repository';
 export { dbProjectsRepository, type DbProject } from './repositories/db-projects-repository';
 export { sharesRepository, SharesRepository, type DbShare } from './repositories/shares-repository';
 // WebSocket server exports are intentionally excluded from the main index
