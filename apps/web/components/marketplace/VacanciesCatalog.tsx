@@ -108,7 +108,7 @@ function Pagination({ currentPage, totalPages, onChange }: PaginationProps) {
   );
 }
 
-function VacancyCard({ vacancy }: { vacancy: Vacancy }) {
+function VacancyCard({ vacancy, detailPath }: { vacancy: Vacancy; detailPath: string }) {
   return (
     <ContentBlock interactive as="article" className="flex h-full flex-col justify-between">
       <div className="space-y-3">
@@ -154,13 +154,12 @@ function VacancyCard({ vacancy }: { vacancy: Vacancy }) {
         </dl>
       </div>
       <footer className="mt-6 flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={() => toast('Перейдите в карточку вакансии, чтобы отправить отклик')}
+        <Link
+          href={`${detailPath}/${vacancy.id}`}
           className="rounded-xl border border-indigo-500/50 bg-indigo-500/15 px-4 py-2 text-sm font-medium text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
         >
           Откликнуться
-        </button>
+        </Link>
         <button
           type="button"
           onClick={() => toast('Вакансия сохранена в подборку (mock)')}
@@ -176,7 +175,7 @@ function VacancyCard({ vacancy }: { vacancy: Vacancy }) {
           Подписаться
         </button>
         <Link
-          href={`/app/marketplace/vacancies/${vacancy.id}`}
+          href={`${detailPath}/${vacancy.id}`}
           className="ml-auto rounded-xl border border-neutral-800 bg-neutral-900/70 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
         >
           Подробнее
@@ -186,17 +185,19 @@ function VacancyCard({ vacancy }: { vacancy: Vacancy }) {
   );
 }
 
-type VacanciesCatalogPropsWithPath = VacanciesCatalogProps & { basePath?: string };
+type VacanciesCatalogPropsWithPath = VacanciesCatalogProps & { basePath?: string; detailPath?: string };
 
-export default function VacanciesCatalog({ data, error, basePath }: VacanciesCatalogPropsWithPath) {
+export default function VacanciesCatalog({ data, error, basePath, detailPath }: VacanciesCatalogPropsWithPath) {
   const router = useRouter();
   const pathname = basePath ?? '/performers/vacancies';
+  const detailPathResolved = detailPath ?? '/performers/vacancies';
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const urlFilters = useMemo(() => parseVacancyFilters(searchParams), [searchParams]);
   const [filters, setFilters] = useState<VacancyFilters>(urlFilters);
   const filtersRef = useRef(filters);
   const [searchDraft, setSearchDraft] = useState(filters.query ?? '');
+  const [showAllFilters, setShowAllFilters] = useState(false);
   const debouncedQuery = useDebouncedValue(searchDraft, 400);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -308,13 +309,22 @@ export default function VacanciesCatalog({ data, error, basePath }: VacanciesCat
           <ContentBlockTitle
             description="Подберите задачи по роли, уровню, формату и типу вознаграждения."
             actions={
-              <button
-                type="button"
-                onClick={handleReset}
-                className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
-              >
-                Сбросить фильтры
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAllFilters((prev) => !prev)}
+                  className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                >
+                  {showAllFilters ? 'Скрыть фильтры' : 'Все фильтры'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                >
+                  Сбросить фильтры
+                </button>
+              </div>
             }
           >
             Каталог вакансий
@@ -351,36 +361,6 @@ export default function VacanciesCatalog({ data, error, basePath }: VacanciesCat
             </select>
           </label>
           <label className="flex flex-col gap-2 text-sm text-neutral-300">
-            <span className="text-xs uppercase tracking-wide text-neutral-500">Язык</span>
-            <select
-              value={filters.language ?? ''}
-              onChange={(event) => updateFilters({ language: event.target.value || null })}
-              className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
-            >
-              <option value="">Все языки</option>
-              {languages.map((language) => (
-                <option key={language} value={language}>
-                  {language.toUpperCase()}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <div className="mt-4 grid gap-4 md:grid-cols-3">
-          <label className="flex flex-col gap-2 text-sm text-neutral-300">
-            <span className="text-xs uppercase tracking-wide text-neutral-500">Тип занятости</span>
-            <select
-              value={filters.employment ?? ''}
-              onChange={(event) => updateFilters({ employment: (event.target.value as VacancyFilters['employment']) || null })}
-              className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
-            >
-              <option value="">Любой</option>
-              <option value="project">Проектная</option>
-              <option value="part-time">Частичная</option>
-              <option value="full-time">Полная</option>
-            </select>
-          </label>
-          <label className="flex flex-col gap-2 text-sm text-neutral-300">
             <span className="text-xs uppercase tracking-wide text-neutral-500">Формат</span>
             <select
               value={filters.format ?? ''}
@@ -391,19 +371,6 @@ export default function VacanciesCatalog({ data, error, basePath }: VacanciesCat
               <option value="remote">Удалённо</option>
               <option value="office">В офисе</option>
               <option value="hybrid">Гибрид</option>
-            </select>
-          </label>
-          <label className="flex flex-col gap-2 text-sm text-neutral-300">
-            <span className="text-xs uppercase tracking-wide text-neutral-500">Вознаграждение</span>
-            <select
-              value={filters.rewardType ?? ''}
-              onChange={(event) => updateFilters({ rewardType: (event.target.value as VacancyFilters['rewardType']) || null })}
-              className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
-            >
-              <option value="">Все варианты</option>
-              <option value="rate">Ставка</option>
-              <option value="salary">Зарплата</option>
-              <option value="equity">Доля</option>
             </select>
           </label>
         </div>
@@ -419,6 +386,51 @@ export default function VacanciesCatalog({ data, error, basePath }: VacanciesCat
             />
           </label>
         </div>
+        {showAllFilters ? (
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            <label className="flex flex-col gap-2 text-sm text-neutral-300">
+              <span className="text-xs uppercase tracking-wide text-neutral-500">Язык</span>
+              <select
+                value={filters.language ?? ''}
+                onChange={(event) => updateFilters({ language: event.target.value || null })}
+                className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
+              >
+                <option value="">Все языки</option>
+                {languages.map((language) => (
+                  <option key={language} value={language}>
+                    {language.toUpperCase()}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-2 text-sm text-neutral-300">
+              <span className="text-xs uppercase tracking-wide text-neutral-500">Тип занятости</span>
+              <select
+                value={filters.employment ?? ''}
+                onChange={(event) => updateFilters({ employment: (event.target.value as VacancyFilters['employment']) || null })}
+                className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
+              >
+                <option value="">Любой</option>
+                <option value="project">Проектная</option>
+                <option value="part-time">Частичная</option>
+                <option value="full-time">Полная</option>
+              </select>
+            </label>
+            <label className="flex flex-col gap-2 text-sm text-neutral-300">
+              <span className="text-xs uppercase tracking-wide text-neutral-500">Вознаграждение</span>
+              <select
+                value={filters.rewardType ?? ''}
+                onChange={(event) => updateFilters({ rewardType: (event.target.value as VacancyFilters['rewardType']) || null })}
+                className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
+              >
+                <option value="">Все варианты</option>
+                <option value="rate">Ставка</option>
+                <option value="salary">Зарплата</option>
+                <option value="equity">Доля</option>
+              </select>
+            </label>
+          </div>
+        ) : null}
       </ContentBlock>
 
       <div ref={listRef} className="flex items-center justify-between text-sm text-neutral-400">
@@ -435,7 +447,7 @@ export default function VacanciesCatalog({ data, error, basePath }: VacanciesCat
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {pageItems.map((vacancy) => (
-            <VacancyCard key={vacancy.id} vacancy={vacancy} />
+            <VacancyCard key={vacancy.id} vacancy={vacancy} detailPath={detailPathResolved} />
           ))}
         </div>
       )}

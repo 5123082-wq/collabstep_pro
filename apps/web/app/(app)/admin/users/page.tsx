@@ -7,6 +7,7 @@ import { toast } from '@/lib/ui/toast';
 import clsx from 'clsx';
 import type { AdminUserView } from '@collabverse/api';
 import { ContentBlock } from '@/components/ui/content-block';
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalTitle, ModalClose } from '@/components/ui/modal';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 
 interface User {
@@ -541,173 +542,168 @@ export default function AdminUsersPage() {
       )}
 
       {/* Модальное окно редактирования пользователя */}
-      {editingUser && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setEditingUser(null);
-            }
-          }}
-        >
-          <ContentBlock
-            className="w-full max-w-md shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-neutral-50">Редактировать пользователя</h2>
-              <button
-                onClick={() => setEditingUser(null)}
-                className="rounded-xl p-1 text-neutral-400 transition hover:bg-neutral-800 hover:text-neutral-200"
-              >
-                ✕
-              </button>
-            </div>
+      <Modal open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
+        <ModalContent className="max-w-2xl">
+          <ModalClose />
+          <ModalHeader>
+            <ModalTitle>Редактировать пользователя</ModalTitle>
+          </ModalHeader>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-neutral-300 mb-1">Имя</label>
-                <p className="text-neutral-100">{editingUser.displayName}</p>
-                {(editingUser.displayName === 'Без имени' || editingUser.email === 'Без email') && (
-                  <p className="text-xs text-orange-400 mt-1">
-                    ⚠️ Это сиротская запись: пользователь есть в системе управления, но отсутствует в списке пользователей workspace
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-neutral-300 mb-1">Email</label>
-                <p className="text-neutral-100">{editingUser.email}</p>
-              </div>
-
-              {(editingUser.displayName === 'Без имени' || editingUser.email === 'Без email') && (
+          {editingUser && (
+            <ModalBody>
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-300 mb-1">User ID</label>
-                  <p className="text-neutral-100 font-mono text-sm">{editingUser.id}</p>
+                  <label className="block text-sm font-medium text-[color:var(--text-primary)] mb-1">Имя</label>
+                  <p className="text-[color:var(--text-primary)]">{editingUser.displayName}</p>
+                  {(editingUser.displayName === 'Без имени' || editingUser.email === 'Без email') && (
+                    <p className="text-xs text-orange-400 mt-1">
+                      ⚠️ Это сиротская запись: пользователь есть в системе управления, но отсутствует в списке пользователей workspace
+                    </p>
+                  )}
                 </div>
-              )}
 
-              <div>
-                <label className="block text-sm font-medium text-neutral-300 mb-2">Статус</label>
-                <select
-                  value={editingUser.status}
-                  onChange={(e) => setEditingUser({ ...editingUser, status: e.target.value as User['status'] })}
-                  className="w-full rounded-xl border border-neutral-800 bg-neutral-900/60 px-3 py-2 text-sm text-neutral-100 transition focus:border-indigo-500 focus:outline-none"
-                >
-                  <option value="active">Активен</option>
-                  <option value="suspended">Заблокирован</option>
-                  <option value="invited">Приглашён</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-neutral-300 mb-2">Роли платформы</label>
-                <div className="space-y-2 rounded-xl border border-neutral-800 bg-neutral-900/60 p-3">
-                  {[
-                    { value: 'productAdmin', label: 'Администратор продукта', description: 'Доступ к админ-панели, управление feature flags' },
-                    { value: 'featureAdmin', label: 'Администратор фич', description: 'Управление feature flags' },
-                    { value: 'supportAgent', label: 'Агент поддержки', description: 'Доступ к модулю поддержки' },
-                    { value: 'financeAdmin', label: 'Администратор финансов', description: 'Доступ к финансовому модулю' },
-                    { value: 'betaTester', label: 'Бета-тестер', description: 'Доступ к бета-фичам' },
-                    { value: 'viewer', label: 'Наблюдатель', description: 'Базовый просмотр' }
-                  ].map((role) => (
-                    <label
-                      key={role.value}
-                      className="flex items-start gap-3 cursor-pointer group"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={editingUser.roles.includes(role.value)}
-                        onChange={(e) => {
-                          const newRoles = e.target.checked
-                            ? [...editingUser.roles, role.value]
-                            : editingUser.roles.filter((r) => r !== role.value);
-                          setEditingUser({ ...editingUser, roles: newRoles });
-                        }}
-                        className="mt-1 h-4 w-4 rounded border-neutral-700 bg-neutral-800 text-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-0 transition"
-                      />
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-neutral-100 group-hover:text-indigo-200 transition">
-                          {role.label}
-                        </div>
-                        <div className="text-xs text-neutral-400">
-                          {role.description}
-                        </div>
-                      </div>
-                    </label>
-                  ))}
+                <div>
+                  <label className="block text-sm font-medium text-[color:var(--text-primary)] mb-1">Email</label>
+                  <p className="text-[color:var(--text-primary)]">{editingUser.email}</p>
                 </div>
-                {editingUser.roles.length === 0 && (
-                  <p className="mt-2 text-xs text-neutral-500">
-                    У пользователя нет назначенных ролей
-                  </p>
+
+                {(editingUser.displayName === 'Без имени' || editingUser.email === 'Без email') && (
+                  <div>
+                    <label className="block text-sm font-medium text-[color:var(--text-primary)] mb-1">User ID</label>
+                    <p className="text-[color:var(--text-primary)] font-mono text-sm">{editingUser.id}</p>
+                  </div>
                 )}
+
+                <div>
+                  <label htmlFor="user-status" className="block text-sm font-medium text-[color:var(--text-primary)] mb-2">
+                    Статус
+                  </label>
+                  <select
+                    id="user-status"
+                    value={editingUser.status}
+                    onChange={(e) => setEditingUser({ ...editingUser, status: e.target.value as User['status'] })}
+                    className="w-full rounded-lg border border-neutral-800 bg-neutral-900/60 px-3 py-2 text-sm text-[color:var(--text-primary)] transition focus:border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  >
+                    <option value="active">Активен</option>
+                    <option value="suspended">Заблокирован</option>
+                    <option value="invited">Приглашён</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[color:var(--text-primary)] mb-2">Роли платформы</label>
+                  <div className="space-y-2 rounded-xl border border-neutral-800 bg-neutral-900/60 p-3 max-h-[300px] overflow-y-auto">
+                    {[
+                      { value: 'productAdmin', label: 'Администратор продукта', description: 'Доступ к админ-панели, управление feature flags' },
+                      { value: 'featureAdmin', label: 'Администратор фич', description: 'Управление feature flags' },
+                      { value: 'supportAgent', label: 'Агент поддержки', description: 'Доступ к модулю поддержки' },
+                      { value: 'financeAdmin', label: 'Администратор финансов', description: 'Доступ к финансовому модулю' },
+                      { value: 'betaTester', label: 'Бета-тестер', description: 'Доступ к бета-фичам' },
+                      { value: 'viewer', label: 'Наблюдатель', description: 'Базовый просмотр' }
+                    ].map((role) => (
+                      <label
+                        key={role.value}
+                        className="flex items-start gap-3 cursor-pointer group"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={editingUser.roles.includes(role.value)}
+                          onChange={(e) => {
+                            const newRoles = e.target.checked
+                              ? [...editingUser.roles, role.value]
+                              : editingUser.roles.filter((r) => r !== role.value);
+                            setEditingUser({ ...editingUser, roles: newRoles });
+                          }}
+                          className="mt-1 h-4 w-4 rounded border-neutral-700 bg-neutral-800 text-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-0 transition"
+                        />
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-[color:var(--text-primary)] group-hover:text-indigo-200 transition">
+                            {role.label}
+                          </div>
+                          <div className="text-xs text-[color:var(--text-secondary)]">
+                            {role.description}
+                          </div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                  {editingUser.roles.length === 0 && (
+                    <p className="mt-2 text-xs text-[color:var(--text-secondary)]">
+                      У пользователя нет назначенных ролей
+                    </p>
+                  )}
+                </div>
               </div>
+            </ModalBody>
+          )}
 
-              <div className="flex gap-2 pt-4">
-                <button
-                  onClick={async () => {
-                    try {
-                      setUpdatingIds((prev) => new Set(prev).add(editingUser.id));
-                      const response = await fetch(`/api/admin/users/${editingUser.id}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          status: editingUser.status,
-                          roles: editingUser.roles
-                        })
-                      });
+          {editingUser && (
+            <ModalFooter>
+              <button
+                type="button"
+                onClick={() => setEditingUser(null)}
+                disabled={updatingIds.has(editingUser.id)}
+                className={clsx(
+                  'rounded-lg border border-neutral-800 bg-neutral-900/60 px-4 py-2 text-sm font-medium text-[color:var(--text-secondary)] transition hover:bg-neutral-800 hover:text-[color:var(--text-primary)]',
+                  updatingIds.has(editingUser.id) && 'cursor-not-allowed opacity-50'
+                )}
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!editingUser) return;
+                  try {
+                    setUpdatingIds((prev) => new Set(prev).add(editingUser.id));
+                    const response = await fetch(`/api/admin/users/${editingUser.id}`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        status: editingUser.status,
+                        roles: editingUser.roles
+                      })
+                    });
 
-                      if (!response.ok) {
-                        const errorData = (await response.json()) as { error?: string; details?: unknown };
-                        throw new Error(errorData.error || 'Не удалось обновить пользователя');
-                      }
-
-                      const data = (await response.json()) as { item: AdminUserView };
-                      const updatedUser = convertAdminUserToUser(data.item);
-                      setUsers((prev) => prev.map((u) => (u.id === editingUser.id ? updatedUser : u)));
-                      setEditingUser(null);
-                      toast('Пользователь обновлён', 'success');
-                    } catch (err) {
-                      toast(err instanceof Error ? err.message : 'Ошибка при обновлении', 'warning');
-                    } finally {
-                      setUpdatingIds((prev) => {
-                        const next = new Set(prev);
-                        next.delete(editingUser.id);
-                        return next;
-                      });
+                    if (!response.ok) {
+                      const errorData = (await response.json()) as { error?: string; details?: unknown };
+                      throw new Error(errorData.error || 'Не удалось обновить пользователя');
                     }
-                  }}
-                  disabled={updatingIds.has(editingUser.id)}
-                  className={clsx(
-                    "flex-1 rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-4 py-2 text-sm font-medium text-indigo-100 transition hover:bg-indigo-500/20",
-                    updatingIds.has(editingUser.id) && "cursor-not-allowed opacity-50"
-                  )}
-                >
-                  {updatingIds.has(editingUser.id) ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
-                      Сохранение...
-                    </span>
-                  ) : (
-                    'Сохранить'
-                  )}
-                </button>
-                <button
-                  onClick={() => setEditingUser(null)}
-                  disabled={updatingIds.has(editingUser.id)}
-                  className={clsx(
-                    "flex-1 rounded-xl border border-neutral-800 bg-neutral-900/60 px-4 py-2 text-sm font-medium text-neutral-300 transition hover:bg-neutral-800",
-                    updatingIds.has(editingUser.id) && "cursor-not-allowed opacity-50"
-                  )}
-                >
-                  Отмена
-                </button>
-              </div>
-            </div>
-          </ContentBlock>
-        </div>
-      )}
+
+                    const data = (await response.json()) as { item: AdminUserView };
+                    const updatedUser = convertAdminUserToUser(data.item);
+                    setUsers((prev) => prev.map((u) => (u.id === editingUser.id ? updatedUser : u)));
+                    setEditingUser(null);
+                    toast('Пользователь обновлён', 'success');
+                  } catch (err) {
+                    toast(err instanceof Error ? err.message : 'Ошибка при обновлении', 'warning');
+                  } finally {
+                    setUpdatingIds((prev) => {
+                      const next = new Set(prev);
+                      next.delete(editingUser.id);
+                      return next;
+                    });
+                  }
+                }}
+                disabled={!editingUser || updatingIds.has(editingUser.id)}
+                className={clsx(
+                  'rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed',
+                  updatingIds.has(editingUser.id) && 'cursor-not-allowed opacity-50'
+                )}
+              >
+                {editingUser && updatingIds.has(editingUser.id) ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
+                    Сохранение...
+                  </span>
+                ) : (
+                  'Сохранить'
+                )}
+              </button>
+            </ModalFooter>
+          )}
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

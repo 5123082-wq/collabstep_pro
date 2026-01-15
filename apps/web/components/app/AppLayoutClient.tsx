@@ -21,6 +21,7 @@ import CreateProjectModal from '@/components/pm/CreateProjectModal';
 import CreateProjectFromTemplateModal from '@/components/projects/CreateProjectFromTemplateModal';
 import { CreateAIAgentModal } from '@/components/ai-hub';
 import { AIAssistantChat, AIAssistantButton } from '@/components/ai-assistant';
+import { CreateVacancyModal } from '@/components/performers/CreateVacancyModal';
 import { flags } from '@/lib/flags';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import type { DemoSession } from '@/lib/auth/demo-session';
@@ -116,8 +117,13 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
   useEffect(() => {
     const handleOpenModal = (event: Event) => {
       const customEvent = event as CustomEvent<{ component: string }>;
-      console.log('[AppLayoutClient] Opening modal:', customEvent.detail.component);
-      setActiveModal(customEvent.detail.component);
+      const component = customEvent.detail.component;
+      console.log('[AppLayoutClient] Opening modal:', component);
+      if (component === 'createVacancy' && !(pathname?.startsWith('/performers') ?? false)) {
+        setCreateOpen(false);
+        return;
+      }
+      setActiveModal(component);
       setCreateOpen(false); // Закрываем dropdown меню
     };
 
@@ -125,7 +131,7 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
     return () => {
       window.removeEventListener('open-create-modal', handleOpenModal);
     };
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
@@ -259,6 +265,12 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
           {activeModal === 'createProjectFromTemplate' && (
             <CreateProjectFromTemplateModal
               isOpen={activeModal === 'createProjectFromTemplate'}
+              onClose={() => setActiveModal(null)}
+            />
+          )}
+          {activeModal === 'createVacancy' && (
+            <CreateVacancyModal
+              open={activeModal === 'createVacancy'}
               onClose={() => setActiveModal(null)}
             />
           )}
