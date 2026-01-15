@@ -96,6 +96,8 @@ export async function ensurePmTables(): Promise<void> {
   `);
 
   // Ensure new columns are present for existing installations
+  await runQuery(`ALTER TABLE ${TABLE_PROJECTS} ADD COLUMN IF NOT EXISTS workspace_id TEXT`);
+  await runQuery(`UPDATE ${TABLE_PROJECTS} SET workspace_id = 'default' WHERE workspace_id IS NULL`);
   await runQuery(`ALTER TABLE ${TABLE_PROJECTS} ADD COLUMN IF NOT EXISTS owner_number INTEGER`);
 
   await runQuery(`
