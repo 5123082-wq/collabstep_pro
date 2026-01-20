@@ -95,6 +95,7 @@ DATABASE_URL=postgres://...     # Недоступно в браузере
 ```bash
 DATABASE_URL=postgresql://...
 POSTGRES_URL=postgresql://...?pgbouncer=true
+AI_AGENTS_DATABASE_URL=postgresql://...
 ```
 
 ### 🔐 Authentication

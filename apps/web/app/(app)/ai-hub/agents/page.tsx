@@ -1,13 +1,22 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { put } from '@vercel/blob/client';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/lib/ui/toast';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalTitle, ModalDescription } from '@/components/ui/modal';
 import { Textarea } from '@/components/ui/textarea';
 import { ContentBlock } from '@/components/ui/content-block';
 import { isDemoAdminEmail } from '@/lib/auth/demo-session';
+import { useOrganization } from '@/components/organizations/OrganizationContext';
 
 type AIAgentScope = 'personal' | 'team' | 'public';
 
@@ -44,6 +53,52 @@ type BrandbookRunResult = {
   };
 };
 
+type BrandbookRunSummary = {
+  id: string;
+  status: string;
+  productBundle: BrandbookProductBundle;
+  createdAt: string;
+  projectId?: string;
+};
+
+type BrandbookRunDetails = {
+  id: string;
+  status: string;
+  input: {
+    projectId?: string;
+    taskId?: string;
+    logoFileId?: string;
+    productBundle: BrandbookProductBundle;
+    preferences?: string[];
+    outputLanguage?: string;
+    watermarkText?: string;
+    contactBlock?: string;
+  };
+  metadata?: {
+    pipelineType: string;
+    outputFormat: string;
+    previewFormat: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+};
+
+type BrandbookRunMessagePayload = {
+  id: string;
+  runId: string;
+  role: BrandbookChatRole;
+  content: string;
+  createdAt: string;
+};
+
+type BrandbookRunArtifactPayload = {
+  id: string;
+  runId: string;
+  fileId: string;
+  kind: 'preview' | 'final';
+  createdAt: string;
+};
+
 type BrandbookRunApiResponse = {
   ok: boolean;
   data?: BrandbookRunResult;
@@ -51,10 +106,27 @@ type BrandbookRunApiResponse = {
   details?: string;
 };
 
+type BrandbookRunListApiResponse = {
+  ok: boolean;
+  data?: { runs: BrandbookRunSummary[] };
+  error?: string;
+  details?: string;
+};
+
+type BrandbookRunDetailsApiResponse = {
+  ok: boolean;
+  data?: {
+    run: BrandbookRunDetails;
+    messages: BrandbookRunMessagePayload[];
+    artifacts: BrandbookRunArtifactPayload[];
+  };
+  error?: string;
+  details?: string;
+};
+
 type BrandbookRunForm = {
   projectId: string;
   taskId: string;
-  logoFileId: string;
   productBundle: BrandbookProductBundle;
   preferences: string;
   outputLanguage: string;
@@ -62,12 +134,13 @@ type BrandbookRunForm = {
   contactBlock: string;
 };
 
-type BrandbookChatRole = 'assistant' | 'user';
+type BrandbookChatRole = 'assistant' | 'user' | 'system';
 
 type BrandbookChatMessage = {
   id: string;
   role: BrandbookChatRole;
   content: string;
+  createdAt?: string;
 };
 
 const AGENT_TYPE_LABELS: Record<string, string> = {
@@ -87,7 +160,6 @@ const AGENT_TYPE_DESCRIPTIONS: Record<string, string> = {
 const BRANDBOOK_FORM_INITIAL: BrandbookRunForm = {
   projectId: '',
   taskId: '',
-  logoFileId: '',
   productBundle: 'merch_basic',
   preferences: '',
   outputLanguage: '',
@@ -105,6 +177,7 @@ const AI_V1_ENABLED = (() => {
 })();
 
 export default function AiAgentsPage() {
+  const { currentOrgId, isLoading: orgLoading } = useOrganization();
   const [agents, setAgents] = useState<AIAgent[]>([]);
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const [agentProjects, setAgentProjects] = useState<Record<string, ProjectInfo[]>>({});
@@ -113,17 +186,24 @@ export default function AiAgentsPage() {
   const [editingAgent, setEditingAgent] = useState<AIAgent | null>(null);
   const [viewingAgent, setViewingAgent] = useState<AIAgent | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isBrandbookModalOpen, setBrandbookModalOpen] = useState(false);
   const [brandbookForm, setBrandbookForm] = useState<BrandbookRunForm>(BRANDBOOK_FORM_INITIAL);
-  const [brandbookRunResult, setBrandbookRunResult] = useState<BrandbookRunResult | null>(null);
+  const [brandbookRuns, setBrandbookRuns] = useState<BrandbookRunSummary[]>([]);
+  const [brandbookActiveRun, setBrandbookActiveRun] = useState<BrandbookRunDetails | null>(null);
   const [brandbookSubmitting, setBrandbookSubmitting] = useState(false);
+  const [brandbookRunsLoading, setBrandbookRunsLoading] = useState(false);
+  const [brandbookActiveLoading, setBrandbookActiveLoading] = useState(false);
+  const [brandbookUploadPending, setBrandbookUploadPending] = useState(false);
   const [isBrandbookAdvancedOpen, setBrandbookAdvancedOpen] = useState(false);
   const [isBrandbookChatOpen, setBrandbookChatOpen] = useState(false);
   const [brandbookChatMessages, setBrandbookChatMessages] = useState<BrandbookChatMessage[]>([]);
   const [brandbookChatInput, setBrandbookChatInput] = useState('');
   const [brandbookLogoLink, setBrandbookLogoLink] = useState('');
   const [brandbookUsePlaceholder, setBrandbookUsePlaceholder] = useState(false);
+  const [isBrandbookActionsOpen, setBrandbookActionsOpen] = useState(false);
   const brandbookChatInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const brandbookFileInputRef = useRef<HTMLInputElement | null>(null);
   
   // Tab state
   const [activeTab, setActiveTab] = useState<'all' | AIAgentScope>('all');
@@ -142,6 +222,7 @@ export default function AiAgentsPage() {
     responseStyle: 'short'
   });
   const [saving, setSaving] = useState(false);
+  const organizationId = currentOrgId ?? '';
 
   useEffect(() => {
     void loadData();
@@ -152,9 +233,12 @@ export default function AiAgentsPage() {
   const checkAdminStatus = async () => {
     try {
       const response = await fetch('/api/auth/me', { headers: { 'cache-control': 'no-store' } });
-      const payload = (await response.json()) as { authenticated?: boolean; email?: string };
+      const payload = (await response.json()) as { authenticated?: boolean; email?: string; userId?: string };
       if (payload.authenticated && payload.email) {
         setIsAdmin(isDemoAdminEmail(payload.email));
+      }
+      if (payload.authenticated && payload.userId) {
+        setCurrentUserId(payload.userId);
       }
     } catch (err) {
       console.error('Failed to check admin status', err);
@@ -294,38 +378,150 @@ export default function AiAgentsPage() {
     });
   };
 
-  const createBrandbookMessage = (role: BrandbookChatRole, content: string): BrandbookChatMessage => ({
+  const createBrandbookMessage = (
+    role: BrandbookChatRole,
+    content: string,
+    createdAt?: string
+  ): BrandbookChatMessage => ({
     id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
     role,
-    content
+    content,
+    ...(createdAt ? { createdAt } : {})
   });
 
-  const openBrandbookChat = (run: BrandbookRunResult) => {
-    setBrandbookRunResult(run);
-    setBrandbookChatMessages([
-      createBrandbookMessage(
-        'assistant',
-        'Запуск создан. Я помогу собрать логотип и уточнения для брендбука.'
-      ),
-      createBrandbookMessage(
-        'assistant',
-        'Лучше всего подходят PNG с прозрачностью и минимум 800px по короткой стороне. Форматы: png, jpg, bmp (webp — опционально).'
-      ),
-      createBrandbookMessage(
-        'assistant',
-        'Вы можете загрузить файл, вставить logoFileId, прикрепить ссылку из Документов или попросить демо-мокап без логотипа.'
-      )
+  const persistBrandbookMessage = async (
+    role: BrandbookChatRole,
+    content: string,
+    notifyOnError = false
+  ) => {
+    if (!brandbookActiveRun) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/ai/agents/brandbook/runs/${brandbookActiveRun.id}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role, content })
+      });
+
+      if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as { error?: string; details?: string } | null;
+        throw new Error(data?.error || data?.details || 'Не удалось сохранить сообщение');
+      }
+    } catch (error) {
+      console.error('Error saving brandbook message:', error);
+      if (notifyOnError) {
+        toast(error instanceof Error ? error.message : 'Не удалось сохранить сообщение', 'warning');
+      }
+    }
+  };
+
+  const appendBrandbookMessage = (
+    role: BrandbookChatRole,
+    content: string,
+    options?: { persist?: boolean; notifyOnError?: boolean; createdAt?: string }
+  ) => {
+    setBrandbookChatMessages((prev) => [
+      ...prev,
+      createBrandbookMessage(role, content, options?.createdAt)
     ]);
-    setBrandbookChatInput('');
+
+    if (options?.persist === false) {
+      return;
+    }
+
+    void persistBrandbookMessage(role, content, options?.notifyOnError);
+  };
+
+  const loadBrandbookRun = async (runId: string) => {
+    setBrandbookActiveLoading(true);
+    try {
+      const response = await fetch(`/api/ai/agents/brandbook/runs/${runId}`);
+      const responsePayload = (await response.json().catch(() => null)) as BrandbookRunDetailsApiResponse | null;
+
+      if (!response.ok) {
+        const errorMessage =
+          responsePayload?.error || responsePayload?.details || 'Не удалось загрузить запуск';
+        throw new Error(errorMessage);
+      }
+
+      if (!responsePayload?.data?.run) {
+        throw new Error('Пустой ответ от сервера');
+      }
+
+      const { run, messages } = responsePayload.data;
+      setBrandbookActiveRun(run);
+      setBrandbookChatMessages(
+        messages.map((message) =>
+          createBrandbookMessage(message.role, message.content, message.createdAt)
+        )
+      );
+      setBrandbookChatInput('');
+      setBrandbookLogoLink('');
+      setBrandbookUsePlaceholder(false);
+    } catch (error) {
+      console.error('Error loading brandbook run:', error);
+      toast(error instanceof Error ? error.message : 'Не удалось загрузить запуск', 'warning');
+    } finally {
+      setBrandbookActiveLoading(false);
+    }
+  };
+
+  const loadBrandbookRuns = async (preferredRunId?: string) => {
+    const fallbackProjectId = brandbookForm.projectId || brandbookActiveRun?.input.projectId || '';
+    if ((!organizationId && !fallbackProjectId) || (orgLoading && !fallbackProjectId)) {
+      if (preferredRunId) {
+        void loadBrandbookRun(preferredRunId);
+      }
+      return;
+    }
+
+    setBrandbookRunsLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (organizationId) {
+        params.set('organizationId', organizationId);
+      } else if (fallbackProjectId) {
+        params.set('projectId', fallbackProjectId);
+      }
+      const response = await fetch(`/api/ai/agents/brandbook/runs?${params.toString()}`);
+      const responsePayload = (await response.json().catch(() => null)) as BrandbookRunListApiResponse | null;
+
+      if (!response.ok) {
+        const errorMessage =
+          responsePayload?.error || responsePayload?.details || 'Не удалось загрузить список запусков';
+        throw new Error(errorMessage);
+      }
+
+      const runs = responsePayload?.data?.runs ?? [];
+      setBrandbookRuns(runs);
+
+      const nextRunId = preferredRunId ?? brandbookActiveRun?.id ?? runs[0]?.id;
+      if (nextRunId) {
+        void loadBrandbookRun(nextRunId);
+      } else {
+        setBrandbookActiveRun(null);
+        setBrandbookChatMessages([]);
+      }
+    } catch (error) {
+      console.error('Error loading brandbook runs:', error);
+      toast(error instanceof Error ? error.message : 'Не удалось загрузить запуски', 'warning');
+    } finally {
+      setBrandbookRunsLoading(false);
+    }
+  };
+
+  const openBrandbookChat = (runId?: string) => {
+    setBrandbookChatOpen(true);
+    setBrandbookActionsOpen(false);
     setBrandbookLogoLink('');
     setBrandbookUsePlaceholder(false);
-    setBrandbookForm((prev) => ({ ...prev, logoFileId: '' }));
-    setBrandbookChatOpen(true);
+    void loadBrandbookRuns(runId);
   };
 
   const openBrandbookModal = () => {
     setBrandbookForm(BRANDBOOK_FORM_INITIAL);
-    setBrandbookRunResult(null);
     setBrandbookAdvancedOpen(false);
     setBrandbookChatOpen(false);
     setBrandbookModalOpen(true);
@@ -333,12 +529,21 @@ export default function AiAgentsPage() {
 
   const handleBrandbookRun = async () => {
     const projectId = brandbookForm.projectId.trim();
-    const taskId = brandbookForm.taskId.trim();
-    const logoFileId = brandbookForm.logoFileId.trim();
+    const taskId = projectId ? brandbookForm.taskId.trim() : '';
     const productBundle = brandbookForm.productBundle;
 
     if (!productBundle) {
       toast('Выберите набор продукции', 'warning');
+      return;
+    }
+
+    if (!projectId && orgLoading) {
+      toast('Организация еще загружается, попробуйте позже', 'warning');
+      return;
+    }
+
+    if (!projectId && !organizationId) {
+      toast('Выберите проект или переключитесь на организацию для запуска', 'warning');
       return;
     }
 
@@ -353,8 +558,8 @@ export default function AiAgentsPage() {
     const payload = {
       productBundle,
       ...(projectId ? { projectId } : {}),
+      ...(projectId ? {} : organizationId ? { organizationId } : {}),
       ...(taskId ? { taskId } : {}),
-      ...(logoFileId ? { logoFileId } : {}),
       ...(preferences.length > 0 ? { preferences } : {}),
       ...(outputLanguage ? { outputLanguage } : {}),
       ...(watermarkText ? { watermarkText } : {}),
@@ -362,7 +567,6 @@ export default function AiAgentsPage() {
     };
 
     setBrandbookSubmitting(true);
-    setBrandbookRunResult(null);
 
     try {
       // TODO(analytics): добавить ai_agent_triggered для запуска Brandbook Agent.
@@ -385,7 +589,7 @@ export default function AiAgentsPage() {
       }
 
       setBrandbookModalOpen(false);
-      openBrandbookChat(responsePayload.data);
+      openBrandbookChat(responsePayload.data.runId);
       toast('Запуск Brandbook Agent создан', 'success');
     } catch (error) {
       console.error('Error starting Brandbook Agent:', error);
@@ -395,17 +599,33 @@ export default function AiAgentsPage() {
     }
   };
 
-  const appendBrandbookMessage = (role: BrandbookChatRole, content: string) => {
-    setBrandbookChatMessages((prev) => [...prev, createBrandbookMessage(role, content)]);
+  const updateActiveRunInput = (patch: Partial<BrandbookRunDetails['input']>) => {
+    setBrandbookActiveRun((prev) => {
+      if (!prev) {
+        return prev;
+      }
+      return {
+        ...prev,
+        input: {
+          ...prev.input,
+          ...patch
+        }
+      };
+    });
   };
 
   const handleBrandbookChatSend = () => {
+    if (!brandbookActiveRun) {
+      toast('Сначала выберите запуск', 'warning');
+      return;
+    }
+
     const message = brandbookChatInput.trim();
     if (!message) {
       return;
     }
 
-    appendBrandbookMessage('user', message);
+    appendBrandbookMessage('user', message, { notifyOnError: true });
     setBrandbookChatInput('');
 
     const logoIdMatch = message.match(/logoFileId\s*[:=]\s*([^\s]+)/i);
@@ -413,7 +633,7 @@ export default function AiAgentsPage() {
 
     if (logoIdMatch) {
       const logoId = logoIdMatch[1] ? logoIdMatch[1].trim() : '';
-      setBrandbookForm((prev) => ({ ...prev, logoFileId: logoId }));
+      updateActiveRunInput({ logoFileId: logoId });
       setBrandbookLogoLink('');
       setBrandbookUsePlaceholder(false);
       appendBrandbookMessage('assistant', 'Принял logoFileId. Если есть еще пожелания — напишите.');
@@ -422,14 +642,14 @@ export default function AiAgentsPage() {
 
     if (linkMatch) {
       setBrandbookLogoLink(linkMatch[0]);
-      setBrandbookForm((prev) => ({ ...prev, logoFileId: '' }));
+      updateActiveRunInput({ logoFileId: '' });
       setBrandbookUsePlaceholder(false);
       appendBrandbookMessage('assistant', 'Ссылку получил. Если нужен формат/размер — уточните.');
       return;
     }
 
     if (!logoIdMatch && !linkMatch && message.length >= 12 && !/\s/.test(message)) {
-      setBrandbookForm((prev) => ({ ...prev, logoFileId: message }));
+      updateActiveRunInput({ logoFileId: message });
       setBrandbookLogoLink('');
       setBrandbookUsePlaceholder(false);
       appendBrandbookMessage('assistant', 'Похоже, это ID файла. Зафиксировал logoFileId.');
@@ -438,7 +658,7 @@ export default function AiAgentsPage() {
 
     if (/без\s+логотипа|placeholder|mockup/i.test(message)) {
       setBrandbookUsePlaceholder(true);
-      setBrandbookForm((prev) => ({ ...prev, logoFileId: '' }));
+      updateActiveRunInput({ logoFileId: '' });
       setBrandbookLogoLink('');
       appendBrandbookMessage('assistant', 'Ок, сделаю демо-мокап с placeholder LOGO.');
       return;
@@ -447,7 +667,110 @@ export default function AiAgentsPage() {
     appendBrandbookMessage('assistant', 'Спасибо, понял. Готов продолжать — можно прислать логотип или уточнения.');
   };
 
+  const handleBrandbookFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    if (!brandbookActiveRun) {
+      toast('Сначала выберите запуск', 'warning');
+      return;
+    }
+
+    if (!currentUserId) {
+      toast('Не удалось определить пользователя', 'warning');
+      return;
+    }
+
+    const projectId = brandbookActiveRun.input.projectId ?? '';
+    if (!organizationId && !projectId) {
+      toast('Не удалось определить организацию', 'warning');
+      return;
+    }
+
+    setBrandbookUploadPending(true);
+    try {
+      const uploadResponse = await fetch('/api/files/upload-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: file.name,
+          mimeType: file.type || 'application/octet-stream',
+          sizeBytes: file.size,
+          ...(projectId ? { projectId } : {}),
+          ...(projectId ? {} : organizationId ? { organizationId } : {})
+        })
+      });
+
+      const uploadPayload = (await uploadResponse.json().catch(() => null)) as
+        | { ok: boolean; data?: { token: string; pathname: string }; error?: string; details?: string }
+        | null;
+
+      if (!uploadResponse.ok || !uploadPayload?.data?.token || !uploadPayload.data.pathname) {
+        const message = uploadPayload?.error || uploadPayload?.details || 'Не удалось подготовить загрузку';
+        throw new Error(message);
+      }
+
+      const uploaded = await put(uploadPayload.data.pathname, file, {
+        token: uploadPayload.data.token,
+        contentType: file.type || 'application/octet-stream',
+        access: 'public'
+      });
+
+      const completeResponse = await fetch('/api/files/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storageKey: uploadPayload.data.pathname,
+          url: uploaded.url,
+          filename: file.name,
+          mimeType: file.type || 'application/octet-stream',
+          sizeBytes: file.size,
+          uploaderId: currentUserId,
+          ...(projectId ? { projectId } : {}),
+          ...(projectId ? {} : organizationId ? { organizationId } : {})
+        })
+      });
+
+      const completePayload = (await completeResponse.json().catch(() => null)) as
+        | { ok: boolean; data?: { file?: { id?: string } }; error?: string; details?: string }
+        | null;
+
+      if (!completeResponse.ok) {
+        const message = completePayload?.error || completePayload?.details || 'Не удалось сохранить файл';
+        throw new Error(message);
+      }
+
+      const fileId = completePayload?.data?.file?.id;
+      if (!fileId) {
+        throw new Error('Файл не сохранен');
+      }
+
+      updateActiveRunInput({ logoFileId: fileId });
+      setBrandbookLogoLink('');
+      setBrandbookUsePlaceholder(false);
+      appendBrandbookMessage('user', `Загрузил логотип: ${file.name}`, { notifyOnError: true });
+      appendBrandbookMessage('assistant', 'Принял logoFileId. Если есть еще пожелания — напишите.');
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      toast(error instanceof Error ? error.message : 'Не удалось загрузить файл', 'warning');
+    } finally {
+      setBrandbookUploadPending(false);
+      if (brandbookFileInputRef.current) {
+        brandbookFileInputRef.current.value = '';
+      }
+    }
+  };
+
   const handleBrandbookChatAction = (action: 'insert-id' | 'insert-link' | 'placeholder' | 'upload') => {
+    setBrandbookActionsOpen(false);
+
+    if (!brandbookActiveRun) {
+      toast('Сначала выберите запуск', 'warning');
+      return;
+    }
+
     if (action === 'insert-id') {
       setBrandbookChatInput('logoFileId: ');
       brandbookChatInputRef.current?.focus();
@@ -461,15 +784,25 @@ export default function AiAgentsPage() {
     }
 
     if (action === 'placeholder') {
-      appendBrandbookMessage('user', 'Сгенерируй мокап без логотипа (placeholder LOGO).');
+      appendBrandbookMessage('user', 'Сгенерируй мокап без логотипа (placeholder LOGO).', { notifyOnError: true });
       setBrandbookUsePlaceholder(true);
-      setBrandbookForm((prev) => ({ ...prev, logoFileId: '' }));
+      updateActiveRunInput({ logoFileId: '' });
       setBrandbookLogoLink('');
       appendBrandbookMessage('assistant', 'Принял. Запущу демо-мокап с placeholder.');
       return;
     }
 
-    toast('Прямая загрузка в чате будет добавлена в следующей итерации.', 'warning');
+    if (action === 'upload') {
+      brandbookFileInputRef.current?.click();
+    }
+  };
+
+  const formatRunDate = (value: string) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return value;
+    }
+    return date.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
   };
 
   const handleSaveAgent = async () => {
@@ -527,17 +860,25 @@ export default function AiAgentsPage() {
     { id: 'public', label: 'Общедоступные' }
   ];
   const showBrandbookCard = AI_V1_ENABLED;
-  const parsedPreferences = brandbookForm.preferences
-    .split(/[\n,]+/)
-    .map((value) => value.trim())
-    .filter(Boolean);
+  const activeRunInput = brandbookActiveRun?.input;
+  const activePreferences = activeRunInput?.preferences ?? [];
+  const activeLogoFileId = activeRunInput?.logoFileId ?? '';
   const brandbookLogoStatus = brandbookUsePlaceholder
     ? 'placeholder LOGO'
-    : brandbookForm.logoFileId
-      ? `ID: ${brandbookForm.logoFileId}`
+    : activeLogoFileId
+      ? `ID: ${activeLogoFileId}`
       : brandbookLogoLink
         ? 'Ссылка из Документов'
         : 'не указан';
+  const canSubmitBrandbook = Boolean(brandbookForm.projectId || organizationId);
+  const isBrandbookSubmitDisabled =
+    brandbookSubmitting || !canSubmitBrandbook || (orgLoading && !brandbookForm.projectId);
+  const isBrandbookChatReady = Boolean(brandbookActiveRun);
+  const canUploadFile = Boolean(
+    brandbookActiveRun &&
+      currentUserId &&
+      (organizationId || brandbookActiveRun.input.projectId)
+  );
 
   return (
     <section className="space-y-6">
@@ -877,30 +1218,43 @@ export default function AiAgentsPage() {
                           className="bg-neutral-900 border-neutral-700"
                         />
                       </div>
-                    <div className="space-y-2">
-                      <div className="text-sm font-medium text-neutral-300">
-                        Привязка к проекту/задаче
-                      </div>
-                      <p className="text-xs text-neutral-500">
-                        По желанию можно указать проект или задачу. Без них агент работает в демо-режиме.
-                      </p>
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <Input
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium text-neutral-300">
+                          Привязка к проекту/задаче
+                        </div>
+                        <p className="text-xs text-neutral-500">
+                          Опционально: выберите проект, если хотите делиться историей с командой.
+                        </p>
+                        <div className="space-y-3">
+                          <select
                             value={brandbookForm.projectId}
-                            onChange={(event) =>
-                              setBrandbookForm((prev) => ({ ...prev, projectId: event.target.value }))
-                            }
-                            placeholder="projectId"
-                            className="bg-neutral-900 border-neutral-700"
-                          />
-                          <Input
-                            value={brandbookForm.taskId}
-                            onChange={(event) =>
-                              setBrandbookForm((prev) => ({ ...prev, taskId: event.target.value }))
-                            }
-                            placeholder="taskId (опционально)"
-                            className="bg-neutral-900 border-neutral-700"
-                          />
+                            onChange={(event) => {
+                              const nextProjectId = event.target.value;
+                              setBrandbookForm((prev) => ({
+                                ...prev,
+                                projectId: nextProjectId,
+                                ...(nextProjectId ? {} : { taskId: '' })
+                              }));
+                            }}
+                            className="w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
+                          >
+                            <option value="">Без проекта (демо-режим)</option>
+                            {projects.map((project) => (
+                              <option key={project.id} value={project.id}>
+                                {project.key}: {project.name || project.key}
+                              </option>
+                            ))}
+                          </select>
+                          {brandbookForm.projectId && (
+                            <Input
+                              value={brandbookForm.taskId}
+                              onChange={(event) =>
+                                setBrandbookForm((prev) => ({ ...prev, taskId: event.target.value }))
+                              }
+                              placeholder="taskId (опционально)"
+                              className="bg-neutral-900 border-neutral-700"
+                            />
+                          )}
                         </div>
                       </div>
                     </div>
@@ -923,7 +1277,7 @@ export default function AiAgentsPage() {
                 <Button
                   variant="primary"
                   type="submit"
-                  disabled={brandbookSubmitting}
+                  disabled={isBrandbookSubmitDisabled}
                   loading={brandbookSubmitting}
                 >
                   Запустить
@@ -936,120 +1290,225 @@ export default function AiAgentsPage() {
 
       {showBrandbookCard && (
         <Modal open={isBrandbookChatOpen} onOpenChange={setBrandbookChatOpen}>
-          <ModalContent className="max-w-3xl">
-            <div className="flex max-h-[85vh] flex-col">
-              <div className="flex items-start justify-between gap-4 border-b border-neutral-800 px-6 py-4">
-                <div>
-                  <div className="text-sm font-semibold text-neutral-100">Brandbook Agent</div>
-                  <div className="text-xs text-neutral-500">
-                    Чат агента{brandbookRunResult ? ` · runId ${brandbookRunResult.runId}` : ''}
+          <ModalContent className="max-w-5xl h-[85vh]">
+            <div className="flex h-full flex-col overflow-hidden md:flex-row">
+              <aside className="flex w-full flex-col border-b border-neutral-800 bg-neutral-950/60 md:w-64 md:border-b-0 md:border-r md:max-h-none max-h-[35vh]">
+                <div className="flex items-center justify-between px-4 py-3">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                    Запуски
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {brandbookRunResult && (
-                    <span className="rounded-full border border-neutral-800 bg-neutral-900/70 px-2 py-1 text-[10px] uppercase tracking-wide text-neutral-300">
-                      {brandbookRunResult.status}
-                    </span>
-                  )}
-                  <Button variant="secondary" size="sm" onClick={() => setBrandbookChatOpen(false)}>
-                    Закрыть
+                  <Button variant="secondary" size="sm" onClick={openBrandbookModal}>
+                    Новый
                   </Button>
                 </div>
-              </div>
+                <div className="flex-1 overflow-y-auto px-2 pb-4">
+                  {brandbookRunsLoading ? (
+                    <div className="px-3 py-2 text-xs text-neutral-500">Загружаем историю...</div>
+                  ) : brandbookRuns.length === 0 ? (
+                    <div className="px-3 py-2 text-xs text-neutral-500">
+                      Запусков пока нет. Создайте первый.
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      {brandbookRuns.map((run) => {
+                        const isActive = brandbookActiveRun?.id === run.id;
+                        const projectLabel = run.projectId
+                          ? projects.find((project) => project.id === run.projectId)?.key ?? 'Проект'
+                          : '';
+                        const runTitle = run.productBundle === 'merch_basic' ? 'Merch basic' : 'Office basic';
 
-              <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
-                <div className="rounded-2xl border border-neutral-800 bg-neutral-900/50 p-3 text-xs text-neutral-400">
-                  <div className="flex flex-wrap gap-3">
-                    <span>Набор: {brandbookForm.productBundle}</span>
-                    <span>Пожелания: {parsedPreferences.length}</span>
-                    <span>Логотип: {brandbookLogoStatus}</span>
+                        return (
+                          <button
+                            key={run.id}
+                            type="button"
+                            onClick={() => void loadBrandbookRun(run.id)}
+                            className={`w-full rounded-xl border px-3 py-2 text-left text-xs transition ${
+                              isActive
+                                ? 'border-indigo-500/50 bg-indigo-500/10 text-indigo-100'
+                                : 'border-neutral-800 bg-neutral-900/40 text-neutral-300 hover:border-neutral-700'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="text-[11px] uppercase tracking-wide text-neutral-500">
+                                {formatRunDate(run.createdAt)}
+                              </div>
+                              <span className="rounded-full border border-neutral-800 bg-neutral-900/70 px-2 py-0.5 text-[10px] uppercase tracking-wide text-neutral-400">
+                                {run.status}
+                              </span>
+                            </div>
+                            <div className="mt-1 text-sm font-medium text-neutral-100">{runTitle}</div>
+                            {projectLabel && (
+                              <div className="mt-1 text-[11px] text-neutral-500">Проект: {projectLabel}</div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </aside>
+
+              <section className="flex flex-1 flex-col">
+                <div className="flex items-start justify-between gap-4 border-b border-neutral-800 px-6 py-4">
+                  <div>
+                    <div className="text-sm font-semibold text-neutral-100">Brandbook Agent</div>
+                    <div className="text-xs text-neutral-500">
+                      {brandbookActiveRun
+                        ? `runId ${brandbookActiveRun.id}`
+                        : 'Выберите запуск слева или создайте новый'}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {brandbookActiveRun && (
+                      <span className="rounded-full border border-neutral-800 bg-neutral-900/70 px-2 py-1 text-[10px] uppercase tracking-wide text-neutral-300">
+                        {brandbookActiveRun.status}
+                      </span>
+                    )}
+                    <Button variant="secondary" size="sm" onClick={() => setBrandbookChatOpen(false)}>
+                      Закрыть
+                    </Button>
                   </div>
                 </div>
 
-                {brandbookRunResult && (
-                  <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-3 text-xs text-neutral-300">
-                    <div>runId: {brandbookRunResult.runId}</div>
-                    <div>status: {brandbookRunResult.status}</div>
-                    <div>pipelineType: {brandbookRunResult.metadata.pipelineType}</div>
-                    <div>outputFormat: {brandbookRunResult.metadata.outputFormat}</div>
-                    <div>previewFormat: {brandbookRunResult.metadata.previewFormat}</div>
-                  </div>
-                )}
+                <div className="flex-1 overflow-y-auto px-6 py-6">
+                  {brandbookActiveLoading ? (
+                    <div className="text-sm text-neutral-500">Загрузка запуска...</div>
+                  ) : !brandbookActiveRun ? (
+                    <div className="flex h-full items-center justify-center text-sm text-neutral-500">
+                      Создайте запуск, чтобы начать диалог с агентом.
+                    </div>
+                  ) : (
+                    <div className="space-y-5">
+                      <div className="rounded-2xl border border-neutral-800 bg-neutral-900/50 p-3 text-xs text-neutral-400">
+                        <div className="flex flex-wrap gap-3">
+                          <span>Набор: {brandbookActiveRun.input.productBundle}</span>
+                          <span>Пожелания: {activePreferences.length}</span>
+                          <span>Логотип: {brandbookLogoStatus}</span>
+                          {brandbookActiveRun.input.projectId && (
+                            <span>
+                              Проект:{' '}
+                              {projects.find((project) => project.id === brandbookActiveRun.input.projectId)?.key ||
+                                'Проект'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
 
-                <div className="space-y-4">
-                  {brandbookChatMessages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex ${message.role === 'assistant' ? 'justify-start' : 'justify-end'}`}
-                    >
-                      <div
-                        className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
-                          message.role === 'assistant'
-                            ? 'bg-neutral-900/70 text-neutral-200'
-                            : 'bg-indigo-500/20 text-indigo-100'
-                        }`}
-                      >
-                        {message.content}
+                      <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-3 text-xs text-neutral-300">
+                        <div>runId: {brandbookActiveRun.id}</div>
+                        <div>status: {brandbookActiveRun.status}</div>
+                        <div>pipelineType: {brandbookActiveRun.metadata?.pipelineType ?? '—'}</div>
+                        <div>outputFormat: {brandbookActiveRun.metadata?.outputFormat ?? '—'}</div>
+                        <div>previewFormat: {brandbookActiveRun.metadata?.previewFormat ?? '—'}</div>
+                      </div>
+
+                      <div className="space-y-4">
+                        {brandbookChatMessages.length === 0 ? (
+                          <div className="text-sm text-neutral-500">Сообщений пока нет.</div>
+                        ) : (
+                          brandbookChatMessages.map((message) => {
+                            const isUser = message.role === 'user';
+                            const isSystem = message.role === 'system';
+                            return (
+                              <div
+                                key={message.id}
+                                className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
+                              >
+                                <div
+                                  className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm ${
+                                    isUser
+                                      ? 'bg-indigo-500/20 text-indigo-100'
+                                      : isSystem
+                                        ? 'bg-neutral-900/40 text-neutral-300'
+                                        : 'bg-neutral-900/70 text-neutral-200'
+                                  }`}
+                                >
+                                  {message.content}
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
-              </div>
 
-              <div className="border-t border-neutral-800 bg-neutral-950/40 px-6 py-4">
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => handleBrandbookChatAction('upload')}
-                  >
-                    Загрузить файл (скоро)
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => handleBrandbookChatAction('insert-id')}
-                  >
-                    Вставить ID
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => handleBrandbookChatAction('insert-link')}
-                  >
-                    Вставить ссылку
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => handleBrandbookChatAction('placeholder')}
-                  >
-                    Мокап без логотипа
-                  </Button>
-                </div>
-                <div className="mt-3 flex gap-2">
-                  <Textarea
-                    ref={brandbookChatInputRef}
-                    value={brandbookChatInput}
-                    onChange={(event) => setBrandbookChatInput(event.target.value)}
-                    rows={2}
-                    className="min-h-[56px] flex-1 bg-neutral-900/60 border-neutral-800"
-                    placeholder="Напишите сообщение агенту..."
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' && !event.shiftKey) {
-                        event.preventDefault();
-                        handleBrandbookChatSend();
+                <div className="border-t border-neutral-800 bg-neutral-950/40 px-6 py-4">
+                  <div className="flex items-end gap-2">
+                    <DropdownMenu open={isBrandbookActionsOpen} onOpenChange={setBrandbookActionsOpen}>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="h-10 w-10 rounded-full p-0"
+                          disabled={!isBrandbookChatReady || brandbookActiveLoading}
+                        >
+                          +
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-56">
+                        <DropdownMenuItem
+                          onClick={() => handleBrandbookChatAction('upload')}
+                          disabled={!canUploadFile || brandbookUploadPending || brandbookActiveLoading}
+                        >
+                          {brandbookUploadPending ? 'Загрузка...' : 'Загрузить логотип'}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleBrandbookChatAction('insert-id')}>
+                          Вставить ID логотипа
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleBrandbookChatAction('insert-link')}>
+                          Вставить ссылку из Документов
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleBrandbookChatAction('placeholder')}>
+                          Сделать демо-мокап без логотипа
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <Textarea
+                      ref={brandbookChatInputRef}
+                      value={brandbookChatInput}
+                      onChange={(event) => setBrandbookChatInput(event.target.value)}
+                      rows={2}
+                      disabled={!isBrandbookChatReady || brandbookActiveLoading}
+                      className="min-h-[56px] flex-1 resize-none bg-neutral-900/60 border-neutral-800"
+                      placeholder={
+                        isBrandbookChatReady
+                          ? 'Напишите сообщение агенту...'
+                          : 'Выберите запуск, чтобы начать диалог.'
                       }
-                    }}
-                  />
-                  <Button variant="primary" onClick={handleBrandbookChatSend}>
-                    Отправить
-                  </Button>
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' && !event.shiftKey) {
+                          event.preventDefault();
+                          handleBrandbookChatSend();
+                        }
+                      }}
+                    />
+
+                    <Button
+                      variant="primary"
+                      onClick={handleBrandbookChatSend}
+                      disabled={!isBrandbookChatReady || brandbookActiveLoading}
+                    >
+                      Отправить
+                    </Button>
+                  </div>
+                  <p className="mt-2 text-[11px] text-neutral-500">
+                    Логотип не обязателен: можно продолжить диалог и вернуться к нему позже.
+                  </p>
                 </div>
-                <p className="mt-2 text-[11px] text-neutral-500">
-                  Прямая загрузка в чате будет добавлена в следующей итерации.
-                </p>
-              </div>
+
+                <input
+                  ref={brandbookFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={!canUploadFile || brandbookUploadPending}
+                  onChange={handleBrandbookFileSelect}
+                />
+              </section>
             </div>
           </ModalContent>
         </Modal>
