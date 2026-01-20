@@ -4,6 +4,7 @@ import { generateClientTokenFromReadWriteToken } from '@vercel/blob/client';
 import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
 import {
   projectsRepository,
+  organizationsRepository,
   organizationSubscriptionsRepository,
   organizationStorageUsageRepository
 } from '@collabverse/api';
@@ -17,7 +18,8 @@ const UploadUrlSchema = z.object({
   filename: z.string().min(1),
   mimeType: z.string().default('application/octet-stream'),
   sizeBytes: z.number().int().nonnegative(),
-  projectId: z.string(),
+  projectId: z.string().min(1).optional(),
+  organizationId: z.string().min(1).optional(),
   entityType: z.enum(['project', 'task', 'comment', 'document', 'project_chat']).optional(),
   entityId: z.string().optional()
 });
@@ -44,30 +46,51 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return jsonError('INVALID_PAYLOAD', { status: 400, details: parsed.error.message });
     }
 
-    const { filename, mimeType, sizeBytes, projectId } = parsed.data;
+    const { filename, mimeType, sizeBytes, projectId, organizationId: rawOrganizationId, entityType, entityId } = parsed.data;
+    let organizationId = rawOrganizationId?.trim() ?? '';
 
-    // Проверка существования проекта
-    const project = await projectsRepository.findById(projectId);
-    if (!project) {
-      return jsonError('PROJECT_NOT_FOUND', { status: 404 });
+    if (!projectId && !organizationId) {
+      return jsonError('ORGANIZATION_ID_REQUIRED', { status: 400 });
     }
 
-    // Проверка доступа к проекту
-    const role = await getProjectRole(projectId, auth.userId, auth.email);
-    if (role === 'viewer') {
-      return jsonError('ACCESS_DENIED', { status: 403 });
+    if (!projectId && (entityType || entityId)) {
+      return jsonError('ENTITY_NOT_ALLOWED', { status: 400 });
     }
 
-    // Get organization ID from project (need to query DB)
-    const [dbProject] = await db
-      .select({ organizationId: projects.organizationId })
-      .from(projects)
-      .where(eq(projects.id, projectId));
+    if (projectId) {
+      // Проверка существования проекта
+      const project = await projectsRepository.findById(projectId);
+      if (!project) {
+        return jsonError('PROJECT_NOT_FOUND', { status: 404 });
+      }
 
-    if (!dbProject || !dbProject.organizationId) {
-      return jsonError('PROJECT_HAS_NO_ORGANIZATION', { status: 400 });
+      // Проверка доступа к проекту
+      const role = await getProjectRole(projectId, auth.userId, auth.email);
+      if (role === 'viewer') {
+        return jsonError('ACCESS_DENIED', { status: 403 });
+      }
+
+      // Get organization ID from project (need to query DB)
+      const [dbProject] = await db
+        .select({ organizationId: projects.organizationId })
+        .from(projects)
+        .where(eq(projects.id, projectId));
+
+      if (!dbProject || !dbProject.organizationId) {
+        return jsonError('PROJECT_HAS_NO_ORGANIZATION', { status: 400 });
+      }
+
+      if (organizationId && organizationId !== dbProject.organizationId) {
+        return jsonError('ORGANIZATION_MISMATCH', { status: 400 });
+      }
+
+      organizationId = dbProject.organizationId;
+    } else {
+      const member = await organizationsRepository.findMember(organizationId, auth.userId);
+      if (!member || member.status !== 'active') {
+        return jsonError('ACCESS_DENIED', { status: 403 });
+      }
     }
-    const organizationId = dbProject.organizationId;
 
     // Check subscription limits
     const plan = await organizationSubscriptionsRepository.getPlanForOrganization(organizationId);
@@ -95,7 +118,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // Генерация уникального пути для файла (storageKey формируется сервером)
     const fileId = crypto.randomUUID();
     const sanitizedFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const pathname = `projects/${projectId}/${fileId}-${sanitizedFilename}`;
+    const dateSegment = new Date().toISOString().slice(0, 10);
+    const pathname = projectId
+      ? `projects/${projectId}/${fileId}-${sanitizedFilename}`
+      : `organizations/${organizationId}/ai-generations/brandbook/${dateSegment}/${fileId}-${sanitizedFilename}`;
 
     // Получение токена из переменных окружения
     const blobToken = process.env.BLOB_READ_WRITE_TOKEN;

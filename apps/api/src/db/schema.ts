@@ -765,6 +765,76 @@ export const fileTrash = pgTable(
     })
 );
 
+export const brandbookAgentRuns = pgTable(
+    "brandbook_agent_run",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        organizationId: text("organization_id").notNull(),
+        projectId: text("project_id"),
+        taskId: text("task_id"),
+        createdBy: text("created_by").notNull(),
+        status: text("status").notNull(),
+        productBundle: text("product_bundle").notNull(),
+        preferences: jsonb("preferences").$type<string[]>(),
+        outputLanguage: text("output_language"),
+        watermarkText: text("watermark_text"),
+        contactBlock: text("contact_block"),
+        logoFileId: text("logo_file_id"),
+        pipelineType: text("pipeline_type"),
+        outputFormat: text("output_format"),
+        previewFormat: text("preview_format"),
+        createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+        updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow(),
+    },
+    (table) => ({
+        organizationIdIdx: index("brandbook_agent_run_organization_id_idx").on(table.organizationId),
+        projectIdIdx: index("brandbook_agent_run_project_id_idx").on(table.projectId),
+        createdByIdx: index("brandbook_agent_run_created_by_idx").on(table.createdBy),
+        statusIdx: index("brandbook_agent_run_status_idx").on(table.status),
+    })
+);
+
+export const brandbookAgentMessages = pgTable(
+    "brandbook_agent_message",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        runId: text("run_id")
+            .notNull()
+            .references(() => brandbookAgentRuns.id, { onDelete: "cascade" }),
+        createdBy: text("created_by"),
+        role: text("role").notNull(),
+        content: text("content").notNull(),
+        createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+    },
+    (table) => ({
+        runIdIdx: index("brandbook_agent_message_run_id_idx").on(table.runId),
+        createdAtIdx: index("brandbook_agent_message_created_at_idx").on(table.createdAt),
+    })
+);
+
+export const brandbookAgentArtifacts = pgTable(
+    "brandbook_agent_artifact",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        runId: text("run_id")
+            .notNull()
+            .references(() => brandbookAgentRuns.id, { onDelete: "cascade" }),
+        fileId: text("file_id").notNull(),
+        kind: text("kind").notNull(),
+        createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+    },
+    (table) => ({
+        runIdIdx: index("brandbook_agent_artifact_run_id_idx").on(table.runId),
+        fileIdIdx: index("brandbook_agent_artifact_file_id_idx").on(table.fileId),
+    })
+);
+
 export const subscriptionPlans = pgTable(
     "subscription_plan",
     {

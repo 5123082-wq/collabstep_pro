@@ -218,14 +218,43 @@
 }
 ```
 
+---
+
+## Brandbook Agent (S1.5)
+
+**Статус:** ✅ реализовано
+
+**Ключевые endpoints:**
+- `POST /api/ai/agents/brandbook/runs` — запуск (sync), `organizationId` обязателен при отсутствии `projectId`.
+- `GET /api/ai/agents/brandbook/runs` — список запусков пользователя (org/project фильтр).
+- `GET /api/ai/agents/brandbook/runs/{runId}` — run + сообщения + артефакты.
+- `POST /api/ai/agents/brandbook/runs/{runId}/messages` — запись сообщений чата.
+
+**Доступ:**
+- при `projectId`: читать могут все участники проекта (включая viewer), писать — owner/admin/member;
+- без `projectId`: читать/писать может только автор запуска.
+
+**Файлы (загрузка логотипа):**
+- `POST /api/files/upload-url` → upload token.
+- `POST /api/files/complete` → фиксация файла + получение `logoFileId`.
+
+**Хранилище (без projectId):**
+- Папка организации `AI Generations/Brandbook/YYYY-MM-DD`.
+- Runs/messages хранятся в отдельной БД (`AI_AGENTS_DATABASE_URL`).
+
 **Response:**
 ```json
 {
-  "phases": [...],
-  "estimatedTotalDays": 45,
-  "suggestedTeamSize": 5,
-  "risks": [...],
-  "recommendations": [...]
+  "ok": true,
+  "data": {
+    "runId": "run-id",
+    "status": "queued",
+    "metadata": {
+      "pipelineType": "generative",
+      "outputFormat": "png",
+      "previewFormat": "jpg"
+    }
+  }
 }
 ```
 

@@ -343,6 +343,45 @@ export interface BrandbookAgentRun {
   output?: BrandbookAgentRunOutput;
 }
 
+export interface BrandbookAgentRunRecord {
+  id: ID;
+  organizationId: ID;
+  createdBy: ID;
+  projectId?: ID;
+  taskId?: ID;
+  status: AgentRunStatus;
+  productBundle: BrandbookProductBundle;
+  preferences?: string[];
+  outputLanguage?: string;
+  watermarkText?: string;
+  contactBlock?: string;
+  logoFileId?: ID;
+  metadata?: BrandbookAgentRunMetadata;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type BrandbookAgentMessageRole = 'assistant' | 'user' | 'system';
+
+export interface BrandbookAgentMessageRecord {
+  id: ID;
+  runId: ID;
+  createdBy?: ID;
+  role: BrandbookAgentMessageRole;
+  content: string;
+  createdAt: string;
+}
+
+export type BrandbookAgentArtifactKind = 'preview' | 'final';
+
+export interface BrandbookAgentArtifactRecord {
+  id: ID;
+  runId: ID;
+  fileId: ID;
+  kind: BrandbookAgentArtifactKind;
+  createdAt: string;
+}
+
 export interface ProjectCardTaskStats {
   total: number;
   overdue: number;

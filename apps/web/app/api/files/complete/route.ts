@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
 import {
   projectsRepository,
+  organizationsRepository,
   usersRepository,
   organizationSubscriptionsRepository,
   organizationStorageUsageRepository,
@@ -10,16 +11,17 @@ import {
   foldersRepository,
   type AttachmentEntityType
 } from '@collabverse/api';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { db } from '@collabverse/api/db/config';
-import { files, attachments, projects } from '@collabverse/api/db/schema';
+import { files, attachments, folders, projects } from '@collabverse/api/db/schema';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { flags } from '@/lib/flags';
 
 const CompleteUploadSchema = z.object({
   storageKey: z.string().min(1),
   url: z.string().url(),
-  projectId: z.string(),
+  projectId: z.string().min(1).optional(),
+  organizationId: z.string().min(1).optional(),
   entityType: z.enum(['project', 'task', 'comment', 'document', 'project_chat']).optional(),
   entityId: z.string().optional().nullable(),
   filename: z.string().min(1),
@@ -27,6 +29,59 @@ const CompleteUploadSchema = z.object({
   sizeBytes: z.number().int().nonnegative(),
   uploaderId: z.string()
 });
+
+const BRANDBOOK_ROOT_FOLDER = 'AI Generations';
+const BRANDBOOK_CHILD_FOLDER = 'Brandbook';
+
+async function ensureOrganizationFolder(params: {
+  organizationId: string;
+  name: string;
+  parentId?: string | null;
+  createdBy: string;
+}): Promise<{ id: string }> {
+  const conditions = [
+    eq(folders.organizationId, params.organizationId),
+    eq(folders.name, params.name),
+    eq(folders.type, 'custom')
+  ];
+
+  if (params.parentId) {
+    conditions.push(eq(folders.parentId, params.parentId));
+  } else {
+    conditions.push(isNull(folders.parentId));
+  }
+
+  conditions.push(isNull(folders.projectId));
+
+  const [existing] = await db
+    .select()
+    .from(folders)
+    .where(and(...conditions))
+    .limit(1);
+
+  if (existing) {
+    return existing;
+  }
+
+  const [created] = await db
+    .insert(folders)
+    .values({
+      organizationId: params.organizationId,
+      projectId: null,
+      taskId: null,
+      parentId: params.parentId ?? null,
+      name: params.name,
+      type: 'custom',
+      createdBy: params.createdBy
+    })
+    .returning();
+
+  if (!created) {
+    throw new Error('Failed to create organization folder');
+  }
+
+  return created;
+}
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   // Проверка feature flag
@@ -48,12 +103,32 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return jsonError('INVALID_PAYLOAD', { status: 400, details: parsed.error.message });
     }
 
-    const { storageKey, url, projectId, entityType, entityId, filename, mimeType, sizeBytes, uploaderId } =
-      parsed.data;
+    const {
+      storageKey,
+      url,
+      projectId,
+      organizationId: rawOrganizationId,
+      entityType,
+      entityId,
+      filename,
+      mimeType,
+      sizeBytes,
+      uploaderId
+    } = parsed.data;
 
     // Проверка, что uploaderId совпадает с текущим пользователем
     if (uploaderId !== auth.userId) {
       return jsonError('UNAUTHORIZED', { status: 403 });
+    }
+
+    let organizationId = rawOrganizationId?.trim() ?? '';
+
+    if (!projectId && !organizationId) {
+      return jsonError('ORGANIZATION_ID_REQUIRED', { status: 400 });
+    }
+
+    if (!projectId && (entityType || entityId)) {
+      return jsonError('ENTITY_NOT_ALLOWED', { status: 400 });
     }
 
     // Валидация blob URL: должен быть из Vercel Blob storage
@@ -69,11 +144,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return jsonError('INVALID_URL', { status: 400, details: 'Invalid URL format' });
     }
 
-    // Валидация storageKey: должен соответствовать формату projects/<projectId>/...
-    if (!storageKey.startsWith(`projects/${projectId}/`)) {
+    const storagePrefix = projectId
+      ? `projects/${projectId}/`
+      : `organizations/${organizationId}/`;
+
+    // Валидация storageKey: должен соответствовать формату projects/<projectId>/... или organizations/<orgId>/...
+    if (!storageKey.startsWith(storagePrefix)) {
       return jsonError('INVALID_STORAGE_KEY', {
         status: 400,
-        details: 'storageKey must start with projects/<projectId>/'
+        details: `storageKey must start with ${storagePrefix}`
       });
     }
 
@@ -87,40 +166,54 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       });
     }
 
-    // Проверка существования проекта
-    const project = await projectsRepository.findById(projectId);
-    if (!project) {
-      return jsonError('PROJECT_NOT_FOUND', { status: 404 });
-    }
-
-    // Проверка доступа к проекту
-    const role = await getProjectRole(projectId, auth.userId, auth.email);
-    if (role === 'viewer') {
-      return jsonError('ACCESS_DENIED', { status: 403 });
-    }
-
-    // Get organization ID from project (need to query DB)
-    const [dbProject] = await db
-      .select({ organizationId: projects.organizationId })
-      .from(projects)
-      .where(eq(projects.id, projectId));
-
-    if (!dbProject || !dbProject.organizationId) {
-      return jsonError('PROJECT_HAS_NO_ORGANIZATION', { status: 400 });
-    }
-    const organizationId = dbProject.organizationId;
-    const projectFolderName = `${project.title || 'Project'} (${projectId})`;
+    let projectFolderName = '';
     let taskForFolder: ReturnType<typeof tasksRepository.findById> | null = null;
 
-    if (entityType === 'task' && entityId) {
-      const task = tasksRepository.findById(entityId);
-      if (!task) {
-        return jsonError('TASK_NOT_FOUND', { status: 404 });
+    if (projectId) {
+      // Проверка существования проекта
+      const project = await projectsRepository.findById(projectId);
+      if (!project) {
+        return jsonError('PROJECT_NOT_FOUND', { status: 404 });
       }
-      if (task.projectId !== projectId) {
-        return jsonError('TASK_PROJECT_MISMATCH', { status: 400 });
+
+      // Проверка доступа к проекту
+      const role = await getProjectRole(projectId, auth.userId, auth.email);
+      if (role === 'viewer') {
+        return jsonError('ACCESS_DENIED', { status: 403 });
       }
-      taskForFolder = task;
+
+      // Get organization ID from project (need to query DB)
+      const [dbProject] = await db
+        .select({ organizationId: projects.organizationId })
+        .from(projects)
+        .where(eq(projects.id, projectId));
+
+      if (!dbProject || !dbProject.organizationId) {
+        return jsonError('PROJECT_HAS_NO_ORGANIZATION', { status: 400 });
+      }
+
+      if (organizationId && organizationId !== dbProject.organizationId) {
+        return jsonError('ORGANIZATION_MISMATCH', { status: 400 });
+      }
+
+      organizationId = dbProject.organizationId;
+      projectFolderName = `${project.title || 'Project'} (${projectId})`;
+
+      if (entityType === 'task' && entityId) {
+        const task = tasksRepository.findById(entityId);
+        if (!task) {
+          return jsonError('TASK_NOT_FOUND', { status: 404 });
+        }
+        if (task.projectId !== projectId) {
+          return jsonError('TASK_PROJECT_MISMATCH', { status: 400 });
+        }
+        taskForFolder = task;
+      }
+    } else {
+      const member = await organizationsRepository.findMember(organizationId, auth.userId);
+      if (!member || member.status !== 'active') {
+        return jsonError('ACCESS_DENIED', { status: 403 });
+      }
     }
 
     // Check subscription limits (race condition check)
@@ -150,7 +243,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     let folderId: string | null = null;
     let taskIdForFile: string | null = null;
 
-    if (entityType === 'task' && entityId && taskForFolder) {
+    if (projectId && entityType === 'task' && entityId && taskForFolder) {
       taskIdForFile = entityId;
 
       // Ensure project folder exists
@@ -172,6 +265,23 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
 
       folderId = taskFolder.id;
+    }
+
+    if (!projectId) {
+      const rootFolder = await ensureOrganizationFolder({
+        organizationId,
+        name: BRANDBOOK_ROOT_FOLDER,
+        createdBy: uploaderId
+      });
+
+      const brandbookFolder = await ensureOrganizationFolder({
+        organizationId,
+        name: BRANDBOOK_CHILD_FOLDER,
+        parentId: rootFolder.id,
+        createdBy: uploaderId
+      });
+
+      folderId = brandbookFolder.id;
     }
 
     // Create file in database

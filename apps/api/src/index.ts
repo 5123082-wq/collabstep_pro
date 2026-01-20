@@ -135,6 +135,25 @@ export {
 } from './repositories/project-chat-repository';
 export { AIAgentsRepository, aiAgentsRepository } from './repositories/ai-agents-repository';
 export {
+  BrandbookAgentRunsRepository,
+  brandbookAgentRunsRepository,
+  type DbBrandbookAgentRun,
+  type NewBrandbookAgentRun,
+  type BrandbookAgentRunUpdateInput
+} from './repositories/brandbook-agent-runs-repository';
+export {
+  BrandbookAgentMessagesRepository,
+  brandbookAgentMessagesRepository,
+  type DbBrandbookAgentMessage,
+  type NewBrandbookAgentMessage
+} from './repositories/brandbook-agent-messages-repository';
+export {
+  BrandbookAgentArtifactsRepository,
+  brandbookAgentArtifactsRepository,
+  type DbBrandbookAgentArtifact,
+  type NewBrandbookAgentArtifact
+} from './repositories/brandbook-agent-artifacts-repository';
+export {
   createBrandbookRunMock,
   type BrandbookAgentRunCreateResult,
   type BrandbookAgentService
@@ -146,7 +165,12 @@ export type {
   AgentRunStatus,
   BrandbookProductBundle,
   BrandbookAgentRun,
+  BrandbookAgentRunRecord,
   BrandbookAgentRunInput,
+  BrandbookAgentMessageRole,
+  BrandbookAgentMessageRecord,
+  BrandbookAgentArtifactKind,
+  BrandbookAgentArtifactRecord,
   BrandbookAgentRunMetadata,
   BrandbookAgentRunOutput
 } from './types';

@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { flags } from '@/lib/flags';
-import { getAuthFromRequest } from '@/lib/api/finance-access';
-import { jsonError } from '@/lib/api/http';
+import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
+import { jsonError, jsonOk } from '@/lib/api/http';
+import {
+  brandbookAgentArtifactsRepository,
+  brandbookAgentMessagesRepository,
+  brandbookAgentRunsRepository,
+  projectsRepository
+} from '@collabverse/api';
 
 export async function GET(
   req: NextRequest,
@@ -21,6 +27,72 @@ export async function GET(
     return jsonError('INVALID_REQUEST', { status: 400 });
   }
 
-  // TODO: Add storage-backed lookup, access checks, and analytics hooks.
-  return jsonError('NOT_IMPLEMENTED', { status: 501 });
+  const run = await brandbookAgentRunsRepository.findById(runId);
+  if (!run) {
+    return jsonError('RUN_NOT_FOUND', { status: 404 });
+  }
+
+  if (run.projectId) {
+    const role = await getProjectRole(run.projectId, auth.userId, auth.email);
+    const members = await projectsRepository.listMembers(run.projectId);
+    const isMember = members.some((member) => member.userId === auth.userId);
+    if (!isMember && role !== 'owner') {
+      return jsonError('ACCESS_DENIED', { status: 403 });
+    }
+  } else {
+    if (run.createdBy !== auth.userId) {
+      return jsonError('ACCESS_DENIED', { status: 403 });
+    }
+  }
+
+  const [messages, artifacts] = await Promise.all([
+    brandbookAgentMessagesRepository.listByRun(runId),
+    brandbookAgentArtifactsRepository.listByRun(runId)
+  ]);
+
+  const metadata = run.pipelineType && run.outputFormat && run.previewFormat
+    ? {
+        pipelineType: run.pipelineType,
+        outputFormat: run.outputFormat,
+        previewFormat: run.previewFormat
+      }
+    : undefined;
+
+  return jsonOk({
+    run: {
+      id: run.id,
+      status: run.status,
+      organizationId: run.organizationId,
+      ...(run.projectId ? { projectId: run.projectId } : {}),
+      ...(run.taskId ? { taskId: run.taskId } : {}),
+      input: {
+        productBundle: run.productBundle,
+        ...(run.projectId ? { projectId: run.projectId } : {}),
+        ...(run.taskId ? { taskId: run.taskId } : {}),
+        ...(run.logoFileId ? { logoFileId: run.logoFileId } : {}),
+        ...(run.preferences ? { preferences: run.preferences } : {}),
+        ...(run.outputLanguage ? { outputLanguage: run.outputLanguage } : {}),
+        ...(run.watermarkText ? { watermarkText: run.watermarkText } : {}),
+        ...(run.contactBlock ? { contactBlock: run.contactBlock } : {})
+      },
+      ...(metadata ? { metadata } : {}),
+      createdAt: run.createdAt instanceof Date ? run.createdAt.toISOString() : run.createdAt,
+      updatedAt: run.updatedAt instanceof Date ? run.updatedAt.toISOString() : run.updatedAt
+    },
+    messages: messages.map((message) => ({
+      id: message.id,
+      runId: message.runId,
+      ...(message.createdBy ? { createdBy: message.createdBy } : {}),
+      role: message.role,
+      content: message.content,
+      createdAt: message.createdAt instanceof Date ? message.createdAt.toISOString() : message.createdAt
+    })),
+    artifacts: artifacts.map((artifact) => ({
+      id: artifact.id,
+      runId: artifact.runId,
+      fileId: artifact.fileId,
+      kind: artifact.kind,
+      createdAt: artifact.createdAt instanceof Date ? artifact.createdAt.toISOString() : artifact.createdAt
+    }))
+  });
 }
