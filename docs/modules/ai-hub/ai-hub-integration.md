@@ -3,7 +3,7 @@
 **Статус:** stable  
 **Владелец:** engineering  
 **Создан:** 2026-01-07  
-**Последнее обновление:** 2026-01-07
+**Последнее обновление:** 2026-01-19
 
 ## Обзор AI функциональности
 
@@ -290,6 +290,39 @@
 }
 ```
 
+### POST /api/ai/agents/brandbook/runs
+
+Запуск Brandbook Agent (MVP)
+
+`projectId`, `taskId` и `logoFileId` опциональны. Если `projectId` указан, применяется проверка доступа к проекту.
+
+**Request:**
+```json
+{
+  "projectId": "project-id",
+  "taskId": "task-id",
+  "logoFileId": "file-id",
+  "productBundle": "merch_basic",
+  "preferences": ["минимализм", "монохром"],
+  "outputLanguage": "ru",
+  "watermarkText": "Confidential",
+  "contactBlock": "hello@brand.com"
+}
+```
+
+**Response:**
+```json
+{
+  "runId": "run-id",
+  "status": "queued",
+  "metadata": {
+    "pipelineType": "generative",
+    "outputFormat": "png",
+    "previewFormat": "jpg"
+  }
+}
+```
+
 ## Интеграция с UI
 
 ### Компоненты использующие AI
@@ -317,6 +350,11 @@
 6. **Assistant Drawer** ⚠️
    - Панель AI помощника (не реализована полностью)
    - Компонент: `components/right-rail/AssistantDrawer.tsx`
+
+7. **Brandbook Agent (AI Hub / Agents)**
+   - Карточка и модалка запуска
+   - Чат‑модалка после запуска для логотипа и уточнений
+   - API: `/api/ai/agents/brandbook/runs`
 
 ### Feature Flags
 

@@ -134,7 +134,22 @@ export {
   type ListChatMessagesOptions
 } from './repositories/project-chat-repository';
 export { AIAgentsRepository, aiAgentsRepository } from './repositories/ai-agents-repository';
-export type { AIAgent, AIAgentType } from './types';
+export {
+  createBrandbookRunMock,
+  type BrandbookAgentRunCreateResult,
+  type BrandbookAgentService
+} from './services/ai-brandbook-service';
+export type {
+  AIAgent,
+  AIAgentType,
+  AgentPipelineType,
+  AgentRunStatus,
+  BrandbookProductBundle,
+  BrandbookAgentRun,
+  BrandbookAgentRunInput,
+  BrandbookAgentRunMetadata,
+  BrandbookAgentRunOutput
+} from './types';
 export { invitationsRepository, type OrganizationInvite, type ProjectInvite } from './repositories/invitations-repository';
 export { organizationsRepository, type Organization, type OrganizationMember } from './repositories/organizations-repository';
 export type {

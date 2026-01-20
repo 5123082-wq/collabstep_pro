@@ -299,6 +299,50 @@ export interface AIAgent extends WorkspaceUser {
   };
 }
 
+export type AgentPipelineType = 'generative' | 'template';
+
+export type AgentRunStatus =
+  | 'queued'
+  | 'processing'
+  | 'postprocessing'
+  | 'saved'
+  | 'done'
+  | 'failed'
+  | 'cancelled'
+  | 'blocked';
+
+export type BrandbookProductBundle = 'merch_basic' | 'office_basic';
+
+export interface BrandbookAgentRunInput {
+  projectId?: ID;
+  taskId?: ID;
+  logoFileId?: ID;
+  productBundle: BrandbookProductBundle;
+  preferences?: string[];
+  outputLanguage?: string;
+  watermarkText?: string;
+  contactBlock?: string;
+}
+
+export interface BrandbookAgentRunMetadata {
+  pipelineType: AgentPipelineType;
+  outputFormat: string;
+  previewFormat: string;
+}
+
+export interface BrandbookAgentRunOutput {
+  previewFileId?: ID;
+  finalFileId?: ID;
+  metadata: BrandbookAgentRunMetadata;
+}
+
+export interface BrandbookAgentRun {
+  id: ID;
+  status: AgentRunStatus;
+  input: BrandbookAgentRunInput;
+  output?: BrandbookAgentRunOutput;
+}
+
 export interface ProjectCardTaskStats {
   total: number;
   overdue: number;
