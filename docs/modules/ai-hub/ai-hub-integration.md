@@ -230,6 +230,10 @@
 - `GET /api/ai/agents/brandbook/runs/{runId}` — run + сообщения + артефакты.
 - `POST /api/ai/agents/brandbook/runs/{runId}/messages` — запись сообщений чата.
 
+**Доступ:**
+- при `projectId`: читать могут все участники проекта (включая viewer), писать — owner/admin/member;
+- без `projectId`: читать/писать может только автор запуска.
+
 **Файлы (загрузка логотипа):**
 - `POST /api/files/upload-url` → upload token.
 - `POST /api/files/complete` → фиксация файла + получение `logoFileId`.

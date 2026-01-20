@@ -805,6 +805,7 @@ export const brandbookAgentMessages = pgTable(
         runId: text("run_id")
             .notNull()
             .references(() => brandbookAgentRuns.id, { onDelete: "cascade" }),
+        createdBy: text("created_by"),
         role: text("role").notNull(),
         content: text("content").notNull(),
         createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),

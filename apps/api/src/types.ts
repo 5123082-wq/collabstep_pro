@@ -366,6 +366,7 @@ export type BrandbookAgentMessageRole = 'assistant' | 'user' | 'system';
 export interface BrandbookAgentMessageRecord {
   id: ID;
   runId: ID;
+  createdBy?: ID;
   role: BrandbookAgentMessageRole;
   content: string;
   createdAt: string;

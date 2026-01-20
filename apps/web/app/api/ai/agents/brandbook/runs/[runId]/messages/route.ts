@@ -6,7 +6,7 @@ import { jsonError, jsonOk } from '@/lib/api/http';
 import {
   brandbookAgentMessagesRepository,
   brandbookAgentRunsRepository,
-  organizationsRepository
+  projectsRepository
 } from '@collabverse/api';
 
 const CreateMessageSchema = z.object({
@@ -45,20 +45,27 @@ export async function POST(
 
   if (run.projectId) {
     const role = await getProjectRole(run.projectId, auth.userId, auth.email);
+    const members = await projectsRepository.listMembers(run.projectId);
+    const isMember = members.some((member) => member.userId === auth.userId);
+    if (!isMember && role !== 'owner') {
+      return jsonError('ACCESS_DENIED', { status: 403 });
+    }
+
     if (role === 'viewer') {
       return jsonError('ACCESS_DENIED', { status: 403 });
     }
   } else {
-    const member = await organizationsRepository.findMember(run.organizationId, auth.userId);
-    if (!member || member.status !== 'active') {
+    if (run.createdBy !== auth.userId) {
       return jsonError('ACCESS_DENIED', { status: 403 });
     }
   }
 
+  const createdBy = parsed.data.role === 'user' ? auth.userId : undefined;
   const message = await brandbookAgentMessagesRepository.create({
     runId,
     role: parsed.data.role,
-    content: parsed.data.content
+    content: parsed.data.content,
+    ...(createdBy ? { createdBy } : {})
   });
 
   return jsonOk({

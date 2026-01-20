@@ -63,6 +63,26 @@ export class BrandbookAgentRunsRepository {
       .limit(limit);
   }
 
+  async listByProject(options: {
+    organizationId: string;
+    projectId: string;
+    limit?: number;
+  }): Promise<DbBrandbookAgentRun[]> {
+    const conditions = [
+      eq(brandbookAgentRuns.organizationId, options.organizationId),
+      eq(brandbookAgentRuns.projectId, options.projectId)
+    ];
+
+    const limit = options.limit ?? 50;
+
+    return await aiAgentsDb
+      .select()
+      .from(brandbookAgentRuns)
+      .where(and(...conditions))
+      .orderBy(desc(brandbookAgentRuns.createdAt))
+      .limit(limit);
+  }
+
   async update(id: string, patch: BrandbookAgentRunUpdateInput): Promise<DbBrandbookAgentRun | null> {
     const updateData = {
       ...(patch.status !== undefined ? { status: patch.status } : {}),

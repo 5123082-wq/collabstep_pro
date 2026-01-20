@@ -86,6 +86,7 @@ type BrandbookRunDetails = {
 type BrandbookRunMessagePayload = {
   id: string;
   runId: string;
+  createdBy?: string;
   role: BrandbookChatRole;
   content: string;
   createdAt: string;
@@ -140,6 +141,7 @@ type BrandbookChatMessage = {
   id: string;
   role: BrandbookChatRole;
   content: string;
+  createdBy?: string;
   createdAt?: string;
 };
 
@@ -381,12 +383,13 @@ export default function AiAgentsPage() {
   const createBrandbookMessage = (
     role: BrandbookChatRole,
     content: string,
-    createdAt?: string
+    options?: { createdAt?: string; createdBy?: string }
   ): BrandbookChatMessage => ({
     id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
     role,
     content,
-    ...(createdAt ? { createdAt } : {})
+    ...(options?.createdBy ? { createdBy: options.createdBy } : {}),
+    ...(options?.createdAt ? { createdAt: options.createdAt } : {})
   });
 
   const persistBrandbookMessage = async (
@@ -420,11 +423,16 @@ export default function AiAgentsPage() {
   const appendBrandbookMessage = (
     role: BrandbookChatRole,
     content: string,
-    options?: { persist?: boolean; notifyOnError?: boolean; createdAt?: string }
+    options?: { persist?: boolean; notifyOnError?: boolean; createdAt?: string; createdBy?: string }
   ) => {
+    const messageOptions = {
+      ...(options?.createdAt ? { createdAt: options.createdAt } : {}),
+      ...(options?.createdBy ? { createdBy: options.createdBy } : {})
+    };
+
     setBrandbookChatMessages((prev) => [
       ...prev,
-      createBrandbookMessage(role, content, options?.createdAt)
+      createBrandbookMessage(role, content, messageOptions)
     ]);
 
     if (options?.persist === false) {
@@ -454,7 +462,10 @@ export default function AiAgentsPage() {
       setBrandbookActiveRun(run);
       setBrandbookChatMessages(
         messages.map((message) =>
-          createBrandbookMessage(message.role, message.content, message.createdAt)
+          createBrandbookMessage(message.role, message.content, {
+            createdAt: message.createdAt,
+            ...(message.createdBy ? { createdBy: message.createdBy } : {})
+          })
         )
       );
       setBrandbookChatInput('');
@@ -480,10 +491,10 @@ export default function AiAgentsPage() {
     setBrandbookRunsLoading(true);
     try {
       const params = new URLSearchParams();
-      if (organizationId) {
-        params.set('organizationId', organizationId);
-      } else if (fallbackProjectId) {
+      if (fallbackProjectId) {
         params.set('projectId', fallbackProjectId);
+      } else if (organizationId) {
+        params.set('organizationId', organizationId);
       }
       const response = await fetch(`/api/ai/agents/brandbook/runs?${params.toString()}`);
       const responsePayload = (await response.json().catch(() => null)) as BrandbookRunListApiResponse | null;
@@ -625,7 +636,10 @@ export default function AiAgentsPage() {
       return;
     }
 
-    appendBrandbookMessage('user', message, { notifyOnError: true });
+    appendBrandbookMessage('user', message, {
+      notifyOnError: true,
+      ...(currentUserId ? { createdBy: currentUserId } : {})
+    });
     setBrandbookChatInput('');
 
     const logoIdMatch = message.match(/logoFileId\s*[:=]\s*([^\s]+)/i);
@@ -750,7 +764,10 @@ export default function AiAgentsPage() {
       updateActiveRunInput({ logoFileId: fileId });
       setBrandbookLogoLink('');
       setBrandbookUsePlaceholder(false);
-      appendBrandbookMessage('user', `Загрузил логотип: ${file.name}`, { notifyOnError: true });
+      appendBrandbookMessage('user', `Загрузил логотип: ${file.name}`, {
+        notifyOnError: true,
+        ...(currentUserId ? { createdBy: currentUserId } : {})
+      });
       appendBrandbookMessage('assistant', 'Принял logoFileId. Если есть еще пожелания — напишите.');
     } catch (error) {
       console.error('Error uploading logo:', error);
@@ -784,7 +801,10 @@ export default function AiAgentsPage() {
     }
 
     if (action === 'placeholder') {
-      appendBrandbookMessage('user', 'Сгенерируй мокап без логотипа (placeholder LOGO).', { notifyOnError: true });
+      appendBrandbookMessage('user', 'Сгенерируй мокап без логотипа (placeholder LOGO).', {
+        notifyOnError: true,
+        ...(currentUserId ? { createdBy: currentUserId } : {})
+      });
       setBrandbookUsePlaceholder(true);
       updateActiveRunInput({ logoFileId: '' });
       setBrandbookLogoLink('');
@@ -804,6 +824,8 @@ export default function AiAgentsPage() {
     }
     return date.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
   };
+
+  const formatShortUserId = (value: string) => (value.length > 6 ? value.slice(0, 6) : value);
 
   const handleSaveAgent = async () => {
     if (!editingAgent) return;
@@ -1409,6 +1431,13 @@ export default function AiAgentsPage() {
                           brandbookChatMessages.map((message) => {
                             const isUser = message.role === 'user';
                             const isSystem = message.role === 'system';
+                            const authorLabel = isUser
+                              ? message.createdBy && currentUserId && message.createdBy === currentUserId
+                                ? 'Вы'
+                                : message.createdBy
+                                  ? `Участник ${formatShortUserId(message.createdBy)}`
+                                  : 'Участник'
+                              : '';
                             return (
                               <div
                                 key={message.id}
@@ -1423,7 +1452,16 @@ export default function AiAgentsPage() {
                                         : 'bg-neutral-900/70 text-neutral-200'
                                   }`}
                                 >
-                                  {message.content}
+                                  {authorLabel && (
+                                    <div
+                                      className={`mb-1 text-[10px] text-neutral-400 ${
+                                        isUser ? 'text-right text-indigo-200/70' : ''
+                                      }`}
+                                    >
+                                      {authorLabel}
+                                    </div>
+                                  )}
+                                  <div className="whitespace-pre-wrap">{message.content}</div>
                                 </div>
                               </div>
                             );

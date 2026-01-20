@@ -6,7 +6,7 @@ import {
   brandbookAgentArtifactsRepository,
   brandbookAgentMessagesRepository,
   brandbookAgentRunsRepository,
-  organizationsRepository
+  projectsRepository
 } from '@collabverse/api';
 
 export async function GET(
@@ -34,12 +34,13 @@ export async function GET(
 
   if (run.projectId) {
     const role = await getProjectRole(run.projectId, auth.userId, auth.email);
-    if (role === 'viewer') {
+    const members = await projectsRepository.listMembers(run.projectId);
+    const isMember = members.some((member) => member.userId === auth.userId);
+    if (!isMember && role !== 'owner') {
       return jsonError('ACCESS_DENIED', { status: 403 });
     }
   } else {
-    const member = await organizationsRepository.findMember(run.organizationId, auth.userId);
-    if (!member || member.status !== 'active') {
+    if (run.createdBy !== auth.userId) {
       return jsonError('ACCESS_DENIED', { status: 403 });
     }
   }
@@ -81,6 +82,7 @@ export async function GET(
     messages: messages.map((message) => ({
       id: message.id,
       runId: message.runId,
+      ...(message.createdBy ? { createdBy: message.createdBy } : {}),
       role: message.role,
       content: message.content,
       createdAt: message.createdAt instanceof Date ? message.createdAt.toISOString() : message.createdAt

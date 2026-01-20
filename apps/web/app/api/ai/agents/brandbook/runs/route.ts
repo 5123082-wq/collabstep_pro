@@ -11,6 +11,7 @@ import {
   brandbookAgentRunsRepository,
   createBrandbookRunMock,
   organizationsRepository,
+  projectsRepository,
   type BrandbookAgentRunInput
 } from '@collabverse/api';
 
@@ -188,7 +189,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     resolvedOrganizationId = projectOrganizationId;
 
     const role = await getProjectRole(parsedProjectId.data, auth.userId, auth.email);
-    if (role === 'viewer') {
+    const members = await projectsRepository.listMembers(parsedProjectId.data);
+    const isMember = members.some((member) => member.userId === auth.userId);
+    if (!isMember && role !== 'owner') {
       return jsonError('ACCESS_DENIED', { status: 403 });
     }
   } else {
@@ -205,11 +208,15 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     resolvedOrganizationId = parsedOrganizationId.data;
   }
 
-  const runs = await brandbookAgentRunsRepository.listByUser({
-    organizationId: resolvedOrganizationId,
-    createdBy: auth.userId,
-    ...(projectId ? { projectId } : {})
-  });
+  const runs = projectId
+    ? await brandbookAgentRunsRepository.listByProject({
+        organizationId: resolvedOrganizationId,
+        projectId
+      })
+    : await brandbookAgentRunsRepository.listByUser({
+        organizationId: resolvedOrganizationId,
+        createdBy: auth.userId
+      });
 
   return jsonOk({
     runs: runs.map((run) => ({
