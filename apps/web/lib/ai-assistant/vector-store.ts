@@ -1,37 +1,14 @@
 /**
  * AI Assistant Vector Store
  * JSON-based хранилище для векторов документации
- * Данные хранятся в .ai-assistant/chunks.json в корне репозитория
+ * Данные хранятся в .ai-assistant/chunks.json
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import type { ChunkStore, DocumentationChunk, StoreStats } from './types';
 
-/**
- * Определяет корень репозитория для хранения индекса
- * Синхронизировано с логикой в index-assistant-docs.ts и indexing-config.ts
- */
-function getRepoRoot(): string {
-  const cwd = process.cwd();
-
-  // Проверяем, есть ли docs/ в текущей директории (значит мы в корне репо)
-  if (existsSync(join(cwd, 'docs'))) {
-    return cwd;
-  }
-
-  // Проверяем на 2 уровня выше (если cwd = apps/web)
-  const twoUp = join(cwd, '..', '..');
-  if (existsSync(join(twoUp, 'docs'))) {
-    return twoUp;
-  }
-
-  // Fallback на cwd
-  return cwd;
-}
-
-const REPO_ROOT = getRepoRoot();
-const STORE_DIR = join(REPO_ROOT, '.ai-assistant');
+const STORE_DIR = join(process.cwd(), '.ai-assistant');
 const STORE_FILE = join(STORE_DIR, 'chunks.json');
 
 /**
