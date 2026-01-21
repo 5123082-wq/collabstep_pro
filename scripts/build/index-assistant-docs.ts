@@ -18,29 +18,18 @@ import { createHash } from 'crypto';
 import { execSync } from 'child_process';
 import OpenAI from 'openai';
 
-// Определяем корень репозитория (скрипт находится в scripts/build/)
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const REPO_ROOT = join(__dirname, '..', '..');
-
-// Загружаем .env.local из корня репозитория
-config({ path: join(REPO_ROOT, '.env.local') });
-// Также пробуем из apps/web (для локальной разработки)
-config({ path: join(REPO_ROOT, 'apps', 'web', '.env.local') });
+// Загружаем .env.local
+config({ path: join(process.cwd(), '.env.local') });
 
 // Импортируем конфигурацию индексации
 import { loadIndexingConfig, getEnabledDocuments, updateDocumentIndexDate } from '../../apps/web/lib/ai-assistant/indexing-config';
 
-// Путь к документации относительно корня репозитория
-const DOCS_DIR = join(REPO_ROOT, 'docs');
+const DOCS_DIR = join(process.cwd(), '..', '..', 'docs');
 const CHUNK_SIZE = 800;
 const CHUNK_OVERLAP = 100;
 
-// Хранилище в корне репозитория
-const STORE_DIR = join(REPO_ROOT, '.ai-assistant');
+// Хранилище
+const STORE_DIR = join(process.cwd(), '.ai-assistant');
 const STORE_FILE = join(STORE_DIR, 'chunks.json');
 
 // Интерфейс для чанка (упрощённый для скрипта)
@@ -323,7 +312,7 @@ async function main() {
   try {
     docsHash = execSync('git ls-files -s docs/ | git hash-object --stdin', {
       encoding: 'utf-8',
-      cwd: REPO_ROOT,
+      cwd: join(process.cwd(), '..', '..'),
       shell: '/bin/sh',
     }).trim();
   } catch (error) {
