@@ -51,7 +51,8 @@ describe('Share Links API', () => {
       .values({
         ownerId: userId,
         name: 'Test Org',
-        type: 'closed'
+        type: 'closed',
+        kind: 'business'
       })
       .returning();
     if (!org) throw new Error('Failed to create test organization');

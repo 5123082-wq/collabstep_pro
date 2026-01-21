@@ -15,7 +15,19 @@ export async function GET() {
 
     try {
         // Get organizations with membership info
-        const memberships = await organizationsRepository.listMembershipsForUser(userId);
+        let memberships = await organizationsRepository.listMembershipsForUser(userId);
+
+        if (memberships.length === 0) {
+            const fallbackName = user?.name?.trim() || user?.email?.split('@')[0]?.trim() || 'Personal Organization';
+            await organizationsRepository.create({
+                ownerId: userId,
+                name: fallbackName,
+                type: 'closed',
+                kind: 'personal',
+                isPublicInDirectory: false,
+            });
+            memberships = await organizationsRepository.listMembershipsForUser(userId);
+        }
         
         // Transform to include isPrimary, userRole, and memberCount
         const organizationsPromises = memberships.map(async ({ organization, member }) => {
@@ -46,6 +58,7 @@ export async function GET() {
                 description: organization.description,
                 ownerId: organization.ownerId,
                 type: organization.type,
+                kind: organization.kind ?? 'business',
                 status: organization.status ?? 'active',
                 isPrimary,
                 userRole: member.role,
@@ -88,17 +101,30 @@ export async function POST(request: NextRequest) {
 
     try {
         const body = await request.json();
-        
-        if (!body.name) {
-            return jsonError('INVALID_REQUEST', { status: 400, details: 'Name is required' });
+        const rawKind = typeof body.kind === 'string' ? body.kind : undefined;
+        if (rawKind && rawKind !== 'personal' && rawKind !== 'business') {
+            return jsonError('INVALID_REQUEST', { status: 400, details: 'Invalid organization kind' });
+        }
+        const kind = rawKind === 'personal' ? 'personal' : 'business';
+        const nameValue = typeof body.name === 'string' ? body.name.trim() : '';
+
+        if (kind === 'business' && !nameValue) {
+            return jsonError('INVALID_REQUEST', { status: 400, details: 'Business organization name is required' });
         }
 
         // Check organization limits
         const subscription = await getUserSubscription(userId);
-        const ownedCount = await getOwnedOrganizationsCount(userId);
+        const ownedCount = await getOwnedOrganizationsCount(userId, kind);
+
+        if (kind === 'personal' && ownedCount >= 1) {
+            return jsonError('PLAN_LIMIT_REACHED', {
+                status: 403,
+                details: 'You already have a personal organization.',
+            });
+        }
         
         // -1 means unlimited
-        if (subscription.maxOrganizations !== -1 && ownedCount >= subscription.maxOrganizations) {
+        if (kind === 'business' && subscription.maxOrganizations !== -1 && ownedCount >= subscription.maxOrganizations) {
             return jsonError('PLAN_LIMIT_REACHED', { 
                 status: 403, 
                 details: `You have reached the maximum of ${subscription.maxOrganizations} organization(s) for your ${subscription.planCode} plan. Upgrade to create more.`,
@@ -107,10 +133,11 @@ export async function POST(request: NextRequest) {
 
         const orgData: NewOrganizationInput = {
             ownerId: userId,
-            name: body.name,
-            description: body.description,
+            name: nameValue || user?.name?.trim() || user?.email?.split('@')[0]?.trim() || 'Personal Organization',
             type: body.type === 'open' ? 'open' : 'closed', // default closed if invalid
+            kind,
             isPublicInDirectory: body.isPublicInDirectory ?? (body.type === 'open'),
+            ...(body.description !== undefined ? { description: body.description } : {}),
         };
 
         // Note: Repository create method is transactional (creates org + owner member)

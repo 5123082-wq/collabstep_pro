@@ -26,6 +26,7 @@ export type Organization = {
   userRole: 'owner' | 'admin' | 'member' | 'viewer';
   memberCount?: number;
   type?: 'open' | 'closed';
+  kind?: 'personal' | 'business';
   status?: 'active' | 'archived' | 'deleted';
   createdAt?: string;
 };
@@ -106,10 +107,11 @@ export const useOrganizationStore = create<OrganizationState>()(
       canCreateNewOrganization: () => {
         const { subscription } = get();
         const ownedOrgs = get().getOwnedOrganizations();
+        const ownedBusinesses = ownedOrgs.filter((org) => (org.kind ?? 'business') === 'business');
         
         if (!subscription) {
           // No subscription info - assume free plan (1 org limit)
-          return ownedOrgs.length < 1;
+          return ownedBusinesses.length < 1;
         }
 
         // -1 means unlimited
@@ -122,11 +124,11 @@ export const useOrganizationStore = create<OrganizationState>()(
           const expiresAt = new Date(subscription.expiresAt);
           if (expiresAt < new Date()) {
             // Expired - fall back to free limits
-            return ownedOrgs.length < 1;
+            return ownedBusinesses.length < 1;
           }
         }
 
-        return ownedOrgs.length < subscription.maxOrganizations;
+        return ownedBusinesses.length < subscription.maxOrganizations;
       },
 
       getOrganizationLimit: () => {
@@ -252,4 +254,3 @@ export const useCanCreateOrganization = () => {
   const canCreate = useOrganizationStore(state => state.canCreateNewOrganization);
   return canCreate();
 };
-

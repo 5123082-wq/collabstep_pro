@@ -23,6 +23,7 @@ describe('OrganizationsRepository: strict canonical userId matching', () => {
       name: 'Org 1',
       ownerId: canonicalUserId,
       type: 'closed',
+      kind: 'business',
       isPublicInDirectory: false,
     });
 
@@ -47,5 +48,4 @@ describe('OrganizationsRepository: strict canonical userId matching', () => {
     expect(orgsByEmail).toHaveLength(0);
   });
 });
-
 

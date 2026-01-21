@@ -2,7 +2,6 @@ import { NextRequest } from 'next/server';
 import { eq, and, isNull } from 'drizzle-orm';
 import {
   fileTrashRepository,
-  organizationSubscriptionsRepository,
   organizationsRepository
 } from '@collabverse/api';
 import { db } from '@collabverse/api/db/config';
@@ -10,6 +9,7 @@ import { files, fileTrash } from '@collabverse/api/db/schema';
 import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { flags } from '@/lib/flags';
+import { resolveOrganizationPlan } from '@/lib/api/resolve-organization-plan';
 
 async function hasFileAccess(
   file: typeof files.$inferSelect,
@@ -104,7 +104,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     }
 
     // Get organization's subscription plan for retention days
-    const subscription = await organizationSubscriptionsRepository.getPlanForOrganization(file.organizationId);
+    const subscription = await resolveOrganizationPlan(file.organizationId);
     const retentionDays = subscription.trashRetentionDays ?? null;
 
     // Calculate expiresAt

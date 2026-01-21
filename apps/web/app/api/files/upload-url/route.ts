@@ -5,7 +5,6 @@ import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
 import {
   projectsRepository,
   organizationsRepository,
-  organizationSubscriptionsRepository,
   organizationStorageUsageRepository
 } from '@collabverse/api';
 import { db } from '@collabverse/api/db/config';
@@ -13,6 +12,7 @@ import { projects } from '@collabverse/api/db/schema';
 import { eq } from 'drizzle-orm';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { flags } from '@/lib/flags';
+import { resolveOrganizationPlan } from '@/lib/api/resolve-organization-plan';
 
 const UploadUrlSchema = z.object({
   filename: z.string().min(1),
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     // Check subscription limits
-    const plan = await organizationSubscriptionsRepository.getPlanForOrganization(organizationId);
+    const plan = await resolveOrganizationPlan(organizationId);
     const usage = await organizationStorageUsageRepository.get(organizationId);
 
     // Check file size limit

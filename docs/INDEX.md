@@ -340,6 +340,7 @@
 - **[План дашборда workspace (архив)](archive/2026-01-07-pm-core-migration/plans/workspace-dashboard-implementation-plan.md)** - План разработки дашборда
 - **[План проектов (архив)](archive/2026-01-07-pm-core-migration/plans/projects-implementation-plan.md)** - План реализации модуля проектов
 - **[План финансовой системы](development/plans/financial-system-implementation-plan.md)** - План разработки финансового модуля
+- **[Спецификация: персональные и бизнес‑организации](development/organization-account-types-implementation.md)** - Регистрация, лимиты и подписки для типов организаций
 
 ### Руководства по разработке
 

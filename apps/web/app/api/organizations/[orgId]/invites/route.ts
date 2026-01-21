@@ -4,9 +4,11 @@ import { dbProjectsRepository, organizationsRepository, invitationsRepository, i
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { sendOrganizationInviteEmail } from '@/lib/email/mailer';
 import { nanoid } from 'nanoid';
+import { resolveOrganizationPlan } from '@/lib/api/resolve-organization-plan';
 
 const ORG_ROLES = ['owner', 'admin', 'member', 'viewer'] as const;
 type OrgRole = (typeof ORG_ROLES)[number];
+const FREE_PLAN_MEMBER_LIMIT = 5;
 
 function parseOrgRole(input: unknown): { ok: true; role: OrgRole } | { ok: false } {
     if (typeof input !== 'string') return { ok: false };
@@ -33,6 +35,18 @@ export async function POST(
         const member = await organizationsRepository.findMember(orgId, userId);
         if (!member || !['owner', 'admin'].includes(member.role) || member.status !== 'active') {
             return jsonError('FORBIDDEN', { status: 403, details: 'Only owners and admins can invite' });
+        }
+
+        const plan = await resolveOrganizationPlan(orgId);
+        if (plan.code === 'free') {
+            const members = await organizationsRepository.listMembers(orgId);
+            const activeCount = members.filter((m) => m.status === 'active').length;
+            if (activeCount >= FREE_PLAN_MEMBER_LIMIT) {
+                return jsonError('PLAN_LIMIT_REACHED', {
+                    status: 403,
+                    details: 'Member limit reached for free plan.',
+                });
+            }
         }
 
         const body = await request.json();
@@ -232,4 +246,3 @@ export async function GET(
         return jsonError('INTERNAL_ERROR', { status: 500 });
     }
 }
-

@@ -23,6 +23,7 @@ describe('OrganizationClosureService', () => {
       name: 'Test Organization',
       ownerId: testOwnerId,
       type: 'closed',
+      kind: 'business',
       isPublicInDirectory: false,
     });
     testOrgId = testOrg.id;

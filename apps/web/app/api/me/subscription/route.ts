@@ -12,7 +12,7 @@ export async function GET() {
 
     try {
         const subscription = await getUserSubscription(userId);
-        const ownedOrganizations = await getOwnedOrganizationsCount(userId);
+        const ownedOrganizations = await getOwnedOrganizationsCount(userId, 'business');
         
         return jsonOk({ 
             subscription,
@@ -26,4 +26,3 @@ export async function GET() {
         return jsonError('INTERNAL_ERROR', { status: 500, details: message });
     }
 }
-

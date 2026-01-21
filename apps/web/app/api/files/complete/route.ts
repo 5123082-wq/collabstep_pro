@@ -5,7 +5,6 @@ import {
   projectsRepository,
   organizationsRepository,
   usersRepository,
-  organizationSubscriptionsRepository,
   organizationStorageUsageRepository,
   tasksRepository,
   foldersRepository,
@@ -16,6 +15,7 @@ import { db } from '@collabverse/api/db/config';
 import { files, attachments, folders, projects } from '@collabverse/api/db/schema';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { flags } from '@/lib/flags';
+import { resolveOrganizationPlan } from '@/lib/api/resolve-organization-plan';
 
 const CompleteUploadSchema = z.object({
   storageKey: z.string().min(1),
@@ -217,7 +217,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     // Check subscription limits (race condition check)
-    const plan = await organizationSubscriptionsRepository.getPlanForOrganization(organizationId);
+    const plan = await resolveOrganizationPlan(organizationId);
     const usage = await organizationStorageUsageRepository.get(organizationId);
 
     // Check file size limit
