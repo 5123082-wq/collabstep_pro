@@ -2,6 +2,9 @@ import { NextRequest } from 'next/server';
 import { getCurrentUser } from '@/lib/auth/session';
 import { invitationsRepository, organizationsRepository } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
+import { resolveOrganizationPlan } from '@/lib/api/resolve-organization-plan';
+
+const FREE_PLAN_MEMBER_LIMIT = 5;
 
 export async function POST(
   _request: NextRequest,
@@ -49,6 +52,30 @@ export async function POST(
       return jsonError('INVALID_REQUEST', { status: 400, details: `Invite is ${invite.status}` });
     }
 
+    const organizationId = invite.organizationId;
+    const member = await organizationsRepository.findMember(organizationId, user.id);
+    if (member?.status === 'blocked') {
+      return jsonError('FORBIDDEN', {
+        status: 403,
+        details: 'Your access to this organization is blocked. Please contact an organization admin.'
+      });
+    }
+
+    const needsActiveSlot = !member || member.status === 'inactive';
+    if (needsActiveSlot) {
+      const plan = await resolveOrganizationPlan(organizationId);
+      if (plan.code === 'free') {
+        const members = await organizationsRepository.listMembers(organizationId);
+        const activeCount = members.filter((m) => m.status === 'active').length;
+        if (activeCount >= FREE_PLAN_MEMBER_LIMIT) {
+          return jsonError('PLAN_LIMIT_REACHED', {
+            status: 403,
+            details: 'Member limit reached for free plan.'
+          });
+        }
+      }
+    }
+
     // Accept + link invite to user if it was email-only.
     const updatedInvite = await invitationsRepository.updateOrganizationInviteStatus(
       invite.id,
@@ -56,8 +83,6 @@ export async function POST(
       invite.inviteeUserId ? undefined : user.id
     );
 
-    const organizationId = invite.organizationId;
-    const member = await organizationsRepository.findMember(organizationId, user.id);
     if (!member) {
       await organizationsRepository.addMember({
         organizationId,
@@ -68,11 +93,6 @@ export async function POST(
     } else if (member.status === 'inactive') {
       // Reactivate existing member (role is preserved by policy).
       await organizationsRepository.updateMemberStatus(organizationId, member.id, 'active');
-    } else if (member.status === 'blocked') {
-      return jsonError('FORBIDDEN', {
-        status: 403,
-        details: 'Your access to this organization is blocked. Please contact an organization admin.'
-      });
     }
 
     return jsonOk({ success: true, invite: updatedInvite ?? invite });
@@ -106,5 +126,4 @@ export async function POST(
     return jsonError('INTERNAL_ERROR', { status: 500 });
   }
 }
-
 

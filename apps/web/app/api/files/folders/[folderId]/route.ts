@@ -3,10 +3,11 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@collabverse/api/db/config';
 import { folders, files } from '@collabverse/api/db/schema';
-import { organizationsRepository, fileTrashRepository, organizationSubscriptionsRepository, projectsRepository } from '@collabverse/api';
+import { organizationsRepository, fileTrashRepository, projectsRepository } from '@collabverse/api';
 import { getAuthFromRequest } from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { flags } from '@/lib/flags';
+import { resolveOrganizationPlan } from '@/lib/api/resolve-organization-plan';
 
 const UpdateFolderSchema = z.object({
   name: z.string().min(1).max(255).optional(),
@@ -180,7 +181,7 @@ export async function DELETE(
       .where(eq(files.folderId, params.folderId));
 
     // Get subscription for retention days
-    const subscription = await organizationSubscriptionsRepository.getPlanForOrganization(folder.organizationId);
+    const subscription = await resolveOrganizationPlan(folder.organizationId);
     const retentionDays = subscription.trashRetentionDays ?? null;
 
     // Track files that belong to projects for notification purposes
@@ -255,4 +256,3 @@ export async function DELETE(
     return jsonError('INTERNAL_ERROR', { status: 500 });
   }
 }
-

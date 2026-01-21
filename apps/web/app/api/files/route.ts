@@ -3,7 +3,6 @@ import { Buffer } from 'node:buffer';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import {
-  organizationSubscriptionsRepository,
   organizationStorageUsageRepository,
   projectsRepository,
   usersRepository,
@@ -18,6 +17,7 @@ import { eq } from 'drizzle-orm';
 import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { flags } from '@/lib/flags';
+import { resolveOrganizationPlan } from '@/lib/api/resolve-organization-plan';
 
 const UploadJsonSchema = z.object({
   filename: z.string(),
@@ -161,7 +161,7 @@ export async function POST(req: NextRequest) {
       taskForFolder = task;
     }
 
-    const plan = await organizationSubscriptionsRepository.getPlanForOrganization(organizationId);
+    const plan = await resolveOrganizationPlan(organizationId);
     const usage = await organizationStorageUsageRepository.get(organizationId);
 
     if (plan.fileSizeLimitBytes && payload.sizeBytes > plan.fileSizeLimitBytes) {

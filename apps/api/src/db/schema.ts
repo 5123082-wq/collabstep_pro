@@ -23,6 +23,7 @@ export const transactionStatusEnum = pgEnum("transaction_status", ["pending", "c
 export const contractStatusEnum = pgEnum("contract_status", ["offer", "accepted", "funded", "completed", "paid", "disputed"]);
 
 export const organizationTypeEnum = pgEnum("organization_type", ["closed", "open"]);
+export const organizationKindEnum = pgEnum("organization_kind", ["personal", "business"]);
 export const organizationRoleEnum = pgEnum("organization_role", ["owner", "admin", "member", "viewer"]);
 export const organizationMemberStatusEnum = pgEnum("organization_member_status", ["active", "inactive", "blocked"]);
 export const projectRoleEnum = pgEnum("project_role", ["owner", "manager", "contributor", "viewer"]);
@@ -176,6 +177,7 @@ export const organizations = pgTable(
         name: text("name").notNull(),
         description: text("description"),
         type: organizationTypeEnum("type").default("closed").notNull(),
+        kind: organizationKindEnum("kind").default("business").notNull(),
         isPublicInDirectory: boolean("is_public_in_directory").default(false).notNull(),
         status: text("status").default("active").notNull(), // 'active' | 'archived' | 'deleted'
         closedAt: timestamp("closed_at", { mode: "date" }),

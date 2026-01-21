@@ -897,6 +897,7 @@ export const memory = {
           name: 'Collabverse Demo Org',
           description: 'Демонстрационная организация',
           type: 'closed',
+          kind: 'business',
           isPublicInDirectory: true,
           createdAt: new Date('2024-01-10T08:00:00.000Z'),
           updatedAt: new Date('2024-06-01T10:00:00.000Z')

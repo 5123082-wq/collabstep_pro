@@ -584,6 +584,7 @@ export interface Organization {
   name: string;
   description?: string;
   type: 'open' | 'closed';
+  kind: 'personal' | 'business';
   isPublicInDirectory: boolean;
   status?: OrganizationStatus; // 'active' | 'archived' | 'deleted'
   closedAt?: Date;

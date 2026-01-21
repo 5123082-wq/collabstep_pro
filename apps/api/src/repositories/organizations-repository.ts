@@ -53,9 +53,10 @@ export class OrganizationsDbRepository implements OrganizationsRepository {
                 .values({
                     name: org.name,
                     ownerId: org.ownerId,
-                    description: org.description,
                     type: org.type,
+                    kind: org.kind,
                     isPublicInDirectory: org.isPublicInDirectory,
+                    ...(org.description !== undefined ? { description: org.description } : {}),
                     // id, createdAt, updatedAt handled by default/db
                 })
                 .returning();
@@ -85,6 +86,7 @@ export class OrganizationsDbRepository implements OrganizationsRepository {
                 name: organizations.name,
                 description: organizations.description,
                 type: organizations.type,
+                kind: organizations.kind,
                 isPublicInDirectory: organizations.isPublicInDirectory,
                 createdAt: organizations.createdAt,
                 updatedAt: organizations.updatedAt,
@@ -106,6 +108,7 @@ export class OrganizationsDbRepository implements OrganizationsRepository {
                             name: 'Collabverse Demo Org',
                             description: 'Демонстрационная организация',
                             type: 'closed',
+                            kind: 'business',
                             isPublicInDirectory: true,
                             status: 'active',
                         })
@@ -135,6 +138,7 @@ export class OrganizationsDbRepository implements OrganizationsRepository {
                         name: organizations.name,
                         description: organizations.description,
                         type: organizations.type,
+                        kind: organizations.kind,
                         isPublicInDirectory: organizations.isPublicInDirectory,
                         createdAt: organizations.createdAt,
                         updatedAt: organizations.updatedAt,
@@ -149,6 +153,7 @@ export class OrganizationsDbRepository implements OrganizationsRepository {
                         name: newRow.name,
                         description: newRow.description ?? undefined,
                         type: newRow.type,
+                        kind: newRow.kind ?? 'business',
                         isPublicInDirectory: newRow.isPublicInDirectory,
                         status: 'active' as const,
                         createdAt: newRow.createdAt ?? new Date(),
@@ -169,6 +174,7 @@ export class OrganizationsDbRepository implements OrganizationsRepository {
             name: row.name,
             description: row.description ?? undefined,
             type: row.type,
+            kind: row.kind ?? 'business',
             isPublicInDirectory: row.isPublicInDirectory,
             status: 'active' as const, // Default value if status column doesn't exist in DB
             createdAt: row.createdAt ?? new Date(),
@@ -196,6 +202,7 @@ export class OrganizationsDbRepository implements OrganizationsRepository {
                     orgName: organizations.name,
                     orgDescription: organizations.description,
                     orgType: organizations.type,
+                    orgKind: organizations.kind,
                     orgIsPublicInDirectory: organizations.isPublicInDirectory,
                     orgCreatedAt: organizations.createdAt,
                     orgUpdatedAt: organizations.updatedAt,
@@ -219,6 +226,7 @@ export class OrganizationsDbRepository implements OrganizationsRepository {
                     name: organizations.name,
                     description: organizations.description,
                     type: organizations.type,
+                    kind: organizations.kind,
                     isPublicInDirectory: organizations.isPublicInDirectory,
                     createdAt: organizations.createdAt,
                     updatedAt: organizations.updatedAt,
@@ -236,6 +244,7 @@ export class OrganizationsDbRepository implements OrganizationsRepository {
                     name: row.orgName,
                     description: row.orgDescription ?? undefined,
                     type: row.orgType,
+                    kind: row.orgKind ?? 'business',
                     isPublicInDirectory: row.orgIsPublicInDirectory,
                     status: 'active' as const, // Default value if status column doesn't exist in DB
                     createdAt: row.orgCreatedAt ?? new Date(),
@@ -251,6 +260,7 @@ export class OrganizationsDbRepository implements OrganizationsRepository {
                     name: row.name,
                     description: row.description ?? undefined,
                     type: row.type,
+                    kind: row.kind ?? 'business',
                     isPublicInDirectory: row.isPublicInDirectory,
                     status: 'active' as const, // Default value if status column doesn't exist in DB
                     createdAt: row.createdAt ?? new Date(),
@@ -306,6 +316,7 @@ export class OrganizationsDbRepository implements OrganizationsRepository {
                     orgName: organizations.name,
                     orgDescription: organizations.description,
                     orgType: organizations.type,
+                    orgKind: organizations.kind,
                     orgIsPublicInDirectory: organizations.isPublicInDirectory,
                     // orgStatus: organizations.status, // Temporarily removed - may not exist in DB
                     // orgClosedAt: organizations.closedAt, // Temporarily removed - may not exist in DB
@@ -337,6 +348,7 @@ export class OrganizationsDbRepository implements OrganizationsRepository {
                     name: row.orgName,
                     description: row.orgDescription ?? undefined,
                     type: row.orgType,
+                    kind: row.orgKind ?? 'business',
                     isPublicInDirectory: row.orgIsPublicInDirectory,
                     status: 'active' as const, // Default value if status column doesn't exist in DB
                     createdAt: row.orgCreatedAt ?? new Date(),
@@ -498,9 +510,10 @@ export class OrganizationsMemoryRepository implements OrganizationsRepository {
             id: org.id || crypto.randomUUID(),
             ownerId: org.ownerId,
             name: org.name,
-            ...(org.description ? { description: org.description } : {}),
             type: org.type,
+            kind: org.kind ?? 'business',
             isPublicInDirectory: org.isPublicInDirectory,
+            ...(org.description !== undefined ? { description: org.description } : {}),
             createdAt: new Date(),
             updatedAt: new Date()
         };

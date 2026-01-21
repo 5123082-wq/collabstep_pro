@@ -2,7 +2,7 @@ import { organizationsRepository } from '@collabverse/api';
 
 export type UserSubscription = {
   planCode: 'free' | 'pro' | 'max';
-  maxOrganizations: number; // -1 means unlimited
+  maxOrganizations: number; // -1 means unlimited (business orgs)
   expiresAt: string | null;
 };
 
@@ -60,13 +60,24 @@ export async function getUserSubscription(_userId: string): Promise<UserSubscrip
 }
 
 /**
- * Get count of organizations owned by user
+ * Get count of organizations owned by user (optionally filtered by kind)
  */
-export async function getOwnedOrganizationsCount(userId: string): Promise<number> {
+export async function getOwnedOrganizationsCount(
+  userId: string,
+  kind?: 'personal' | 'business'
+): Promise<number> {
   try {
     const memberships = await organizationsRepository.listMembershipsForUser(userId);
-    const ownedCount = memberships.filter(m => m.member.role === 'owner').length;
-    return ownedCount;
+    const ownedOrganizations = memberships
+      .filter((membership) => membership.member.role === 'owner')
+      .map((membership) => membership.organization)
+      .filter((organization) => !['archived', 'deleted'].includes(organization.status ?? 'active'));
+
+    if (!kind) {
+      return ownedOrganizations.length;
+    }
+
+    return ownedOrganizations.filter((organization) => (organization.kind ?? 'business') === kind).length;
   } catch (error) {
     console.error('[getOwnedOrganizationsCount] Error:', error);
     return 0;
@@ -76,19 +87,34 @@ export async function getOwnedOrganizationsCount(userId: string): Promise<number
 /**
  * Check if user can create a new organization based on their subscription
  */
-export async function canUserCreateOrganization(userId: string): Promise<{
+export async function canUserCreateOrganization(
+  userId: string,
+  kind: 'personal' | 'business' = 'business'
+): Promise<{
   canCreate: boolean;
   reason?: string;
   subscription: UserSubscription;
   currentCount: number;
 }> {
   const subscription = await getUserSubscription(userId);
-  const currentCount = await getOwnedOrganizationsCount(userId);
-  
+  const currentCount = await getOwnedOrganizationsCount(userId, kind);
+
+  if (kind === 'personal') {
+    if (currentCount >= 1) {
+      return {
+        canCreate: false,
+        reason: 'Personal organization limit reached.',
+        subscription,
+        currentCount,
+      };
+    }
+    return { canCreate: true, subscription, currentCount };
+  }
+
   if (subscription.maxOrganizations === -1) {
     return { canCreate: true, subscription, currentCount };
   }
-  
+
   if (currentCount >= subscription.maxOrganizations) {
     return {
       canCreate: false,
@@ -97,7 +123,6 @@ export async function canUserCreateOrganization(userId: string): Promise<{
       currentCount,
     };
   }
-  
+
   return { canCreate: true, subscription, currentCount };
 }
-

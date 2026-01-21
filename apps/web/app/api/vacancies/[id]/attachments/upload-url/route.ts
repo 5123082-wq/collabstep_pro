@@ -5,10 +5,10 @@ import { getCurrentUser } from '@/lib/auth/session';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import {
   organizationStorageUsageRepository,
-  organizationSubscriptionsRepository,
   organizationsRepository,
   vacanciesRepository
 } from '@collabverse/api';
+import { resolveOrganizationPlan } from '@/lib/api/resolve-organization-plan';
 
 const UploadUrlSchema = z.object({
   filename: z.string().min(1),
@@ -41,7 +41,7 @@ export async function POST(
   }
 
   const { filename, mimeType, sizeBytes } = parsed.data;
-  const plan = await organizationSubscriptionsRepository.getPlanForOrganization(vacancy.organizationId);
+  const plan = await resolveOrganizationPlan(vacancy.organizationId);
   const usage = await organizationStorageUsageRepository.get(vacancy.organizationId);
 
   if (plan.fileSizeLimitBytes && sizeBytes > plan.fileSizeLimitBytes) {

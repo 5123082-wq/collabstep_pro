@@ -10,7 +10,6 @@ import {
   commentsRepository,
   projectChatRepository,
   usersRepository,
-  organizationSubscriptionsRepository,
   organizationStorageUsageRepository,
   foldersRepository
 } from '@collabverse/api';
@@ -18,6 +17,7 @@ import { db } from '@collabverse/api/db/config';
 import { attachments, files, fileTrash, projects } from '@collabverse/api/db/schema';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { put } from '@vercel/blob';
+import { resolveOrganizationPlan } from '@/lib/api/resolve-organization-plan';
 
 type FileSource = 'tasks' | 'comments' | 'chat' | 'project' | 'documents';
 
@@ -264,7 +264,7 @@ export async function POST(
     const buffer = Buffer.from(await file.arrayBuffer());
     const sha256 = createHash('sha256').update(buffer).digest('hex');
 
-    const plan = await organizationSubscriptionsRepository.getPlanForOrganization(organizationId);
+    const plan = await resolveOrganizationPlan(organizationId);
     const usage = await organizationStorageUsageRepository.get(organizationId);
 
     if (plan.fileSizeLimitBytes && buffer.length > plan.fileSizeLimitBytes) {

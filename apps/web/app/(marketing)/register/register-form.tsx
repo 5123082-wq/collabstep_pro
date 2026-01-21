@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { trackEvent } from '@/lib/telemetry';
 
 const MIN_PASSWORD_LENGTH = 6;
 
@@ -9,6 +10,8 @@ type FormState = {
   name: string;
   email: string;
   password: string;
+  accountType: 'personal' | 'business';
+  organizationName: string;
   consent: boolean;
   error: string | null;
   loading: boolean;
@@ -18,6 +21,7 @@ type FieldErrors = {
   name?: string;
   email?: string;
   password?: string;
+  organizationName?: string;
 };
 
 type InvitePrefill = {
@@ -30,6 +34,8 @@ const initialState: FormState = {
   name: '',
   email: '',
   password: '',
+  accountType: 'personal',
+  organizationName: '',
   consent: false,
   error: null,
   loading: false
@@ -67,7 +73,8 @@ export default function RegisterForm() {
   const [invitePrefillLoading, setInvitePrefillLoading] = useState(false);
   const [invitePrefillError, setInvitePrefillError] = useState<string | null>(null);
 
-  const isInviteFlow = !!inviteToken && !!invitePrefill;
+  const hasInviteToken = !!inviteToken;
+  const isInviteFlow = hasInviteToken && !!invitePrefill;
   const isEmailLocked = !!invitePrefill?.email;
 
   useEffect(() => {
@@ -129,6 +136,24 @@ export default function RegisterForm() {
     return () => controller.abort();
   }, [inviteToken]);
 
+  useEffect(() => {
+    if (!hasInviteToken) {
+      return;
+    }
+
+    setState((prev) => {
+      if (prev.accountType === 'personal' && prev.organizationName === '') {
+        return prev;
+      }
+      return { ...prev, accountType: 'personal', organizationName: '', error: null };
+    });
+    setFieldErrors((prev) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { organizationName, ...rest } = prev;
+      return rest;
+    });
+  }, [hasInviteToken]);
+
   const passwordStrength = useMemo(() => {
     if (!state.password) return null;
     return getPasswordStrength(state.password);
@@ -165,6 +190,40 @@ export default function RegisterForm() {
     }
   };
 
+  const validateOrganizationName = (value: string, accountType: 'personal' | 'business'): string | undefined => {
+    if (accountType !== 'business') {
+      return undefined;
+    }
+    if (!value.trim()) {
+      return 'Название организации обязательно для заполнения';
+    }
+    if (value.trim().length < 2) {
+      return 'Название организации должно содержать минимум 2 символа';
+    }
+    return undefined;
+  };
+
+  const handleAccountTypeChange = (nextType: 'personal' | 'business') => {
+    if (hasInviteToken) {
+      return;
+    }
+    setState((prev) => ({
+      ...prev,
+      accountType: nextType,
+      ...(nextType === 'personal' ? { organizationName: '' } : {}),
+      error: null
+    }));
+    setFieldErrors((prev) => {
+      if (nextType === 'personal') {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { organizationName, ...rest } = prev;
+        return rest;
+      }
+      return prev;
+    });
+    trackEvent('auth_account_type_selected', { account_type: nextType });
+  };
+
   const handleChange = (field: 'name' | 'email' | 'password') => (event: ChangeEvent<HTMLInputElement>) => {
     if (field === 'email' && isEmailLocked) {
       return;
@@ -177,6 +236,20 @@ export default function RegisterForm() {
     setFieldErrors((prev) => ({ ...prev, [field]: error }));
   };
 
+  const handleOrganizationNameChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setState((prev) => ({ ...prev, organizationName: value, error: null }));
+    const error = validateOrganizationName(value, state.accountType);
+    setFieldErrors((prev) => {
+      if (error) {
+        return { ...prev, organizationName: error };
+      }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { organizationName, ...rest } = prev;
+      return rest;
+    });
+  };
+
   const handleBlur = (field: 'name' | 'email' | 'password') => () => {
     if (field === 'email' && isEmailLocked) {
       return;
@@ -184,6 +257,18 @@ export default function RegisterForm() {
     const value = state[field];
     const error = validateField(field, value);
     setFieldErrors((prev) => ({ ...prev, [field]: error }));
+  };
+
+  const handleOrganizationNameBlur = () => {
+    const error = validateOrganizationName(state.organizationName, state.accountType);
+    setFieldErrors((prev) => {
+      if (error) {
+        return { ...prev, organizationName: error };
+      }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { organizationName, ...rest } = prev;
+      return rest;
+    });
   };
 
   const handleConsentChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -208,14 +293,19 @@ export default function RegisterForm() {
     const nameError = validateField('name', state.name);
     const emailError = isInviteFlow ? undefined : validateField('email', state.email);
     const passwordError = validateField('password', state.password);
+    const organizationNameError =
+      !hasInviteToken && state.accountType === 'business'
+        ? validateOrganizationName(state.organizationName, state.accountType)
+        : undefined;
 
     setFieldErrors({
       ...(nameError ? { name: nameError } : {}),
       ...(emailError ? { email: emailError } : {}),
-      ...(passwordError ? { password: passwordError } : {})
+      ...(passwordError ? { password: passwordError } : {}),
+      ...(organizationNameError ? { organizationName: organizationNameError } : {})
     });
 
-    if (nameError || emailError || passwordError || !state.consent) {
+    if (nameError || emailError || passwordError || organizationNameError || !state.consent) {
       setState((prev) => ({
         ...prev,
         error: !state.consent ? 'Необходимо подтвердить согласие с условиями использования' : 'Проверьте правильность заполнения полей'
@@ -226,6 +316,8 @@ export default function RegisterForm() {
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
+      const accountType = isInviteFlow ? 'personal' : state.accountType;
+      const trimmedOrganizationName = state.organizationName.trim();
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
@@ -237,12 +329,17 @@ export default function RegisterForm() {
             ? {
                 name: state.name.trim(),
                 password: state.password,
-                inviteToken
+                inviteToken,
+                accountType: 'personal'
               }
             : {
                 name: state.name.trim(),
                 email: state.email.trim(),
-                password: state.password
+                password: state.password,
+                accountType,
+                ...(accountType === 'business' && trimmedOrganizationName
+                  ? { organizationName: trimmedOrganizationName }
+                  : {})
               }
         )
       });
@@ -310,6 +407,82 @@ export default function RegisterForm() {
           </p>
         )}
       </div>
+
+      {!hasInviteToken ? (
+        <div>
+          <span className="block text-sm text-neutral-300">Тип аккаунта</span>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            <label
+              className={`flex items-start gap-3 rounded-lg border px-3 py-2 text-sm transition ${state.accountType === 'personal'
+                  ? 'border-indigo-400 bg-indigo-500/10 text-white'
+                  : 'border-neutral-800 text-neutral-300 hover:border-neutral-700'
+                }`}
+            >
+              <input
+                type="radio"
+                name="account-type"
+                value="personal"
+                checked={state.accountType === 'personal'}
+                onChange={() => handleAccountTypeChange('personal')}
+                disabled={state.loading || invitePrefillLoading}
+                className="mt-1 text-indigo-500 focus:ring-indigo-500"
+              />
+              <span>
+                <span className="block font-medium">Персональный</span>
+                <span className="block text-xs text-neutral-400">Для личных проектов</span>
+              </span>
+            </label>
+            <label
+              className={`flex items-start gap-3 rounded-lg border px-3 py-2 text-sm transition ${state.accountType === 'business'
+                  ? 'border-indigo-400 bg-indigo-500/10 text-white'
+                  : 'border-neutral-800 text-neutral-300 hover:border-neutral-700'
+                }`}
+            >
+              <input
+                type="radio"
+                name="account-type"
+                value="business"
+                checked={state.accountType === 'business'}
+                onChange={() => handleAccountTypeChange('business')}
+                disabled={state.loading || invitePrefillLoading}
+                className="mt-1 text-indigo-500 focus:ring-indigo-500"
+              />
+              <span>
+                <span className="block font-medium">Организация</span>
+                <span className="block text-xs text-neutral-400">Команда и совместная работа</span>
+              </span>
+            </label>
+          </div>
+        </div>
+      ) : null}
+
+      {!hasInviteToken && state.accountType === 'business' ? (
+        <div>
+          <label className="block text-sm text-neutral-300">
+            Название организации
+            <input
+              type="text"
+              name="organizationName"
+              value={state.organizationName}
+              onChange={handleOrganizationNameChange}
+              onBlur={handleOrganizationNameBlur}
+              className={`mt-1 w-full rounded-lg border bg-neutral-900 px-3 py-2 text-neutral-100 focus:outline-none ${fieldErrors.organizationName
+                  ? 'border-rose-500 focus:border-rose-400'
+                  : 'border-neutral-800 focus:border-indigo-400'
+                }`}
+              placeholder="Например, Acme Studio"
+              required
+              aria-invalid={!!fieldErrors.organizationName}
+              aria-describedby={fieldErrors.organizationName ? 'organization-name-error' : undefined}
+            />
+          </label>
+          {fieldErrors.organizationName && (
+            <p id="organization-name-error" role="alert" className="mt-1 text-xs text-rose-300">
+              {fieldErrors.organizationName}
+            </p>
+          )}
+        </div>
+      ) : null}
 
       <div>
         <label className="block text-sm text-neutral-300">

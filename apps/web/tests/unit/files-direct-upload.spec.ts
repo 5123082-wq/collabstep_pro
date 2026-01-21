@@ -68,7 +68,8 @@ describe('Direct Upload API', () => {
         id: organizationId,
         ownerId: userId,
         name: 'Test Org',
-        type: 'closed'
+        type: 'closed',
+        kind: 'business'
       });
 
     await db

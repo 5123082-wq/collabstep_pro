@@ -2,7 +2,7 @@
 
 **Статус:** active  
 **Владелец:** product/analytics  
-**Последнее обновление:** 2026-01-06
+**Последнее обновление:** 2026-01-21
 
 Это **канонический** список событий аналитики и их схем.
 
@@ -11,7 +11,7 @@
 ### Именование событий
 
 - Имена событий: `snake_case`
-- Префиксы по модулям: `pm_`, `marketplace_`, `marketing_`, `ai_`, `finance_`
+- Префиксы по модулям: `auth_`, `pm_`, `marketplace_`, `marketing_`, `ai_`, `finance_`
 - Формат: `{module}_{entity}_{action}`
 
 ### Общие поля (обязательные)
@@ -35,6 +35,15 @@
 - Пароли и токены
 
 **Политика:** Определить явную политику обработки PII (NEEDS_CONFIRMATION)
+
+## События Auth & Регистрация
+
+| Событие | Описание | Payload | Когда | Где |
+|---------|----------|--------|-------|-----|
+| `auth_account_type_selected` | Выбран тип аккаунта при регистрации | `{ account_type: 'personal' \| 'business', registration_type: 'direct' \| 'invite' }` | При выборе типа аккаунта в форме регистрации | Frontend form `/register` |
+| `auth_user_registered` | Пользователь зарегистрирован | `{ user_id, account_type: 'personal' \| 'business', registration_type: 'direct' \| 'invite', organization_id }` | После успешной регистрации | API endpoint `/api/auth/register` |
+| `auth_user_logged_in` | Пользователь вошел в систему | `{ user_id, login_method: 'email' \| 'google' \| 'demo' }` | При успешном входе | API endpoint `/api/auth/login` или NextAuth |
+| `auth_user_logged_out` | Пользователь вышел из системы | `{ user_id }` | При выходе | API endpoint `/api/auth/logout` |
 
 ## События PM Core
 
@@ -147,6 +156,20 @@
   listing_id: "listing-id",
   referrer?: "search" | "category" | "recommendation",
   position?: number // Позиция в списке/каталоге
+}
+```
+
+### auth_account_type_selected
+
+```typescript
+{
+  event_id: "uuid",
+  ts: "2026-01-21T12:00:00.000Z",
+  session_id: "session-id",
+  source: "web",
+  // Специфичные поля
+  account_type: "personal" | "business",
+  registration_type: "direct" | "invite"
 }
 ```
 

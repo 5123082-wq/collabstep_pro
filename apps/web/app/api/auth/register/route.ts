@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDemoAccount } from '@/lib/auth/demo-session';
 import { ensureDemoAccountsInitialized } from '@/lib/auth/init-demo-accounts';
-import { invitationsRepository, usersRepository } from '@collabverse/api';
+import { invitationsRepository, organizationsRepository, usersRepository } from '@collabverse/api';
 import { hashPassword, verifyPassword } from '@collabverse/api/utils/password';
+import { trackEvent } from '@/lib/telemetry';
 
 const INVALID_MESSAGE = 'Заполните все поля корректно';
 const EMAIL_EXISTS_MESSAGE = 'Пользователь с таким email уже зарегистрирован';
@@ -35,6 +36,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const email = sanitizeString(payload.email);
   const password = typeof payload.password === 'string' ? payload.password : '';
   const title = sanitizeString(payload.title);
+  const rawAccountType = sanitizeString(payload.accountType);
+  const rawOrganizationName = sanitizeString(payload.organizationName);
 
   const isInviteFlow = !!inviteToken;
   let inviteEmailLower: string | null = null;
@@ -102,6 +105,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Этот email зарезервирован для демо-аккаунта' }, { status: 400 });
   }
 
+  const resolvedAccountType = isInviteFlow
+    ? 'personal'
+    : rawAccountType === 'business'
+      ? 'business'
+      : rawAccountType === 'personal'
+        ? 'personal'
+        : 'personal';
+
+  if (!isInviteFlow && rawAccountType && !['personal', 'business'].includes(rawAccountType)) {
+    return NextResponse.json({ error: INVALID_MESSAGE }, { status: 400 });
+  }
+
+  if (resolvedAccountType === 'business' && !rawOrganizationName) {
+    return NextResponse.json({ error: 'Название организации обязательно для бизнес-аккаунта' }, { status: 400 });
+  }
+
+  const organizationName = resolvedAccountType === 'business' ? rawOrganizationName : name;
+
   // Создаём нового пользователя с хэшированным паролем
   // Все новые пользователи получают роль 'user' (не admin)
   const passwordHash = hashPassword(password);
@@ -112,6 +133,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     ...(title && { title })
   });
 
+  try {
+    await organizationsRepository.create({
+      ownerId: createdUser.id,
+      name: organizationName,
+      type: 'closed',
+      kind: resolvedAccountType,
+      isPublicInDirectory: false,
+    });
+  } catch (error) {
+    console.error('[Register] Error creating organization:', error);
+    await usersRepository.delete(createdUser.id);
+    return NextResponse.json({ error: 'Не удалось создать организацию. Попробуйте позже.' }, { status: 500 });
+  }
+
   // При регистрации по приглашению: привязываем инвайт к новому userId, но не принимаем автоматически.
   if (isInviteFlow && inviteId) {
     try {
@@ -121,6 +156,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       // Non-fatal: user is created; invite will still be visible by email match (until linked elsewhere).
     }
   }
+
+  trackEvent('auth_user_registered', {
+    account_type: resolvedAccountType,
+    source: isInviteFlow ? 'invite' : 'direct',
+  });
 
   // Не создаем сессию - пользователь должен войти вручную
   return NextResponse.json({ redirect: '/login?toast=register-success' });

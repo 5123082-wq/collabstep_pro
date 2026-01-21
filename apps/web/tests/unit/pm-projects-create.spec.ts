@@ -78,6 +78,7 @@ describe('POST /api/pm/projects', () => {
       ownerId: userId,
       name: 'Test Org',
       type: 'closed',
+      kind: 'business',
       isPublicInDirectory: false
     });
 
@@ -93,6 +94,7 @@ describe('POST /api/pm/projects', () => {
       ownerId: userId,
       name: 'Test Org',
       type: 'closed',
+      kind: 'business',
       isPublicInDirectory: false
     });
   });

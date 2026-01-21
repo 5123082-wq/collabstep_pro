@@ -66,7 +66,8 @@ describe('File limits and trash', () => {
         id: organizationId,
         ownerId: userId,
         name: 'Test Org',
-        type: 'closed'
+        type: 'closed',
+        kind: 'business'
       });
 
     await db
@@ -84,6 +85,7 @@ describe('File limits and trash', () => {
         ownerId: userId,
         name: 'Test Org',
         type: 'closed',
+        kind: 'business',
         isPublicInDirectory: false
       });
     }
