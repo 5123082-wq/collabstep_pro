@@ -63,7 +63,7 @@ export default function CreateTaskModal({ projectId, isOpen, onClose, onSuccess 
         body: JSON.stringify({
           projectId,
           title: title.trim(),
-          description: description.trim() || undefined,
+          description: description && typeof description === 'string' ? description.trim() || undefined : undefined,
           status,
           priority,
           ...(dueAt ? { dueAt } : {})

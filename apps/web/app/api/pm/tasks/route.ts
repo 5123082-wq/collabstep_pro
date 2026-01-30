@@ -310,21 +310,29 @@ export async function POST(request: Request) {
       return jsonError('Missing required fields: projectId, title, status', { status: 400 });
     }
 
+    // Нормализуем projectId и title
+    const normalizedProjectId = typeof projectId === 'string' ? projectId.trim() : String(projectId).trim();
+    const normalizedTitle = typeof title === 'string' ? title.trim() : String(title).trim();
+    
+    if (!normalizedProjectId || !normalizedTitle) {
+      return jsonError('Missing required fields: projectId, title, status', { status: 400 });
+    }
+
     // Проверяем доступ к проекту
-    if (!projectsRepository.hasAccess(projectId, auth.userId)) {
+    if (!projectsRepository.hasAccess(normalizedProjectId, auth.userId)) {
       return jsonError('No access to project', { status: 403 });
     }
 
     const task = tasksRepository.create({
-      projectId,
-      title: String(title).trim(),
+      projectId: normalizedProjectId,
+      title: normalizedTitle,
       status: status as TaskStatus,
       ...(rest.assigneeId ? { assigneeId: rest.assigneeId } : {}),
       ...(rest.priority ? { priority: rest.priority } : {}),
       ...(rest.startDate || rest.startAt ? { startDate: rest.startDate || rest.startAt } : {}),
       ...(rest.dueAt ? { dueAt: rest.dueAt } : {}),
       ...(rest.labels ? { labels: Array.isArray(rest.labels) ? rest.labels : [] } : {}),
-      ...(rest.description ? { description: rest.description } : {}),
+      ...(rest.description && typeof rest.description === 'string' ? { description: rest.description.trim() || undefined } : {}),
       ...(rest.estimatedTime !== undefined ? { estimatedTime: rest.estimatedTime } : {}),
       ...(rest.storyPoints !== undefined ? { storyPoints: rest.storyPoints } : {}),
       ...(rest.parentId !== undefined ? { parentId: rest.parentId || null } : {})
@@ -332,7 +340,7 @@ export async function POST(request: Request) {
 
     // Генерируем уведомление при назначении задачи
     if (rest.assigneeId && rest.assigneeId !== auth.userId) {
-      await notifyTaskAssigned(task.id, rest.assigneeId, projectId);
+      await notifyTaskAssigned(task.id, rest.assigneeId, normalizedProjectId);
 
       // Если назначен AI-агент, обработать назначение
       const agent = await aiAgentsRepository.findById(rest.assigneeId);
@@ -344,9 +352,9 @@ export async function POST(request: Request) {
     }
 
     // Рассылаем событие через WebSocket
-    await broadcastToProject(projectId, 'task.created', {
+    await broadcastToProject(normalizedProjectId, 'task.created', {
       task,
-      projectId
+      projectId: normalizedProjectId
     });
 
     return jsonOk({ task });
