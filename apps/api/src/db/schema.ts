@@ -982,3 +982,66 @@ export const projectTemplateTasks = pgTable(
         templatePositionIdx: index("project_template_tasks_template_position_idx").on(table.templateId, table.position),
     })
 );
+
+// --- AI Agent System ---
+
+export const aiAgentConfigs = pgTable(
+    "ai_agent_config",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        slug: text("slug").unique().notNull(),
+        name: text("name").notNull(),
+        description: text("description"),
+        pipelineType: text("pipeline_type").default("generative").notNull(),
+        enabled: boolean("enabled").default(true).notNull(),
+        icon: text("icon"),
+        limits: jsonb("limits").$type<{
+            maxRunsPerDay: number;
+            maxConcurrentRuns: number;
+            maxFileSizeBytes: number;
+        }>(),
+        parameters: jsonb("parameters").$type<{
+            outputLanguage?: string;
+            watermarkText?: string;
+            contactBlock?: string;
+        }>(),
+        createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+        updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow(),
+    },
+    (table) => ({
+        slugIdx: uniqueIndex("ai_agent_config_slug_idx").on(table.slug),
+        enabledIdx: index("ai_agent_config_enabled_idx").on(table.enabled),
+    })
+);
+
+export const aiAgentPromptVersions = pgTable(
+    "ai_agent_prompt_version",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        agentId: text("agent_id")
+            .notNull()
+            .references(() => aiAgentConfigs.id, { onDelete: "cascade" }),
+        version: integer("version").notNull(),
+        status: text("status").default("draft").notNull(),
+        systemPrompt: text("system_prompt"),
+        prompts: jsonb("prompts").$type<{
+            intake?: string;
+            logoCheck?: string;
+            generate?: string;
+            qa?: string;
+            followup?: string;
+        }>(),
+        createdBy: text("created_by")
+            .references(() => users.id, { onDelete: "set null" }),
+        createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+    },
+    (table) => ({
+        agentVersionIdx: uniqueIndex("ai_agent_prompt_version_agent_version_idx").on(table.agentId, table.version),
+        agentIdIdx: index("ai_agent_prompt_version_agent_id_idx").on(table.agentId),
+        statusIdx: index("ai_agent_prompt_version_status_idx").on(table.status),
+    })
+);

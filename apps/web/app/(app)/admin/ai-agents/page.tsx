@@ -31,9 +31,9 @@ function StatusBadge({ status }: { status: AssistantStatus['status'] }) {
     disabled: { label: 'Выключен', color: 'bg-neutral-500/20 text-neutral-400 ring-neutral-500/50', icon: AlertCircle },
     error: { label: 'Ошибка', color: 'bg-red-500/20 text-red-400 ring-red-500/50', icon: AlertCircle },
   };
-  
+
   const { label, color, icon: Icon } = config[status];
-  
+
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset ${color}`}>
       <Icon className="h-3.5 w-3.5" />
@@ -71,14 +71,14 @@ export default function AdminAIAgentsPage() {
   const handleReindex = async () => {
     setIsIndexing(true);
     toast('Запуск индексации документации...', 'info');
-    
+
     // Индексация выполняется через CLI скрипт
     // Здесь мы просто показываем инструкцию
     toast(
       'Запустите команду: pnpm --filter @collabverse/web index-assistant-docs',
       'info'
     );
-    
+
     setTimeout(() => {
       setIsIndexing(false);
       void fetchStatus();
@@ -126,13 +126,12 @@ export default function AdminAIAgentsPage() {
               {/* Status Overview */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-full ${
-                    status.status === 'ok' 
-                      ? 'bg-green-500/20 text-green-400' 
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-full ${status.status === 'ok'
+                      ? 'bg-green-500/20 text-green-400'
                       : status.status === 'degraded'
-                      ? 'bg-yellow-500/20 text-yellow-400'
-                      : 'bg-neutral-500/20 text-neutral-400'
-                  }`}>
+                        ? 'bg-yellow-500/20 text-yellow-400'
+                        : 'bg-neutral-500/20 text-neutral-400'
+                    }`}>
                     <Sparkles className="h-6 w-6" />
                   </div>
                   <div>
@@ -157,7 +156,7 @@ export default function AdminAIAgentsPage() {
                       {status.details.apiKey ? 'Настроен' : 'Не настроен'}
                     </p>
                   </div>
-                  
+
                   <div className="rounded-lg border border-neutral-800 bg-neutral-900/30 p-3">
                     <div className="flex items-center gap-2 text-xs text-neutral-500 mb-1">
                       <Database className="h-3.5 w-3.5" />
@@ -167,14 +166,14 @@ export default function AdminAIAgentsPage() {
                       {status.details.chunksCount}
                     </p>
                   </div>
-                  
+
                   <div className="rounded-lg border border-neutral-800 bg-neutral-900/30 p-3">
                     <div className="flex items-center gap-2 text-xs text-neutral-500 mb-1">
                       <Clock className="h-3.5 w-3.5" />
                       Последняя индексация
                     </div>
                     <p className="text-sm font-medium text-neutral-200">
-                      {status.details.stats?.indexedAt 
+                      {status.details.stats?.indexedAt
                         ? formatDate(status.details.stats.indexedAt)
                         : 'Не проводилась'}
                     </p>
@@ -205,7 +204,7 @@ export default function AdminAIAgentsPage() {
               {!flags.AI_ASSISTANT && (
                 <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
                   <p className="text-sm text-yellow-200">
-                    <strong>Внимание:</strong> Feature flag AI_ASSISTANT выключен. 
+                    <strong>Внимание:</strong> Feature flag AI_ASSISTANT выключен.
                     Добавьте <code className="bg-neutral-800 px-1 rounded">NEXT_PUBLIC_FEATURE_AI_ASSISTANT=true</code> в .env.local
                   </p>
                 </div>
@@ -253,13 +252,67 @@ export default function AdminAIAgentsPage() {
         </ContentBlock>
       </div>
 
-      <ContentBlock title="Список глобальных агентов" size="sm">
-        <div className="rounded-lg border border-neutral-800 bg-neutral-900/30 p-8 text-center">
-          <Sparkles className="mx-auto h-8 w-8 text-neutral-600" />
-          <h3 className="mt-2 font-medium text-neutral-300">Список агентов</h3>
-          <p className="mt-1 text-sm text-neutral-500">
-            Функционал управления глобальными агентами будет доступен в ближайшем обновлении.
-          </p>
+      <ContentBlock title="AI-агенты" size="sm">
+        <div className="space-y-4">
+          {/* Brandbook Agent Card */}
+          <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-400">
+                  <Sparkles className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="font-medium text-neutral-200">Brandbook Agent</p>
+                  <p className="text-xs text-neutral-400">
+                    AI-дизайнер для создания брендбуков мерча
+                  </p>
+                </div>
+              </div>
+              <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset bg-green-500/20 text-green-400 ring-green-500/50">
+                <CheckCircle className="h-3.5 w-3.5" />
+                Активен
+              </span>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-lg border border-neutral-800 bg-neutral-900/30 p-3">
+                <p className="text-xs text-neutral-500 mb-1">Pipeline</p>
+                <p className="text-sm font-medium text-neutral-200">Generative</p>
+              </div>
+              <div className="rounded-lg border border-neutral-800 bg-neutral-900/30 p-3">
+                <p className="text-xs text-neutral-500 mb-1">Провайдер</p>
+                <p className="text-sm font-medium text-neutral-200">OpenAI</p>
+              </div>
+              <div className="rounded-lg border border-neutral-800 bg-neutral-900/30 p-3">
+                <p className="text-xs text-neutral-500 mb-1">Лимит</p>
+                <p className="text-sm font-medium text-neutral-200">10 runs/day</p>
+              </div>
+            </div>
+
+            <div className="mt-4 flex gap-3">
+              <a
+                href="/admin/ai-agents/brandbook"
+                className="inline-flex items-center gap-2 rounded-lg border border-indigo-500/40 bg-indigo-500/10 px-4 py-2 text-sm text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/20"
+              >
+                <Sparkles className="h-4 w-4" />
+                Настроить промпты
+              </a>
+              <button
+                onClick={() => toast('Редактирование конфигурации в разработке', 'info')}
+                className="inline-flex items-center gap-2 rounded-lg border border-neutral-700 bg-neutral-800/50 px-4 py-2 text-sm text-neutral-200 transition hover:border-neutral-600 hover:bg-neutral-800"
+              >
+                Редактировать
+              </button>
+            </div>
+          </div>
+
+          {/* Placeholder for future agents */}
+          <div className="rounded-lg border border-dashed border-neutral-700 bg-neutral-900/30 p-6 text-center">
+            <Sparkles className="mx-auto h-6 w-6 text-neutral-600" />
+            <p className="mt-2 text-sm text-neutral-500">
+              Другие агенты появятся в будущих обновлениях
+            </p>
+          </div>
         </div>
       </ContentBlock>
     </div>

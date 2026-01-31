@@ -154,10 +154,33 @@ export {
   type NewBrandbookAgentArtifact
 } from './repositories/brandbook-agent-artifacts-repository';
 export {
+  AIAgentConfigsDbRepository,
+  aiAgentConfigsDbRepository,
+  AIAgentPromptVersionsDbRepository,
+  aiAgentPromptVersionsDbRepository,
+  type DbAIAgentConfig,
+  type NewAIAgentConfig,
+  type DbAIAgentPromptVersion,
+  type NewAIAgentPromptVersion,
+  type AIAgentPrompts,
+  type AIAgentConfigUpdateInput,
+  type AIAgentPromptVersionUpdateInput
+} from './repositories/ai-agent-configs-repository';
+export {
   createBrandbookRunMock,
   type BrandbookAgentRunCreateResult,
   type BrandbookAgentService
 } from './services/ai-brandbook-service';
+export { OpenAIClient, type AIClient } from './services/ai/openai-client';
+export {
+  BrandbookAgentPipeline,
+  createBrandbookPipeline,
+  type BrandbookPrompts,
+  type BrandbookPipelineConfig,
+  type BrandbookPipelineInput,
+  type BrandbookPipelineStep,
+  type BrandbookPipelineResult
+} from './services/ai/brandbook-pipeline';
 export type {
   AIAgent,
   AIAgentType,
