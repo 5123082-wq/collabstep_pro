@@ -117,27 +117,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     ...(contactBlock !== undefined ? { contactBlock } : {})
   };
 
-  // TODO: Add analytics hooks for brandbook runs.
-  const run = await createBrandbookRunMock(runInput);
-
-  await brandbookAgentRunsRepository.create({
-    id: run.runId,
+  // Execute via service
+  const run = await createBrandbookRunMock({
+    ...runInput,
     organizationId,
-    createdBy: auth.userId,
-    status: run.status,
-    productBundle,
-    ...(projectId ? { projectId } : {}),
-    ...(taskId ? { taskId } : {}),
-    ...(logoFileId ? { logoFileId } : {}),
-    ...(preferences ? { preferences } : {}),
-    ...(outputLanguage ? { outputLanguage } : {}),
-    ...(watermarkText ? { watermarkText } : {}),
-    ...(contactBlock ? { contactBlock } : {}),
-    ...(run.metadata?.pipelineType ? { pipelineType: run.metadata.pipelineType } : {}),
-    ...(run.metadata?.outputFormat ? { outputFormat: run.metadata.outputFormat } : {}),
-    ...(run.metadata?.previewFormat ? { previewFormat: run.metadata.previewFormat } : {})
+    createdBy: auth.userId
   });
 
+  // Add initial system messages
   await Promise.all(
     STARTER_MESSAGES.map((content) =>
       brandbookAgentMessagesRepository.create({
@@ -210,13 +197,13 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   const runs = projectId
     ? await brandbookAgentRunsRepository.listByProject({
-        organizationId: resolvedOrganizationId,
-        projectId
-      })
+      organizationId: resolvedOrganizationId,
+      projectId
+    })
     : await brandbookAgentRunsRepository.listByUser({
-        organizationId: resolvedOrganizationId,
-        createdBy: auth.userId
-      });
+      organizationId: resolvedOrganizationId,
+      createdBy: auth.userId
+    });
 
   return jsonOk({
     runs: runs.map((run) => ({

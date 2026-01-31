@@ -60,4 +60,10 @@ declare module 'lucide-react' {
   export const Building2: LucideIcon;
   export const Check: LucideIcon;
   export const ArrowRight: LucideIcon;
+  // AI agents / brandbook admin
+  export const Save: LucideIcon;
+  export const History: LucideIcon;
+  export const CircleCheck: LucideIcon;
+  export const AlertCircle: LucideIcon;
+  export const Database: LucideIcon;
 }
