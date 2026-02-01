@@ -90,8 +90,14 @@ export async function GET(
     artifacts: artifacts.map((artifact) => ({
       id: artifact.id,
       runId: artifact.runId,
-      fileId: artifact.fileId,
+      ...(artifact.fileId ? { fileId: artifact.fileId } : {}),
       kind: artifact.kind,
+      ...(artifact.storageUrl ? { storageUrl: artifact.storageUrl } : {}),
+      ...(artifact.filename ? { filename: artifact.filename } : {}),
+      ...(artifact.mimeType ? { mimeType: artifact.mimeType } : {}),
+      ...(artifact.sizeBytes !== null && artifact.sizeBytes !== undefined
+        ? { sizeBytes: Number(artifact.sizeBytes) }
+        : {}),
       createdAt: artifact.createdAt instanceof Date ? artifact.createdAt.toISOString() : artifact.createdAt
     }))
   });

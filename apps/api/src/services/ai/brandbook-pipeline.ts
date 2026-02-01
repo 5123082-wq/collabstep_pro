@@ -1,4 +1,4 @@
-import { OpenAIClient } from './openai-client';
+import { OpenAIClient, type GenerateImageOptions } from './openai-client';
 
 // --- Types ---
 
@@ -17,6 +17,16 @@ export interface BrandbookPipelineConfig {
         outputLanguage?: string;
         watermarkText?: string;
         contactBlock?: string;
+        /** Chat model for text (e.g. gpt-3.5-turbo, gpt-4o-mini). Image generation uses separate API (DALL-E). */
+        model?: string;
+        /** DALL·E model for image generation (e.g. dall-e-3). */
+        dalleModel?: GenerateImageOptions['model'];
+        /** DALL·E image size (e.g. 1024x1024). */
+        dalleSize?: GenerateImageOptions['size'];
+        /** DALL·E image quality (standard | hd). */
+        dalleQuality?: GenerateImageOptions['quality'];
+        /** DALL·E image style (vivid | natural). */
+        dalleStyle?: GenerateImageOptions['style'];
     };
 }
 
@@ -30,17 +40,23 @@ export interface BrandbookPipelineInput {
 }
 
 export interface BrandbookPipelineStep {
-    step: 'intake' | 'logoCheck' | 'generate' | 'qa' | 'followup';
+    step: 'intake' | 'logoCheck' | 'generate' | 'image' | 'qa' | 'followup';
     prompt: string;
     response?: string | undefined;
     error?: string | undefined;
     timestamp: Date;
 }
 
+export interface BrandbookPipelineImageResult {
+    b64Json: string;
+    revisedPrompt?: string;
+}
+
 export interface BrandbookPipelineResult {
     success: boolean;
     steps: BrandbookPipelineStep[];
     finalResponse?: string;
+    image?: BrandbookPipelineImageResult;
     error?: string;
 }
 
@@ -61,7 +77,7 @@ export class BrandbookAgentPipeline {
     private config: BrandbookPipelineConfig;
 
     constructor(apiKey: string, config: BrandbookPipelineConfig) {
-        this.client = new OpenAIClient(apiKey);
+        this.client = new OpenAIClient(apiKey, { model: config.parameters?.model ?? 'gpt-3.5-turbo' });
         this.config = config;
     }
 
@@ -131,6 +147,21 @@ export class BrandbookAgentPipeline {
         });
 
         return response;
+    }
+
+    /**
+     * Generate image based on the generated prompt (DALL·E)
+     */
+    async generateImage(prompt: string): Promise<BrandbookPipelineImageResult> {
+        const image = await this.client.generateImage(prompt, {
+            model: this.config.parameters.dalleModel ?? 'dall-e-3',
+            size: this.config.parameters.dalleSize ?? '1024x1024',
+            quality: this.config.parameters.dalleQuality ?? 'standard',
+            style: this.config.parameters.dalleStyle ?? 'vivid',
+            responseFormat: 'b64_json'
+        });
+
+        return image;
     }
 
     /**
@@ -263,6 +294,15 @@ export class BrandbookAgentPipeline {
                 timestamp: new Date()
             });
 
+            // Step 3.5: Generate image
+            const imageResult = await this.generateImage(generateResponse);
+            steps.push({
+                step: 'image',
+                prompt: 'Generate image',
+                response: imageResult.revisedPrompt || 'Image generated',
+                timestamp: new Date()
+            });
+
             // Step 4: QA
             const qaResult = await this.runQualityCheck(generateResponse);
             steps.push({
@@ -285,7 +325,8 @@ export class BrandbookAgentPipeline {
             return {
                 success: true,
                 steps,
-                finalResponse: generateResponse
+                finalResponse: generateResponse,
+                image: imageResult
             };
         } catch (error) {
             return {

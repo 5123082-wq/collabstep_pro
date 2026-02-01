@@ -34,6 +34,12 @@
 
 ### Now
 
+- ✅ **BRANDBOOK AGENT: отдельный API-ключ** (2026-02-01):
+  - Введена переменная `BRANDBOOK_AGENT_OPENAI_API_KEY` только для Brandbook Agent (не использовать `OPENAI_API_KEY`).
+  - Ключ читается в `apps/api/src/services/ai-brandbook-service.ts`; записывать в `apps/web/.env.local`.
+  - Обновлены `.env.example`, подсказка в `scripts/utils/reset-ai-agents.ts`.
+  - Отчёт: `docs/development/ai-brandbook-agent/BRANDBOOK_AGENT_AUDIT_REPORT.md`.
+
 - ✅ **ДОБАВЛЕНО СОБЫТИЕ АНАЛИТИКИ ДЛЯ РЕГИСТРАЦИИ** (2026-01-21):
   - Добавлен раздел "События Auth & Регистрация" в `docs/platform/analytics-events.md`
   - Событие `auth_account_type_selected` для отслеживания выбора типа аккаунта (personal/business)
@@ -328,6 +334,10 @@
 - **Документация**: `docs/runbooks/USER_DATA_RECOVERY.md`
 
 ## Last updated
+
+- 2026-02-01 — **PR #56 создан: Brandbook agent artifacts preview, separate API key** ✅
+  - Коммит bc99f4f: BRANDBOOK_AGENT_OPENAI_API_KEY, миграция 0021, API артефактов
+  - PR: https://github.com/5123082-wq/collabstep_pro/pull/56
 
 - 2026-01-12 — **PR #41 создан: исправление сохранения статуса задач при drag&drop** ✅
   - Метод `tasksRepository.update()` сделан async с await для `persistTaskToPg()`

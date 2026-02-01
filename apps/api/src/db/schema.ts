@@ -827,7 +827,12 @@ export const brandbookAgentArtifacts = pgTable(
         runId: text("run_id")
             .notNull()
             .references(() => brandbookAgentRuns.id, { onDelete: "cascade" }),
-        fileId: text("file_id").notNull(),
+        fileId: text("file_id"),
+        storageKey: text("storage_key"),
+        storageUrl: text("storage_url"),
+        filename: text("filename"),
+        mimeType: text("mime_type"),
+        sizeBytes: bigint("size_bytes", { mode: "number" }),
         kind: text("kind").notNull(),
         createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
     },

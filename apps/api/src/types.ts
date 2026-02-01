@@ -377,7 +377,12 @@ export type BrandbookAgentArtifactKind = 'preview' | 'final';
 export interface BrandbookAgentArtifactRecord {
   id: ID;
   runId: ID;
-  fileId: ID;
+  fileId?: ID;
+  storageKey?: string;
+  storageUrl?: string;
+  filename?: string;
+  mimeType?: string;
+  sizeBytes?: number;
   kind: BrandbookAgentArtifactKind;
   createdAt: string;
 }

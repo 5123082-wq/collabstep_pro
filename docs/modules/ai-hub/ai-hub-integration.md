@@ -252,7 +252,7 @@
     "metadata": {
       "pipelineType": "generative",
       "outputFormat": "png",
-      "previewFormat": "jpg"
+      "previewFormat": "png"
     }
   }
 }
@@ -347,7 +347,7 @@
   "metadata": {
     "pipelineType": "generative",
     "outputFormat": "png",
-    "previewFormat": "jpg"
+    "previewFormat": "png"
   }
 }
 ```
