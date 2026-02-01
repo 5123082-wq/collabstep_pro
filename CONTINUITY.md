@@ -335,6 +335,10 @@
 
 ## Last updated
 
+- 2026-02-01 — **PR #56 создан: Brandbook agent artifacts preview, separate API key** ✅
+  - Коммит bc99f4f: BRANDBOOK_AGENT_OPENAI_API_KEY, миграция 0021, API артефактов
+  - PR: https://github.com/5123082-wq/collabstep_pro/pull/56
+
 - 2026-01-12 — **PR #41 создан: исправление сохранения статуса задач при drag&drop** ✅
   - Метод `tasksRepository.update()` сделан async с await для `persistTaskToPg()`
   - Исправлена race condition в serverless окружении
