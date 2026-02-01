@@ -95,9 +95,13 @@ type BrandbookRunMessagePayload = {
 type BrandbookRunArtifactPayload = {
   id: string;
   runId: string;
-  fileId: string;
   kind: 'preview' | 'final';
   createdAt: string;
+  fileId?: string;
+  storageUrl?: string;
+  filename?: string;
+  mimeType?: string;
+  sizeBytes?: number;
 };
 
 type BrandbookRunApiResponse = {
@@ -196,6 +200,9 @@ export default function AiAgentsPage() {
   const [brandbookSubmitting, setBrandbookSubmitting] = useState(false);
   const [brandbookRunsLoading, setBrandbookRunsLoading] = useState(false);
   const [brandbookActiveLoading, setBrandbookActiveLoading] = useState(false);
+  const [brandbookArtifacts, setBrandbookArtifacts] = useState<BrandbookRunArtifactPayload[]>([]);
+  const [brandbookArtifactSaving, setBrandbookArtifactSaving] = useState<Record<string, boolean>>({});
+  const [brandbookChatSending, setBrandbookChatSending] = useState(false);
   const [brandbookUploadPending, setBrandbookUploadPending] = useState(false);
   const [isBrandbookAdvancedOpen, setBrandbookAdvancedOpen] = useState(false);
   const [isBrandbookChatOpen, setBrandbookChatOpen] = useState(false);
@@ -420,6 +427,62 @@ export default function AiAgentsPage() {
     }
   };
 
+  const sendBrandbookChatMessage = async (message: string, createdBy?: string) => {
+    if (!brandbookActiveRun) {
+      return;
+    }
+
+    const trimmed = message.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    appendBrandbookMessage('user', trimmed, {
+      persist: false,
+      ...(createdBy ? { createdBy } : {})
+    });
+
+    setBrandbookChatSending(true);
+    try {
+      const response = await fetch(`/api/ai/agents/brandbook/runs/${brandbookActiveRun.id}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: 'user', content: trimmed })
+      });
+
+      const responsePayload = (await response.json().catch(() => null)) as
+        | {
+            ok: boolean;
+            data?: {
+              messageId: string;
+              assistantMessage?: { id: string; content: string; createdAt: string };
+            };
+            error?: string;
+            details?: string;
+          }
+        | null;
+
+      if (!response.ok || !responsePayload?.ok) {
+        const errorMessage =
+          responsePayload?.error || responsePayload?.details || 'Не удалось отправить сообщение';
+        throw new Error(errorMessage);
+      }
+
+      const assistantMessage = responsePayload?.data?.assistantMessage;
+      if (assistantMessage?.content) {
+        appendBrandbookMessage('assistant', assistantMessage.content, {
+          persist: false,
+          createdAt: assistantMessage.createdAt
+        });
+      }
+    } catch (error) {
+      console.error('Error sending brandbook chat message:', error);
+      toast(error instanceof Error ? error.message : 'Не удалось отправить сообщение', 'warning');
+    } finally {
+      setBrandbookChatSending(false);
+    }
+  };
+
   const appendBrandbookMessage = (
     role: BrandbookChatRole,
     content: string,
@@ -458,7 +521,7 @@ export default function AiAgentsPage() {
         throw new Error('Пустой ответ от сервера');
       }
 
-      const { run, messages } = responsePayload.data;
+      const { run, messages, artifacts } = responsePayload.data;
       setBrandbookActiveRun(run);
       setBrandbookChatMessages(
         messages.map((message) =>
@@ -468,6 +531,8 @@ export default function AiAgentsPage() {
           })
         )
       );
+      setBrandbookArtifacts(artifacts ?? []);
+      setBrandbookArtifactSaving({});
       setBrandbookChatInput('');
       setBrandbookLogoLink('');
       setBrandbookUsePlaceholder(false);
@@ -514,6 +579,8 @@ export default function AiAgentsPage() {
       } else {
         setBrandbookActiveRun(null);
         setBrandbookChatMessages([]);
+        setBrandbookArtifacts([]);
+        setBrandbookArtifactSaving({});
       }
     } catch (error) {
       console.error('Error loading brandbook runs:', error);
@@ -625,9 +692,13 @@ export default function AiAgentsPage() {
     });
   };
 
-  const handleBrandbookChatSend = () => {
+  const handleBrandbookChatSend = async () => {
     if (!brandbookActiveRun) {
       toast('Сначала выберите запуск', 'warning');
+      return;
+    }
+
+    if (brandbookChatSending) {
       return;
     }
 
@@ -636,10 +707,6 @@ export default function AiAgentsPage() {
       return;
     }
 
-    appendBrandbookMessage('user', message, {
-      notifyOnError: true,
-      ...(currentUserId ? { createdBy: currentUserId } : {})
-    });
     setBrandbookChatInput('');
 
     const logoIdMatch = message.match(/logoFileId\s*[:=]\s*([^\s]+)/i);
@@ -650,35 +717,21 @@ export default function AiAgentsPage() {
       updateActiveRunInput({ logoFileId: logoId });
       setBrandbookLogoLink('');
       setBrandbookUsePlaceholder(false);
-      appendBrandbookMessage('assistant', 'Принял logoFileId. Если есть еще пожелания — напишите.');
-      return;
-    }
-
-    if (linkMatch) {
+    } else if (linkMatch) {
       setBrandbookLogoLink(linkMatch[0]);
       updateActiveRunInput({ logoFileId: '' });
       setBrandbookUsePlaceholder(false);
-      appendBrandbookMessage('assistant', 'Ссылку получил. Если нужен формат/размер — уточните.');
-      return;
-    }
-
-    if (!logoIdMatch && !linkMatch && message.length >= 12 && !/\s/.test(message)) {
+    } else if (!logoIdMatch && !linkMatch && message.length >= 12 && !/\s/.test(message)) {
       updateActiveRunInput({ logoFileId: message });
       setBrandbookLogoLink('');
       setBrandbookUsePlaceholder(false);
-      appendBrandbookMessage('assistant', 'Похоже, это ID файла. Зафиксировал logoFileId.');
-      return;
-    }
-
-    if (/без\s+логотипа|placeholder|mockup/i.test(message)) {
+    } else if (/без\s+логотипа|placeholder|mockup/i.test(message)) {
       setBrandbookUsePlaceholder(true);
       updateActiveRunInput({ logoFileId: '' });
       setBrandbookLogoLink('');
-      appendBrandbookMessage('assistant', 'Ок, сделаю демо-мокап с placeholder LOGO.');
-      return;
     }
 
-    appendBrandbookMessage('assistant', 'Спасибо, понял. Готов продолжать — можно прислать логотип или уточнения.');
+    await sendBrandbookChatMessage(message, currentUserId ?? undefined);
   };
 
   const handleBrandbookFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -764,11 +817,7 @@ export default function AiAgentsPage() {
       updateActiveRunInput({ logoFileId: fileId });
       setBrandbookLogoLink('');
       setBrandbookUsePlaceholder(false);
-      appendBrandbookMessage('user', `Загрузил логотип: ${file.name}`, {
-        notifyOnError: true,
-        ...(currentUserId ? { createdBy: currentUserId } : {})
-      });
-      appendBrandbookMessage('assistant', 'Принял logoFileId. Если есть еще пожелания — напишите.');
+      await sendBrandbookChatMessage(`Загрузил логотип: ${file.name}`, currentUserId ?? undefined);
     } catch (error) {
       console.error('Error uploading logo:', error);
       toast(error instanceof Error ? error.message : 'Не удалось загрузить файл', 'warning');
@@ -777,6 +826,51 @@ export default function AiAgentsPage() {
       if (brandbookFileInputRef.current) {
         brandbookFileInputRef.current.value = '';
       }
+    }
+  };
+
+  const handleBrandbookArtifactSave = async (artifact: BrandbookRunArtifactPayload) => {
+    if (!brandbookActiveRun || artifact.kind !== 'preview') {
+      return;
+    }
+
+    if (artifact.fileId) {
+      return;
+    }
+
+    setBrandbookArtifactSaving((prev) => ({ ...prev, [artifact.id]: true }));
+    try {
+      const response = await fetch(
+        `/api/ai/agents/brandbook/runs/${brandbookActiveRun.id}/artifacts/${artifact.id}/save`,
+        { method: 'POST' }
+      );
+      const responsePayload = (await response.json().catch(() => null)) as {
+        ok: boolean;
+        data?: { fileId: string; alreadySaved?: boolean };
+        error?: string;
+        details?: string;
+      } | null;
+
+      if (!response.ok || !responsePayload?.ok) {
+        const errorMessage =
+          responsePayload?.error || responsePayload?.details || 'Не удалось сохранить превью в файлы';
+        throw new Error(errorMessage);
+      }
+
+      const fileId = responsePayload.data?.fileId;
+      if (!fileId) {
+        throw new Error('Пустой ответ от сервера');
+      }
+
+      setBrandbookArtifacts((prev) =>
+        prev.map((item) => (item.id === artifact.id ? { ...item, fileId } : item))
+      );
+      toast('Превью сохранено в файлы', 'success');
+    } catch (error) {
+      console.error('Error saving brandbook preview:', error);
+      toast(error instanceof Error ? error.message : 'Не удалось сохранить превью', 'warning');
+    } finally {
+      setBrandbookArtifactSaving((prev) => ({ ...prev, [artifact.id]: false }));
     }
   };
 
@@ -801,14 +895,10 @@ export default function AiAgentsPage() {
     }
 
     if (action === 'placeholder') {
-      appendBrandbookMessage('user', 'Сгенерируй мокап без логотипа (placeholder LOGO).', {
-        notifyOnError: true,
-        ...(currentUserId ? { createdBy: currentUserId } : {})
-      });
       setBrandbookUsePlaceholder(true);
       updateActiveRunInput({ logoFileId: '' });
       setBrandbookLogoLink('');
-      appendBrandbookMessage('assistant', 'Принял. Запущу демо-мокап с placeholder.');
+      void sendBrandbookChatMessage('Сгенерируй мокап без логотипа (placeholder LOGO).', currentUserId ?? undefined);
       return;
     }
 
@@ -892,6 +982,7 @@ export default function AiAgentsPage() {
       : brandbookLogoLink
         ? 'Ссылка из Документов'
         : 'не указан';
+  const previewArtifacts = brandbookArtifacts.filter((artifact) => artifact.kind === 'preview');
   const canSubmitBrandbook = Boolean(brandbookForm.projectId || organizationId);
   const isBrandbookSubmitDisabled =
     brandbookSubmitting || !canSubmitBrandbook || (orgLoading && !brandbookForm.projectId);
@@ -1425,6 +1516,45 @@ export default function AiAgentsPage() {
                       </div>
 
                       <div className="space-y-4">
+                        {previewArtifacts.map((artifact) => {
+                          const isSaved = Boolean(artifact.fileId);
+                          const isSaving = Boolean(brandbookArtifactSaving[artifact.id]);
+                          return (
+                            <div key={`preview-${artifact.id}`} className="flex justify-start">
+                              <div className="max-w-[75%] rounded-2xl border border-neutral-800 bg-neutral-900/70 px-4 py-3 text-sm text-neutral-200">
+                                <div className="mb-2 text-[10px] uppercase tracking-wide text-neutral-400">
+                                  Превью
+                                </div>
+                                {artifact.storageUrl ? (
+                                  <img
+                                    src={artifact.storageUrl}
+                                    alt={artifact.filename || 'Brandbook preview'}
+                                    className="w-full max-w-[360px] rounded-xl border border-neutral-800"
+                                  />
+                                ) : (
+                                  <div className="text-xs text-neutral-500">Превью готовится...</div>
+                                )}
+                                <div className="mt-3 flex items-center justify-between gap-2">
+                                  <div className="text-[11px] text-neutral-500">
+                                    {artifact.filename || 'preview.png'}
+                                  </div>
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => void handleBrandbookArtifactSave(artifact)}
+                                    disabled={!artifact.storageUrl || isSaving || isSaved}
+                                  >
+                                    {isSaving
+                                      ? 'Сохраняю...'
+                                      : isSaved
+                                        ? '✓ В файлах'
+                                        : '+ Сохранить'}
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                         {brandbookChatMessages.length === 0 ? (
                           <div className="text-sm text-neutral-500">Сообщений пока нет.</div>
                         ) : (
@@ -1510,7 +1640,7 @@ export default function AiAgentsPage() {
                       value={brandbookChatInput}
                       onChange={(event) => setBrandbookChatInput(event.target.value)}
                       rows={2}
-                      disabled={!isBrandbookChatReady || brandbookActiveLoading}
+                      disabled={!isBrandbookChatReady || brandbookActiveLoading || brandbookChatSending}
                       className="min-h-[56px] flex-1 resize-none bg-neutral-900/60 border-neutral-800"
                       placeholder={
                         isBrandbookChatReady
@@ -1520,15 +1650,15 @@ export default function AiAgentsPage() {
                       onKeyDown={(event) => {
                         if (event.key === 'Enter' && !event.shiftKey) {
                           event.preventDefault();
-                          handleBrandbookChatSend();
+                          void handleBrandbookChatSend();
                         }
                       }}
                     />
 
                     <Button
                       variant="primary"
-                      onClick={handleBrandbookChatSend}
-                      disabled={!isBrandbookChatReady || brandbookActiveLoading}
+                      onClick={() => void handleBrandbookChatSend()}
+                      disabled={!isBrandbookChatReady || brandbookActiveLoading || brandbookChatSending}
                     >
                       Отправить
                     </Button>

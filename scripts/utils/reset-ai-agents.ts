@@ -78,7 +78,7 @@ async function resetAgents() {
   });
 
   console.log('\n✨ Готово! AI-агенты успешно обновлены.');
-  console.log('\n💡 Убедитесь, что в .env.local установлен OPENAI_API_KEY');
+  console.log('\n💡 Для Brandbook Agent установите в apps/web/.env.local: BRANDBOOK_AGENT_OPENAI_API_KEY=sk-...');
 }
 
 // Запускаем скрипт

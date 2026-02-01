@@ -34,6 +34,12 @@
 
 ### Now
 
+- ✅ **BRANDBOOK AGENT: отдельный API-ключ** (2026-02-01):
+  - Введена переменная `BRANDBOOK_AGENT_OPENAI_API_KEY` только для Brandbook Agent (не использовать `OPENAI_API_KEY`).
+  - Ключ читается в `apps/api/src/services/ai-brandbook-service.ts`; записывать в `apps/web/.env.local`.
+  - Обновлены `.env.example`, подсказка в `scripts/utils/reset-ai-agents.ts`.
+  - Отчёт: `docs/development/ai-brandbook-agent/BRANDBOOK_AGENT_AUDIT_REPORT.md`.
+
 - ✅ **ДОБАВЛЕНО СОБЫТИЕ АНАЛИТИКИ ДЛЯ РЕГИСТРАЦИИ** (2026-01-21):
   - Добавлен раздел "События Auth & Регистрация" в `docs/platform/analytics-events.md`
   - Событие `auth_account_type_selected` для отслеживания выбора типа аккаунта (personal/business)
