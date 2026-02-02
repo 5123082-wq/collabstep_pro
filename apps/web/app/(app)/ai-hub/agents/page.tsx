@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { put } from '@vercel/blob/client';
 import { Button } from '@/components/ui/button';
 import {
@@ -213,7 +213,8 @@ export default function AiAgentsPage() {
   const [isBrandbookActionsOpen, setBrandbookActionsOpen] = useState(false);
   const brandbookChatInputRef = useRef<HTMLTextAreaElement | null>(null);
   const brandbookFileInputRef = useRef<HTMLInputElement | null>(null);
-  
+  const chatContainerRef = useRef<HTMLDivElement | null>(null);
+
   // Tab state
   const [activeTab, setActiveTab] = useState<'all' | AIAgentScope>('all');
 
@@ -238,6 +239,31 @@ export default function AiAgentsPage() {
     // Проверить, является ли пользователь админом
     void checkAdminStatus();
   }, []);
+
+  // Авто-прокрутка чата к новым сообщениям
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [brandbookChatMessages, brandbookArtifacts]);
+
+  // Polling для обновления данных при processing/queued статусе
+  useEffect(() => {
+    if (!brandbookActiveRun) return;
+
+    const shouldPoll =
+      brandbookActiveRun.status === 'processing' ||
+      brandbookActiveRun.status === 'queued' ||
+      brandbookActiveRun.status === 'postprocessing';
+    if (!shouldPoll) return;
+
+    const pollInterval = setInterval(() => {
+      void loadBrandbookRun(brandbookActiveRun.id);
+    }, 3000); // Poll каждые 3 секунды
+
+    return () => clearInterval(pollInterval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brandbookActiveRun?.id, brandbookActiveRun?.status]);
 
   const checkAdminStatus = async () => {
     try {
@@ -395,8 +421,8 @@ export default function AiAgentsPage() {
     id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
     role,
     content,
-    ...(options?.createdBy ? { createdBy: options.createdBy } : {}),
-    ...(options?.createdAt ? { createdAt: options.createdAt } : {})
+    createdAt: options?.createdAt ?? new Date().toISOString(),
+    ...(options?.createdBy ? { createdBy: options.createdBy } : {})
   });
 
   const persistBrandbookMessage = async (
@@ -452,14 +478,14 @@ export default function AiAgentsPage() {
 
       const responsePayload = (await response.json().catch(() => null)) as
         | {
-            ok: boolean;
-            data?: {
-              messageId: string;
-              assistantMessage?: { id: string; content: string; createdAt: string };
-            };
-            error?: string;
-            details?: string;
-          }
+          ok: boolean;
+          data?: {
+            messageId: string;
+            assistantMessage?: { id: string; content: string; createdAt: string };
+          };
+          error?: string;
+          details?: string;
+        }
         | null;
 
       if (!response.ok || !responsePayload?.ok) {
@@ -983,14 +1009,36 @@ export default function AiAgentsPage() {
         ? 'Ссылка из Документов'
         : 'не указан';
   const previewArtifacts = brandbookArtifacts.filter((artifact) => artifact.kind === 'preview');
+
+  // Объединяем сообщения и артефакты в единую хронологию
+  const chatItems = useMemo(() => {
+    const items: Array<
+      | { type: 'message'; data: BrandbookChatMessage; sortTime: number }
+      | { type: 'artifact'; data: BrandbookRunArtifactPayload; sortTime: number }
+    > = [];
+
+    brandbookChatMessages.forEach(msg => {
+      const sortTime = msg.createdAt ? new Date(msg.createdAt).getTime() : Date.now();
+      items.push({ type: 'message', data: msg, sortTime });
+    });
+
+    previewArtifacts.forEach(artifact => {
+      const sortTime = artifact.createdAt ? new Date(artifact.createdAt).getTime() : Date.now();
+      items.push({ type: 'artifact', data: artifact, sortTime });
+    });
+
+    // Сортируем по времени создания
+    return items.sort((a, b) => a.sortTime - b.sortTime);
+  }, [brandbookChatMessages, previewArtifacts]);
+
   const canSubmitBrandbook = Boolean(brandbookForm.projectId || organizationId);
   const isBrandbookSubmitDisabled =
     brandbookSubmitting || !canSubmitBrandbook || (orgLoading && !brandbookForm.projectId);
   const isBrandbookChatReady = Boolean(brandbookActiveRun);
   const canUploadFile = Boolean(
     brandbookActiveRun &&
-      currentUserId &&
-      (organizationId || brandbookActiveRun.input.projectId)
+    currentUserId &&
+    (organizationId || brandbookActiveRun.input.projectId)
   );
 
   return (
@@ -1010,11 +1058,10 @@ export default function AiAgentsPage() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
-              activeTab === tab.id
-                ? 'border-indigo-500 text-indigo-400'
-                : 'border-transparent text-neutral-400 hover:text-neutral-200'
-            }`}
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${activeTab === tab.id
+              ? 'border-indigo-500 text-indigo-400'
+              : 'border-transparent text-neutral-400 hover:text-neutral-200'
+              }`}
           >
             {tab.label}
           </button>
@@ -1078,8 +1125,8 @@ export default function AiAgentsPage() {
           )}
           {filteredAgents.length === 0 && !showBrandbookCard ? (
             <div className="col-span-full rounded-xl border border-neutral-800 bg-neutral-950/40 p-6 text-center text-sm text-neutral-400">
-              {activeTab === 'all' 
-                ? 'Нет доступных AI-агентов' 
+              {activeTab === 'all'
+                ? 'Нет доступных AI-агентов'
                 : 'В этой категории пока нет агентов'}
             </div>
           ) : (
@@ -1104,19 +1151,19 @@ export default function AiAgentsPage() {
                         </span>
                         {/* Scope badge */}
                         {agent.scope === 'personal' && (
-                           <span className="text-[10px] text-neutral-500 border border-neutral-800 rounded px-1.5 py-0.5">Личный</span>
+                          <span className="text-[10px] text-neutral-500 border border-neutral-800 rounded px-1.5 py-0.5">Личный</span>
                         )}
                         {agent.scope === 'team' && (
-                           <span className="text-[10px] text-blue-400 border border-blue-900/30 bg-blue-500/10 rounded px-1.5 py-0.5">Команда</span>
+                          <span className="text-[10px] text-blue-400 border border-blue-900/30 bg-blue-500/10 rounded px-1.5 py-0.5">Команда</span>
                         )}
-                         {(agent.scope === 'public' || agent.isGlobal) && (
-                           <span className="text-[10px] text-emerald-400 border border-emerald-900/30 bg-emerald-500/10 rounded px-1.5 py-0.5">Общий</span>
+                        {(agent.scope === 'public' || agent.isGlobal) && (
+                          <span className="text-[10px] text-emerald-400 border border-emerald-900/30 bg-emerald-500/10 rounded px-1.5 py-0.5">Общий</span>
                         )}
                       </div>
                     </div>
-                    
+
                     <h3 className="text-lg font-semibold text-neutral-50 mb-1">{agent.name}</h3>
-                    
+
                     <p className="text-xs uppercase tracking-wide text-indigo-300">
                       {AGENT_TYPE_LABELS[agent.agentType]}
                     </p>
@@ -1249,11 +1296,10 @@ export default function AiAgentsPage() {
                             onClick={() =>
                               setBrandbookForm((prev) => ({ ...prev, productBundle: bundle }))
                             }
-                            className={`rounded-lg border px-3 py-2 text-xs font-medium transition ${
-                              brandbookForm.productBundle === bundle
-                                ? 'border-indigo-500/60 bg-indigo-500/15 text-indigo-200'
-                                : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:border-neutral-700'
-                            }`}
+                            className={`rounded-lg border px-3 py-2 text-xs font-medium transition ${brandbookForm.productBundle === bundle
+                              ? 'border-indigo-500/60 bg-indigo-500/15 text-indigo-200'
+                              : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:border-neutral-700'
+                              }`}
                           >
                             {bundle}
                           </button>
@@ -1435,11 +1481,10 @@ export default function AiAgentsPage() {
                             key={run.id}
                             type="button"
                             onClick={() => void loadBrandbookRun(run.id)}
-                            className={`w-full rounded-xl border px-3 py-2 text-left text-xs transition ${
-                              isActive
-                                ? 'border-indigo-500/50 bg-indigo-500/10 text-indigo-100'
-                                : 'border-neutral-800 bg-neutral-900/40 text-neutral-300 hover:border-neutral-700'
-                            }`}
+                            className={`w-full rounded-xl border px-3 py-2 text-left text-xs transition ${isActive
+                              ? 'border-indigo-500/50 bg-indigo-500/10 text-indigo-100'
+                              : 'border-neutral-800 bg-neutral-900/40 text-neutral-300 hover:border-neutral-700'
+                              }`}
                           >
                             <div className="flex items-center justify-between gap-2">
                               <div className="text-[11px] uppercase tracking-wide text-neutral-500">
@@ -1483,7 +1528,7 @@ export default function AiAgentsPage() {
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-6 py-6">
+                <div ref={chatContainerRef} className="flex-1 overflow-y-auto px-6 py-6">
                   {brandbookActiveLoading ? (
                     <div className="text-sm text-neutral-500">Загрузка запуска...</div>
                   ) : !brandbookActiveRun ? (
@@ -1516,87 +1561,98 @@ export default function AiAgentsPage() {
                       </div>
 
                       <div className="space-y-4">
-                        {previewArtifacts.map((artifact) => {
-                          const isSaved = Boolean(artifact.fileId);
-                          const isSaving = Boolean(brandbookArtifactSaving[artifact.id]);
-                          return (
-                            <div key={`preview-${artifact.id}`} className="flex justify-start">
-                              <div className="max-w-[75%] rounded-2xl border border-neutral-800 bg-neutral-900/70 px-4 py-3 text-sm text-neutral-200">
-                                <div className="mb-2 text-[10px] uppercase tracking-wide text-neutral-400">
-                                  Превью
-                                </div>
-                                {artifact.storageUrl ? (
-                                  <img
-                                    src={artifact.storageUrl}
-                                    alt={artifact.filename || 'Brandbook preview'}
-                                    className="w-full max-w-[360px] rounded-xl border border-neutral-800"
-                                  />
-                                ) : (
-                                  <div className="text-xs text-neutral-500">Превью готовится...</div>
-                                )}
-                                <div className="mt-3 flex items-center justify-between gap-2">
-                                  <div className="text-[11px] text-neutral-500">
-                                    {artifact.filename || 'preview.png'}
-                                  </div>
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={() => void handleBrandbookArtifactSave(artifact)}
-                                    disabled={!artifact.storageUrl || isSaving || isSaved}
-                                  >
-                                    {isSaving
-                                      ? 'Сохраняю...'
-                                      : isSaved
-                                        ? '✓ В файлах'
-                                        : '+ Сохранить'}
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                        {brandbookChatMessages.length === 0 ? (
+                        {chatItems.length === 0 ? (
                           <div className="text-sm text-neutral-500">Сообщений пока нет.</div>
                         ) : (
-                          brandbookChatMessages.map((message) => {
-                            const isUser = message.role === 'user';
-                            const isSystem = message.role === 'system';
-                            const authorLabel = isUser
-                              ? message.createdBy && currentUserId && message.createdBy === currentUserId
-                                ? 'Вы'
-                                : message.createdBy
-                                  ? `Участник ${formatShortUserId(message.createdBy)}`
-                                  : 'Участник'
-                              : '';
-                            return (
-                              <div
-                                key={message.id}
-                                className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
-                              >
+                          chatItems.map((item) => {
+                            if (item.type === 'artifact') {
+                              const artifact = item.data;
+                              const isSaved = Boolean(artifact.fileId);
+                              const isSaving = Boolean(brandbookArtifactSaving[artifact.id]);
+                              return (
+                                <div key={`preview-${artifact.id}`} className="flex justify-start">
+                                  <div className="max-w-[75%] rounded-2xl border border-neutral-800 bg-neutral-900/70 px-4 py-3 text-sm text-neutral-200">
+                                    <div className="mb-2 text-[10px] uppercase tracking-wide text-neutral-400">
+                                      Превью
+                                    </div>
+                                    {artifact.storageUrl ? (
+                                      <img
+                                        src={artifact.storageUrl}
+                                        alt={artifact.filename || 'Brandbook preview'}
+                                        className="w-full max-w-[360px] rounded-xl border border-neutral-800"
+                                      />
+                                    ) : (
+                                      <div className="text-xs text-neutral-500">Превью готовится...</div>
+                                    )}
+                                    <div className="mt-3 flex items-center justify-between gap-2">
+                                      <div className="text-[11px] text-neutral-500">
+                                        {artifact.filename || 'preview.png'}
+                                      </div>
+                                      <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={() => void handleBrandbookArtifactSave(artifact)}
+                                        disabled={!artifact.storageUrl || isSaving || isSaved}
+                                      >
+                                        {isSaving
+                                          ? 'Сохраняю...'
+                                          : isSaved
+                                            ? '✓ В файлах'
+                                            : '+ Сохранить'}
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            } else {
+                              const message = item.data;
+                              const isUser = message.role === 'user';
+                              const isSystem = message.role === 'system';
+                              const authorLabel = isUser
+                                ? message.createdBy && currentUserId && message.createdBy === currentUserId
+                                  ? 'Вы'
+                                  : message.createdBy
+                                    ? `Участник ${formatShortUserId(message.createdBy)}`
+                                    : 'Участник'
+                                : '';
+                              return (
                                 <div
-                                  className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm ${
-                                    isUser
+                                  key={message.id}
+                                  className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
+                                >
+                                  <div
+                                    className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm ${isUser
                                       ? 'bg-indigo-500/20 text-indigo-100'
                                       : isSystem
                                         ? 'bg-neutral-900/40 text-neutral-300'
                                         : 'bg-neutral-900/70 text-neutral-200'
-                                  }`}
-                                >
-                                  {authorLabel && (
-                                    <div
-                                      className={`mb-1 text-[10px] text-neutral-400 ${
-                                        isUser ? 'text-right text-indigo-200/70' : ''
                                       }`}
-                                    >
-                                      {authorLabel}
-                                    </div>
-                                  )}
-                                  <div className="whitespace-pre-wrap">{message.content}</div>
+                                  >
+                                    {authorLabel && (
+                                      <div
+                                        className={`mb-1 text-[10px] text-neutral-400 ${isUser ? 'text-right text-indigo-200/70' : ''
+                                          }`}
+                                      >
+                                        {authorLabel}
+                                      </div>
+                                    )}
+                                    <div className="whitespace-pre-wrap">{message.content}</div>
+                                  </div>
                                 </div>
-                              </div>
-                            );
+                              );
+                            }
                           })
                         )}
+
+                        {/* Индикатор генерации изображения */}
+                        {(brandbookActiveRun.status === 'processing' ||
+                          brandbookActiveRun.status === 'queued' ||
+                          brandbookActiveRun.status === 'postprocessing') && (
+                            <div className="flex items-center gap-2 rounded-2xl border border-neutral-800 bg-neutral-900/50 px-4 py-3 text-sm text-neutral-400">
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-neutral-600 border-t-indigo-500" />
+                              <span>Генерация изображения...</span>
+                            </div>
+                          )}
                       </div>
                     </div>
                   )}
@@ -1699,15 +1755,15 @@ export default function AiAgentsPage() {
                   <h4 className="mb-3 text-sm font-semibold text-neutral-200">Описание</h4>
                   <p className="text-sm text-neutral-400">{AGENT_TYPE_DESCRIPTIONS[viewingAgent.agentType]}</p>
                 </div>
-                
+
                 {/* Scope info */}
                 <div>
                   <h4 className="mb-3 text-sm font-semibold text-neutral-200">Доступ</h4>
                   <div className="text-sm text-neutral-400">
-                     {viewingAgent.scope === 'personal' && 'Личный агент (видите только вы)'}
-                     {viewingAgent.scope === 'team' && 'Доступен команде'}
-                     {(viewingAgent.scope === 'public' || viewingAgent.isGlobal) && 'Общедоступный агент'}
-                     {!viewingAgent.scope && !viewingAgent.isGlobal && 'Общедоступный (legacy)'}
+                    {viewingAgent.scope === 'personal' && 'Личный агент (видите только вы)'}
+                    {viewingAgent.scope === 'team' && 'Доступен команде'}
+                    {(viewingAgent.scope === 'public' || viewingAgent.isGlobal) && 'Общедоступный агент'}
+                    {!viewingAgent.scope && !viewingAgent.isGlobal && 'Общедоступный (legacy)'}
                   </div>
                 </div>
 

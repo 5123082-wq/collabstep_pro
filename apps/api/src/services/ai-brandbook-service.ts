@@ -1,6 +1,5 @@
 import { Buffer } from 'node:buffer';
 import { put } from '@vercel/blob';
-import { and, eq, isNull } from 'drizzle-orm';
 import type {
   BrandbookAgentRunInput,
   BrandbookAgentRunMetadata
@@ -11,9 +10,6 @@ import {
 } from '../repositories/ai-agent-configs-repository';
 import { brandbookAgentArtifactsRepository } from '../repositories/brandbook-agent-artifacts-repository';
 import { brandbookAgentRunsRepository } from '../repositories/brandbook-agent-runs-repository';
-import { organizationStorageUsageRepository } from '../repositories/organization-storage-usage-repository';
-import { db } from '../db/config';
-import { files, folders } from '../db/schema';
 import { BrandbookAgentPipeline, type BrandbookPipelineConfig } from './ai/brandbook-pipeline';
 
 export interface BrandbookAgentRunCreateResult {
@@ -32,9 +28,6 @@ const DEFAULT_RUN_METADATA: BrandbookAgentRunMetadata = {
   previewFormat: 'png'
 };
 
-const BRANDBOOK_ROOT_FOLDER = 'AI Generations';
-const BRANDBOOK_CHILD_FOLDER = 'Brandbook';
-
 function sanitizeFilename(value: string): string {
   return value.replace(/[^a-zA-Z0-9._-]/g, '_');
 }
@@ -45,56 +38,6 @@ function resolveImageMimeType(extension: string): string {
     return 'image/jpeg';
   }
   return 'image/png';
-}
-
-async function ensureOrganizationFolder(params: {
-  organizationId: string;
-  name: string;
-  parentId?: string | null;
-  createdBy: string;
-}): Promise<{ id: string }> {
-  const conditions = [
-    eq(folders.organizationId, params.organizationId),
-    eq(folders.name, params.name),
-    eq(folders.type, 'custom')
-  ];
-
-  if (params.parentId) {
-    conditions.push(eq(folders.parentId, params.parentId));
-  } else {
-    conditions.push(isNull(folders.parentId));
-  }
-
-  conditions.push(isNull(folders.projectId));
-
-  const [existing] = await db
-    .select()
-    .from(folders)
-    .where(and(...conditions))
-    .limit(1);
-
-  if (existing) {
-    return existing;
-  }
-
-  const [created] = await db
-    .insert(folders)
-    .values({
-      organizationId: params.organizationId,
-      projectId: null,
-      taskId: null,
-      parentId: params.parentId ?? null,
-      name: params.name,
-      type: 'custom',
-      createdBy: params.createdBy
-    })
-    .returning();
-
-  if (!created) {
-    throw new Error('Failed to create organization folder');
-  }
-
-  return created;
 }
 
 export class BrandbookAgentServiceImpl implements BrandbookAgentService {
@@ -151,13 +94,13 @@ export class BrandbookAgentServiceImpl implements BrandbookAgentService {
 
     const configuredParameters = (config.parameters as BrandbookPipelineConfig['parameters']) || {};
     const dalleSizeEnv = process.env.BRANDBOOK_AGENT_DALLE_SIZE;
+    const dallePreviewSizeEnv = process.env.BRANDBOOK_AGENT_DALLE_PREVIEW_SIZE;
+    // DALL-E 3 поддерживает: 1024x1024, 1792x1024, 1024x1792
+    // DALL-E 2 поддерживает: 256x256, 512x512, 1024x1024
+    // Для совместимости с DALL-E 3 используем только его размеры
     const allowedDalleSizes = new Set([
       'auto',
       '1024x1024',
-      '1536x1024',
-      '1024x1536',
-      '256x256',
-      '512x512',
       '1792x1024',
       '1024x1792'
     ]);
@@ -169,6 +112,10 @@ export class BrandbookAgentServiceImpl implements BrandbookAgentService {
       dalleSizeEnv && allowedDalleSizes.has(dalleSizeEnv)
         ? (dalleSizeEnv as BrandbookPipelineConfig['parameters']['dalleSize'])
         : configuredParameters.dalleSize;
+    const dallePreviewSize =
+      dallePreviewSizeEnv && allowedDalleSizes.has(dallePreviewSizeEnv)
+        ? (dallePreviewSizeEnv as BrandbookPipelineConfig['parameters']['dallePreviewSize'])
+        : configuredParameters.dallePreviewSize ?? '1024x1024'; // DALL-E 3 не поддерживает 512x512
     const dalleQuality =
       dalleQualityEnv === 'hd' || dalleQualityEnv === 'standard'
         ? dalleQualityEnv
@@ -188,6 +135,7 @@ export class BrandbookAgentServiceImpl implements BrandbookAgentService {
           ? { dalleModel: process.env.BRANDBOOK_AGENT_DALLE_MODEL || configuredParameters.dalleModel }
           : {}),
         ...(dalleSize !== undefined ? { dalleSize } : {}),
+        ...(dallePreviewSize ? { dallePreviewSize } : {}),
         ...(dalleQuality ? { dalleQuality } : {}),
         ...(dalleStyle ? { dalleStyle } : {})
       }
@@ -201,8 +149,7 @@ export class BrandbookAgentServiceImpl implements BrandbookAgentService {
     // However, it's better to update status to "processing" first.
 
     void this.executePipelineAsync(runRecord.id, pipeline, runInput, {
-      organizationId: runRecord.organizationId,
-      createdBy: runRecord.createdBy
+      organizationId: runRecord.organizationId
     });
 
     return {
@@ -220,7 +167,7 @@ export class BrandbookAgentServiceImpl implements BrandbookAgentService {
     runId: string,
     pipeline: BrandbookAgentPipeline,
     input: BrandbookAgentRunInput,
-    context: { organizationId: string; createdBy: string }
+    context: { organizationId: string }
   ) {
     try {
       await brandbookAgentRunsRepository.update(runId, { status: 'processing' });
@@ -251,84 +198,26 @@ export class BrandbookAgentServiceImpl implements BrandbookAgentService {
         const imageBuffer = Buffer.from(result.image.b64Json, 'base64');
         const sizeBytes = imageBuffer.length;
         const dateSegment = new Date().toISOString().slice(0, 10);
-        const outputFormat = 'png';
         const previewFormat = 'png';
-        const outputMimeType = resolveImageMimeType(outputFormat);
         const previewMimeType = resolveImageMimeType(previewFormat);
         const baseName = `brandbook-${runId}`;
-
-        const finalFilename = sanitizeFilename(`${baseName}-final.${outputFormat}`);
-        const finalStorageKey = `organizations/${context.organizationId}/ai-generations/brandbook/${dateSegment}/${finalFilename}`;
-        const finalBlob = await put(finalStorageKey, imageBuffer, {
+        const previewFilename = sanitizeFilename(`${baseName}-preview.${previewFormat}`);
+        const previewStorageKey = `organizations/${context.organizationId}/ai-generations/brandbook/previews/${dateSegment}/${previewFilename}`;
+        const previewBlob = await put(previewStorageKey, imageBuffer, {
           access: 'public',
-          contentType: outputMimeType,
+          contentType: previewMimeType,
           token: blobToken
         });
 
-        const rootFolder = await ensureOrganizationFolder({
-          organizationId: context.organizationId,
-          name: BRANDBOOK_ROOT_FOLDER,
-          createdBy: context.createdBy
-        });
-
-        const brandbookFolder = await ensureOrganizationFolder({
-          organizationId: context.organizationId,
-          name: BRANDBOOK_CHILD_FOLDER,
-          parentId: rootFolder.id,
-          createdBy: context.createdBy
-        });
-
-        const [createdFile] = await db
-          .insert(files)
-          .values({
-            organizationId: context.organizationId,
-            projectId: null,
-            uploadedBy: context.createdBy,
-            filename: finalFilename,
-            mimeType: outputMimeType,
-            sizeBytes,
-            storageKey: finalBlob.pathname,
-            storageUrl: finalBlob.url,
-            sha256: null,
-            description: null,
-            folderId: brandbookFolder.id,
-            taskId: null
-          })
-          .returning();
-
-        if (!createdFile) {
-          throw new Error('Failed to create brandbook file record');
-        }
-
         await brandbookAgentArtifactsRepository.create({
           runId,
-          fileId: createdFile.id,
-          kind: 'final'
+          kind: 'preview',
+          storageKey: previewBlob.pathname,
+          storageUrl: previewBlob.url,
+          filename: previewFilename,
+          mimeType: previewMimeType,
+          sizeBytes
         });
-
-        await organizationStorageUsageRepository.increment(context.organizationId, sizeBytes);
-
-        try {
-          const previewFilename = sanitizeFilename(`${baseName}-preview.${previewFormat}`);
-          const previewStorageKey = `organizations/${context.organizationId}/ai-generations/brandbook/previews/${dateSegment}/${previewFilename}`;
-          const previewBlob = await put(previewStorageKey, imageBuffer, {
-            access: 'public',
-            contentType: previewMimeType,
-            token: blobToken
-          });
-
-          await brandbookAgentArtifactsRepository.create({
-            runId,
-            kind: 'preview',
-            storageKey: previewBlob.pathname,
-            storageUrl: previewBlob.url,
-            filename: previewFilename,
-            mimeType: previewMimeType,
-            sizeBytes
-          });
-        } catch (previewError) {
-          console.error(`Failed to store preview for run ${runId}:`, previewError);
-        }
 
         await brandbookAgentRunsRepository.update(runId, { status: 'done' });
       } else {
