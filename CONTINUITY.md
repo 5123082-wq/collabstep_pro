@@ -419,6 +419,14 @@
   - Интегрирован в `AppTopbar.tsx`
   - Линтер и typecheck пройдены
 
+- 2026-02-03 — **FIX: Lucide React versions and types** ✅
+  - Откат `lucide-react` до стабильной версии `0.469.0` для решения проблем при деплое.
+  - Удален ограничивающий файл `apps/web/types/lucide-react.d.ts` (использовались нативные типы).
+  - Оптимизирован импорт в `customRailIcons.ts` (tree-shaking friendly).
+  - Исправлены ошибки TypeScript `exactOptionalPropertyTypes` в шаблонах проектов (использование `LucideIcon` типа).
+  - Удалены все `@ts-expect-error` связанные с иконками.
+  - Пройден полный `pnpm typecheck`.
+
 - 2026-02-03 — **PR #58 создан: AI agent identity, AI Hub, subscriptions, brandbook limits** ✅
   - Коммит c1bed2c: AI identity (0023), AI Hub (0025), subscriptions (0024), prompt blocks (0022), limits, fix results/route type
   - PR: https://github.com/5123082-wq/collabstep_pro/pull/58

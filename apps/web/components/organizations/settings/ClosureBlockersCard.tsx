@@ -1,6 +1,5 @@
 'use client';
 
-// @ts-expect-error lucide-react icon types
 import { AlertCircle, AlertTriangle, Info } from 'lucide-react';
 import Link from 'next/link';
 

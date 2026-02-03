@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-// @ts-expect-error lucide-react icon types
 import { RefreshCw, Save, Plus, Trash2, CheckCircle, FileText, AlertCircle } from 'lucide-react';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 

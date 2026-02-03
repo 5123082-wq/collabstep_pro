@@ -20,7 +20,6 @@ import {
   ArrowLeft,
   Calendar,
 } from 'lucide-react';
-// @ts-expect-error lucide-react icon types - these icons exist but types are incomplete
 import { Archive, Folder, Download, HardDrive } from 'lucide-react';
 
 export default function ArchiveDetailsPage() {

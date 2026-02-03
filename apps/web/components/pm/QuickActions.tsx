@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-// @ts-expect-error lucide-react icon types
 import { Archive, DollarSign, Plus, Store, UserPlus, LayoutTemplate } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type Project } from '@/types/pm';

@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { ContentBlock } from '@/components/ui/content-block';
-// @ts-expect-error lucide-react icon types
 import { Sparkles, RefreshCw, CheckCircle, AlertCircle, Clock, Database, Loader2 } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import { flags } from '@/lib/flags';

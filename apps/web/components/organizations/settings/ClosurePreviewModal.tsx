@@ -5,7 +5,6 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalTitle } 
 import { Button } from '@/components/ui/button';
 import { ClosureBlockersCard } from './ClosureBlockersCard';
 import { ClosureConfirmDialog } from './ClosureConfirmDialog';
-// @ts-expect-error lucide-react icon types
 import { Loader2, CheckCircle, AlertCircle, FileText } from 'lucide-react';
 
 type ClosureBlocker = {

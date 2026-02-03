@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-// @ts-expect-error lucide-react icon types
-import { Check, FileText, Globe, Megaphone, Palette, Sparkles } from 'lucide-react';
+import { Check, FileText, Globe, Megaphone, Palette, Sparkles, type LucideIcon } from 'lucide-react';
 import {
   Modal,
   ModalBody,
@@ -36,7 +35,7 @@ type ProjectTemplateSelectorModalProps = {
   onSelect: (template: ProjectTemplate | null) => void;
 };
 
-const KIND_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+const KIND_ICONS: Record<string, LucideIcon> = {
   product: FileText,
   brand: Palette,
   landing: Globe,
@@ -174,7 +173,7 @@ export default function ProjectTemplateSelectorModal({
     onOpenChange(false);
   };
 
-  const getKindIcon = (kind: string | undefined): React.ComponentType<{ className?: string }> => {
+  const getKindIcon = (kind: string | undefined): LucideIcon => {
     return KIND_ICONS[kind || ''] ?? KIND_ICONS.default!;
   };
 

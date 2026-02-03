@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-// @ts-expect-error lucide-react icon types
-import { Plus, Edit, Trash2, RefreshCw, FileText, Palette, Globe, Megaphone, Sparkles } from 'lucide-react';
+import { Plus, Edit, Trash2, RefreshCw, FileText, Palette, Globe, Megaphone, Sparkles, type LucideIcon } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import clsx from 'clsx';
 import { ContentBlock } from '@/components/ui/content-block';
@@ -38,7 +37,7 @@ type TemplateFormData = {
   projectVisibility?: string;
 };
 
-const KIND_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+const KIND_ICONS: Record<string, LucideIcon> = {
   product: FileText,
   brand: Palette,
   landing: Globe,
@@ -76,7 +75,7 @@ const KIND_OPTIONS = [
   { value: 'internal', label: 'Внутренний' }
 ];
 
-function getKindIcon(kind: string | undefined): React.ComponentType<{ className?: string }> {
+function getKindIcon(kind: string | undefined): LucideIcon {
   return KIND_ICONS[kind || ''] ?? KIND_ICONS.default!;
 }
 

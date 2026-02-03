@@ -16,7 +16,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useDebouncedValue } from '@/lib/ui/useDebouncedValue';
-// @ts-expect-error lucide-react icon types
 import { Mail, Link2, Copy, Check, Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 

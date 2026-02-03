@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
-// @ts-expect-error lucide-react icon types
 import { Sparkles, X, Send, Loader2, ExternalLink } from 'lucide-react';
 import clsx from 'clsx';
 

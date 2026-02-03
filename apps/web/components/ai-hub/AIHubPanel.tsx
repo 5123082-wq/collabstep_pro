@@ -1,14 +1,32 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-// @ts-expect-error lucide-react icon types
-import { Bot, Loader2, MessageSquare, Plus, Send, Sparkles } from 'lucide-react';
+import { Bot, Loader2, MessageSquare, Plus, Send, Sparkles, Palette, FileText, Globe, Megaphone, Check, Brain, Code, PenTool, Image as LucideImage } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
+
+const IconMap: Record<string, React.ElementType> = {
+  Palette,
+  Bot,
+  Sparkles,
+  FileText,
+  Globe,
+  Megaphone,
+  Check,
+  Brain,
+  Code,
+  PenTool,
+  Image: LucideImage
+};
+
+function AgentIcon({ icon, className }: { icon: string | null; className?: string }) {
+  const IconComponent = icon && IconMap[icon] ? IconMap[icon] : Bot;
+  return <IconComponent className={className} />;
+}
 
 // Types
 interface AIAgent {
@@ -276,11 +294,7 @@ export function AIHubPanel() {
                   className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left transition-colors hover:bg-neutral-800/50"
                 >
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/20 text-indigo-400">
-                    {agent.icon ? (
-                      <span className="text-lg">{agent.icon}</span>
-                    ) : (
-                      <Bot className="h-4 w-4" />
-                    )}
+                    <AgentIcon icon={agent.icon} className="h-4 w-4" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="truncate text-sm font-medium text-neutral-200">{agent.name}</p>
@@ -326,11 +340,7 @@ export function AIHubPanel() {
                         : 'bg-neutral-800/50 text-neutral-400'
                     )}
                   >
-                    {conv.agent.icon ? (
-                      <span className="text-lg">{conv.agent.icon}</span>
-                    ) : (
-                      <Bot className="h-4 w-4" />
-                    )}
+                    <AgentIcon icon={conv.agent.icon} className="h-5 w-5" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="truncate text-sm font-medium">{conv.agent.name}</p>
@@ -362,11 +372,7 @@ export function AIHubPanel() {
             {/* Chat header */}
             <div className="flex items-center gap-3 border-b border-neutral-800/70 px-4 py-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/20 text-indigo-400">
-                {activeConversation.agent.icon ? (
-                  <span className="text-xl">{activeConversation.agent.icon}</span>
-                ) : (
-                  <Bot className="h-5 w-5" />
-                )}
+                <AgentIcon icon={activeConversation.agent.icon} className="h-5 w-5" />
               </div>
               <div>
                 <h3 className="text-sm font-medium text-neutral-200">
