@@ -34,6 +34,13 @@
 
 ### Now
 
+- ✅ **ПОДПИСКИ: UI раздел** (2026-02-03):
+  - Создан компонент `SubscriptionModal.tsx` с таблицей тарифов (Free/Pro/Max).
+  - Интегрирован в `AppTopbar.tsx` (кнопка "ПОДПИСКА PRO").
+  - Отображает текущий план пользователя (через `/api/me/subscription`).
+  - Список возможностей соответствует seed-данным (лимиты AI, хранилище, организации).
+  - Кнопка "Upgrade" пока показывает toast (платежи в разработке).
+
 - ✅ **FIX: PROJECT_HAS_NO_ORGANIZATION при открытии задачи** (2026-02-03):
   - **Проблема:** При открытии задачи в `TaskDetailDrawer` возникала ошибка `PROJECT_HAS_NO_ORGANIZATION`
   - **Причина:** API `/api/pm/tasks/[id]/results` читал `organizationId` из deprecated таблицы `project`, но проекты создаются в `pm_projects` без синхронизации с legacy таблицей
@@ -406,6 +413,15 @@
 - **Документация**: `docs/runbooks/USER_DATA_RECOVERY.md`
 
 ## Last updated
+
+- 2026-02-03 — **UI подписок реализован** ✅
+  - Создан `SubscriptionModal.tsx`
+  - Интегрирован в `AppTopbar.tsx`
+  - Линтер и typecheck пройдены
+
+- 2026-02-03 — **PR #58 создан: AI agent identity, AI Hub, subscriptions, brandbook limits** ✅
+  - Коммит c1bed2c: AI identity (0023), AI Hub (0025), subscriptions (0024), prompt blocks (0022), limits, fix results/route type
+  - PR: https://github.com/5123082-wq/collabstep_pro/pull/58
 
 - 2026-02-01 — **PR #56 создан: Brandbook agent artifacts preview, separate API key** ✅
   - Коммит bc99f4f: BRANDBOOK_AGENT_OPENAI_API_KEY, миграция 0021, API артефактов

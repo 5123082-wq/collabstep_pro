@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-// @ts-expect-error lucide-react icon types
 import { ArrowLeft, Bell, Bot, Loader2, MessageSquare, UserPlus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';

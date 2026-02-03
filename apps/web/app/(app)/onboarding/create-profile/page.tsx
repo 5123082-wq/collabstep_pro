@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ContentBlock } from '@/components/ui/content-block';
 import { toast } from '@/lib/ui/toast';
-// @ts-expect-error lucide-react icon types
 import { User, ArrowLeft } from 'lucide-react';
 
 export default function CreateProfilePage() {

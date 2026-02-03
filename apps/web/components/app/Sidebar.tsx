@@ -9,38 +9,50 @@ import type { UserRole } from '@/lib/auth/roles';
 import { useUiStore } from '@/lib/state/ui-store';
 import { useMenuPreferencesStore, ALL_MENU_IDS } from '@/stores/menuPreferences';
 
-const iconMap: Record<string, string> = {
-  dashboard: 'M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z',
-  projects: 'M4 4h16v4H4V4zm0 6h14v4H4v-4zm0 6h12v4H4v-4z',
-  marketplace: 'M3 7h18l-2 12H5L3 7Zm5 0V5a4 4 0 0 1 8 0v2',
-  marketing: 'M4 4h16v4H4V4Zm0 6h6v8H4v-8Zm8 0h6v8h-6v-8Zm-2-6h4v2h-4V4Z',
-  ai: 'M9.5 3A6.5 6.5 0 0 0 3 9.5c0 1.61.59 3.09 1.56 4.23l-1.13 1.13A8.5 8.5 0 0 1 1 9.5 8.5 8.5 0 0 1 18 9.5c0 1.61-.59 3.09-1.56 4.23l1.13 1.13A6.5 6.5 0 0 0 9.5 3zm0 2A4.5 4.5 0 0 1 14 9.5c0 .81-.23 1.56-.64 2.2l-1.13-1.13A2.5 2.5 0 0 0 12 9.5 2.5 2.5 0 0 0 9.5 7c-.81 0-1.56.23-2.2.64L6.17 6.51A4.5 4.5 0 0 1 9.5 5zm0 2A2.5 2.5 0 0 1 12 9.5c0 .81-.23 1.56-.64 2.2l-1.13-1.13A.5.5 0 0 0 10 9.5.5.5 0 0 0 9.5 9c-.81 0-1.56.23-2.2.64L6.17 8.51A2.5 2.5 0 0 1 9.5 7z',
-  community: 'M8 21a4 4 0 1 1 8 0H8Zm9-9a4 4 0 1 0-6-3.464A4 4 0 1 0 7 12c0 2.761 4 4 4 4s4-1.239 4-4Z',
-  finance: 'M3 5h18v4H3V5Zm2 6h14v8H5v-8Zm4 2v4m6-4v4',
-  docs: 'M6 3h9l5 5v13H6V3Zm9 5h5',
-  messages: 'M20 19H4l0-14h16v14Zm0 0-5-5',
-  notifications: 'M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2Zm6-6V11a6 6 0 1 0-12 0v5l-2 2h16l-2-2Z',
-  profile: 'M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4 0-8 2-8 4v2h16v-2c0-2-4-4-8-4Z',
-  org: 'M4 21V9l8-6 8 6v12H4Zm4-10h8v10H8V11Z',
-  support: 'M12 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7V3Zm0 16h.01',
-  admin: 'M12 2 2 7l10 5 10-5-10-5Zm0 9.91L4 8.27V17l8 5 8-5V8.27l-8 3.64Z',
-  performers: 'M4 7h4a4 4 0 0 1 8 0h4v12H4V7Zm6 0h4a2 2 0 1 0-4 0Zm-2 6a2 2 0 1 1 4 0v2H8v-2Zm6 0a2 2 0 1 1 4 0v2h-4v-2Z'
-};
+import {
+  LayoutDashboard,
+  FolderKanban,
+  Store,
+  Megaphone,
+  Sparkles,
+  Users,
+  Wallet,
+  FileText,
+  MessageSquare,
+  Bell,
+  User,
+  Building2,
+  LifeBuoy,
+  ShieldCheck,
+  Briefcase,
+  ChevronRight,
+  ChevronLeft
+} from 'lucide-react';
+
+const iconMap = {
+  dashboard: LayoutDashboard,
+  projects: FolderKanban,
+  marketplace: Store,
+  marketing: Megaphone,
+  ai: Sparkles,
+  community: Users,
+  finance: Wallet,
+  docs: FileText,
+  messages: MessageSquare,
+  notifications: Bell,
+  profile: User,
+  org: Building2,
+  support: LifeBuoy,
+  admin: ShieldCheck,
+  performers: Briefcase
+} as const;
 
 type IconName = keyof typeof iconMap;
 
 function MenuIcon({ name, className }: { name: IconName; className?: string }) {
-  return (
-    <svg
-      className={clsx('h-3.5 w-3.5 flex-none text-indigo-200', className)}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-    >
-      <path d={iconMap[name]} fill="currentColor" />
-    </svg>
-  );
+  const Icon = iconMap[name];
+  if (!Icon) return null;
+  return <Icon className={clsx('h-3.5 w-3.5 flex-none text-indigo-200', className)} strokeWidth={1.5} />;
 }
 
 type SidebarProps = {
@@ -376,17 +388,7 @@ export default function Sidebar({ roles }: SidebarProps) {
               title="Свернуть все"
               className="flex h-7 w-7 items-center justify-center rounded-full border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] text-[color:var(--text-tertiary)] transition hover:border-indigo-500/40 hover:text-[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
             >
-              <svg 
-                className="h-3.5 w-3.5" 
-                viewBox="0 0 20 20" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M5 13l5-5 5 5" />
-              </svg>
+              <ChevronLeft className="h-3.5 w-3.5" strokeWidth={1.5} />
             </button>
           )}
           <button
@@ -395,13 +397,11 @@ export default function Sidebar({ roles }: SidebarProps) {
             className="flex h-7 w-7 items-center justify-center rounded-full border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] text-[color:var(--text-tertiary)] transition hover:border-indigo-500/40 hover:text-[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
             aria-label={sidebarCollapsed ? 'Развернуть меню' : 'Свернуть меню'}
           >
-            <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
-              {sidebarCollapsed ? (
-                <path d="M7 5l6 5-6 5" strokeLinecap="round" strokeLinejoin="round" />
-              ) : (
-                <path d="M13 5l-6 5 6 5" strokeLinecap="round" strokeLinejoin="round" />
-              )}
-            </svg>
+            {sidebarCollapsed ? (
+              <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.5} />
+            ) : (
+              <ChevronLeft className="h-3.5 w-3.5" strokeWidth={1.5} />
+            )}
           </button>
         </div>
       </div>
