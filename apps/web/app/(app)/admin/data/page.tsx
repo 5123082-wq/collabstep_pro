@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-// @ts-expect-error lucide-react icon types
 import { FileText, Trash2, RefreshCw, AlertTriangle } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import { canAccessAdmin, getRolesForDemoAccount } from '@/lib/auth/roles';

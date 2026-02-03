@@ -6,7 +6,6 @@ import type { OrganizationArchive } from '@collabverse/api';
 import { formatClosedDate, formatExpiresDate, getTimeUntilDeletion, getExpiryColor } from '@/lib/utils/archive-utils';
 import { cn } from '@/lib/utils';
 import { Clock, FileText, Users } from 'lucide-react';
-// @ts-expect-error lucide-react icon types - these icons exist but types are incomplete
 import { Archive, Folder, Download } from 'lucide-react';
 
 export default function ArchivesPage() {

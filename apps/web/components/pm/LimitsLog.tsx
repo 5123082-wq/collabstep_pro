@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { type Project } from '@/types/pm';
-// @ts-expect-error lucide-react icon types
 import { Clock, Download, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';

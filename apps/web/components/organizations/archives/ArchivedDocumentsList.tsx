@@ -5,7 +5,6 @@ import type { ArchivedDocument } from '@collabverse/api';
 import { formatFileSize } from '@/lib/utils/archive-utils';
 import { cn } from '@/lib/utils';
 import { FileText } from 'lucide-react';
-// @ts-expect-error lucide-react icon types - these icons exist but types are incomplete
 import { Download, Folder } from 'lucide-react';
 
 type ArchivedDocumentsListProps = {

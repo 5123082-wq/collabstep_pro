@@ -3,7 +3,6 @@
 import * as React from 'react';
 import * as SelectPrimitive from '@radix-ui/react-select';
 import { cn } from '@/lib/utils';
-// @ts-expect-error lucide-react icon types
 import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 
 const Select = SelectPrimitive.Root;

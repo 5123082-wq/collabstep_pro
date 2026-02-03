@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-// @ts-expect-error lucide-react icon types
 import { ArrowLeft, ArrowRight, CheckCircle, Sparkles } from "lucide-react";
 import clsx from "clsx";
 import LargeContentModal from "@/components/ui/large-content-modal";

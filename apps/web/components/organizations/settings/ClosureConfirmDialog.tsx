@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalTitle, ModalDescription } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-// @ts-expect-error lucide-react icon types
 import { AlertTriangle } from 'lucide-react';
 
 type ClosureConfirmDialogProps = {

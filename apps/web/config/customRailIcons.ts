@@ -1,18 +1,18 @@
-import * as Icons from 'lucide-react';
+import { 
+  Bookmark, Link, Rocket, Sparkles, Star, Zap, ExternalLink, Flame, Calendar, BookOpen 
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-const { Bookmark, Link, Rocket, Sparkles, Star, Zap, ExternalLink, Flame, Calendar, BookOpen } = Icons;
-
 export const CUSTOM_RAIL_ICONS = {
-  link: { icon: (Link ?? ExternalLink) as LucideIcon, label: 'Ссылка' },
-  star: { icon: (Star ?? Bookmark) as LucideIcon, label: 'Избранное' },
-  spark: { icon: (Sparkles ?? Star) as LucideIcon, label: 'Идеи' },
-  rocket: { icon: (Rocket ?? Zap) as LucideIcon, label: 'Запуск' },
-  note: { icon: (BookOpen ?? Bookmark) as LucideIcon, label: 'Заметка' },
-  calendar: { icon: (Calendar ?? ExternalLink) as LucideIcon, label: 'Календарь' },
-  flame: { icon: (Flame ?? Zap) as LucideIcon, label: 'Важное' },
-  zap: { icon: (Zap ?? Sparkles) as LucideIcon, label: 'Быстро' },
-  external: { icon: (ExternalLink ?? Link ?? Bookmark) as LucideIcon, label: 'Внешняя ссылка' }
+  link: { icon: Link || ExternalLink, label: 'Ссылка' },
+  star: { icon: Star || Bookmark, label: 'Избранное' },
+  spark: { icon: Sparkles || Star, label: 'Идеи' },
+  rocket: { icon: Rocket || Zap, label: 'Запуск' },
+  note: { icon: BookOpen || Bookmark, label: 'Заметка' },
+  calendar: { icon: Calendar || ExternalLink, label: 'Календарь' },
+  flame: { icon: Flame || Zap, label: 'Важное' },
+  zap: { icon: Zap || Sparkles, label: 'Быстро' },
+  external: { icon: ExternalLink || Link || Bookmark, label: 'Внешняя ссылка' }
 } as const satisfies Record<string, { icon: LucideIcon; label: string }>;
 
 export type CustomRailIconKey = keyof typeof CUSTOM_RAIL_ICONS;

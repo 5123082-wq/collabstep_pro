@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ClosurePreviewModal } from './ClosurePreviewModal';
-// @ts-expect-error lucide-react icon types
 import { AlertTriangle } from 'lucide-react';
 
 type DangerZoneTabProps = {

@@ -2,7 +2,6 @@ import React from 'react';
 import { ContentBlock } from '@/components/ui/content-block';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-// @ts-expect-error lucide-react icon types
 import { Loader2, CheckCircle, X, FileText, ListTodo, BarChart4 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';

@@ -1,6 +1,5 @@
 'use client';
 
-// @ts-expect-error lucide-react icon types
 import { CheckCircle, MessageSquare, Notebook } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { type Project } from '@/types/pm';
