@@ -11,11 +11,26 @@ import {
     Plus,
     Rocket,
     Loader2,
-    Clock
+    Clock,
+    Trash2,
+    MessageSquare,
+    Zap
 } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import Link from 'next/link';
+
+// --- Types ---
+
+type StepKey = 'intake' | 'logoCheck' | 'generate' | 'qa' | 'followup';
+
+interface PromptBlock {
+    id: string;
+    order: number;
+    name: string;
+    content: string;
+    stepKey?: StepKey;
+}
 
 interface PromptVersion {
     id: string;
@@ -29,7 +44,92 @@ interface PromptVersion {
         qa?: string;
         followup?: string;
     } | null;
+    blocks: PromptBlock[] | null;
     createdAt: string;
+}
+
+// --- Constants ---
+
+const STEP_KEY_OPTIONS: Array<{ value: StepKey; label: string }> = [
+    { value: 'intake', label: 'intake' },
+    { value: 'logoCheck', label: 'logoCheck' },
+    { value: 'generate', label: 'generate' },
+    { value: 'qa', label: 'qa' },
+    { value: 'followup', label: 'followup' }
+];
+
+/**
+ * Info about how each step is used:
+ * - intake/followup: shown as message to user (no LLM call)
+ * - logoCheck/qa: added to system prompt (LLM call)
+ * - generate: used as user prompt (LLM call)
+ */
+const STEP_INFO: Record<StepKey, { badge: string; badgeColor: string; description: string; isLLM: boolean }> = {
+    intake: {
+        badge: 'сообщение',
+        badgeColor: 'bg-blue-500/20 text-blue-400',
+        description: 'Показывается пользователю как приветственное сообщение',
+        isLLM: false
+    },
+    logoCheck: {
+        badge: 'LLM + system',
+        badgeColor: 'bg-purple-500/20 text-purple-400',
+        description: 'Добавляется к системному промпту при проверке логотипа',
+        isLLM: true
+    },
+    generate: {
+        badge: 'LLM + user',
+        badgeColor: 'bg-orange-500/20 text-orange-400',
+        description: 'Используется как user prompt для генерации. Поддерживает {{productBundle}}, {{preferences}}',
+        isLLM: true
+    },
+    qa: {
+        badge: 'LLM + system',
+        badgeColor: 'bg-purple-500/20 text-purple-400',
+        description: 'Добавляется к системному промпту при проверке качества',
+        isLLM: true
+    },
+    followup: {
+        badge: 'сообщение',
+        badgeColor: 'bg-blue-500/20 text-blue-400',
+        description: 'Показывается пользователю после завершения генерации',
+        isLLM: false
+    }
+};
+
+/**
+ * Convert legacy prompts object to blocks array
+ */
+function legacyPromptsToBlocks(prompts: PromptVersion['prompts']): PromptBlock[] {
+    if (!prompts) return [];
+
+    const blocks: PromptBlock[] = [];
+    const keys: StepKey[] = ['intake', 'logoCheck', 'generate', 'qa', 'followup'];
+
+    keys.forEach((key, index) => {
+        const content = prompts[key];
+        if (content) {
+            blocks.push({
+                id: crypto.randomUUID(),
+                order: index + 1,
+                name: key,
+                content,
+                stepKey: key
+            });
+        }
+    });
+
+    return blocks;
+}
+
+/**
+ * Get blocks from version (use blocks if available, else convert from prompts)
+ */
+function getVersionBlocks(version: PromptVersion): PromptBlock[] {
+    if (version.blocks && version.blocks.length > 0) {
+        return [...version.blocks].sort((a, b) => a.order - b.order);
+    }
+    return legacyPromptsToBlocks(version.prompts);
 }
 
 export default function BrandbookAgentAdminPage() {
@@ -38,6 +138,8 @@ export default function BrandbookAgentAdminPage() {
     const [publishing, setPublishing] = useState(false);
     const [versions, setVersions] = useState<PromptVersion[]>([]);
     const [selectedVersion, setSelectedVersion] = useState<PromptVersion | null>(null);
+    const [blocks, setBlocks] = useState<PromptBlock[]>([]);
+    const [systemPrompt, setSystemPrompt] = useState('');
     const [isModified, setIsModified] = useState(false);
 
     // Fetch data
@@ -52,7 +154,13 @@ export default function BrandbookAgentAdminPage() {
 
             // Select published version by default, or the latest version
             const published = data.promptVersions.find((v: PromptVersion) => v.status === 'published');
-            setSelectedVersion(published || data.promptVersions[0] || null);
+            const selected = published || data.promptVersions[0] || null;
+            setSelectedVersion(selected);
+
+            if (selected) {
+                setBlocks(getVersionBlocks(selected));
+                setSystemPrompt(selected.systemPrompt || '');
+            }
         } catch (err) {
             toast(err instanceof Error ? err.message : 'Ошибка загрузки данных', 'warning');
         } finally {
@@ -64,23 +172,49 @@ export default function BrandbookAgentAdminPage() {
         void fetchData();
     }, []);
 
-    const handleFieldChange = (field: string, value: string) => {
-        if (!selectedVersion || selectedVersion.status !== 'draft') return;
+    // When selected version changes, update local state
+    const handleSelectVersion = (v: PromptVersion) => {
+        if (isModified && !confirm('Несохраненные изменения будут потеряны. Продолжить?')) return;
+        setSelectedVersion(v);
+        setBlocks(getVersionBlocks(v));
+        setSystemPrompt(v.systemPrompt || '');
+        setIsModified(false);
+    };
 
+    const handleSystemPromptChange = (value: string) => {
+        if (!selectedVersion || selectedVersion.status !== 'draft') return;
+        setSystemPrompt(value);
         setIsModified(true);
-        setSelectedVersion(prev => {
-            if (!prev) return null;
-            if (field === 'systemPrompt') {
-                return { ...prev, systemPrompt: value };
-            }
-            return {
-                ...prev,
-                prompts: {
-                    ...prev.prompts,
-                    [field]: value
-                }
-            };
-        });
+    };
+
+    const handleBlockChange = (blockId: string, field: 'name' | 'content' | 'stepKey', value: string) => {
+        if (!selectedVersion || selectedVersion.status !== 'draft') return;
+        setBlocks(prev => prev.map(b =>
+            b.id === blockId
+                ? { ...b, [field]: field === 'stepKey' ? (value as StepKey || undefined) : value }
+                : b
+        ));
+        setIsModified(true);
+    };
+
+    const handleAddBlock = () => {
+        if (!selectedVersion || selectedVersion.status !== 'draft') return;
+        const maxOrder = blocks.length > 0 ? Math.max(...blocks.map(b => b.order)) : 0;
+        const newBlock: PromptBlock = {
+            id: crypto.randomUUID(),
+            order: maxOrder + 1,
+            name: '',
+            content: ''
+        };
+        setBlocks(prev => [...prev, newBlock]);
+        setIsModified(true);
+    };
+
+    const handleDeleteBlock = (blockId: string) => {
+        if (!selectedVersion || selectedVersion.status !== 'draft') return;
+        if (!confirm('Удалить этот блок?')) return;
+        setBlocks(prev => prev.filter(b => b.id !== blockId));
+        setIsModified(true);
     };
 
     const handleSave = async () => {
@@ -88,12 +222,18 @@ export default function BrandbookAgentAdminPage() {
 
         setSaving(true);
         try {
+            // Normalize blocks order
+            const normalizedBlocks = blocks.map((b, idx) => ({
+                ...b,
+                order: idx + 1
+            }));
+
             const resp = await fetch(`/api/admin/ai-agents/brandbook/prompts/${selectedVersion.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    systemPrompt: selectedVersion.systemPrompt,
-                    prompts: selectedVersion.prompts
+                    systemPrompt,
+                    blocks: normalizedBlocks
                 })
             });
 
@@ -113,12 +253,17 @@ export default function BrandbookAgentAdminPage() {
         setLoading(true);
         try {
             // Create new draft based on currently selected version
+            const normalizedBlocks = blocks.map((b, idx) => ({
+                ...b,
+                order: idx + 1
+            }));
+
             const resp = await fetch('/api/admin/ai-agents/brandbook/prompts', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    systemPrompt: selectedVersion?.systemPrompt,
-                    prompts: selectedVersion?.prompts
+                    systemPrompt,
+                    blocks: normalizedBlocks
                 })
             });
 
@@ -127,7 +272,6 @@ export default function BrandbookAgentAdminPage() {
             const newDraft = await resp.json();
             toast('Новый черновик (v' + newDraft.version + ') создан', 'success');
             await fetchData();
-            setSelectedVersion(newDraft);
         } catch (err) {
             toast('Ошибка создания черновика', 'warning');
         } finally {
@@ -198,11 +342,7 @@ export default function BrandbookAgentAdminPage() {
                                 {versions.map(v => (
                                     <button
                                         key={v.id}
-                                        onClick={() => {
-                                            if (isModified && !confirm('Несохраненные изменения будут потеряны. Продолжить?')) return;
-                                            setSelectedVersion(v);
-                                            setIsModified(false);
-                                        }}
+                                        onClick={() => handleSelectVersion(v)}
                                         className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition ${selectedVersion?.id === v.id
                                             ? 'bg-neutral-800 text-white ring-1 ring-neutral-700'
                                             : 'text-neutral-400 hover:bg-neutral-900 hover:text-neutral-200'
@@ -229,7 +369,7 @@ export default function BrandbookAgentAdminPage() {
                     </ContentBlock>
                 </div>
 
-                {/* Main: Prompt Editor */}
+                {/* Main: Prompt Editor - Single Column */}
                 <div className="lg:col-span-3 space-y-6">
                     {selectedVersion ? (
                         <>
@@ -278,7 +418,7 @@ export default function BrandbookAgentAdminPage() {
                                 </div>
                             </div>
 
-                            {/* Editor Fields */}
+                            {/* Editor Fields - Single Column */}
                             <div className="space-y-6">
                                 {/* System Prompt */}
                                 <ContentBlock title="Системный промпт" size="sm">
@@ -286,68 +426,94 @@ export default function BrandbookAgentAdminPage() {
                                         Глобальные инструкции по стилю общения, ограничениям и базовым знаниям агента.
                                     </p>
                                     <textarea
-                                        value={selectedVersion.systemPrompt || ''}
-                                        onChange={(e) => handleFieldChange('systemPrompt', e.target.value)}
+                                        value={systemPrompt}
+                                        onChange={(e) => handleSystemPromptChange(e.target.value)}
                                         disabled={selectedVersion.status !== 'draft'}
                                         className="h-32 w-full rounded-xl border border-neutral-800 bg-neutral-900/50 p-4 text-sm text-neutral-200 outline-none focus:border-indigo-500/50 disabled:opacity-60"
                                         placeholder="Напр.: Вы — экспертный AI-дизайнер брендбуков..."
                                     />
                                 </ContentBlock>
 
-                                {/* Stages */}
-                                <div className="grid gap-6 md:grid-cols-2">
-                                    <div className="space-y-6">
-                                        <ContentBlock title="Этап: Приветствие (Intake)" size="sm">
-                                            <textarea
-                                                value={selectedVersion.prompts?.intake || ''}
-                                                onChange={(e) => handleFieldChange('intake', e.target.value)}
-                                                disabled={selectedVersion.status !== 'draft'}
-                                                className="h-24 w-full rounded-xl border border-neutral-800 bg-neutral-900/50 p-4 text-sm text-neutral-200 outline-none focus:border-indigo-500/50 disabled:opacity-60"
-                                            />
-                                        </ContentBlock>
+                                {/* Blocks - Sequential */}
+                                {blocks.map((block, index) => {
+                                    const stepInfo = block.stepKey ? STEP_INFO[block.stepKey] : null;
+                                    return (
+                                        <ContentBlock
+                                            key={block.id}
+                                            title={`Блок ${index + 1}${block.stepKey ? ` (${block.stepKey})` : ''}`}
+                                            size="sm"
+                                        >
+                                            {/* Badge */}
+                                            {stepInfo && (
+                                                <div className="mb-3 flex items-center gap-2">
+                                                    <span className={`flex items-center gap-1 rounded px-2 py-0.5 text-[10px] ${stepInfo.badgeColor}`}>
+                                                        {stepInfo.isLLM ? <Zap className="h-3 w-3" /> : <MessageSquare className="h-3 w-3" />}
+                                                        {stepInfo.badge}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            <div className="space-y-3">
+                                                {/* Block name / stepKey selector */}
+                                                <div className="flex items-center gap-4">
+                                                    <div className="flex-1">
+                                                        <label className="mb-1 block text-xs text-neutral-500">Имя (stepKey)</label>
+                                                        <select
+                                                            value={block.stepKey || ''}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value as StepKey | '';
+                                                                handleBlockChange(block.id, 'stepKey', val);
+                                                                if (val) {
+                                                                    handleBlockChange(block.id, 'name', val);
+                                                                }
+                                                            }}
+                                                            disabled={selectedVersion.status !== 'draft'}
+                                                            className="w-full rounded-lg border border-neutral-800 bg-neutral-900/50 px-3 py-2 text-sm text-neutral-200 outline-none focus:border-indigo-500/50 disabled:opacity-60"
+                                                        >
+                                                            <option value="">— выберите —</option>
+                                                            {STEP_KEY_OPTIONS.map(opt => (
+                                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                    {selectedVersion.status === 'draft' && (
+                                                        <button
+                                                            onClick={() => handleDeleteBlock(block.id)}
+                                                            className="mt-5 flex h-9 w-9 items-center justify-center rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 transition hover:bg-red-500/20"
+                                                            title="Удалить блок"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </button>
+                                                    )}
+                                                </div>
 
-                                        <ContentBlock title="Этап: Проверка логотипа" size="sm">
-                                            <textarea
-                                                value={selectedVersion.prompts?.logoCheck || ''}
-                                                onChange={(e) => handleFieldChange('logoCheck', e.target.value)}
-                                                disabled={selectedVersion.status !== 'draft'}
-                                                className="h-24 w-full rounded-xl border border-neutral-800 bg-neutral-900/50 p-4 text-sm text-neutral-200 outline-none focus:border-indigo-500/50 disabled:opacity-60"
-                                            />
-                                        </ContentBlock>
-                                    </div>
+                                                {/* Description */}
+                                                {stepInfo && (
+                                                    <p className="text-xs text-neutral-500">{stepInfo.description}</p>
+                                                )}
 
-                                    <div className="space-y-6">
-                                        <ContentBlock title="Этап: Генерация брендбука" size="sm">
-                                            <p className="mb-2 text-[10px] text-indigo-400">
-                                                Используйте {'{{productBundle}}'}, {'{{preferences}}'} для вставки данных.
-                                            </p>
-                                            <textarea
-                                                value={selectedVersion.prompts?.generate || ''}
-                                                onChange={(e) => handleFieldChange('generate', e.target.value)}
-                                                disabled={selectedVersion.status !== 'draft'}
-                                                className="h-24 w-full rounded-xl border border-neutral-800 bg-neutral-900/50 p-4 text-sm text-neutral-200 outline-none focus:border-indigo-500/50 disabled:opacity-60"
-                                            />
+                                                {/* Content */}
+                                                <textarea
+                                                    value={block.content}
+                                                    onChange={(e) => handleBlockChange(block.id, 'content', e.target.value)}
+                                                    disabled={selectedVersion.status !== 'draft'}
+                                                    className="h-32 w-full rounded-xl border border-neutral-800 bg-neutral-900/50 p-4 text-sm text-neutral-200 outline-none focus:border-indigo-500/50 disabled:opacity-60"
+                                                    placeholder="Содержимое блока..."
+                                                />
+                                            </div>
                                         </ContentBlock>
+                                    );
+                                })}
 
-                                        <ContentBlock title="Этап: Проверка качества (QA)" size="sm">
-                                            <textarea
-                                                value={selectedVersion.prompts?.qa || ''}
-                                                onChange={(e) => handleFieldChange('qa', e.target.value)}
-                                                disabled={selectedVersion.status !== 'draft'}
-                                                className="h-24 w-full rounded-xl border border-neutral-800 bg-neutral-900/50 p-4 text-sm text-neutral-200 outline-none focus:border-indigo-500/50 disabled:opacity-60"
-                                            />
-                                        </ContentBlock>
-                                    </div>
-                                </div>
-
-                                <ContentBlock title="Этап: Завершение (Followup)" size="sm">
-                                    <textarea
-                                        value={selectedVersion.prompts?.followup || ''}
-                                        onChange={(e) => handleFieldChange('followup', e.target.value)}
-                                        disabled={selectedVersion.status !== 'draft'}
-                                        className="h-24 w-full rounded-xl border border-neutral-800 bg-neutral-900/50 p-4 text-sm text-neutral-200 outline-none focus:border-indigo-500/50 disabled:opacity-60"
-                                    />
-                                </ContentBlock>
+                                {/* Add Block Button */}
+                                {selectedVersion.status === 'draft' && (
+                                    <button
+                                        onClick={handleAddBlock}
+                                        className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-neutral-700 bg-neutral-900/30 py-4 text-sm text-neutral-400 transition hover:border-indigo-500/50 hover:text-indigo-400"
+                                    >
+                                        <Plus className="h-4 w-4" />
+                                        Добавить блок
+                                    </button>
+                                )}
                             </div>
                         </>
                     ) : (

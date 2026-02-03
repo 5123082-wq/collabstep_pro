@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Bell, Loader2, MessageSquare, UserPlus } from 'lucide-react';
+// @ts-expect-error lucide-react icon types
+import { ArrowLeft, Bell, Bot, Loader2, MessageSquare, UserPlus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ import { ru } from 'date-fns/locale';
 import type { Project, Task, ProjectChatMessage } from '@collabverse/api';
 import NotificationsPanel from '@/components/right-rail/NotificationsPanel';
 import InvitesPanel from '@/components/right-rail/InvitesPanel';
+import { AIHubPanel } from '@/components/ai-hub/AIHubPanel';
 
 type Thread = {
   id: string;
@@ -41,7 +43,7 @@ type ApiMessage = ProjectChatMessage & {
   } | null;
 };
 
-type CommunicationTab = 'chats' | 'notifications' | 'invites';
+type CommunicationTab = 'chats' | 'notifications' | 'invites' | 'ai-hub';
 
 type TabDefinition = {
   id: CommunicationTab;
@@ -52,11 +54,12 @@ type TabDefinition = {
 const COMM_TABS: TabDefinition[] = [
   { id: 'chats', label: 'Чаты', icon: MessageSquare },
   { id: 'notifications', label: 'Уведомления', icon: Bell },
-  { id: 'invites', label: 'Приглашения', icon: UserPlus }
+  { id: 'invites', label: 'Приглашения', icon: UserPlus },
+  { id: 'ai-hub', label: 'AI Hub', icon: Bot }
 ];
 
 function normalizeTab(value: unknown): CommunicationTab | null {
-  return value === 'chats' || value === 'notifications' || value === 'invites' ? value : null;
+  return value === 'chats' || value === 'notifications' || value === 'invites' || value === 'ai-hub' ? value : null;
 }
 
 export function AllChatsModal() {
@@ -85,7 +88,8 @@ export function AllChatsModal() {
     () => ({
       chats: unreadChats,
       notifications: unreadNotifications,
-      invites: unreadInvites
+      invites: unreadInvites,
+      'ai-hub': 0
     }),
     [unreadChats, unreadInvites, unreadNotifications]
   );
@@ -387,7 +391,7 @@ export function AllChatsModal() {
   if (!isOpen) return null;
 
   const title =
-    activeTab === 'chats' ? 'Все чаты' : activeTab === 'notifications' ? 'Уведомления' : 'Приглашения';
+    activeTab === 'chats' ? 'Все чаты' : activeTab === 'notifications' ? 'Уведомления' : activeTab === 'invites' ? 'Приглашения' : 'AI Hub';
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 px-4 py-6">
@@ -399,8 +403,10 @@ export function AllChatsModal() {
                 <MessageSquare className="h-5 w-5" aria-hidden="true" />
               ) : activeTab === 'notifications' ? (
                 <Bell className="h-5 w-5" aria-hidden="true" />
-              ) : (
+              ) : activeTab === 'invites' ? (
                 <UserPlus className="h-5 w-5" aria-hidden="true" />
+              ) : (
+                <Bot className="h-5 w-5" aria-hidden="true" />
               )}
             </div>
             <div>
@@ -656,6 +662,10 @@ export function AllChatsModal() {
             </div>
           </section>
         </div>
+        ) : activeTab === 'ai-hub' ? (
+          <div className="h-[calc(100vh-200px)] min-h-[520px] px-4 py-4">
+            <AIHubPanel />
+          </div>
         ) : (
           <div className="h-[calc(100vh-200px)] min-h-[520px] px-4 py-4">
             <section className="flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-neutral-800/70 bg-neutral-950/80">

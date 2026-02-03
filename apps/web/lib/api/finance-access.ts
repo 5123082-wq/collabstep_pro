@@ -1,4 +1,5 @@
 import { decodeDemoSession, DEMO_SESSION_COOKIE, isDemoAdminEmail } from '@/lib/auth/demo-session';
+import { getCurrentSession } from '@/lib/auth/session';
 import { projectsRepository, isAdminUserId } from '@collabverse/api';
 
 export type FinanceRole = 'owner' | 'admin' | 'member' | 'viewer';
@@ -7,6 +8,25 @@ export interface AuthContext {
   userId: string;
   email: string;
   role: FinanceRole;
+}
+
+/**
+ * Get auth from NextAuth session first, then from demo cookie.
+ * Use this in API routes where users may log in via NextAuth (e.g. AI Hub, chat).
+ */
+export async function getAuthFromRequestWithSession(request: Request): Promise<AuthContext | null> {
+  const session = await getCurrentSession();
+  const sessionUserId = session?.user?.id;
+  const sessionEmail = session?.user?.email;
+  if (sessionUserId && sessionEmail) {
+    const isAdmin = session?.user?.role === 'admin' || isDemoAdminEmail(sessionEmail);
+    return {
+      userId: sessionUserId,
+      email: sessionEmail,
+      role: (isAdmin ? 'owner' : 'member') as FinanceRole,
+    };
+  }
+  return getAuthFromRequest(request);
 }
 
 export function getAuthFromRequest(request: Request): AuthContext | null {

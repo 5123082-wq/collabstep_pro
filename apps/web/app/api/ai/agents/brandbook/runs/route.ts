@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { flags } from '@/lib/flags';
 import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
+import { trackEvent } from '@/lib/telemetry';
 import { db } from '@collabverse/api/db/config';
 import { projects } from '@collabverse/api/db/schema';
 import {
@@ -122,6 +123,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     ...runInput,
     organizationId,
     createdBy: auth.userId
+  });
+
+  // Трекаем событие создания запуска агента
+  trackEvent('ai_agent_run_created', {
+    run_id: run.runId,
+    agent_type: 'brandbook',
+    organization_id: organizationId,
+    project_id: projectId,
+    product_bundle: productBundle
   });
 
   // Add initial system messages

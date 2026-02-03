@@ -1,4 +1,4 @@
-import { organizationsRepository } from '@collabverse/api';
+import { organizationsRepository, userSubscriptionsRepository } from '@collabverse/api';
 
 export type UserSubscription = {
   planCode: 'free' | 'pro' | 'max';
@@ -14,39 +14,30 @@ const PLAN_LIMITS: Record<'free' | 'pro' | 'max', { maxOrganizations: number }> 
 };
 
 /**
- * Get user subscription info
- * Currently returns free plan for all users
- * TODO: Implement actual subscription lookup from user_subscription table
+ * Get user subscription info from database
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function getUserSubscription(_userId: string): Promise<UserSubscription> {
-  // TODO: Query user_subscription table when implemented
-  // For now, return free plan for all users
+export async function getUserSubscription(
+  userId: string
+): Promise<UserSubscription> {
   try {
-    // Placeholder for future implementation:
-    // const db = getDb();
-    // const [subscription] = await db
-    //   .select()
-    //   .from(userSubscriptions)
-    //   .where(eq(userSubscriptions.userId, userId));
-    // 
-    // if (subscription) {
-    //   // Check if expired
-    //   if (subscription.expiresAt && new Date(subscription.expiresAt) < new Date()) {
-    //     return { planCode: 'free', maxOrganizations: 1, expiresAt: null };
-    //   }
-    //   return {
-    //     planCode: subscription.planCode,
-    //     maxOrganizations: subscription.maxOrganizations,
-    //     expiresAt: subscription.expiresAt?.toISOString() ?? null,
-    //   };
-    // }
+    const subscription = await userSubscriptionsRepository.getOrCreate(userId);
 
-    // Default to free plan
+    // Check if subscription expired
+    if (
+      subscription.expiresAt &&
+      new Date(subscription.expiresAt) < new Date()
+    ) {
+      return {
+        planCode: 'free',
+        maxOrganizations: PLAN_LIMITS.free.maxOrganizations,
+        expiresAt: null,
+      };
+    }
+
     return {
-      planCode: 'free',
-      maxOrganizations: PLAN_LIMITS.free.maxOrganizations,
-      expiresAt: null,
+      planCode: subscription.planCode,
+      maxOrganizations: subscription.maxOrganizations,
+      expiresAt: subscription.expiresAt?.toISOString() ?? null,
     };
   } catch (error) {
     console.error('[getUserSubscription] Error:', error);

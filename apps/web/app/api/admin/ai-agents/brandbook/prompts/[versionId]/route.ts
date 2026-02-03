@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isAdminUser } from '@/lib/auth/check-admin-role.server';
-import { aiAgentPromptVersionsDbRepository, type AIAgentPrompts } from '@collabverse/api';
+import { aiAgentPromptVersionsDbRepository, type AIAgentPrompts, type AIAgentPromptBlock } from '@collabverse/api';
 import { z } from 'zod';
 
 // --- Helpers ---
@@ -18,6 +18,16 @@ function jsonOk<T>(data: T, status = 200) {
 
 // --- Schemas ---
 
+const StepKeyEnum = z.enum(['intake', 'logoCheck', 'generate', 'qa', 'followup']);
+
+const PromptBlockSchema = z.object({
+    id: z.string().uuid().optional(),
+    order: z.number().int().positive(),
+    name: z.string().min(1),
+    content: z.string(),
+    stepKey: StepKeyEnum.optional()
+});
+
 const UpdatePromptVersionSchema = z.object({
     systemPrompt: z.string().optional(),
     prompts: z.object({
@@ -26,8 +36,29 @@ const UpdatePromptVersionSchema = z.object({
         generate: z.string().optional(),
         qa: z.string().optional(),
         followup: z.string().optional()
-    }).optional()
+    }).optional(),
+    blocks: z.array(PromptBlockSchema).optional()
 });
+
+type StepKeyType = 'intake' | 'logoCheck' | 'generate' | 'qa' | 'followup';
+
+/**
+ * Normalize blocks: assign missing ids, renumber order 1..N
+ */
+function normalizeBlocks(blocks: Array<{ id?: string; order: number; name: string; content: string; stepKey?: StepKeyType }>): AIAgentPromptBlock[] {
+    return blocks.map((block, index): AIAgentPromptBlock => {
+        const result: AIAgentPromptBlock = {
+            id: block.id ?? crypto.randomUUID(),
+            order: index + 1,
+            name: block.name,
+            content: block.content
+        };
+        if (block.stepKey) {
+            result.stepKey = block.stepKey;
+        }
+        return result;
+    });
+}
 
 type RouteParams = { params: Promise<{ versionId: string }> };
 
@@ -119,9 +150,21 @@ export async function PATCH(
             }
             : null;
 
+        // Normalize blocks if provided
+        const blocks = parsed.data.blocks
+            ? normalizeBlocks(parsed.data.blocks.map(b => ({
+                order: b.order,
+                name: b.name,
+                content: b.content,
+                ...(b.id ? { id: b.id } : {}),
+                ...(b.stepKey ? { stepKey: b.stepKey } : {})
+            })))
+            : undefined;
+
         const updated = await aiAgentPromptVersionsDbRepository.update(versionId, {
             systemPrompt: parsed.data.systemPrompt ?? null,
-            prompts
+            prompts,
+            ...(blocks !== undefined ? { blocks } : {})
         });
 
         return jsonOk(updated);

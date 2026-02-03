@@ -61,6 +61,7 @@ export const users = pgTable("user", {
     department: text("department"),
     location: text("location"),
     timezone: text("timezone"),
+    isAi: boolean("is_ai").default(false), // True for AI agent user identities
     createdAt: timestamp("createdAt", { mode: "date" }).defaultNow(),
     updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow(),
 });
@@ -853,6 +854,9 @@ export const subscriptionPlans = pgTable(
         storageLimitBytes: bigint("storage_limit_bytes", { mode: "number" }),
         fileSizeLimitBytes: bigint("file_size_limit_bytes", { mode: "number" }),
         trashRetentionDays: integer("trash_retention_days"),
+        // AI agent limits
+        aiAgentRunsPerDay: integer("ai_agent_runs_per_day"),
+        aiAgentConcurrentRuns: integer("ai_agent_concurrent_runs"),
         createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
         updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow(),
     },
@@ -1002,6 +1006,7 @@ export const aiAgentConfigs = pgTable(
         pipelineType: text("pipeline_type").default("generative").notNull(),
         enabled: boolean("enabled").default(true).notNull(),
         icon: text("icon"),
+        userId: text("user_id").references(() => users.id), // Optional link to AI user identity
         limits: jsonb("limits").$type<{
             maxRunsPerDay: number;
             maxConcurrentRuns: number;
@@ -1012,12 +1017,64 @@ export const aiAgentConfigs = pgTable(
             watermarkText?: string;
             contactBlock?: string;
         }>(),
+        allowDirectMessages: boolean("allow_direct_messages").default(true), // Allow direct conversations in AI Hub
         createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
         updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow(),
     },
     (table) => ({
         slugIdx: uniqueIndex("ai_agent_config_slug_idx").on(table.slug),
         enabledIdx: index("ai_agent_config_enabled_idx").on(table.enabled),
+        userIdIdx: index("ai_agent_config_user_id_idx").on(table.userId),
+    })
+);
+
+// AI Conversations - direct user-agent chats (AI Hub)
+export const aiConversations = pgTable(
+    "ai_conversation",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        userId: text("user_id")
+            .notNull()
+            .references(() => users.id, { onDelete: "cascade" }),
+        agentConfigId: text("agent_config_id")
+            .notNull()
+            .references(() => aiAgentConfigs.id, { onDelete: "cascade" }),
+        title: text("title"),
+        lastMessageAt: timestamp("last_message_at", { mode: "date" }),
+        createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+        updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow(),
+    },
+    (table) => ({
+        userIdIdx: index("ai_conversation_user_id_idx").on(table.userId),
+        agentConfigIdIdx: index("ai_conversation_agent_config_id_idx").on(table.agentConfigId),
+        lastMessageAtIdx: index("ai_conversation_last_message_at_idx").on(table.lastMessageAt),
+    })
+);
+
+// AI Conversation Messages
+export const aiConversationMessages = pgTable(
+    "ai_conversation_message",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        conversationId: text("conversation_id")
+            .notNull()
+            .references(() => aiConversations.id, { onDelete: "cascade" }),
+        role: text("role").notNull(), // 'user' | 'assistant'
+        content: text("content").notNull(),
+        metadata: jsonb("metadata").$type<{
+            runId?: string;
+            artifacts?: string[];
+            error?: string;
+        }>(),
+        createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+    },
+    (table) => ({
+        conversationIdIdx: index("ai_conversation_message_conversation_id_idx").on(table.conversationId),
+        createdAtIdx: index("ai_conversation_message_created_at_idx").on(table.createdAt),
     })
 );
 
@@ -1040,6 +1097,13 @@ export const aiAgentPromptVersions = pgTable(
             qa?: string;
             followup?: string;
         }>(),
+        blocks: jsonb("blocks").$type<Array<{
+            id: string;
+            order: number;
+            name: string;
+            content: string;
+            stepKey?: 'intake' | 'logoCheck' | 'generate' | 'qa' | 'followup';
+        }>>(),
         createdBy: text("created_by")
             .references(() => users.id, { onDelete: "set null" }),
         createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),

@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, count, desc, eq, gte, inArray } from 'drizzle-orm';
 import { aiAgentsDb } from '../db/ai-agents-config';
 import { brandbookAgentRuns } from '../db/schema';
 
@@ -104,6 +104,48 @@ export class BrandbookAgentRunsRepository {
       .returning();
 
     return updated || null;
+  }
+
+  /**
+   * Count runs created today for a specific user in an organization
+   */
+  async countRunsToday(organizationId: string, createdBy: string): Promise<number> {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const result = await aiAgentsDb
+      .select({ count: count() })
+      .from(brandbookAgentRuns)
+      .where(
+        and(
+          eq(brandbookAgentRuns.organizationId, organizationId),
+          eq(brandbookAgentRuns.createdBy, createdBy),
+          gte(brandbookAgentRuns.createdAt, todayStart)
+        )
+      );
+
+    return result[0]?.count ?? 0;
+  }
+
+  /**
+   * Count concurrent (active) runs for a specific user in an organization
+   * Active statuses: queued, processing, postprocessing
+   */
+  async countConcurrentRuns(organizationId: string, createdBy: string): Promise<number> {
+    const activeStatuses = ['queued', 'processing', 'postprocessing'];
+
+    const result = await aiAgentsDb
+      .select({ count: count() })
+      .from(brandbookAgentRuns)
+      .where(
+        and(
+          eq(brandbookAgentRuns.organizationId, organizationId),
+          eq(brandbookAgentRuns.createdBy, createdBy),
+          inArray(brandbookAgentRuns.status, activeStatuses)
+        )
+      );
+
+    return result[0]?.count ?? 0;
   }
 }
 

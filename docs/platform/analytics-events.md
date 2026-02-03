@@ -2,7 +2,7 @@
 
 **Статус:** active  
 **Владелец:** product/analytics  
-**Последнее обновление:** 2026-01-21
+**Последнее обновление:** 2026-02-03
 
 Это **канонический** список событий аналитики и их схем.
 
@@ -105,12 +105,24 @@
 
 ## События AI Hub
 
+### AI-ассистенты
+
 | Событие | Описание | Payload | Когда | Где |
 |---------|----------|--------|-------|-----|
 | `ai_assistant_used` | Использован AI-ассистент | `{ assistant_type, project_id?, task_id? }` | При использовании ассистента | Frontend AI Hub |
 | `ai_generation_created` | Создана генерация | `{ generation_id, generation_type, provider }` | При создании генерации | API endpoint `/api/ai/generate` |
 | `ai_prompt_created` | Создан промпт | `{ prompt_id, prompt_type }` | При создании промпта | Планируется (API `/api/ai/prompts` отсутствует) |
 | `ai_agent_triggered` | Запущен AI-агент | `{ agent_id, trigger_type }` | При запуске агента | API endpoint `/api/pm/projects/[id]/ai-agents` |
+
+### AI-агенты (Brandbook и другие)
+
+| Событие | Описание | Payload | Когда | Где |
+|---------|----------|--------|-------|-----|
+| `ai_agent_invoked` | Агент вызван через @упоминание | `{ agent_type, project_id, user_id }` | При @упоминании агента в чате проекта | API endpoint `/api/pm/projects/[id]/chat` |
+| `ai_agent_run_created` | Создан запуск агента | `{ run_id, agent_type, organization_id, project_id?, product_bundle }` | При создании нового запуска | API endpoint `/api/ai/agents/brandbook/runs` |
+| `ai_agent_run_completed` | Запуск завершён | `{ run_id, agent_type, duration_ms, artifacts_count }` | При успешном завершении запуска | API endpoint `/api/ai/agents/brandbook/runs/[runId]` |
+| `ai_agent_run_failed` | Запуск провалился | `{ run_id, agent_type, error_code, error_message? }` | При ошибке запуска | API endpoint `/api/ai/agents/brandbook/runs/[runId]` |
+| `ai_agent_limit_exceeded` | Превышен лимит | `{ agent_type, organization_id, limit_type, current_value, max_value }` | При попытке превысить лимит (квота запусков и т.д.) | API endpoint `/api/ai/agents/*/runs` |
 
 ## События Finance
 
@@ -204,7 +216,7 @@ trackEvent('pm_task_created', {
 - [ ] Агрегация и отчеты
 - [ ] Real-time дашборды аналитики
 - [ ] Marketplace/Marketing события и API (модули планируются)
-- [ ] AI prompts/agents события (API отсутствуют)
+- [x] AI-агенты: базовые события реализованы (`ai_agent_invoked`, `ai_agent_run_created`)
 
 ---
 

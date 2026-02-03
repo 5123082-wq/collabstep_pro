@@ -4,9 +4,10 @@ import { projectChatRepository, projectsRepository, usersRepository } from '@col
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { notifyChatMessageAdded } from '@/lib/notifications/event-generator';
 import { broadcastToProject } from '@/lib/websocket/event-broadcaster';
-import { handleAgentMentionInChat } from '@/lib/ai/agent-responses';
+import { handleAgentMentionInChat, sendAgentChatResponse } from '@/lib/ai/agent-responses';
 import { getCurrentSession } from '@/lib/auth/session';
 import { decodeDemoSession, DEMO_SESSION_COOKIE, isDemoAdminEmail } from '@/lib/auth/demo-session';
+import { trackEvent } from '@/lib/telemetry';
 
 type AuthContext = {
   userId: string;
@@ -158,10 +159,32 @@ export async function POST(
     });
 
     // Проверить упоминания AI-агентов и отправить ответы (асинхронно, не блокируем ответ)
-    handleAgentMentionInChat(projectId, messageBody.trim(), auth.userId).catch((error) => {
-      console.error('Error handling agent mentions:', error);
-      // Не блокируем основной ответ при ошибке обработки агентов
-    });
+    handleAgentMentionInChat(projectId, messageBody.trim(), auth.userId)
+      .then(async (results) => {
+        // Обработка config-based агентов (например Brandbook Agent)
+        for (const result of results) {
+          // Трекаем событие вызова агента через @упоминание
+          trackEvent('ai_agent_invoked', {
+            agent_type: result.config?.pipelineType ?? result.agentType,
+            project_id: projectId,
+            user_id: auth.userId
+          });
+
+          if (result.requiresPipeline && result.config) {
+            // Отправить приветственное сообщение от агента
+            // Пайплайн генерации будет запущен отдельно пользователем
+            await sendAgentChatResponse(
+              projectId,
+              result.agentId,
+              'Привет! Я Brandbook Agent. Загрузите логотип и я создам для вас брендбук.'
+            );
+          }
+        }
+      })
+      .catch((error) => {
+        console.error('Error handling agent mentions:', error);
+        // Не блокируем основной ответ при ошибке обработки агентов
+      });
 
     // Возврат результата
     return jsonOk({
