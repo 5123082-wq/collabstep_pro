@@ -1,6 +1,7 @@
 import { and, desc, eq } from 'drizzle-orm';
 import { aiAgentsDb } from '../db/ai-agents-config';
-import { aiConversations, aiConversationMessages, aiAgentConfigs } from '../db/schema';
+import { db } from '../db/config';
+import { aiConversations, aiConversationMessages, aiAgentConfigs, users } from '../db/schema';
 
 // --- Types ---
 
@@ -27,6 +28,61 @@ export interface AIConversationWithAgent extends DbAIConversation {
 // --- AI Conversations Repository ---
 
 export class AIConversationsRepository {
+    /**
+     * Ensure user exists in AI database.
+     * Required when AI_AGENTS_DATABASE_URL points to a separate database,
+     * since ai_conversation has FK to user table.
+     * 
+     * This is a lazy sync: we only create the user record when they
+     * actually use AI Hub features.
+     */
+    private async ensureUserInAiDb(userId: string): Promise<void> {
+        // Check if user already exists in AI DB
+        const [existing] = await aiAgentsDb
+            .select({ id: users.id })
+            .from(users)
+            .where(eq(users.id, userId));
+
+        if (existing) return;
+
+        // Fetch user info from main database
+        const [mainUser] = await db
+            .select({
+                id: users.id,
+                email: users.email,
+                name: users.name,
+                image: users.image,
+            })
+            .from(users)
+            .where(eq(users.id, userId));
+
+        if (!mainUser) {
+            throw new Error(`User ${userId} not found in main database`);
+        }
+
+        // Create user in AI database (minimal fields for FK satisfaction)
+        try {
+            await aiAgentsDb
+                .insert(users)
+                .values({
+                    id: mainUser.id,
+                    email: mainUser.email,
+                    name: mainUser.name,
+                    image: mainUser.image,
+                    isAi: false,
+                    createdAt: new Date(),
+                })
+                .onConflictDoNothing(); // Idempotent: ignore if race condition
+        } catch (error) {
+            // If insert fails due to duplicate key (race condition), that's OK
+            const isDuplicateKey = error instanceof Error && 
+                (error.message.includes('duplicate key') || error.message.includes('unique constraint'));
+            if (!isDuplicateKey) {
+                throw error;
+            }
+        }
+    }
+
     /**
      * List all conversations for a user, with agent info
      */
@@ -104,6 +160,9 @@ export class AIConversationsRepository {
      * Find or create conversation between user and agent
      */
     async findOrCreate(userId: string, agentConfigId: string): Promise<DbAIConversation> {
+        // Ensure user exists in AI database (for FK constraint)
+        await this.ensureUserInAiDb(userId);
+
         // Check for existing conversation
         const [existing] = await aiAgentsDb
             .select()
@@ -144,6 +203,9 @@ export class AIConversationsRepository {
      * Create a new conversation
      */
     async create(data: NewAIConversation): Promise<DbAIConversation> {
+        // Ensure user exists in AI database (for FK constraint)
+        await this.ensureUserInAiDb(data.userId);
+
         const [conversation] = await aiAgentsDb
             .insert(aiConversations)
             .values(data)
