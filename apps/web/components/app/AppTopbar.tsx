@@ -5,7 +5,7 @@ import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 
 import type { KeyboardEvent } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 // TODO: Подключить к реальному API специалистов и вакансий
-import { toast } from '@/lib/ui/toast';
+import { SubscriptionModal } from '@/components/subscriptions/SubscriptionModal';
 import ThemeToggle from '@/components/app/ThemeToggle';
 import AccountMenu from '@/components/app/AccountMenu';
 import { getUserType, type UserType } from '@/lib/auth/roles';
@@ -27,6 +27,7 @@ import {
 } from '@/lib/nav/navigation-utils';
 import { useUI } from '@/stores/ui';
 import type { OrganizationMember } from '@collabverse/api';
+import { Bell, MessageCircle, Wallet, User, Search, CreditCard, Plus } from 'lucide-react';
 
 type QuickSuggestion = {
   id: string;
@@ -36,12 +37,12 @@ type QuickSuggestion = {
   type: 'specialist' | 'vacancy';
 };
 
-const iconPaths: Record<string, string> = {
-  bell: 'M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2Zm8-6a2 2 0 0 1-2-2v-3a6 6 0 1 0-12 0v3a2 2 0 0 1-2 2h16Z',
-  chat: 'M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z',
-  wallet: 'M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 0 4H5a2 2 0 0 1-2-2Zm0 5a2 2 0 0 1 2-2h16v8H5a2 2 0 0 1-2-2v-4Zm13 2a1 1 0 1 0 0 2h3v-2h-3Z',
-  user: 'M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4 0-8 2-8 4v2h16v-2c0-2-4-4-8-4Z'
-};
+const iconMap = {
+  bell: Bell,
+  chat: MessageCircle,
+  wallet: Wallet,
+  user: User
+} as const;
 
 function resolveRoleLabel(role: DemoProfile['role']): string {
   return role === 'admin' ? 'Админ' : 'Пользователь';
@@ -53,11 +54,12 @@ function IconButton({
   onClick,
   badge
 }: {
-  icon: keyof typeof iconPaths;
+  icon: keyof typeof iconMap;
   label: string;
   onClick?: () => void;
   badge?: number;
 }) {
+  const Icon = iconMap[icon];
   const showBadge = typeof badge === 'number' && badge > 0;
   return (
     <button
@@ -70,18 +72,11 @@ function IconButton({
       aria-label={label}
       onClick={onClick}
     >
-      <svg
+      <Icon
         aria-hidden="true"
         className="h-[18px] w-[18px] transition group-hover:scale-105"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d={iconPaths[icon]} fill="currentColor" />
-      </svg>
+        strokeWidth={1.5}
+      />
       {showBadge ? (
         <span className="absolute -top-1 -right-1 rounded-full bg-indigo-500 px-1.5 py-[1px] text-[10px] font-semibold text-white shadow">
           {badge}
@@ -125,6 +120,7 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
   const listboxId = useId();
   const hintId = `${listboxId}-hint`;
   const [userType, setUserTypeState] = useState<UserType>(null);
+  const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
 
   useEffect(() => {
     const updateUserType = () => setUserTypeState(getUserType());
@@ -436,7 +432,7 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
             onClick={onOpenCreate}
             className="inline-flex items-center gap-[7.2px] rounded-2xl border border-indigo-500/50 bg-indigo-500/10 px-[14.4px] py-[7.2px] text-[12.6px] font-semibold text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
           >
-            <span className="text-[16.2px] leading-none">+</span>
+            <Plus className="h-[16.2px] w-[16.2px]" strokeWidth={1.5} />
             Создать
           </button>
         </div>
@@ -451,24 +447,13 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
         <div className="hidden items-center gap-[7.2px] md:flex">
           <button
             type="button"
-            onClick={() => toast('Раздел тарифов скоро появится в демо-версии платформы', 'info')}
+            onClick={() => setSubscriptionModalOpen(true)}
             className="inline-flex items-center gap-[7.2px] rounded-2xl border border-indigo-500/60 bg-indigo-500/15 px-[14.4px] py-[7.2px] text-[9.9px] font-semibold uppercase tracking-[0.18em] text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
           >
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 24 24"
-              className="h-[14.4px] w-[14.4px]"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.6}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M4 9.5 7 5l5 5 5-5 3 4.5V20H4z" />
-              <path d="M4 15h16" />
-            </svg>
+            <CreditCard className="h-[14.4px] w-[14.4px]" strokeWidth={1.5} />
             {currentSubscriptionLabel}
           </button>
+          <SubscriptionModal open={subscriptionModalOpen} onOpenChange={setSubscriptionModalOpen} />
           <IconButton
             icon="bell"
             label="Уведомления"
@@ -504,19 +489,7 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
             className="flex h-9 w-9 items-center justify-center rounded-full border transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 border-[color:var(--theme-control-border)] bg-[color:var(--theme-control-bg)] text-[color:var(--theme-control-foreground)] hover:border-[color:var(--theme-control-border-hover)] hover:text-[color:var(--theme-control-foreground-hover)]"
             aria-label="Поиск"
           >
-            <svg
-              aria-hidden="true"
-              className="h-[14px] w-[14px]"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
+            <Search className="h-[14px] w-[14px]" strokeWidth={1.5} />
           </button>
           <AccountMenu 
             profile={profile} 

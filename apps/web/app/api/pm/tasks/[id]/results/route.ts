@@ -4,13 +4,79 @@ import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
 import {
   tasksRepository,
   foldersRepository,
-  projectsRepository
+  projectsRepository,
+  organizationsRepository
 } from '@collabverse/api';
 import { db } from '@collabverse/api/db/config';
 import { files, projects } from '@collabverse/api/db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { flags } from '@/lib/flags';
+import type { Project } from '@collabverse/api';
+
+/**
+ * Ensures project exists in legacy `project` table and returns organizationId.
+ * If project doesn't exist in the table, it tries to find user's primary organization
+ * and creates the record.
+ */
+async function ensureProjectInLegacyTable(
+  projectId: string,
+  project: Project,
+  userId: string
+): Promise<string | null> {
+  // First, try to get existing record
+  const [dbProject] = await db
+    .select({ organizationId: projects.organizationId })
+    .from(projects)
+    .where(eq(projects.id, projectId));
+
+  if (dbProject?.organizationId) {
+    return dbProject.organizationId;
+  }
+
+  // Project not in legacy table or has no organizationId - find user's organization
+  const userOrgs = await organizationsRepository.listForUser(userId);
+  if (!userOrgs || userOrgs.length === 0) {
+    console.error(`[TaskResults] User ${userId} has no organizations`);
+    return null;
+  }
+
+  // Use first organization (primary) or the one where user is owner
+  const primaryOrg = userOrgs.find(org => org.ownerId === userId) ?? userOrgs[0];
+  if (!primaryOrg) {
+    return null;
+  }
+
+  const organizationId = primaryOrg.id;
+  const now = new Date();
+
+  // Insert or update the legacy project record
+  if (dbProject) {
+    // Record exists but organizationId is null - update it
+    await db
+      .update(projects)
+      .set({
+        organizationId,
+        updatedAt: now
+      })
+      .where(eq(projects.id, projectId));
+  } else {
+    // Record doesn't exist - create it
+    await db.insert(projects).values({
+      id: projectId,
+      organizationId,
+      ownerId: project.ownerId,
+      name: project.title,
+      description: project.description ?? null,
+      visibility: project.visibility === 'public' ? 'public' : 'private',
+      createdAt: now,
+      updatedAt: now
+    });
+  }
+
+  console.log(`[TaskResults] Synced project ${projectId} to legacy table with organizationId ${organizationId}`);
+  return organizationId;
+}
 
 const SetResultsSchema = z.object({
   fileIds: z.array(z.string()).min(1)
@@ -50,13 +116,9 @@ export async function GET(
       return jsonError('PROJECT_NOT_FOUND', { status: 404 });
     }
 
-    // Get organization ID from project
-    const [dbProject] = await db
-      .select({ organizationId: projects.organizationId })
-      .from(projects)
-      .where(eq(projects.id, task.projectId));
-
-    if (!dbProject || !dbProject.organizationId) {
+    // Get or create organization ID in legacy table
+    const organizationId = await ensureProjectInLegacyTable(task.projectId, project, auth.userId);
+    if (!organizationId) {
       return jsonError('PROJECT_HAS_NO_ORGANIZATION', { status: 400 });
     }
 
@@ -74,7 +136,7 @@ export async function GET(
       .where(
         and(
           eq(files.folderId, resultFolder.id),
-          eq(files.organizationId, dbProject.organizationId)
+          eq(files.organizationId, organizationId)
         )
       )
       .orderBy(files.createdAt);
@@ -138,13 +200,9 @@ export async function POST(
       return jsonError('PROJECT_NOT_FOUND', { status: 404 });
     }
 
-    // Get organization ID from project
-    const [dbProject] = await db
-      .select({ organizationId: projects.organizationId })
-      .from(projects)
-      .where(eq(projects.id, task.projectId));
-
-    if (!dbProject || !dbProject.organizationId) {
+    // Get or create organization ID in legacy table
+    const organizationId = await ensureProjectInLegacyTable(task.projectId, project, auth.userId);
+    if (!organizationId) {
       return jsonError('PROJECT_HAS_NO_ORGANIZATION', { status: 400 });
     }
 
@@ -156,7 +214,7 @@ export async function POST(
         and(
           inArray(files.id, fileIds),
           eq(files.projectId, task.projectId),
-          eq(files.organizationId, dbProject.organizationId)
+          eq(files.organizationId, organizationId)
         )
       );
 
@@ -169,7 +227,7 @@ export async function POST(
 
     // Ensure project folder exists
     const projectFolder = await foldersRepository.ensureProjectFolder(
-      dbProject.organizationId,
+      organizationId,
       task.projectId,
       `${project.title || 'Project'} (${task.projectId})`,
       auth.userId
@@ -177,7 +235,7 @@ export async function POST(
 
     // Ensure task folder exists
     const taskFolder = await foldersRepository.ensureTaskFolder(
-      dbProject.organizationId,
+      organizationId,
       task.projectId,
       taskId,
       `${task.title || 'Task'} (${taskId})`,
@@ -187,7 +245,7 @@ export async function POST(
 
     // Ensure result folder exists
     const resultFolder = await foldersRepository.ensureResultFolder(
-      dbProject.organizationId,
+      organizationId,
       task.projectId,
       taskId,
       auth.userId,

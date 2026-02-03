@@ -7,10 +7,12 @@ import {
   aiAgentConfigsDbRepository,
   aiAgentPromptVersionsDbRepository,
   BrandbookAgentPipeline,
+  blocksToPrompts,
   brandbookAgentMessagesRepository,
   brandbookAgentRunsRepository,
   projectsRepository,
-  type BrandbookPipelineConfig
+  type BrandbookPipelineConfig,
+  type BrandbookPromptBlock
 } from '@collabverse/api';
 
 const CreateMessageSchema = z.object({
@@ -101,7 +103,10 @@ export async function POST(
   const configuredParameters = (config.parameters as BrandbookPipelineConfig['parameters']) || {};
   const pipelineConfig: BrandbookPipelineConfig = {
     systemPrompt: promptVersion.systemPrompt || '',
-    prompts: (promptVersion.prompts as BrandbookPipelineConfig['prompts']) || {},
+    prompts: blocksToPrompts(
+      promptVersion.blocks as BrandbookPromptBlock[] | null,
+      promptVersion.prompts as BrandbookPipelineConfig['prompts'] | null
+    ),
     parameters: {
       ...configuredParameters,
       model: process.env.BRANDBOOK_AGENT_OPENAI_MODEL || configuredParameters.model || 'gpt-3.5-turbo'

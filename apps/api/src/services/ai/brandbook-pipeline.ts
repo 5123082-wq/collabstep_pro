@@ -10,6 +10,38 @@ export interface BrandbookPrompts {
     followup?: string;
 }
 
+export interface BrandbookPromptBlock {
+    id: string;
+    order: number;
+    name: string;
+    content: string;
+    stepKey?: 'intake' | 'logoCheck' | 'generate' | 'qa' | 'followup';
+}
+
+/**
+ * Convert blocks array to prompts object by stepKey.
+ * If blocks is empty/null, returns the legacy prompts object.
+ */
+export function blocksToPrompts(
+    blocks: BrandbookPromptBlock[] | null | undefined,
+    legacyPrompts: BrandbookPrompts | null | undefined
+): BrandbookPrompts {
+    if (!blocks || blocks.length === 0) {
+        return legacyPrompts || {};
+    }
+
+    const prompts: BrandbookPrompts = {};
+    const sortedBlocks = [...blocks].sort((a, b) => a.order - b.order);
+
+    for (const block of sortedBlocks) {
+        if (block.stepKey) {
+            prompts[block.stepKey] = block.content;
+        }
+    }
+
+    return prompts;
+}
+
 export interface BrandbookPipelineConfig {
     systemPrompt: string;
     prompts: BrandbookPrompts;

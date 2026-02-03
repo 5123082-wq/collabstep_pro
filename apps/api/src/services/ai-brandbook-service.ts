@@ -10,7 +10,9 @@ import {
 } from '../repositories/ai-agent-configs-repository';
 import { brandbookAgentArtifactsRepository } from '../repositories/brandbook-agent-artifacts-repository';
 import { brandbookAgentRunsRepository } from '../repositories/brandbook-agent-runs-repository';
-import { BrandbookAgentPipeline, type BrandbookPipelineConfig } from './ai/brandbook-pipeline';
+import { userSubscriptionsRepository } from '../repositories/user-subscriptions-repository';
+import { subscriptionPlansRepository } from '../repositories/subscription-plans-repository';
+import { BrandbookAgentPipeline, blocksToPrompts, type BrandbookPipelineConfig, type BrandbookPromptBlock } from './ai/brandbook-pipeline';
 
 export interface BrandbookAgentRunCreateResult {
   runId: string;
@@ -57,13 +59,55 @@ export class BrandbookAgentServiceImpl implements BrandbookAgentService {
       throw new Error('Brandbook agent is currently disabled.');
     }
 
-    // 2. Fetch Published Prompt Version
+    // 2. Get user subscription and plan limits
+    const userSubscription =
+      await userSubscriptionsRepository.findByUserId(createdBy);
+    const planCode = userSubscription?.planCode ?? 'free';
+    const plan = await subscriptionPlansRepository.findByCode(planCode);
+
+    // 3. Determine limits (plan takes priority over config)
+    const maxRunsPerDay =
+      plan?.aiAgentRunsPerDay ??
+      (config.limits as { maxRunsPerDay?: number } | null)?.maxRunsPerDay ??
+      10;
+    const maxConcurrentRuns =
+      plan?.aiAgentConcurrentRuns ??
+      (config.limits as { maxConcurrentRuns?: number } | null)?.maxConcurrentRuns ??
+      1;
+
+    // 4. Check daily runs limit (-1 = unlimited)
+    if (maxRunsPerDay !== -1) {
+      const runsToday = await brandbookAgentRunsRepository.countRunsToday(
+        organizationId,
+        createdBy
+      );
+      if (runsToday >= maxRunsPerDay) {
+        throw new Error(
+          `Достигнут лимит запусков за день (${maxRunsPerDay}). Обновите подписку до Pro для увеличения лимита.`
+        );
+      }
+    }
+
+    // 5. Check concurrent runs limit
+    if (maxConcurrentRuns !== -1) {
+      const concurrentRuns = await brandbookAgentRunsRepository.countConcurrentRuns(
+        organizationId,
+        createdBy
+      );
+      if (concurrentRuns >= maxConcurrentRuns) {
+        throw new Error(
+          `Достигнут лимит одновременных запусков (${maxConcurrentRuns}). Дождитесь завершения текущих.`
+        );
+      }
+    }
+
+    // 6. Fetch Published Prompt Version
     const promptVersion = await aiAgentPromptVersionsDbRepository.findPublished(config.id);
     if (!promptVersion) {
       throw new Error('No published prompt version found for Brandbook agent. Please publish a version in Admin Panel.');
     }
 
-    // 3. Create Run Record in DB
+    // 7. Create Run Record in DB
     const runRecord = await brandbookAgentRunsRepository.create({
       id: crypto.randomUUID(),
       organizationId,
@@ -84,7 +128,7 @@ export class BrandbookAgentServiceImpl implements BrandbookAgentService {
       updatedAt: new Date(),
     });
 
-    // 4. Initialize Pipeline (dedicated key for Brandbook Agent only)
+    // 8. Initialize Pipeline (dedicated key for Brandbook Agent only)
     const apiKey = process.env.BRANDBOOK_AGENT_OPENAI_API_KEY;
     if (!apiKey) {
       console.error('CRITICAL: BRANDBOOK_AGENT_OPENAI_API_KEY is missing. Set it in apps/web/.env.local for Brandbook generation.');
@@ -127,7 +171,10 @@ export class BrandbookAgentServiceImpl implements BrandbookAgentService {
 
     const pipelineConfig: BrandbookPipelineConfig = {
       systemPrompt: promptVersion.systemPrompt || '',
-      prompts: (promptVersion.prompts as BrandbookPipelineConfig['prompts']) || {},
+      prompts: blocksToPrompts(
+        promptVersion.blocks as BrandbookPromptBlock[] | null,
+        promptVersion.prompts as BrandbookPipelineConfig['prompts'] | null
+      ),
       parameters: {
         ...configuredParameters,
         model: process.env.BRANDBOOK_AGENT_OPENAI_MODEL || configuredParameters.model || 'gpt-3.5-turbo',
@@ -143,7 +190,7 @@ export class BrandbookAgentServiceImpl implements BrandbookAgentService {
 
     const pipeline = new BrandbookAgentPipeline(apiKey, pipelineConfig);
 
-    // 5. Execute Pipeline (Async)
+    // 9. Execute Pipeline (Async)
     // We execute it but don't await the full completion for the initial createRun response
     // if we want to return "queued" immediately.
     // However, it's better to update status to "processing" first.

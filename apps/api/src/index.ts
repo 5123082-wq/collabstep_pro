@@ -163,9 +163,19 @@ export {
   type DbAIAgentPromptVersion,
   type NewAIAgentPromptVersion,
   type AIAgentPrompts,
+  type AIAgentPromptBlock,
   type AIAgentConfigUpdateInput,
   type AIAgentPromptVersionUpdateInput
 } from './repositories/ai-agent-configs-repository';
+export {
+  AIConversationsRepository,
+  aiConversationsRepository,
+  type DbAIConversation,
+  type NewAIConversation,
+  type DbAIConversationMessage,
+  type NewAIConversationMessage,
+  type AIConversationWithAgent,
+} from './repositories/ai-conversations-repository';
 export {
   createBrandbookRunMock,
   type BrandbookAgentRunCreateResult,
@@ -175,7 +185,9 @@ export { OpenAIClient, type AIClient } from './services/ai/openai-client';
 export {
   BrandbookAgentPipeline,
   createBrandbookPipeline,
+  blocksToPrompts,
   type BrandbookPrompts,
+  type BrandbookPromptBlock,
   type BrandbookPipelineConfig,
   type BrandbookPipelineInput,
   type BrandbookPipelineStep,
@@ -274,6 +286,11 @@ export { sendExpiryNotifications } from './services/closure/archive-expiry-notif
 export { pmPgHydration } from './storage/pm-pg-bootstrap';
 export { fileTrashRepository, FileTrashRepository, type DbFileTrash, type NewDbFileTrash, type FileTrashWithFile } from './repositories/file-trash-repository';
 export { subscriptionPlansRepository, SubscriptionPlansRepository, type DbSubscriptionPlan, type NewDbSubscriptionPlan } from './repositories/subscription-plans-repository';
+export { userSubscriptionsRepository } from './repositories/user-subscriptions-repository';
+export type {
+  UserSubscriptionRecord,
+  UserSubscriptionInsert,
+} from './repositories/user-subscriptions-repository';
 export { organizationSubscriptionsRepository, OrganizationSubscriptionsRepository, type DbOrganizationSubscription, type NewDbOrganizationSubscription, type OrganizationSubscriptionWithPlan } from './repositories/organization-subscriptions-repository';
 export { organizationStorageUsageRepository, OrganizationStorageUsageRepository, type DbOrganizationStorageUsage, type NewDbOrganizationStorageUsage } from './repositories/organization-storage-usage-repository';
 export { cleanupExpiredFileTrash } from './services/file-trash-cleanup-job';

@@ -34,6 +34,78 @@
 
 ### Now
 
+- ✅ **FIX: PROJECT_HAS_NO_ORGANIZATION при открытии задачи** (2026-02-03):
+  - **Проблема:** При открытии задачи в `TaskDetailDrawer` возникала ошибка `PROJECT_HAS_NO_ORGANIZATION`
+  - **Причина:** API `/api/pm/tasks/[id]/results` читал `organizationId` из deprecated таблицы `project`, но проекты создаются в `pm_projects` без синхронизации с legacy таблицей
+  - **Решение:** Добавлена функция `ensureProjectInLegacyTable()` которая автоматически синхронизирует проект с legacy таблицей, используя организацию текущего пользователя
+  - **Файл:** `apps/web/app/api/pm/tasks/[id]/results/route.ts`
+
+- ✅ **ЭТАП 3: ВЕРИФИКАЦИЯ ЗАВЕРШЕНА** (2026-02-03):
+  - Typecheck ✅ — все ошибки исправлены (была ошибка `result.config?.type` → исправлено на `result.config?.pipelineType`)
+  - Lint ✅ — только 1 warning (не связан с изменениями)
+  - Все файлы Этапа 3 проверены и работают корректно
+
+- ✅ **BRANDBOOK AGENT: Проверка лимитов** (2026-02-03):
+  - Добавлены методы `countRunsToday()` и `countConcurrentRuns()` в `brandbook-agent-runs-repository.ts`
+  - В `ai-brandbook-service.ts` добавлена проверка лимитов из `ai_agent_config.limits` перед созданием запуска
+  - Проверяется `maxRunsPerDay` и `maxConcurrentRuns`, при превышении выбрасывается Error с понятным сообщением
+  - Active statuses для concurrent runs: `queued`, `processing`, `postprocessing`
+  - Файлы: `apps/api/src/repositories/brandbook-agent-runs-repository.ts`, `apps/api/src/services/ai-brandbook-service.ts`
+
+- ✅ **AI AGENTS ANALYTICS EVENTS** (2026-02-03):
+  - Добавлены события аналитики для AI-агентов в `docs/platform/analytics-events.md`
+  - События: `ai_agent_invoked`, `ai_agent_run_created`, `ai_agent_run_completed`, `ai_agent_run_failed`, `ai_agent_limit_exceeded`
+  - Добавлен `trackEvent('ai_agent_invoked')` при @упоминании агента в чате проекта
+  - Добавлен `trackEvent('ai_agent_run_created')` при создании запуска Brandbook Agent
+  - Файлы: `apps/web/app/api/pm/projects/[id]/chat/route.ts`, `apps/web/app/api/ai/agents/brandbook/runs/route.ts`
+
+- ✅ **AI AGENT IDENTITY UNIFICATION — ВСЕ ЭТАПЫ ЗАВЕРШЕНЫ** (2026-02-03):
+  - **Этап 1**: AI-пользователь `brandbook.agent@collabverse.ai` создан, связан с конфигом ✅
+  - **Этап 2**: @упоминания агентов работают в чате (`@brandbook`, `@Brandbook Agent`) ✅
+  - **Этап 3**: Лимиты из конфига, аналитика (ai_agent_invoked, ai_agent_run_created) ✅
+  - **Этап 4**: AI Hub — прямые диалоги с агентами ✅ **ПОЛНОСТЬЮ РАБОТАЕТ**
+    - Миграция 0025: ai_conversation, ai_conversation_message, allowDirectMessages
+    - API: /api/ai/conversations, /api/ai/hub/agents
+    - UI: вкладка "AI Hub" в AllChatsModal, компонент AIHubPanel
+    - Интеграция с Brandbook Agent pipeline
+    - **FIX 1**: Исправлена обработка формата ответа API (`{ok, data: {agents}}`)
+    - **FIX 2**: Создан demo-пользователь в AI БД через `sync-demo-user-to-ai-db.ts`
+    - **FIX 3**: Исправлена проблема Foreign Key constraint violation при создании диалога
+    - **VERIFIED**: Диалоги создаются успешно (status 200), Brandbook Agent работает
+  - **Документация (2026-02-03):** обновлена под фактическую реализацию — один Brandbook Agent с `userId`, без клона (v2) и без legacy-агента. Файлы: `11-agent-identity-unification-plan.md`, `10-agent-identity-and-projects.md`, `11-stage-1-identity-model.md`, `11-stage-4-migration-rollout.md`
+  - Документы этапов: `11-stage-1-identity-model.md`, `11-stage-2-project-chat-integration.md`, `11-stage-3-access-analytics-guardrails.md`, `11-stage-4-migration-rollout.md`
+
+- ✅ **ПОДПИСКИ: базовая инфраструктура** (2026-02-03):
+  - **Статус:** ✅ Выполнено
+  - **Созданные файлы:**
+    - `apps/api/src/repositories/user-subscriptions-repository.ts` — репозиторий подписок пользователей
+    - `apps/api/src/db/migrations/0024_subscription_ai_limits.sql` — миграция с AI-лимитами
+    - `scripts/db/seed-subscription-plans.ts` — скрипт для seed-данных планов
+  - **Обновлённые файлы:**
+    - `apps/api/src/index.ts` — добавлен экспорт userSubscriptionsRepository
+    - `apps/api/src/db/schema.ts` — добавлены поля aiAgentRunsPerDay, aiAgentConcurrentRuns в subscriptionPlans
+    - `apps/web/lib/api/user-subscription.ts` — getUserSubscription() читает из БД
+    - `apps/api/src/services/ai-brandbook-service.ts` — проверка лимитов использует план подписки
+  - **Проверки:** typecheck ✅, lint ✅
+  - **Документ:** `docs/development/subscriptions/00-subscriptions-implementation-plan.md`
+
+- ✅ **AI AGENT IDENTITY: миграция и AI-пользователь Brandbook Agent** (2026-02-03):
+  - **Миграция БД**: `0023_agent_identity.sql` — добавлены `is_ai` в `user`, `user_id` в `ai_agent_config`.
+  - **Схема**: обновлена `apps/api/src/db/schema.ts` — поля `isAi` и `userId` с индексом.
+  - **Репозиторий**: добавлены методы `ensureAgentUser()` и `ensureBrandbookAgentUser()` в `ai-agent-configs-repository.ts`.
+  - **Скрипт**: `scripts/db/create-brandbook-agent-user.ts` — идемпотентный скрипт для создания AI-пользователя.
+  - AI-пользователь: email=brandbook.agent@collabverse.ai, name=Brandbook Agent, is_ai=true.
+  - Все поля nullable — legacy агенты без userId продолжают работать.
+  - Typecheck ✅, lint ✅
+
+- ✅ **BRANDBOOK AGENT: админка промптов — динамические блоки** (2026-02-01):
+  - **Миграция БД**: добавлена колонка `blocks` (jsonb) в `ai_agent_prompt_version`.
+  - **Схема**: тип `AIAgentPromptBlock` (id, order, name, content, stepKey?).
+  - **Хелпер**: `blocksToPrompts()` — преобразование blocks → prompts для пайплайна.
+  - **API админки**: POST/PATCH принимают `blocks`, нормализуют order.
+  - **UI**: один столбец, блоки с именами (`intake`, `logoCheck`, `generate`, `qa`, `followup`), бейджи «LLM / сообщение», добавление/удаление блоков.
+  - Файлы: `apps/api/src/db/migrations/0022_prompt_version_blocks.sql`, `apps/api/src/db/schema.ts`, `apps/api/src/repositories/ai-agent-configs-repository.ts`, `apps/api/src/services/ai/brandbook-pipeline.ts`, `apps/web/app/(app)/admin/ai-agents/brandbook/page.tsx`, API routes.
+
 - ✅ **BRANDBOOK AGENT: отдельный API-ключ** (2026-02-01):
   - Введена переменная `BRANDBOOK_AGENT_OPENAI_API_KEY` только для Brandbook Agent (не использовать `OPENAI_API_KEY`).
   - Ключ читается в `apps/api/src/services/ai-brandbook-service.ts`; записывать в `apps/web/.env.local`.
