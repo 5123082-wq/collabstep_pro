@@ -66,4 +66,21 @@ declare module 'lucide-react' {
   export const CircleCheck: LucideIcon;
   export const AlertCircle: LucideIcon;
   export const Database: LucideIcon;
+  // App shell / theme / account / sidebar
+  export const Sun: LucideIcon;
+  export const Moon: LucideIcon;
+  export const User: LucideIcon;
+  export const UserCog: LucideIcon;
+  export const Camera: LucideIcon;
+  export const Bot: LucideIcon;
+  export const MessageCircle: LucideIcon;
+  export const Wallet: LucideIcon;
+  export const CreditCard: LucideIcon;
+  export const LayoutDashboard: LucideIcon;
+  export const FolderKanban: LucideIcon;
+  export const Store: LucideIcon;
+  export const Megaphone: LucideIcon;
+  export const LifeBuoy: LucideIcon;
+  export const ShieldCheck: LucideIcon;
+  export const Briefcase: LucideIcon;
 }

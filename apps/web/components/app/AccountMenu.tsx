@@ -8,20 +8,29 @@ import { useMenuPreferencesStore, MENU_PRESETS } from '@/stores/menuPreferences'
 import { leftMenuConfig } from './LeftMenu.config';
 import type { DemoProfile } from './AppTopbar';
 import { toast } from '@/lib/ui/toast';
+import {
+  Sun,
+  Moon,
+  Loader2,
+  Camera,
+  Trash2,
+  UserCog,
+  ChevronDown,
+  Settings,
+} from 'lucide-react';
 
 const themeOptions = [
   {
     id: 'light' as const,
     label: 'Светлая',
     description: 'Высокая читаемость на светлом фоне',
-    icon:
-      'M12 5a1 1 0 0 1-1-1V2a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1Zm0 14a1 1 0 0 1 1 1v2a1 1 0 1 1-2 0v-2a1 1 0 0 1 1-1Zm7-7a1 1 0 0 1 1-1h2a1 1 0 1 1 0 2h-2a1 1 0 0 1-1-1ZM4 12a1 1 0 0 1-1 1H1a1 1 0 1 1 0-2h2a1 1 0 0 1 1 1Zm12.95-6.364a1 1 0 0 1 0-1.414l1.414-1.415a1 1 0 1 1 1.414 1.415l-1.414 1.414a1 1 0 0 1-1.414 0ZM5.636 17.95a1 1 0 0 1 0 1.414L4.222 20.78a1 1 0 1 1-1.414-1.414l1.414-1.414a1 1 0 0 1 1.414 0ZM18.364 17.95a1 1 0 0 1 1.414 0l1.414 1.414a1 1 0 1 1-1.414 1.414l-1.414-1.414a1 1 0 0 1 0-1.414ZM5.636 4.636a1 1 0 0 1-1.414 0L2.808 3.222A1 1 0 0 1 4.222 1.808l1.414 1.414a1 1 0 0 1 0 1.414ZM12 7.5A4.5 4.5 0 1 1 7.5 12 4.5 4.5 0 0 1 12 7.5Z'
+    Icon: Sun
   },
   {
     id: 'dark' as const,
     label: 'Тёмная',
     description: 'Глубокие цвета и акцентные контуры',
-    icon: 'M21 12.79A9 9 0 0 1 11.21 3 6.5 6.5 0 1 0 21 12.79Z'
+    Icon: Moon
   }
 ];
 
@@ -278,41 +287,9 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut, onOpenSet
                     aria-label="Изменить фото профиля"
                   >
                     {isUploadingAvatar ? (
-                      <svg
-                        className="h-5 w-5 animate-spin text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
+                      <Loader2 className="h-5 w-5 animate-spin text-white" />
                     ) : (
-                      <svg
-                        aria-hidden="true"
-                        viewBox="0 0 24 24"
-                        className="h-5 w-5 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="17 8 12 3 7 8" />
-                        <line x1="12" y1="3" x2="12" y2="15" />
-                      </svg>
+                      <Camera className="h-5 w-5 text-white" strokeWidth={2} />
                     )}
                   </button>
                 </div>
@@ -355,44 +332,12 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut, onOpenSet
                 >
                   {isUploadingAvatar ? (
                     <>
-                      <svg
-                        className="h-4 w-4 animate-spin"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
+                      <Loader2 className="h-4 w-4 animate-spin" />
                       Загрузка...
                     </>
                   ) : (
                     <>
-                      <svg
-                        aria-hidden="true"
-                        viewBox="0 0 24 24"
-                        className="h-4 w-4"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="17 8 12 3 7 8" />
-                        <line x1="12" y1="3" x2="12" y2="15" />
-                      </svg>
+                      <Camera className="h-4 w-4" strokeWidth={1.5} />
                       {avatarUrl ? 'Изменить фото' : 'Загрузить фото'}
                     </>
                   )}
@@ -403,18 +348,7 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut, onOpenSet
                     onClick={handleRemoveAvatar}
                     className="flex w-full items-center justify-center gap-2 rounded-lg border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] px-3 py-2 text-sm font-medium text-[color:var(--text-secondary)] transition hover:border-[color:var(--button-danger-border)] hover:text-[color:var(--button-danger-foreground)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                   >
-                    <svg
-                      aria-hidden="true"
-                      viewBox="0 0 24 24"
-                      className="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                    </svg>
+                    <Trash2 className="h-4 w-4" strokeWidth={1.5} />
                     Удалить фото
                   </button>
                 )}
@@ -435,19 +369,7 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut, onOpenSet
                 <span className="text-xs font-semibold uppercase tracking-[0.24em] text-[color:var(--text-tertiary)]">
                   Настройки профиля
                 </span>
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  className="h-4 w-4 text-[color:var(--text-tertiary)]"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
+                <UserCog className="h-4 w-4 text-[color:var(--text-tertiary)]" strokeWidth={1.5} />
               </button>
             </section>
             <section>
@@ -461,18 +383,10 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut, onOpenSet
                 <span className="text-xs font-semibold uppercase tracking-[0.24em] text-[color:var(--text-tertiary)]">Кастомизация меню</span>
                 <span className="flex items-center gap-2 text-xs text-[color:var(--text-tertiary)]">
                   {visibleMenuIds.length} / {leftMenuConfig.length}
-                  <svg
-                    aria-hidden="true"
-                    viewBox="0 0 24 24"
+                  <ChevronDown
                     className={clsx('h-4 w-4 transition-transform', isMenuCustomizationOpen ? 'rotate-180' : 'rotate-0')}
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
+                    strokeWidth={1.5}
+                  />
                 </span>
               </button>
               <div
@@ -536,18 +450,7 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut, onOpenSet
                         : 'border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] text-[color:var(--text-secondary)] hover:border-[color:var(--button-primary-border)] hover:text-[color:var(--text-primary)] focus-visible:outline-[color:var(--surface-border-strong)]'
                     )}
                   >
-                    <svg
-                      aria-hidden="true"
-                      viewBox="0 0 24 24"
-                      className="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d={option.icon} fill="currentColor" />
-                    </svg>
+                    <option.Icon className="h-4 w-4" strokeWidth={1.5} />
                     {option.label}
                   </button>
                 ))}
@@ -566,20 +469,7 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut, onOpenSet
                   <span className="text-xs font-semibold uppercase tracking-[0.24em] text-[color:var(--text-tertiary)]">
                     Настройки платформы
                   </span>
-                  <svg
-                    aria-hidden="true"
-                    viewBox="0 0 24 24"
-                    className="h-4 w-4 text-[color:var(--text-tertiary)]"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M12 22a10 10 0 1 1 10-10 10 10 0 0 1-10 10Z" />
-                    <path d="M12 18a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6Z" />
-                    <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-                  </svg>
+                  <Settings className="h-4 w-4 text-[color:var(--text-tertiary)]" strokeWidth={1.5} />
                 </button>
               </section>
             )}

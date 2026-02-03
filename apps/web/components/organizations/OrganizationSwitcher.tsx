@@ -100,7 +100,7 @@ export function OrganizationSwitcher({ collapsed }: { collapsed?: boolean }) {
         )}
         disabled={isLoading}
       >
-        <div className="flex items-center gap-2 overflow-hidden">
+        <div className="flex min-w-0 items-center gap-2">
           <div className="relative flex h-6 w-6 flex-none items-center justify-center rounded-lg bg-indigo-500/10 text-xs font-bold text-indigo-500">
             {isLoading ? (
               <div className="h-3 w-3 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
@@ -109,7 +109,11 @@ export function OrganizationSwitcher({ collapsed }: { collapsed?: boolean }) {
             )}
             {/* Primary indicator */}
             {currentOrganization?.isPrimary && !collapsed && (
-              <Star className="absolute -top-1 -right-1 h-3 w-3 fill-amber-400 text-amber-400" />
+              <Star
+                className="absolute -top-1.5 -right-1.5 h-3.5 w-3.5 fill-amber-400 text-amber-400"
+                strokeWidth={3}
+                stroke="var(--surface-muted)"
+              />
             )}
           </div>
           {!collapsed && (

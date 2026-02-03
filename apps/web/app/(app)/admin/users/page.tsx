@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-// @ts-expect-error lucide-react icon types
 import { Search, Filter, Shield, UserX, UserCheck, RefreshCw, User, Trash2, Edit } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import clsx from 'clsx';
