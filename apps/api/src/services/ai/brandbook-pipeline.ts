@@ -23,6 +23,8 @@ export interface BrandbookPipelineConfig {
         dalleModel?: GenerateImageOptions['model'];
         /** DALL·E image size (e.g. 1024x1024). */
         dalleSize?: GenerateImageOptions['size'];
+        /** DALL·E preview size (e.g. 512x512). */
+        dallePreviewSize?: GenerateImageOptions['size'];
         /** DALL·E image quality (standard | hd). */
         dalleQuality?: GenerateImageOptions['quality'];
         /** DALL·E image style (vivid | natural). */
@@ -155,7 +157,7 @@ export class BrandbookAgentPipeline {
     async generateImage(prompt: string): Promise<BrandbookPipelineImageResult> {
         const image = await this.client.generateImage(prompt, {
             model: this.config.parameters.dalleModel ?? 'dall-e-3',
-            size: this.config.parameters.dalleSize ?? '1024x1024',
+            size: this.config.parameters.dallePreviewSize ?? this.config.parameters.dalleSize ?? '512x512',
             quality: this.config.parameters.dalleQuality ?? 'standard',
             style: this.config.parameters.dalleStyle ?? 'vivid',
             responseFormat: 'b64_json'
