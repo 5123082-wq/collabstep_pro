@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import type { NavItem } from '@/config/MarketingMenu.config';
+import type { NavItem, NavChild } from '@/config/MarketingMenu.config';
 
 interface MobileMenuProps {
   menu: NavItem[];
@@ -143,7 +143,7 @@ export default function MobileMenu({ menu }: MobileMenuProps) {
                         hidden: !isOpen
                       })}
                     >
-                      {item.children.map((child) => (
+                      {item.children.map((child: NavChild) => (
                         <div key={child.id} className="space-y-2">
                           <Link
                             href={child.href}

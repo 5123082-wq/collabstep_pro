@@ -1,18 +1,10 @@
 import { marketingMenu } from '@/config/MarketingMenu.config';
+import type { NavChild } from '@/config/MarketingMenu.config';
 
 describe('marketingMenu config', () => {
   it('содержит ожидаемые верхние пункты меню', () => {
     const topLevelIds = marketingMenu.map((item) => item.id);
-    expect(topLevelIds).toEqual([
-      'product',
-      'audience',
-      'projects',
-      'specialists',
-      'contractors',
-      'pricing',
-      'blog',
-      'auth'
-    ]);
+    expect(topLevelIds).toEqual(['features', 'collaboration', 'roles', 'pricing']);
   });
 
   it('каждый подпункт имеет валидный href', () => {
@@ -22,7 +14,7 @@ describe('marketingMenu config', () => {
         expect(item.href).toMatch(/^\//);
       }
 
-      item.children?.forEach((child) => {
+      item.children?.forEach((child: NavChild) => {
         expect(child.href).toMatch(hrefPattern);
         child.cta && expect(child.cta.href).toMatch(hrefPattern);
       });
@@ -30,7 +22,7 @@ describe('marketingMenu config', () => {
   });
 
   it('href подпунктов уникальны', () => {
-    const hrefs = marketingMenu.flatMap((item) => item.children?.map((child) => child.href) ?? []);
+    const hrefs = marketingMenu.flatMap((item) => item.children?.map((child: NavChild) => child.href) ?? []);
     const unique = new Set(hrefs);
     expect(unique.size).toBe(hrefs.length);
   });
