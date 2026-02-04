@@ -174,9 +174,6 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
     }
     setLoggingOut(true);
     try {
-      // Clear organization store on logout
-      resetOrgStore();
-      
       const response = await fetch('/api/auth/logout', {
         method: 'POST',
         headers: {
@@ -185,6 +182,8 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
       });
 
       if (response.ok) {
+        // Clear organization store only after successful logout
+        resetOrgStore();
         const data = (await response.json().catch(() => null)) as { redirect?: string } | null;
         if (data?.redirect) {
           router.push(data.redirect);
@@ -193,12 +192,17 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
       }
 
       if (response.redirected) {
+        // Clear organization store only after successful logout
+        resetOrgStore();
         router.push(response.url);
         return;
       }
 
+      // Fallback: if we reach here without ok/redirect, still clear and redirect
+      resetOrgStore();
       router.push('/login');
     } catch (error) {
+      // Don't clear store on error - user is still logged in
       toast('Не удалось выйти. Повторите попытку.', 'warning');
     } finally {
       setLoggingOut(false);
