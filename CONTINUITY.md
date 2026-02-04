@@ -34,6 +34,31 @@
 
 ### Now
 
+- ✅ **DATABASE CONSOLIDATION: Две базы объединены в одну** (2026-02-04):
+  - **Проблема:** Проект использовал две Neon базы: `neon-collabverse` (основная) и `neon-AI-agen` (AI агенты)
+  - **Проблемы:** Дублирование таблиц, рассинхронизация пользователей, FK errors, сложность миграций
+  - **Решение:** Консолидация в одну базу `neon-collabverse`
+  - **Выполнено:**
+    - Применена миграция 0025 к основной базе (ai_conversation, ai_conversation_message, allow_direct_messages)
+    - Перенесены данные: 25 brandbook runs, 129 messages, 5 artifacts, 2 conversations, 6 conversation messages
+    - Обновлён `ai-agents-config.ts` — теперь использует основную БД
+    - Удалена переменная `AI_AGENTS_DATABASE_URL` из `.env.example`
+    - Удалён скрипт `sync-demo-user-to-ai-db.ts`
+    - Обновлена документация
+  - **Файлы изменены:**
+    - `apps/api/src/db/ai-agents-config.ts`
+    - `scripts/db/load-db-env.ts`
+    - `scripts/db/consolidate-databases.ts` (создан для миграции)
+    - `.env.example`
+    - `docs/modules/ai-hub/ai-hub-integration.md`
+    - `docs/ENV_FILES_EXPLANATION.md`
+  - **Проверки:** typecheck ✅, lint ✅
+  - **Следующий шаг:** Удалить `AI_AGENTS_DATABASE_URL` из Vercel env и после тестирования удалить AI базу в Neon Console
+
+- 📋 **BRANDBOOK AGENT: диагностика** (2026-02-04):
+  - Проверен браузер на `/ai-hub/agents`: модалка «Запуск Brandbook Agent» открыта, кнопка «Запустить» видна.
+  - Возможные причины, если не запускается: (1) кнопка отключена — нет организации или проекта (`currentOrgId` пустой / не выбран проект); (2) API 403 ACCESS_DENIED — пользователь не в `organization_member` с status active; (3) API 500 — нет опубликованной версии промпта, конфиг отключён или нет BRANDBOOK_AGENT_OPENAI_API_KEY; (4) лимиты подписки (maxRunsPerDay / maxConcurrentRuns). Добавлен `data-testid="brandbook-run-submit"` для кнопки в модалке.
+
 - ✅ **ПОДПИСКИ: UI раздел** (2026-02-03):
   - Создан компонент `SubscriptionModal.tsx` с таблицей тарифов (Free/Pro/Max).
   - Интегрирован в `AppTopbar.tsx` (кнопка "ПОДПИСКА PRO").

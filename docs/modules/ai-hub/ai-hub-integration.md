@@ -240,7 +240,8 @@
 
 **Хранилище (без projectId):**
 - Папка организации `AI Generations/Brandbook/YYYY-MM-DD`.
-- Runs/messages хранятся в отдельной БД (`AI_AGENTS_DATABASE_URL`).
+- Runs/messages хранятся в основной БД (`DATABASE_URL`).
+  - NOTE: База консолидирована 2026-02-04, AI_AGENTS_DATABASE_URL удалён.
 
 **Response:**
 ```json

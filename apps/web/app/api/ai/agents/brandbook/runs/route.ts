@@ -118,34 +118,46 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     ...(contactBlock !== undefined ? { contactBlock } : {})
   };
 
-  // Execute via service
-  const run = await createBrandbookRunMock({
-    ...runInput,
-    organizationId,
-    createdBy: auth.userId
-  });
+  try {
+    // Execute via service
+    const run = await createBrandbookRunMock({
+      ...runInput,
+      organizationId,
+      createdBy: auth.userId
+    });
 
-  // Трекаем событие создания запуска агента
-  trackEvent('ai_agent_run_created', {
-    run_id: run.runId,
-    agent_type: 'brandbook',
-    organization_id: organizationId,
-    project_id: projectId,
-    product_bundle: productBundle
-  });
+    // Трекаем событие создания запуска агента
+    trackEvent('ai_agent_run_created', {
+      run_id: run.runId,
+      agent_type: 'brandbook',
+      organization_id: organizationId,
+      project_id: projectId,
+      product_bundle: productBundle
+    });
 
-  // Add initial system messages
-  await Promise.all(
-    STARTER_MESSAGES.map((content) =>
-      brandbookAgentMessagesRepository.create({
-        runId: run.runId,
-        role: 'assistant',
-        content
-      })
-    )
-  );
+    // Add initial system messages
+    await Promise.all(
+      STARTER_MESSAGES.map((content) =>
+        brandbookAgentMessagesRepository.create({
+          runId: run.runId,
+          role: 'assistant',
+          content
+        })
+      )
+    );
 
-  return jsonOk(run);
+    return jsonOk(run);
+  } catch (err) {
+    const rawMessage = err instanceof Error ? err.message : String(err);
+    console.error('Brandbook run create failed:', err);
+    // User-friendly hint when DB/table is missing (e.g. migrations not applied)
+    const isDbError =
+      /Failed query|relation .* does not exist|column .* does not exist/i.test(rawMessage);
+    const message = isDbError
+      ? 'Таблицы AI-агентов не найдены. Примените миграции 0020, 0022 и 0025 к БД (POSTGRES_URL).'
+      : rawMessage;
+    return jsonError(message, { status: 500 });
+  }
 }
 
 export async function GET(req: NextRequest): Promise<NextResponse> {

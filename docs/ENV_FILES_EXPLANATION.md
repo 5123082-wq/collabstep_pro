@@ -95,7 +95,7 @@ DATABASE_URL=postgres://...     # Недоступно в браузере
 ```bash
 DATABASE_URL=postgresql://...
 POSTGRES_URL=postgresql://...?pgbouncer=true
-AI_AGENTS_DATABASE_URL=postgresql://...
+# NOTE: AI_AGENTS_DATABASE_URL removed (2026-02-04) - all data now uses main DATABASE_URL
 ```
 
 ### 🔐 Authentication

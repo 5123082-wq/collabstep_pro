@@ -101,6 +101,7 @@ export async function GET(req: NextRequest) {
     return jsonOk({ agents: visibleAgents });
   } catch (error) {
     console.error('Failed to list AI agents:', error);
-    return jsonError('Внутренняя ошибка сервера', { status: 500 });
+    // Fallback: return empty list so the page loads (e.g. Brandbook card still visible)
+    return jsonOk({ agents: [] });
   }
 }

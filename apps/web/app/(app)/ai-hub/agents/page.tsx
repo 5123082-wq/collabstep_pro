@@ -1438,6 +1438,7 @@ export default function AiAgentsPage() {
                   type="submit"
                   disabled={isBrandbookSubmitDisabled}
                   loading={brandbookSubmitting}
+                  data-testid="brandbook-run-submit"
                 >
                   Запустить
                 </Button>
