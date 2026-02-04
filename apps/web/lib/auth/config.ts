@@ -109,7 +109,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         strategy: "jwt",
     },
     callbacks: {
-        async jwt({ token, user }) {
+        async signIn({ user, account }) {
+            console.log('[Auth] SignIn attempt:', { 
+                email: user.email, 
+                provider: account?.provider,
+                isExistingUser: !!user.id 
+            });
+            return true;
+        },
+        async jwt({ token, user, account }) {
+            if (account) {
+                console.log('[Auth] JWT Callback (New Sign In):', { 
+                    provider: account.provider, 
+                    userId: user?.id 
+                });
+            }
             if (user) {
                 token.id = user.id!
                 const userWithRoles = user as { role?: string; roles?: string[] };

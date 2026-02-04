@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ChangeEvent, type FormEvent } from 'react';
+import { useState, useEffect, type ChangeEvent, type FormEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQueryToast } from '@/lib/ui/useQueryToast';
 import { signIn } from 'next-auth/react';
@@ -29,6 +29,21 @@ export default function LoginForm() {
   const searchParams = useSearchParams();
   const [state, setState] = useState(initialState);
   useQueryToast(TOASTS);
+
+  // Обработка ошибок OAuth из URL
+  const errorParam = searchParams.get('error');
+  useEffect(() => {
+    if (errorParam) {
+      const errorMessages: Record<string, string> = {
+        OAuthAccountNotLinked: "Этот email уже используется. Пожалуйста, войдите с помощью пароля, чтобы связать аккаунты.",
+        OAuthSignin: "Ошибка при попытке входа через Google.",
+        OAuthCallback: "Ошибка при получении данных от Google.",
+        Default: "Произошла ошибка авторизации."
+      };
+      const message = errorMessages[errorParam] ?? errorMessages.Default;
+      setState(prev => ({ ...prev, error: message || 'Произошла ошибка' }));
+    }
+  }, [errorParam]);
 
   const handleChange = (field: 'email' | 'password') => (event: ChangeEvent<HTMLInputElement>) => {
     setState((prev) => ({ ...prev, [field]: event.target.value }));
