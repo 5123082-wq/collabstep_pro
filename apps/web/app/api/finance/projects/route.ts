@@ -1,9 +1,9 @@
+import { getAuthFromRequestWithSession, getProjectRole } from "@/lib/api/finance-access";
 import { projectsRepository } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
-import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
 
 export async function GET(request: Request) {
-  const auth = getAuthFromRequest(request);
+  const auth = await getAuthFromRequestWithSession(request);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }

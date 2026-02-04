@@ -1,7 +1,7 @@
+import { getAuthFromRequestWithSession, getProjectRole } from "@/lib/api/finance-access";
 import '@/lib/finance/bootstrap';
 import { financeService, type UpdateExpenseInput, type ExpenseStatus } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
-import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
 
 type AttachmentInput = { filename: string; url: string };
 
@@ -41,7 +41,7 @@ function handleError(error: unknown) {
 }
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
-  const auth = getAuthFromRequest(request);
+  const auth = await getAuthFromRequestWithSession(request);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }

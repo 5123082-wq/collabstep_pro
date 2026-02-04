@@ -1,6 +1,6 @@
+import { getAuthFromRequestWithSession, getProjectRole } from "@/lib/api/finance-access";
 import { NextRequest, NextResponse } from 'next/server';
 import { flags } from '@/lib/flags';
-import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
 
 export async function POST(
@@ -11,7 +11,7 @@ export async function POST(
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  const auth = getAuthFromRequest(req);
+  const auth = await getAuthFromRequestWithSession(req);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }

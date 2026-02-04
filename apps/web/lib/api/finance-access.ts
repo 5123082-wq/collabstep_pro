@@ -18,6 +18,7 @@ export async function getAuthFromRequestWithSession(request: Request): Promise<A
   const session = await getCurrentSession();
   const sessionUserId = session?.user?.id;
   const sessionEmail = session?.user?.email;
+  
   if (sessionUserId && sessionEmail) {
     const isAdmin = session?.user?.role === 'admin' || isDemoAdminEmail(sessionEmail);
     return {
@@ -26,6 +27,8 @@ export async function getAuthFromRequestWithSession(request: Request): Promise<A
       role: (isAdmin ? 'owner' : 'member') as FinanceRole,
     };
   }
+  
+  // Fallback to demo cookie
   return getAuthFromRequest(request);
 }
 

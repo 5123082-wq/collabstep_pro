@@ -1,6 +1,7 @@
+import { getAuthFromRequestWithSession } from "@/lib/api/finance-access";
 import { NextRequest, NextResponse } from 'next/server';
 import { fileTrashRepository, organizationsRepository } from '@collabverse/api';
-import { getAuthFromRequest } from '@/lib/api/finance-access';
+ // removed unused from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { flags } from '@/lib/flags';
 
@@ -10,7 +11,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   }
 
   // Check authorization
-  const auth = getAuthFromRequest(req);
+  const auth = await getAuthFromRequestWithSession(req);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }

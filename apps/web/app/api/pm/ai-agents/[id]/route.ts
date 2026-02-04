@@ -1,5 +1,6 @@
+import { getAuthFromRequestWithSession } from "@/lib/api/finance-access";
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthFromRequest } from '@/lib/api/finance-access';
+ // removed unused from '@/lib/api/finance-access';
 import { aiAgentsRepository } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { isDemoAdminEmail } from '@/lib/auth/demo-session';
@@ -8,7 +9,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
-  const auth = getAuthFromRequest(req);
+  const auth = await getAuthFromRequestWithSession(req);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }

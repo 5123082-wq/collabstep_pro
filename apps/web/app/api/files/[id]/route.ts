@@ -1,3 +1,4 @@
+import { getAuthFromRequestWithSession, getProjectRole } from "@/lib/api/finance-access";
 import { NextRequest } from 'next/server';
 import { eq, and, isNull } from 'drizzle-orm';
 import {
@@ -6,7 +7,6 @@ import {
 } from '@collabverse/api';
 import { db } from '@collabverse/api/db/config';
 import { files, fileTrash } from '@collabverse/api/db/schema';
-import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { flags } from '@/lib/flags';
 import { resolveOrganizationPlan } from '@/lib/api/resolve-organization-plan';
@@ -29,7 +29,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     return jsonError('FEATURE_DISABLED', { status: 404 });
   }
 
-  const auth = getAuthFromRequest(_req);
+  const auth = await getAuthFromRequestWithSession(_req);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }
@@ -76,7 +76,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   }
 
   // Check authorization
-  const auth = getAuthFromRequest(req);
+  const auth = await getAuthFromRequestWithSession(req);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }

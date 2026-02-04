@@ -1,7 +1,8 @@
+import { getAuthFromRequestWithSession } from "@/lib/api/finance-access";
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { userTemplatesRepository, projectsRepository, type CreateUserTemplateInput } from '@collabverse/api';
-import { getAuthFromRequest } from '@/lib/api/finance-access';
+ // removed unused from '@/lib/api/finance-access';
 import { jsonOk, jsonError } from '@/lib/api/http';
 
 export const dynamic = 'force-dynamic';
@@ -17,7 +18,7 @@ const SaveProjectAsTemplateSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const auth = getAuthFromRequest(request);
+  const auth = await getAuthFromRequestWithSession(request);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }

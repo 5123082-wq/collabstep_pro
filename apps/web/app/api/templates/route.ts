@@ -1,7 +1,8 @@
+import { getAuthFromRequestWithSession } from "@/lib/api/finance-access";
 import { NextResponse } from 'next/server';
 import { flags } from '@/lib/flags';
 import { projectCatalogService, templatesRepository, userTemplatesRepository } from '@collabverse/api';
-import { getAuthFromRequest } from '@/lib/api/finance-access';
+ // removed unused from '@/lib/api/finance-access';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,7 +16,7 @@ export async function GET(request: Request) {
     const adminTemplates = templatesRepository.list();
 
     // Get user templates (only for authenticated users)
-    const auth = getAuthFromRequest(request);
+    const auth = await getAuthFromRequestWithSession(request);
     let userTemplates: Array<{ id: string; title: string; kind: string; summary: string; _type: 'user' }> = [];
     
     if (auth) {

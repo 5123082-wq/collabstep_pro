@@ -1,6 +1,6 @@
+import { getAuthFromRequestWithSession, getProjectRole } from "@/lib/api/finance-access";
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
 import {
   projectsRepository,
   organizationsRepository,
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   // Проверка авторизации
-  const auth = getAuthFromRequest(req);
+  const auth = await getAuthFromRequestWithSession(req);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }

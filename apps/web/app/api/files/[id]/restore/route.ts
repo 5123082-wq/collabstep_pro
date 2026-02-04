@@ -1,6 +1,6 @@
+import { getAuthFromRequestWithSession, getProjectRole } from "@/lib/api/finance-access";
 import { NextRequest } from 'next/server';
 import { fileTrashRepository, organizationsRepository } from '@collabverse/api';
-import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
 import { db } from '@collabverse/api/db/config';
 import { files } from '@collabverse/api/db/schema';
 import { eq } from 'drizzle-orm';
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   // Check authorization
-  const auth = getAuthFromRequest(req);
+  const auth = await getAuthFromRequestWithSession(req);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }

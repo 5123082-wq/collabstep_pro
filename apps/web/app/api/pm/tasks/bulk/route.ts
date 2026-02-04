@@ -1,6 +1,7 @@
+import { getAuthFromRequestWithSession } from "@/lib/api/finance-access";
 // NextRequest and NextResponse removed - using Request instead
 import { flags } from '@/lib/flags';
-import { getAuthFromRequest } from '@/lib/api/finance-access';
+ // removed unused from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { tasksRepository, projectsRepository, type TaskStatus, aiAgentsRepository } from '@collabverse/api';
 import { notifyTaskAssigned, notifyTaskUpdated } from '@/lib/notifications/event-generator';
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
     return jsonError('FEATURE_NOT_ENABLED', { status: 404 });
   }
 
-  const auth = getAuthFromRequest(request);
+  const auth = await getAuthFromRequestWithSession(request);
   if (!auth) {
     console.error('[Bulk Update] Unauthorized request');
     return jsonError('UNAUTHORIZED', { status: 401 });

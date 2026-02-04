@@ -1,6 +1,7 @@
+import { getAuthFromRequestWithSession } from "@/lib/api/finance-access";
 import { NextResponse } from 'next/server';
 import { flags } from '@/lib/flags';
-import { getAuthFromRequest } from '@/lib/api/finance-access';
+ // removed unused from '@/lib/api/finance-access';
 import { templateTasksRepository, templatesRepository, userTemplatesRepository } from '@collabverse/api';
 
 export const dynamic = 'force-dynamic';
@@ -15,7 +16,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
   const adminTemplate = templatesRepository.findById(templateId);
 
   if (!adminTemplate) {
-    const auth = getAuthFromRequest(request);
+    const auth = await getAuthFromRequestWithSession(request);
     if (!auth) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }
