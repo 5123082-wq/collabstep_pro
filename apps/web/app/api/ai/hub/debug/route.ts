@@ -12,9 +12,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const authSync = getAuthFromRequest(req);
   const authWithSession = await getAuthFromRequestWithSession(req);
   const session = await getCurrentSession();
-  const hasAiAgentsUrl = Boolean(
-    process.env.AI_AGENTS_DATABASE_URL && String(process.env.AI_AGENTS_DATABASE_URL).trim()
-  );
+  // NOTE: AI_AGENTS_DATABASE_URL removed - all data now uses main database
+  const hasAiAgentsUrl = true; // Always true since consolidated to main DB
 
   let agentsCount = 0;
   let agentsSample: { id: string; slug: string; name: string }[] = [];

@@ -29,12 +29,9 @@ export interface AIConversationWithAgent extends DbAIConversation {
 
 export class AIConversationsRepository {
     /**
-     * Ensure user exists in AI database.
-     * Required when AI_AGENTS_DATABASE_URL points to a separate database,
-     * since ai_conversation has FK to user table.
-     * 
-     * This is a lazy sync: we only create the user record when they
-     * actually use AI Hub features.
+     * Ensure user exists in database for AI conversations.
+     * NOTE: Since database consolidation (2026-02-04), aiAgentsDb = db (main database),
+     * so this check is a no-op but kept for safety.
      */
     private async ensureUserInAiDb(userId: string): Promise<void> {
         // Check if user already exists in AI DB

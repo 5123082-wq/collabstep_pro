@@ -1,13 +1,15 @@
-import { drizzle as drizzlePostgresJs } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import * as schema from './schema';
+/**
+ * AI Agents Database Connection
+ * 
+ * Previously supported a separate AI_AGENTS_DATABASE_URL for AI agent data.
+ * Now consolidated to use the main database (DATABASE_URL/POSTGRES_URL).
+ * 
+ * Migration completed: 2026-02-04
+ * See: scripts/db/consolidate-databases.ts for migration script
+ */
 import { db } from './config';
 
-const aiAgentsDatabaseUrl = process.env.AI_AGENTS_DATABASE_URL;
-
-export const aiAgentsDb =
-  aiAgentsDatabaseUrl && aiAgentsDatabaseUrl.trim()
-    ? drizzlePostgresJs(postgres(aiAgentsDatabaseUrl, { ssl: 'prefer' }), { schema })
-    : db;
+// Use the main database for all AI agent operations
+export const aiAgentsDb = db;
 
 export type AiAgentsDatabase = typeof aiAgentsDb;
