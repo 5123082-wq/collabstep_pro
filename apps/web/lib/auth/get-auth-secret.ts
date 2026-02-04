@@ -1,7 +1,8 @@
 /**
  * Gets AUTH_SECRET from environment variables with proper validation.
  * 
- * In production/Vercel runtime environments, AUTH_SECRET is required.
+ * In production runtime (NODE_ENV=production), AUTH_SECRET is strictly required
+ * to prevent JWT token forgery vulnerabilities.
  * During build time or development, a fallback is used with a warning.
  */
 export function getAuthSecret(): string {
@@ -12,17 +13,16 @@ export function getAuthSecret(): string {
   const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build';
   
   // Check if we're in actual production runtime (not build time)
-  // VERCEL_ENV is only reliably set at runtime, not during build
+  // This applies to ANY production deployment (Vercel, Docker, VPS, etc.)
   const isProductionRuntime = 
     !isBuildTime &&
-    process.env.NODE_ENV === 'production' &&
-    (process.env.VERCEL_ENV === 'production' || 
-     process.env.VERCEL_ENV === 'preview');
+    process.env.NODE_ENV === 'production';
   
-  // Only require secret in actual production runtime (not during build)
+  // Require secret in ANY production runtime to prevent security vulnerabilities
+  // Using a fixed fallback in production would allow JWT token forgery
   if (isProductionRuntime && !secret) {
     throw new Error(
-      'AUTH_SECRET is required in production runtime. ' +
+      'AUTH_SECRET is required in production. ' +
       'Please set AUTH_SECRET or NEXTAUTH_SECRET environment variable. ' +
       'Generate one with: openssl rand -base64 32'
     );
