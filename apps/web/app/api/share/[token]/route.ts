@@ -1,8 +1,9 @@
+import { getAuthFromRequestWithSession } from "@/lib/api/finance-access";
 import { NextRequest, NextResponse } from 'next/server';
 import { sharesRepository } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { flags } from '@/lib/flags';
-import { getAuthFromRequest } from '@/lib/api/finance-access';
+ // removed unused from '@/lib/api/finance-access';
 
 /**
  * DELETE /api/share/[token]
@@ -17,7 +18,7 @@ export async function DELETE(
   }
 
   // Check authentication
-  const auth = getAuthFromRequest(req);
+  const auth = await getAuthFromRequestWithSession(req);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }

@@ -1,10 +1,11 @@
+import { getAuthFromRequestWithSession } from "@/lib/api/finance-access";
 import { NextRequest } from 'next/server';
-import { getAuthFromRequest } from '@/lib/api/finance-access';
+ // removed unused from '@/lib/api/finance-access';
 import { contractService } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
-    const auth = getAuthFromRequest(request);
+    const auth = await getAuthFromRequestWithSession(request);
     if (!auth) {
         return jsonError('UNAUTHORIZED', { status: 401 });
     }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { flags } from '@/lib/flags';
-import { getAuthFromRequest } from '@/lib/api/finance-access';
+import { getAuthFromRequestWithSession } from '@/lib/api/finance-access';
 import { organizationsRepository, projectsRepository, DEFAULT_WORKSPACE_ID } from '@collabverse/api';
 import { db } from '@collabverse/api/db/config';
 import { projects } from '@collabverse/api/db/schema';
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const auth = getAuthFromRequest(request);
+    const auth = await getAuthFromRequestWithSession(request);
     if (!auth) {
       return jsonError('UNAUTHORIZED', { status: 401 });
     }
@@ -151,7 +151,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  const auth = getAuthFromRequest(request);
+  const auth = await getAuthFromRequestWithSession(request);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }

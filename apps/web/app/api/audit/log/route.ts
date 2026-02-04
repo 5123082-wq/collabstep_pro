@@ -1,10 +1,11 @@
+import { getAuthFromRequestWithSession } from "@/lib/api/finance-access";
 import '@/lib/finance/bootstrap';
 import { auditLogRepository } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
-import { getAuthFromRequest } from '@/lib/api/finance-access';
+ // removed unused from '@/lib/api/finance-access';
 
 export async function GET(request: Request) {
-  const auth = getAuthFromRequest(request);
+  const auth = await getAuthFromRequestWithSession(request);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }

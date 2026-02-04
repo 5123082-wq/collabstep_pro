@@ -1,5 +1,6 @@
+import { getAuthFromRequestWithSession } from "@/lib/api/finance-access";
 import { memory, projectsRepository, tasksRepository } from '@collabverse/api';
-import { getAuthFromRequest } from '@/lib/api/finance-access';
+ // removed unused from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { flags } from '@/lib/flags';
 
@@ -24,7 +25,7 @@ export async function GET(
     return jsonError('FEATURE_DISABLED', { status: 404 });
   }
 
-  const auth = getAuthFromRequest(req);
+  const auth = await getAuthFromRequestWithSession(req);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }

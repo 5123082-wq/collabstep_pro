@@ -1,8 +1,11 @@
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
+import { 
+  getAuthFromRequestWithSession, 
+  getProjectRole 
+} from "@/lib/api/finance-access";
 import { jsonError, jsonOk } from '@/lib/api/http';
-import { getProjectRole } from '@/lib/api/finance-access';
 import { flags } from '@/lib/flags';
 import {
   commentsRepository,
@@ -13,34 +16,6 @@ import {
   type TaskCommentNode
 } from '@collabverse/api';
 import { broadcastToProject } from '@/lib/websocket/event-broadcaster';
-import { getCurrentSession } from '@/lib/auth/session';
-import { decodeDemoSession, DEMO_SESSION_COOKIE, isDemoAdminEmail } from '@/lib/auth/demo-session';
-
-type AuthContext = {
-  userId: string;
-  email: string;
-  role: 'owner' | 'member';
-};
-
-async function getAuthFromRequest(req: NextRequest): Promise<AuthContext | null> {
-  // 1) Prefer NextAuth session (real users)
-  const session = await getCurrentSession();
-  const sessionUserId = session?.user?.id;
-  const sessionEmail = session?.user?.email;
-  if (sessionUserId && sessionEmail) {
-    const isAdmin = session?.user?.role === 'admin' || isDemoAdminEmail(sessionEmail);
-    return { userId: sessionUserId, email: sessionEmail, role: isAdmin ? 'owner' : 'member' };
-  }
-
-  // 2) Fallback to legacy/demo cookie
-  const sessionCookie = req.cookies.get(DEMO_SESSION_COOKIE);
-  const demoSession = decodeDemoSession(sessionCookie?.value ?? null);
-  if (!demoSession) {
-    return null;
-  }
-  const isAdmin = demoSession.role === 'admin' || isDemoAdminEmail(demoSession.email);
-  return { userId: demoSession.userId, email: demoSession.email, role: isAdmin ? 'owner' : 'member' };
-}
 
 function parseThreadId(threadId: string): { kind: 'project' | 'task'; id: string } | null {
   if (threadId.startsWith('project-')) {
@@ -71,7 +46,7 @@ export async function GET(
     return jsonError('FEATURE_DISABLED', { status: 404 });
   }
 
-  const auth = await getAuthFromRequest(req);
+  const auth = await getAuthFromRequestWithSession(req);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }
@@ -169,7 +144,7 @@ export async function POST(
   if (!flags.PM_NAV_PROJECTS_AND_TASKS) {
     return jsonError('FEATURE_DISABLED', { status: 404 });
   }
-  const auth = await getAuthFromRequest(req);
+  const auth = await getAuthFromRequestWithSession(req);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }
@@ -251,7 +226,7 @@ export async function PATCH(
   if (!flags.PM_NAV_PROJECTS_AND_TASKS) {
     return jsonError('FEATURE_DISABLED', { status: 404 });
   }
-  const auth = await getAuthFromRequest(req);
+  const auth = await getAuthFromRequestWithSession(req);
   if (!auth) return jsonError('UNAUTHORIZED', { status: 401 });
 
   const parsed = parseThreadId(params.threadId);
@@ -330,7 +305,7 @@ export async function DELETE(
   if (!flags.PM_NAV_PROJECTS_AND_TASKS) {
     return jsonError('FEATURE_DISABLED', { status: 404 });
   }
-  const auth = await getAuthFromRequest(req);
+  const auth = await getAuthFromRequestWithSession(req);
   if (!auth) return jsonError('UNAUTHORIZED', { status: 401 });
 
   const parsed = parseThreadId(params.threadId);

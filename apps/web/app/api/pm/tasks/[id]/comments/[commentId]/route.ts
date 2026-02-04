@@ -1,6 +1,6 @@
+import { getAuthFromRequestWithSession, getProjectRole } from "@/lib/api/finance-access";
 import { NextRequest, NextResponse } from 'next/server';
 import { flags } from '@/lib/flags';
-import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
 import {
   commentsRepository,
   tasksRepository,
@@ -19,7 +19,7 @@ export async function PATCH(
   }
 
   // Проверка авторизации
-  const auth = getAuthFromRequest(req);
+  const auth = await getAuthFromRequestWithSession(req);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }
@@ -148,7 +148,7 @@ export async function DELETE(
   }
 
   // Проверка авторизации
-  const auth = getAuthFromRequest(req);
+  const auth = await getAuthFromRequestWithSession(req);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }

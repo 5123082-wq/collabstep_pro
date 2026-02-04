@@ -1,5 +1,6 @@
+import { getAuthFromRequestWithSession } from "@/lib/api/finance-access";
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthFromRequest } from '@/lib/api/finance-access';
+ // removed unused from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { broadcastToProject, broadcastToUser } from '@/lib/websocket/event-broadcaster';
 import type { WebSocketEventType } from '@/lib/websocket/types';
@@ -9,7 +10,7 @@ import type { WebSocketEventType } from '@/lib/websocket/types';
  * Используется для отправки событий из API routes
  */
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const auth = getAuthFromRequest(req);
+  const auth = await getAuthFromRequestWithSession(req);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }

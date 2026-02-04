@@ -1,7 +1,8 @@
+import { getAuthFromRequestWithSession } from "@/lib/api/finance-access";
 import { NextRequest } from 'next/server';
 import { projectsRepository, tasksRepository } from '@collabverse/api';
 import { jsonOk } from '@/lib/api/http';
-import { getAuthFromRequest } from '@/lib/api/finance-access';
+ // removed unused from '@/lib/api/finance-access';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest) {
     return jsonOk({ error: 'Not allowed in production' });
   }
 
-  const auth = getAuthFromRequest(request);
+  const auth = await getAuthFromRequestWithSession(request);
   const allProjects = await projectsRepository.list();
   const allTasks = await tasksRepository.list();
 

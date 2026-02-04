@@ -1,12 +1,12 @@
 import { NextRequest } from 'next/server';
-import { getAuthFromRequest } from '@/lib/api/finance-access';
+import { getAuthFromRequestWithSession } from '@/lib/api/finance-access';
 import { aiAgentsRepository } from '@collabverse/api';
 import { jsonOk, jsonError } from '@/lib/api/http';
 import type { AIAgentType } from '@collabverse/api';
 
 export async function POST(req: NextRequest) {
   try {
-    const auth = await getAuthFromRequest(req);
+    const auth = await getAuthFromRequestWithSession(req);
     if (!auth) {
       return jsonError('Unauthorized', { status: 401 });
     }
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = await getAuthFromRequest(req);
+    const auth = await getAuthFromRequestWithSession(req);
     if (!auth) {
       return jsonError('Unauthorized', { status: 401 });
     }

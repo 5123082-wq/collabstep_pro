@@ -1,3 +1,4 @@
+import { getAuthFromRequestWithSession } from "@/lib/api/finance-access";
 /**
  * API endpoint для массовых операций с задачами
  * 
@@ -7,7 +8,7 @@
  */
 
 import { NextRequest } from 'next/server';
-import { getAuthFromRequest } from '@/lib/api/finance-access';
+ // removed unused from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { tasksRepository, projectsRepository, domainEventsRepository } from '@collabverse/api';
 import type { BulkOperation } from '@/lib/ai/bulk-operations';
@@ -18,7 +19,7 @@ type TaskPriority = NonNullable<TaskUpdatePatch['priority']>;
 export async function POST(req: NextRequest) {
   try {
     // Проверка авторизации
-    const auth = getAuthFromRequest(req);
+    const auth = await getAuthFromRequestWithSession(req);
     if (!auth) {
       return jsonError('UNAUTHORIZED', { status: 401 });
     }

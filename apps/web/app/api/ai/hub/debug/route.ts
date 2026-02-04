@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { flags } from '@/lib/flags';
-import { getAuthFromRequest, getAuthFromRequestWithSession } from '@/lib/api/finance-access';
 import { getCurrentSession } from '@/lib/auth/session';
+import { getAuthFromRequestWithSession } from '@/lib/api/finance-access';
 import { aiAgentConfigsDbRepository } from '@collabverse/api';
 
 /**
@@ -9,7 +9,7 @@ import { aiAgentConfigsDbRepository } from '@collabverse/api';
  * Diagnostic: auth, session, agents count. Remove or restrict in production.
  */
 export async function GET(req: NextRequest): Promise<NextResponse> {
-  const authSync = getAuthFromRequest(req);
+  const authSync = await getAuthFromRequestWithSession(req);
   const authWithSession = await getAuthFromRequestWithSession(req);
   const session = await getCurrentSession();
   // NOTE: AI_AGENTS_DATABASE_URL removed - all data now uses main database

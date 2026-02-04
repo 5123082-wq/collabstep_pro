@@ -1,3 +1,4 @@
+import { getAuthFromRequestWithSession, getProjectRole, assertProjectAccess } from "@/lib/api/finance-access";
 import '@/lib/finance/bootstrap';
 import {
   amountToCents,
@@ -11,7 +12,6 @@ import {
   type Expense
 } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
-import { assertProjectAccess, getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
 
 // Ленивая инициализация для обеспечения правильного порядка инициализации bootstrap
 function getFinanceService() {
@@ -137,7 +137,7 @@ function summarizeExpenses(expenses: Expense[]) {
 }
 
 export async function GET(request: Request) {
-  const auth = getAuthFromRequest(request);
+  const auth = await getAuthFromRequestWithSession(request);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }
@@ -185,7 +185,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const auth = getAuthFromRequest(request);
+  const auth = await getAuthFromRequestWithSession(request);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }

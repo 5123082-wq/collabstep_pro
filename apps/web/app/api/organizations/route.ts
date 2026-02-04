@@ -18,6 +18,7 @@ export async function GET() {
         let memberships = await organizationsRepository.listMembershipsForUser(userId);
 
         if (memberships.length === 0) {
+            console.log('[Organizations] No organizations found for user, creating fallback personal organization:', userId);
             const fallbackName = user?.name?.trim() || user?.email?.split('@')[0]?.trim() || 'Personal Organization';
             await organizationsRepository.create({
                 ownerId: userId,
@@ -27,6 +28,7 @@ export async function GET() {
                 isPublicInDirectory: false,
             });
             memberships = await organizationsRepository.listMembershipsForUser(userId);
+            console.log('[Organizations] Fallback organization created for user:', userId);
         }
         
         // Transform to include isPrimary, userRole, and memberCount

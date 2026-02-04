@@ -1,7 +1,8 @@
+import { getAuthFromRequestWithSession } from "@/lib/api/finance-access";
 import { NextRequest } from 'next/server';
 import { tasksRepository, taskDependenciesRepository } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
-import { getAuthFromRequest } from '@/lib/api/finance-access';
+ // removed unused from '@/lib/api/finance-access';
 import { flags } from '@/lib/flags';
 import { DASHBOARD_WIDGET_TYPES, type WidgetData, type WidgetType } from '@/lib/dashboard/types';
 import type { ProjectsTasksPayload } from '@/components/dashboard/widgets';
@@ -208,7 +209,7 @@ export async function GET(request: NextRequest) {
     return jsonError('NOT_FOUND', { status: 404 });
   }
 
-  const auth = getAuthFromRequest(request);
+  const auth = await getAuthFromRequestWithSession(request);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }

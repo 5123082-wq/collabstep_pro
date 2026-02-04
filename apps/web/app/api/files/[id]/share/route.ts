@@ -1,6 +1,7 @@
+import { getAuthFromRequestWithSession } from "@/lib/api/finance-access";
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getAuthFromRequest } from '@/lib/api/finance-access';
+ // removed unused from '@/lib/api/finance-access';
 import { sharesRepository } from '@collabverse/api';
 import { db } from '@collabverse/api/db/config';
 import { files } from '@collabverse/api/db/schema';
@@ -26,7 +27,7 @@ export async function POST(
   }
 
   // Check authentication
-  const auth = getAuthFromRequest(req);
+  const auth = await getAuthFromRequestWithSession(req);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }

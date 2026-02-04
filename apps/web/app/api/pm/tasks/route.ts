@@ -1,6 +1,7 @@
+import { getAuthFromRequestWithSession } from "@/lib/api/finance-access";
 import { NextResponse } from 'next/server';
 import { flags } from '@/lib/flags';
-import { getAuthFromRequest } from '@/lib/api/finance-access';
+ // removed unused from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { tasksRepository, projectsRepository, type TaskStatus, aiAgentsRepository, hydrateTasksAttachmentsFromDb } from '@collabverse/api';
 import type { ProjectScope } from '@/lib/pm/filters';
@@ -133,7 +134,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const auth = getAuthFromRequest(request);
+    const auth = await getAuthFromRequestWithSession(request);
     if (!auth) {
       return jsonError('UNAUTHORIZED', { status: 401 });
     }
@@ -297,7 +298,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  const auth = getAuthFromRequest(request);
+  const auth = await getAuthFromRequestWithSession(request);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }

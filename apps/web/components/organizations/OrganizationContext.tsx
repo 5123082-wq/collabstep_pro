@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useCallback, useMemo, useRef, type ReactNode } from 'react';
+import { useSessionContext } from '@/components/app/SessionContext';
 import { 
   useOrganizationStore, 
   useCurrentOrganization, 
@@ -31,12 +32,14 @@ type OrganizationContextValue = {
   // Actions
   switchOrganization: (orgId: string) => void;
   refreshOrganizations: () => Promise<void>;
+  reset: () => void;
 };
 
 const OrganizationContext = createContext<OrganizationContextValue | null>(null);
 
 export function OrganizationProvider({ children }: { children: ReactNode }) {
   // Extract individual actions from store to avoid reference changes
+  const resetStore = useOrganizationStore(state => state.reset);
   const setIsLoading = useOrganizationStore(state => state.setIsLoading);
   const setOrganizations = useOrganizationStore(state => state.setOrganizations);
   const setSubscription = useOrganizationStore(state => state.setSubscription);
@@ -52,9 +55,21 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   
   const currentOrganization = useCurrentOrganization();
   const currentOrgId = useCurrentOrgId();
+  const session = useSessionContext();
   
   // Track if we've already fetched to prevent double fetching
   const hasFetched = useRef(false);
+  const lastUserId = useRef<string | null>(session.userId);
+
+  // Reset store if user changed
+  useEffect(() => {
+    if (session.userId !== lastUserId.current) {
+      console.log('[OrganizationProvider] User changed, resetting store');
+      resetStore();
+      lastUserId.current = session.userId;
+      hasFetched.current = false;
+    }
+  }, [session.userId, resetStore]);
 
   // Fetch organizations from API
   const fetchOrganizations = useCallback(async () => {
@@ -137,6 +152,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     isInitialized,
     switchOrganization,
     refreshOrganizations,
+    reset: resetStore,
   }), [
     currentOrganization,
     currentOrgId,
@@ -150,6 +166,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     getOrganizationLimit,
     switchOrganization,
     refreshOrganizations,
+    resetStore,
   ]);
 
   return (

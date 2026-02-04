@@ -1,3 +1,4 @@
+import { getAuthFromRequestWithSession } from "@/lib/api/finance-access";
 /**
  * API endpoint для рекомендаций по назначению задач
  * 
@@ -12,7 +13,7 @@ import {
   suggestTaskAssignments,
   type AssignmentRecommendation 
 } from '@collabverse/api/services/ai-planning-service';
-import { getAuthFromRequest } from '@/lib/api/finance-access';
+ // removed unused from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { projectsRepository, tasksRepository, type Task } from '@collabverse/api';
 
@@ -31,7 +32,7 @@ const aiClientAdapter = {
 export async function POST(req: NextRequest) {
   try {
     // Проверка авторизации
-    const auth = getAuthFromRequest(req);
+    const auth = await getAuthFromRequestWithSession(req);
     if (!auth) {
       return jsonError('UNAUTHORIZED', { status: 401 });
     }

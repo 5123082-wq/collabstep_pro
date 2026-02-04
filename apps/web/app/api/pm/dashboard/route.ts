@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { flags } from '@/lib/flags';
-import { getAuthFromRequest } from '@/lib/api/finance-access';
+import { getAuthFromRequestWithSession } from '@/lib/api/finance-access';
 import { tasksRepository, usersRepository } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { getAccessibleProjects } from '@/lib/api/project-access';
@@ -11,7 +11,7 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  const auth = getAuthFromRequest(_req);
+  const auth = await getAuthFromRequestWithSession(_req);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }

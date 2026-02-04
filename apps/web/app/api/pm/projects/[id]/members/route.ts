@@ -1,6 +1,6 @@
+import { getAuthFromRequestWithSession, getProjectRole } from "@/lib/api/finance-access";
 import { NextRequest, NextResponse } from 'next/server';
 import { flags } from '@/lib/flags';
-import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
 import { projectsRepository, usersRepository } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
 
@@ -14,7 +14,7 @@ export async function GET(
   }
 
   // Проверка авторизации
-  const auth = getAuthFromRequest(req);
+  const auth = await getAuthFromRequestWithSession(req);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }
