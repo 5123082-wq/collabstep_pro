@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { flags } from '@/lib/flags';
-import { getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
+import { getAuthFromRequestWithSession, getProjectRole } from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { trackEvent } from '@/lib/telemetry';
 import { db } from '@collabverse/api/db/config';
@@ -52,7 +52,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return jsonError('FEATURE_DISABLED', { status: 404 });
   }
 
-  const auth = getAuthFromRequest(req);
+  // Use getAuthFromRequestWithSession to support both NextAuth sessions and demo cookies
+  const auth = await getAuthFromRequestWithSession(req);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }
@@ -165,7 +166,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     return jsonError('FEATURE_DISABLED', { status: 404 });
   }
 
-  const auth = getAuthFromRequest(req);
+  // Use getAuthFromRequestWithSession to support both NextAuth sessions and demo cookies
+  const auth = await getAuthFromRequestWithSession(req);
   if (!auth) {
     return jsonError('UNAUTHORIZED', { status: 401 });
   }
