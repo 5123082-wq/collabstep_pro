@@ -41,7 +41,9 @@ export function getAuthSecret(): string {
         'This is NOT secure for production!'
       );
     }
-    return 'dev-secret-change-in-production-' + Date.now();
+    // Using a fixed fallback secret to ensure consistency across Edge/Node runtimes
+    // if the environment variable is missing. Random values would break sessions.
+    return 'dev-secret-do-not-use-in-production-fallback-key';
   }
   
   return secret;
