@@ -41,6 +41,8 @@ type AppLayoutClientProps = {
   children: ReactNode;
 };
 
+import { useOrganizationStore } from '@/stores/organization-store';
+
 const AVATAR_STORAGE_KEY = 'cv-user-avatar';
 
 function getStoredAvatar(email: string): string | null {
@@ -58,6 +60,7 @@ function getStoredAvatar(email: string): string | null {
 export default function AppLayoutClient({ session, children }: AppLayoutClientProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const resetOrgStore = useOrganizationStore(state => state.reset);
   const [isCreateOpen, setCreateOpen] = useState(false);
   const [isPaletteOpen, setPaletteOpen] = useState(false);
   const [isSettingsOpen, setSettingsOpen] = useState(false);
@@ -171,6 +174,9 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
     }
     setLoggingOut(true);
     try {
+      // Clear organization store on logout
+      resetOrgStore();
+      
       const response = await fetch('/api/auth/logout', {
         method: 'POST',
         headers: {
