@@ -476,6 +476,9 @@ export default function TaskDetailModal({
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-neutral-500">
+                  В списке только участники проекта. Если нужного человека нет, сначала добавьте его в команду проекта.
+                </p>
               </div>
 
               <div className="space-y-1">

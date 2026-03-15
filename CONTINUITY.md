@@ -1,6 +1,6 @@
 # Continuity Ledger
 
-> **Последнее обновление:** 2026-03-09
+> **Последнее обновление:** 2026-03-15
 > **Default read scope:** читать только до строки `<!-- STOP LINE: ACTIVE CONTEXT ENDS -->`
 
 ## Active Context
@@ -202,5 +202,78 @@
 - добавлен unit test `apps/web/tests/unit/catalog-pm-bridge.spec.ts` на personal/team target PM context и minimal access bridge
 - `pnpm test -- catalog-pm-bridge.spec.ts --runInBand` — assertions проходят, но сам Jest-процесс в sandbox завершается с ошибкой из-за фонового DB/WebSocket bootstrap на недоступный host `ep-plain-frost-a467jeml-pooler.us-east-1.aws.neon.tech`
 - `pnpm test -- marketplace-listing-contract.spec.ts --runInBand` — assertions проходят, но сам Jest-процесс в sandbox завершается с ошибкой из-за фонового DB/WebSocket bootstrap на недоступный host `ep-plain-frost-a467jeml-pooler.us-east-1.aws.neon.tech`
+
+### Tertiary Thread
+
+- **Зона работ:** PM Core / people picker и project membership
+- **Текущий статус:** 2026-03-15 закрыт базовый slice по поиску пользователей платформы и прямому добавлению их в PM-проект
+
+### Что зафиксировано по people picker
+
+- добавлен `/api/pm/projects/[id]/member-candidates`:
+  - ищет зарегистрированных пользователей по имени, email и должности;
+  - маркирует кандидатов как `уже в проекте` / `в команде организации` / `только на платформе`;
+- добавлен `POST /api/pm/projects/[id]/members` для direct add existing user в PM-проект;
+- PM modal управления участниками переведён с link-only flow на `search + direct add`, invite-link оставлен как fallback;
+- блок `Команда` в карточке проекта получил явную кнопку `Добавить участника`;
+- task detail теперь явно подсказывает, что назначение возможно только после project membership;
+- docs синхронизированы для `ROADMAP`, PM overview/projects/tasks/access/teams и analytics taxonomy.
+
+### Ключевые решения по people picker
+
+- task assignment остаётся project-scoped: assignee picker не ищет по всей платформе и использует только команду проекта;
+- registered platform user можно добавить в проект напрямую без email-only обхода;
+- если пользователь есть на платформе, но не состоит в организации, базовый slice допускает его как внешнего project participant;
+- отдельная глобальная user directory / картотека пользователей остаётся future scope.
+
+### People Picker Docs
+
+- `docs/ROADMAP.md`
+- `docs/modules/projects-tasks/projects-tasks-overview.md`
+- `docs/modules/projects-tasks/projects-tasks-projects.md`
+- `docs/modules/projects-tasks/projects-tasks-tasks.md`
+- `docs/modules/projects-tasks/projects-tasks-access.md`
+- `docs/modules/projects-tasks/projects-tasks-teams.md`
+- `docs/platform/analytics-events.md`
+
+### People Picker Verification
+
+- `pnpm -w typecheck` — успешно
+- `pnpm test -- project-people-picker-api.spec.ts --runInBand` — успешно
+
+### Quaternary Thread
+
+- **Зона работ:** Performers / people directory, user cabinet и performer card contract
+- **Текущий статус:** 2026-03-15 собран и синхронизирован docs-only contract по кабинету пользователя, карточке исполнителя, картотеке людей и contact-to-project workflow
+
+### Что зафиксировано по performers docs contract
+
+- `performers-overview` переписан из разрозненного “биржа исполнителей” описания в связанный доменный контракт:
+  - единый аккаунт и кабинет пользователя;
+  - performer card как расширение аккаунта;
+  - публичный каталог + private relation layer;
+  - внешний flow `контакт -> preview -> approval -> membership`;
+- `performers-specialists` теперь явно разделяет:
+  - публичный discovery catalog;
+  - PM operational people picker;
+  - будущую приватную картотеку контактов;
+- `performers-responses` зафиксировал reuse уже существующих invite threads, `previewProjectIds` и project invite statuses вместо новой state machine;
+- добавлен новый канонический doc `docs/modules/performers/performers-profile-cabinet.md`:
+  - описывает текущее расщепление `/settings/profile`, `/settings/performer`, `/profile/*`, settings modals;
+  - фиксирует, как должна создаваться performer card через единый кабинет;
+- добавлен новый `docs/modules/performers/performers-implementation-plan.md` с фазами P0-P4;
+- синхронизированы `docs/ROADMAP.md`, `docs/platform/overview.md`, `docs/README.md`, `docs/INDEX.md`.
+
+### Ключевые решения по performers docs contract
+
+- не вводить новую сущность “человек” поверх уже существующих `users` + `performer_profile` + relation layer;
+- не вводить отдельную новую state machine для candidate access, если достаточно `organization_invite`, `project_invite`, invite threads и текущих invite statuses;
+- current PM people picker остаётся valid для direct add known users, но не считается финальным external hiring/contact flow;
+- `/settings/profile` и `/settings/performer` считать текущими рабочими surfaces, а `/profile/*` и часть settings modals — legacy/transition state;
+- analytics taxonomy не обновлялась: пока зафиксирован только план будущих событий, без реализации.
+
+### Performers Docs Verification
+
+- docs-only update; `pnpm -w typecheck` не запускался
 
 <!-- STOP LINE: ACTIVE CONTEXT ENDS -->

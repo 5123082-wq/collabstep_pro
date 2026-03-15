@@ -1,6 +1,6 @@
 # Документация Collabverse
 
-> **Последнее обновление:** 2026-03-09  
+> **Последнее обновление:** 2026-03-15  
 > **[Полный индекс документации](INDEX.md)** - навигация по всем документам
 
 Добро пожаловать в документацию проекта Collabverse — платформы для управления проектами с AI-агентами и каталогом решений.
@@ -16,7 +16,7 @@
 - **[Рабочий стол](modules/dashboard/dashboard-overview.md)** — сводные виджеты и быстрые действия
 - **[Проекты и задачи](modules/projects-tasks/projects-tasks-overview.md)** — ключевые процессы управления работой
 - **[Каталог](modules/marketplace/marketplace-overview.md)** — шаблоны, готовые решения, услуги, страницы авторов и reuse/publish flow
-- **[Исполнители](modules/performers/performers-overview.md)** — специалисты, команды и вакансии
+- **[Исполнители](modules/performers/performers-overview.md)** — специалисты, картотека людей, карточка исполнителя и вакансии
 - **[Маркетинг](modules/marketing/marketing-overview.md)** — кампании и аналитика
 - **[AI-хаб](modules/ai-hub/ai-hub-overview.md)** — AI инструменты и ассистент
 - **[Комьюнити](modules/community/community-overview.md)** — сообщество и события (планируется)
@@ -49,7 +49,7 @@
 - **[AI-хаб](modules/ai-hub/ai-hub-overview.md)** — интеграция AI-ассистентов
 - **[OpenClaw Architecture Brief](modules/ai-hub/ai-hub-openclaw-architecture.md)** — стартовая shared/private архитектура AI Hub на OpenClaw
 - **[Маркетинг](modules/marketing/marketing-overview.md)** — маркетинговые дашборды и аналитика
-- **[Исполнители](modules/performers/performers-overview.md)** — специалисты, команды и вакансии
+- **[Исполнители](modules/performers/performers-overview.md)** — специалисты, картотека людей, карточка исполнителя и вакансии
 - **[Комьюнити](modules/community/community-overview.md)** — сообщество и взаимодействие (планируется)
 - **[Рабочий стол](modules/dashboard/dashboard-overview.md)** — сводные виджеты и быстрые действия
 - **[Документы](modules/docs/docs-overview.md)** — документы, контракты и бренд‑материалы
@@ -195,7 +195,7 @@
 
 ---
 
-**Последнее обновление:** 2026-03-09  
+**Последнее обновление:** 2026-03-15  
 **Версия документации:** 2.1  
 **Статус реорганизации:** ✅ Завершена
 

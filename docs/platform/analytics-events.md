@@ -2,7 +2,7 @@
 
 **Статус:** active  
 **Владелец:** product/analytics  
-**Последнее обновление:** 2026-03-09
+**Последнее обновление:** 2026-03-15
 
 Это **канонический** список событий аналитики и их схем.
 
@@ -58,6 +58,7 @@
 | `pm_project_restored` | Проект восстановлен из архива | `{ project_id }` | При восстановлении | API endpoint `/api/pm/projects/[id]/restore` |
 | `pm_project_deleted` | Проект удален | `{ project_id }` | При удалении | API endpoint `/api/pm/projects/[id]` |
 | `pm_project_viewed` | Просмотр страницы проекта | `{ project_id, view_type }` | При открытии страницы проекта | Frontend page `/pm/projects/[id]` |
+| `pm_project_member_added` | Existing user добавлен в проект напрямую из people picker | `{ project_id, member_id, member_role, source }` | После успешного direct add в `POST /api/pm/projects/[id]/members` / PM modal | Frontend/API |
 | `pm_project_member_invited` | Приглашен участник проекта | `{ project_id, member_role }` | При отправке приглашения | API endpoint `/api/pm/projects/[id]/invites` |
 | `pm_project_member_removed` | Удален участник проекта | `{ project_id, member_id }` | При удалении участника | API endpoint `/api/pm/projects/[id]/members` |
 
