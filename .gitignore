@@ -30,6 +30,14 @@ filebrowser-test/
 
 # Archived documentation (not for git)
 docs/archive/
+!docs/archive/
+docs/archive/*
+!docs/archive/README.md
+!docs/archive/development/
+docs/archive/development/*
+!docs/archive/development/2026-03-09-catalog-reorganization/
+docs/archive/development/2026-03-09-catalog-reorganization/*
+!docs/archive/development/2026-03-09-catalog-reorganization/legacy-marketplace-structure.md
 
 # Development documentation (local only, not for git)
 docs/development/

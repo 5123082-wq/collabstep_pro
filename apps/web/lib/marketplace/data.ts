@@ -1,41 +1,65 @@
-import type { MarketplaceTemplate, MarketplaceSeller } from './types';
+import type {
+  CatalogAuthorPublication,
+  CatalogCollection,
+  CatalogSpotlight,
+  MarketplaceSeller,
+  MarketplaceTemplate
+} from './types';
 
 const sellers: MarketplaceSeller[] = [
   {
     id: 'studio-nova',
+    handle: 'studio-nova',
     name: 'Studio Nova',
     avatarUrl: '/placeholders/avatar-1.svg',
-    portfolioCount: 24
+    portfolioCount: 24,
+    headline: 'Лендинги и launch-системы для digital-продуктов',
+    location: 'Berlin, CET'
   },
   {
     id: 'pixel-foundry',
+    handle: 'pixel-foundry',
     name: 'Pixel Foundry',
     avatarUrl: '/placeholders/avatar-2.svg',
-    portfolioCount: 31
+    portfolioCount: 31,
+    headline: 'Айдентика и бренд-системы для малых команд',
+    location: 'Warsaw, CET'
   },
   {
     id: 'orbit-labs',
+    handle: 'orbit-labs',
     name: 'Orbit Labs',
     avatarUrl: '/placeholders/avatar-3.svg',
-    portfolioCount: 18
+    portfolioCount: 18,
+    headline: 'Продуктовые dashboard-решения и data UX',
+    location: 'Tallinn, EET'
   },
   {
     id: 'north-dsgn',
+    handle: 'north-dsgn',
     name: 'North DSGN',
     avatarUrl: '/placeholders/avatar-1.svg',
-    portfolioCount: 27
+    portfolioCount: 27,
+    headline: 'Системы запуска для growth- и content-команд',
+    location: 'Riga, EET'
   },
   {
     id: 'vector-squad',
+    handle: 'vector-squad',
     name: 'Vector Squad',
     avatarUrl: '/placeholders/avatar-2.svg',
-    portfolioCount: 15
+    portfolioCount: 15,
+    headline: 'Мобильные UI-киты и сервисные сценарии',
+    location: 'Lisbon, WET'
   },
   {
     id: 'boldline',
+    handle: 'boldline',
     name: 'Boldline',
     avatarUrl: '/placeholders/avatar-3.svg',
-    portfolioCount: 22
+    portfolioCount: 22,
+    headline: 'Фирменные пакеты и визуальные гайды для B2B',
+    location: 'Prague, CET'
   }
 ];
 
@@ -50,6 +74,8 @@ const templateGallery = {
 
 const getSeller = (index: number) => sellers[index]!;
 const getGallery = (key: keyof typeof templateGallery) => [...templateGallery[key]];
+
+export const marketplaceSellers = sellers;
 
 export const templates: MarketplaceTemplate[] = [
   {
@@ -357,10 +383,168 @@ export const templates: MarketplaceTemplate[] = [
   }
 ];
 
+export const readySolutions: CatalogSpotlight[] = [
+  {
+    id: 'ops-sprint-os',
+    kind: 'solution',
+    title: 'Operations Sprint OS',
+    description: 'Публичное решение на базе PM-проекта для запуска ops-команды с недельным ритмом, шаблонами созвонов и dashboard-ритуалами.',
+    href: '/market/projects',
+    previewUrl: templateGallery.orbit[2],
+    seller: getSeller(2),
+    tags: ['ops', 'workflow', 'dashboard'],
+    highlight: 'Готовое решение',
+    meta: 'Reuse-first публикация из PM',
+    demoMetrics: { likes: 126, views: 3800, uses: 48 }
+  },
+  {
+    id: 'growth-campaign-canvas',
+    kind: 'solution',
+    title: 'Growth Campaign Canvas',
+    description: 'Готовая структура проекта для growth-команд: гипотезы, спринты, контент и weekly review в одном публичном решении.',
+    href: '/market/projects',
+    previewUrl: templateGallery.skyline[1],
+    seller: getSeller(3),
+    tags: ['growth', 'campaigns', 'playbook'],
+    highlight: 'Готовое решение',
+    meta: 'Подходит для старта нового PM-контура',
+    demoMetrics: { likes: 94, views: 2900, uses: 34 }
+  },
+  {
+    id: 'brand-launch-playbook',
+    kind: 'solution',
+    title: 'Brand Launch Playbook',
+    description: 'Собранный public layer проекта запуска бренда: этапы, deliverables, рабочие документы и handoff в продакшн-команду.',
+    href: '/market/projects',
+    previewUrl: templateGallery.dawn[0],
+    seller: getSeller(5),
+    tags: ['brand', 'launch', 'playbook'],
+    highlight: 'Готовое решение',
+    meta: 'Публикация отдельна от исходного PM-проекта',
+    demoMetrics: { likes: 112, views: 3400, uses: 41 }
+  }
+];
+
+export const serviceOffers: CatalogSpotlight[] = [
+  {
+    id: 'launch-sprint-embed',
+    kind: 'service',
+    title: 'Launch Sprint с автором',
+    description: 'Команда автора адаптирует логику каталожного решения под ваш продукт, собирает бриф и переводит работу в проектный контур.',
+    href: '/market/services',
+    previewUrl: templateGallery.neon[0],
+    seller: getSeller(0),
+    tags: ['launch', 'adaptation', 'delivery'],
+    highlight: 'Услуга',
+    meta: 'Brief -> inquiry -> проект',
+    demoMetrics: { likes: 67, views: 2100, uses: 16 }
+  },
+  {
+    id: 'brand-system-retainer',
+    kind: 'service',
+    title: 'Brand System Retainer',
+    description: 'Сервис сопровождения по айдентике и бренд-пакетам с настройкой шаблонов, ревью артефактов и внедрением в рабочий процесс команды.',
+    href: '/market/services',
+    previewUrl: templateGallery.dawn[2],
+    seller: getSeller(1),
+    tags: ['brand', 'retainer', 'review'],
+    highlight: 'Услуга',
+    meta: 'Не instant checkout, а согласование scope',
+    demoMetrics: { likes: 58, views: 1800, uses: 12 }
+  },
+  {
+    id: 'mobile-ui-adaptation',
+    kind: 'service',
+    title: 'Адаптация Mobile UI под ваш контур',
+    description: 'Автор переносит UI-kit в существующий проект, помогает с handoff и подготавливает команду к следующему спринту разработки.',
+    href: '/market/services',
+    previewUrl: templateGallery.ocean[1],
+    seller: getSeller(4),
+    tags: ['mobile', 'handoff', 'support'],
+    highlight: 'Услуга',
+    meta: 'Ведёт к проекту и договорённости, а не только в корзину',
+    demoMetrics: { likes: 73, views: 2400, uses: 19 }
+  }
+];
+
+export const catalogCollections: CatalogCollection[] = [
+  {
+    id: 'launch-in-a-week',
+    eyebrow: 'Подборка',
+    title: 'Для запуска за 7 дней',
+    description: 'Сценарии, где нужен быстрый старт: лендинги, питч-деки и готовые проектные контуры для запуска.',
+    href: '/market/categories',
+    stat: '12 решений'
+  },
+  {
+    id: 'author-led-systems',
+    eyebrow: 'Авторские системы',
+    title: 'Решения с сильным автором',
+    description: 'Публикации, где особенно важны доверие, узнаваемый стиль и возможность запросить адаптацию напрямую у автора.',
+    href: '/market/categories',
+    stat: '8 авторов'
+  },
+  {
+    id: 'project-ready-bases',
+    eyebrow: 'Reuse flow',
+    title: 'Что можно быстро отправить в проект',
+    description: 'Шаблоны, готовые решения и сервисные предложения, которые удобно использовать как стартовую базу для PM-проекта.',
+    href: '/market/categories',
+    stat: '19 отправок'
+  }
+];
+
 export function getTemplateById(id: string) {
   return templates.find((template) => template.id === id);
 }
 
 export function getTemplatesByCategory(category: string, excludeId?: string) {
   return templates.filter((template) => template.category === category && template.id !== excludeId);
+}
+
+export function getMarketplaceSellerByHandle(handle: string): MarketplaceSeller | null {
+  return sellers.find((seller) => seller.handle === handle) ?? null;
+}
+
+export function getCatalogAuthorPublications(handle: string): CatalogAuthorPublication[] {
+  const authorTemplates = templates
+    .filter((template) => template.seller.handle === handle)
+    .map<CatalogAuthorPublication>((template) => ({
+      id: `template:${template.id}`,
+      sourceId: template.id,
+      kind: 'template',
+      title: template.title,
+      description: template.description,
+      href: `/market/templates/${template.id}`,
+      tags: template.tags,
+      meta: 'Публичный шаблон каталога'
+    }));
+
+  const authorSolutions = readySolutions
+    .filter((solution) => solution.seller.handle === handle)
+    .map<CatalogAuthorPublication>((solution) => ({
+      id: `solution:${solution.id}`,
+      sourceId: solution.id,
+      kind: 'solution',
+      title: solution.title,
+      description: solution.description,
+      href: solution.href,
+      tags: solution.tags,
+      meta: solution.meta
+    }));
+
+  const authorServices = serviceOffers
+    .filter((service) => service.seller.handle === handle)
+    .map<CatalogAuthorPublication>((service) => ({
+      id: `service:${service.id}`,
+      sourceId: service.id,
+      kind: 'service',
+      title: service.title,
+      description: service.description,
+      href: service.href,
+      tags: service.tags,
+      meta: service.meta
+    }));
+
+  return [...authorSolutions, ...authorTemplates, ...authorServices];
 }

@@ -51,6 +51,27 @@ These rules apply to all automated changes in this repo.
   If documentation updates are not included, explicitly ask whether they are required.
 
 - New API endpoints must follow existing feature flags and access control patterns.
+- Use the repository documentation lifecycle consistently:
+  - `docs/ROADMAP.md` is the canonical source for planned, in-progress, and completed implementation status.
+  - `docs/modules/<module>/<module>-overview.md` is the canonical module document.
+  - `docs/modules/<module>/<module>-implementation-plan.md` is optional detailed planning and must not contradict `docs/ROADMAP.md`.
+  - `docs/platform/changelog.md` is for released changes only.
+  - `CONTINUITY.md` is for active task handoff and pause/resume state only.
+- When a new idea or feature starts, update `docs/ROADMAP.md` and the affected module overview without waiting for a separate prompt.
+- When work is paused or resumed, make sure `CONTINUITY.md` and any in-progress roadmap/plan statuses stay accurate.
+- When implementation is completed, sync `docs/ROADMAP.md`, module docs, relevant platform docs, and `CONTINUITY.md` before considering the task fully done.
+- If a new module or documentation entry point is added, also update `docs/platform/overview.md`, `docs/README.md`, and `docs/INDEX.md`.
+
+### Continuity & Working Memory
+
+- Treat `CONTINUITY.md` as the canonical continuity ledger for active project state.
+- At the start of any substantial task, and when resuming after a context switch, read `CONTINUITY.md` before coding.
+- By default, read only through the marker `<!-- STOP LINE: ACTIVE CONTEXT ENDS -->` and do not read continuity archive files unless the task needs global historical context.
+- After completing any meaningful feature, behavior change, migration, architecture decision, or cross-cutting bug fix, update `CONTINUITY.md` without waiting for a separate user prompt.
+- Keep `CONTINUITY.md` factual and compact: update active goals, constraints, key decisions, current status, next steps, affected docs, and verification status. Use concrete dates.
+- If the active continuity section grows noisy, move stale detail to `docs/archive/continuity/` and leave a short pointer in `CONTINUITY.md`.
+- Do not write secrets, private URLs, or prompt instructions into `CONTINUITY.md`. Mark uncertain information as `UNCONFIRMED`.
+- If a change affects permissions, analytics, feature flags, dashboards, notifications, or documentation, reflect that in `CONTINUITY.md` and update the relevant docs in the same task or explicitly state why they were not updated.
 
 ## How To Request Work
 

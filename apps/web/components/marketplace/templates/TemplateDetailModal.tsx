@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useMarketplaceStore } from '@/lib/marketplace/store';
 import { getTemplateById } from '@/lib/marketplace/data';
 import TemplatePurchaseActions from './TemplatePurchaseActions';
@@ -27,6 +28,13 @@ export default function TemplateDetailModal() {
             <header className="space-y-3">
               <h1 className="text-2xl font-semibold text-neutral-50">{template.title}</h1>
               <p className="text-sm text-neutral-400">{template.description}</p>
+              <div className="rounded-2xl border border-neutral-800/80 bg-neutral-900/60 p-4">
+                <p className="text-xs uppercase tracking-[0.24em] text-neutral-500">Автор</p>
+                <Link href={`/p/${template.seller.handle}`} className="mt-2 block text-base font-semibold text-neutral-100 transition hover:text-indigo-300">
+                  {template.seller.name}
+                </Link>
+                <p className="mt-1 text-sm text-neutral-400">{template.seller.headline}</p>
+              </div>
             </header>
             <div className="grid gap-3 sm:grid-cols-2">
               {template.gallery.map((image) => (
@@ -62,11 +70,10 @@ export default function TemplateDetailModal() {
             <TemplatePurchaseActions template={template} />
             <div className="space-y-3 text-sm text-neutral-400">
               <p>
-                После оплаты шаблон появится в ваших заказах. Файлы будут доступны по защищённым ссылкам в течение 72
-                часов.
+                Поверхность шаблона теперь ведёт в reuse-flow: сначала оценка решения, затем сохранение, отправка в проект или запрос на адаптацию.
               </p>
               <p>
-                Для совместной работы можно добавить шаблон в существующий проект и поделиться доступом с командой.
+                Корзина и оформление остаются вторичным сценарием и не заменяют связь шаблона с проектным контуром.
               </p>
             </div>
           </ContentBlock>
@@ -74,4 +81,3 @@ export default function TemplateDetailModal() {
     </LargeContentModal>
   );
 }
-

@@ -6,9 +6,9 @@ export default function MarketCartPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-neutral-50">Корзина</h1>
+          <h1 className="text-xl font-semibold text-neutral-50">Корзина и оформление</h1>
           <p className="text-sm text-neutral-400">
-            Проверьте выбранные шаблоны перед оплатой. Услуги добавляются отдельно через запрос предложения.
+            Вторичный коммерческий слой каталога. Используйте его, когда решение уже выбрано и нужно перейти к оформлению доступа.
           </p>
         </div>
       </div>

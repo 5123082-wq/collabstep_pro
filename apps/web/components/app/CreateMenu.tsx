@@ -102,7 +102,7 @@ function resolveContext(pathname: string | null): CreateContext {
   // Также проверяем /pm (без слэша) для дашборда
   if (pathname.startsWith('/pm')) return 'pm';
   if (pathname.startsWith('/performers')) return 'performers';
-  if (pathname.startsWith('/market/')) return 'marketplace';
+  if (pathname === '/market' || pathname.startsWith('/market/')) return 'marketplace';
   if (pathname.startsWith('/finance')) return 'finance';
   if (pathname.startsWith('/community')) return 'community';
   if (pathname.startsWith('/ai-hub')) return 'ai-hub';

@@ -1,9 +1,11 @@
-import { getAuthFromRequestWithSession, getProjectRole } from "@/lib/api/finance-access";
+import { getAuthFromRequestWithSession } from "@/lib/api/finance-access";
 import { NextRequest, NextResponse } from 'next/server';
 import { flags } from '@/lib/flags';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { projectsRepository, marketplaceListingsRepository } from '@collabverse/api';
 import { trackEvent } from '@/lib/telemetry';
+import { getCurrentUser } from '@/lib/auth/session';
+import { resolveProjectListingManagerContext } from '@/lib/marketplace/pm-listing-authorship';
 
 export async function POST(
   req: NextRequest,
@@ -18,15 +20,20 @@ export async function POST(
     return jsonError('UNAUTHORIZED', { status: 401 });
   }
 
-  const role = await getProjectRole(params.id, auth.userId);
-  if (role !== 'owner' && role !== 'admin') {
-    return jsonError('ACCESS_DENIED', { status: 403 });
-  }
-
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser?.id) {
+      return jsonError('UNAUTHORIZED', { status: 401 });
+    }
+
     const project = await projectsRepository.findById(params.id);
     if (!project) {
       return jsonError('PROJECT_NOT_FOUND', { status: 404 });
+    }
+
+    const managerContext = await resolveProjectListingManagerContext(project, currentUser.id);
+    if (!managerContext?.canManage) {
+      return jsonError('ACCESS_DENIED', { status: 403 });
     }
 
     // Проверяем, нет ли уже листинга для этого проекта
@@ -51,6 +58,9 @@ export async function POST(
     const listing = marketplaceListingsRepository.create({
       projectId: params.id,
       workspaceId: project.workspaceId,
+      authorEntityType: managerContext.authorEntity.type,
+      authorEntityId: managerContext.authorEntity.id,
+      publishedByUserId: currentUser.id,
       title: project.title,
       ...(project.description && { description: project.description }),
       state: 'draft'
@@ -61,6 +71,10 @@ export async function POST(
       workspaceId: project.workspaceId,
       projectId: params.id,
       userId: auth.userId,
+      actorUserId: currentUser.id,
+      authorEntityType: managerContext.authorEntity.type,
+      authorEntityId: managerContext.authorEntity.id,
+      publishedByUserId: currentUser.id,
       listingId: listing.id,
       source: 'api'
     });
@@ -88,15 +102,20 @@ export async function PATCH(
     return jsonError('UNAUTHORIZED', { status: 401 });
   }
 
-  const role = await getProjectRole(params.id, auth.userId);
-  if (role !== 'owner' && role !== 'admin') {
-    return jsonError('ACCESS_DENIED', { status: 403 });
-  }
-
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser?.id) {
+      return jsonError('UNAUTHORIZED', { status: 401 });
+    }
+
     const project = await projectsRepository.findById(params.id);
     if (!project) {
       return jsonError('PROJECT_NOT_FOUND', { status: 404 });
+    }
+
+    const managerContext = await resolveProjectListingManagerContext(project, currentUser.id);
+    if (!managerContext?.canManage) {
+      return jsonError('ACCESS_DENIED', { status: 403 });
     }
 
     // Проверяем, существует ли листинг
@@ -126,7 +145,8 @@ export async function PATCH(
     const updatedListing = marketplaceListingsRepository.update(existingListing.id, {
       title: title !== undefined ? title : existingListing.title,
       description: description !== undefined ? description : existingListing.description,
-      state: state !== undefined ? state : existingListing.state
+      state: state !== undefined ? state : existingListing.state,
+      lastEditedByUserId: currentUser.id
     });
 
     // Аналитика события
@@ -134,6 +154,9 @@ export async function PATCH(
       workspaceId: project.workspaceId,
       projectId: params.id,
       userId: auth.userId,
+      actorUserId: currentUser.id,
+      authorEntityType: existingListing.authorEntityType,
+      authorEntityId: existingListing.authorEntityId,
       listingId: existingListing.id,
       source: 'api'
     });
@@ -161,15 +184,20 @@ export async function DELETE(
     return jsonError('UNAUTHORIZED', { status: 401 });
   }
 
-  const role = await getProjectRole(params.id, auth.userId);
-  if (role !== 'owner' && role !== 'admin') {
-    return jsonError('ACCESS_DENIED', { status: 403 });
-  }
-
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser?.id) {
+      return jsonError('UNAUTHORIZED', { status: 401 });
+    }
+
     const project = await projectsRepository.findById(params.id);
     if (!project) {
       return jsonError('PROJECT_NOT_FOUND', { status: 404 });
+    }
+
+    const managerContext = await resolveProjectListingManagerContext(project, currentUser.id);
+    if (!managerContext?.canManage) {
+      return jsonError('ACCESS_DENIED', { status: 403 });
     }
 
     // Проверяем, существует ли листинг
@@ -189,6 +217,9 @@ export async function DELETE(
       workspaceId: project.workspaceId,
       projectId: params.id,
       userId: auth.userId,
+      actorUserId: currentUser.id,
+      authorEntityType: existingListing.authorEntityType,
+      authorEntityId: existingListing.authorEntityId,
       listingId: existingListing.id,
       source: 'api'
     });
@@ -202,4 +233,3 @@ export async function DELETE(
     );
   }
 }
-

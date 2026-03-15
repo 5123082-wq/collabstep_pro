@@ -27,7 +27,7 @@ export default function TemplateFileList({ files }: { files: MarketplaceFile[] }
       </div>
       <p className="text-xs text-neutral-500">
         После покупки файлы доступны для скачивания через защищённые ссылки. Срок действия ссылок — 72 часа, далее
-        их можно обновить в разделе «Мои заказы».
+        их можно обновить в разделе «Сделки и доступ».
       </p>
     </ContentBlock>
   );

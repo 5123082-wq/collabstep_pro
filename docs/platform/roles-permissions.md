@@ -2,7 +2,7 @@
 
 **Статус:** active  
 **Владелец:** product/engineering  
-**Последнее обновление:** 2026-01-06
+**Последнее обновление:** 2026-03-09
 
 ## Роли (канонические)
 
@@ -19,14 +19,15 @@
 
 ### Роли в проекте (Project Roles)
 
-Роли определяются в `project_role` enum в базе данных:
+Текущие PM/Catalog read-models используют следующие эффективные роли проекта:
 
 - **`owner`** — владелец проекта. Полный контроль над проектом.
-- **`manager`** — менеджер проекта. Может управлять задачами, командой, но не удалять проект.
-- **`contributor`** — участник проекта. Может создавать и редактировать задачи, комментировать.
+- **`admin`** — администратор проекта. Может управлять задачами, командой и сервисными действиями каталога.
+- **`member`** — участник проекта. Может создавать и редактировать задачи, комментировать.
 - **`viewer`** — наблюдатель. Только просмотр задач и комментариев.
 
 **Примечание:** Создатель проекта автоматически получает роль `owner`.
+Legacy naming `manager` / `contributor` всё ещё встречается в части PM docs и архивных материалов; для `Каталога` source of truth — текущий effective role layer `owner/admin/member/viewer`.
 
 ### Системные роли платформы (Platform Roles)
 
@@ -85,8 +86,8 @@
 
 ### Проект
 
-| Действие | Owner | Manager | Contributor | Viewer |
-|----------|:-----:|:-------:|:-----------:|:-----:|
+| Действие | Owner | Admin | Member | Viewer |
+|----------|:-----:|:-----:|:------:|:-----:|
 | Создать проект | ✅ | ✅ | ✅ | ❌ |
 | Удалить проект | ✅ | ❌ | ❌ | ❌ |
 | Архивировать проект | ✅ | ✅ | ❌ | ❌ |
@@ -100,10 +101,38 @@
 | Комментировать задачу | ✅ | ✅ | ✅ | ❌ |
 | Просмотр проекта | ✅ | ✅ | ✅ | ✅ |
 | Просмотр задач | ✅ | ✅ | ✅ | ✅ |
-| Публикация в маркетплейс | ✅ | ✅ | ✅ | ❌ |
 | Управление бюджетом | ✅ | ✅ | ❌ | ❌ |
 | Создание расходов | ✅ | ✅ | ✅ | ❌ |
 | Утверждение расходов | ✅ | ✅ | ❌ | ❌ |
+
+### Каталог / Marketplace overlay (C5)
+
+- read-side surfaces `Каталога` (`/market/*`, `/p/:handle`) сейчас живут внутри authenticated app shell; anonymous public web exposure не входит в текущий контракт;
+- author-page visibility:
+  - расширенные performer-блоки показываются только при `performer_profile.isPublic`;
+  - minimal author-shell может рендериться по `handle`, если уже есть публичные catalog entities;
+  - PM publication попадает на `/p/:handle` только при `authorEntityType=user`, `state=published`, `showOnAuthorPage=true`;
+  - team-owned publication не попадает на person-route `/p/:handle`;
+- publish/manage rights:
+  - personal PM project -> publish/manage only owner;
+  - team-owned PM project -> publish/manage owner/admin;
+  - template/service publication -> create/manage only `ownerUserId`;
+  - manager rights и persisted author entity — разные слои; read-path не должен переписывать авторство уже созданной публикации;
+- apply/import rights:
+  - current implementation в catalog/PM create path проверяет только active membership выбранной организации;
+  - import в existing project разрешён owner/admin/member и запрещён viewer;
+  - apply/import не меняет publication-layer автоматически;
+- inquiry/deal-layer access:
+  - brief создаётся из authenticated catalog flow;
+  - привязать inquiry можно только к проектам, где доступен create-task-capable target;
+  - `/market/orders` пока остаётся локальным secondary layer без shared backend deal model.
+
+### Open Contradiction After C5
+
+- matrix выше трактует `viewer` как read-only роль и не даёт ему create-project rights;
+- current PM/catalog implementation для нового проекта проверяет только active organization membership;
+- это не зафиксировано как новый канонический product contract;
+- нужен отдельный corrective task: либо сузить create path до `owner/admin/member`, либо утвердить более широкий contract и затем обновить matrix.
 
 ### Платформа
 
@@ -196,6 +225,7 @@ if (canAccessFinance()) {
 ## NEEDS_CONFIRMATION
 
 - [ ] Детали RBAC/ABAC (scopes, inheritance, custom roles)
+- [ ] Каноническое правило project creation в organization context: `owner/admin/member` или любой active member
 - [ ] Права для внешних участников (contractors, guests)
 - [ ] Права на уровне workspace (отдельно от организации)
 - [ ] Интеграция с системой подписок (free/pro/max планы)
@@ -206,4 +236,3 @@ if (canAccessFinance()) {
 - [Обзор платформы](./overview.md)
 - [Глоссарий](./glossary.md)
 - [Системный анализ](../architecture/system-analysis.md#авторизация-и-мультиаккаунт)
-

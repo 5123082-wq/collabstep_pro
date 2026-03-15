@@ -280,11 +280,11 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
   const currentSubscriptionLabel = 'Подписка Pro';
 
   // Определяем текущий раздел для отображения панели навигации
-  // Важно: проверяем маркетинг ПЕРЕД маркетплейсом, так как /marketing начинается с /market
+  // Важно: проверяем маркетинг ПЕРЕД каталогом, так как /marketing начинается с /market
   const isMarketingSection = pathname?.startsWith(MARKETING_HUB_PATH) ?? false;
   const isPMSection = (pathname?.startsWith(PM_HUB_PATH) ?? false) && !pathname?.match(/^\/pm\/projects\/[^/]+/);
-  // Маркетплейс проверяем на /market/, чтобы не перехватывать /marketing
-  const isMarketplaceSection = pathname?.startsWith('/market/') ?? false;
+  // Каталог проверяем после /marketing и учитываем корневой /market
+  const isMarketplaceSection = pathname === '/market' || (pathname?.startsWith('/market/') ?? false);
   const isPerformersSection = pathname?.startsWith('/performers') ?? false;
   const isAiHubSection = pathname?.startsWith('/ai-hub') ?? false;
   const isCommunitySection = pathname?.startsWith('/community') ?? false;
@@ -540,7 +540,8 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
       {isMarketplaceSection && (
         <SectionNavigationBar
           items={getMarketplaceNavigation()}
-          ariaLabel="Навигация по разделам маркетплейса"
+          ariaLabel="Навигация по разделам каталога"
+          basePath="/market"
         />
       )}
       {isPerformersSection && (

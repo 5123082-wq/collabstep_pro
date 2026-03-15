@@ -1,9 +1,9 @@
 # Документация Collabverse
 
-> **Последнее обновление:** 2026-01-07  
+> **Последнее обновление:** 2026-03-09  
 > **[Полный индекс документации](INDEX.md)** - навигация по всем документам
 
-Добро пожаловать в документацию проекта Collabverse — платформы для управления проектами с AI-агентами и маркетплейсом услуг.
+Добро пожаловать в документацию проекта Collabverse — платформы для управления проектами с AI-агентами и каталогом решений.
 
 ## 📚 Структура документации
 
@@ -15,7 +15,7 @@
 
 - **[Рабочий стол](modules/dashboard/dashboard-overview.md)** — сводные виджеты и быстрые действия
 - **[Проекты и задачи](modules/projects-tasks/projects-tasks-overview.md)** — ключевые процессы управления работой
-- **[Маркетплейс](modules/marketplace/marketplace-overview.md)** — каталог шаблонов и услуг
+- **[Каталог](modules/marketplace/marketplace-overview.md)** — шаблоны, готовые решения, услуги, страницы авторов и reuse/publish flow
 - **[Исполнители](modules/performers/performers-overview.md)** — специалисты, команды и вакансии
 - **[Маркетинг](modules/marketing/marketing-overview.md)** — кампании и аналитика
 - **[AI-хаб](modules/ai-hub/ai-hub-overview.md)** — AI инструменты и ассистент
@@ -34,8 +34,8 @@
 - **[Авторизация и регистрация](platform/authentication.md)** — вход, регистрация, сессии
 - **[Организации и workspace](modules/organization/organization-overview.md)** — модель организаций и членства
 - **[Глоссарий](platform/glossary.md)** — определения терминов платформы
-- **[Роли и права доступа](platform/roles-permissions.md)** — матрица прав доступа
-- **[События аналитики](platform/analytics-events.md)** — каталог событий аналитики
+- **[Роли и права доступа](platform/roles-permissions.md)** — матрица прав доступа, включая overlay `Каталога` после C5
+- **[События аналитики](platform/analytics-events.md)** — каталог событий аналитики, включая текущий coverage/gaps `Каталога`
 - **[Видение и scope](platform/vision-scope.md)** — видение платформы и границы
 - **[Начало работы](platform/getting-started.md)** — быстрый старт и настройка
 - **[История изменений](platform/changelog.md)** — changelog платформы
@@ -45,8 +45,9 @@
 Документация по модулям платформы:
 
 - **[Проекты и задачи](modules/projects-tasks/projects-tasks-overview.md)** — управление проектами, задачами, командами
-- **[Маркетплейс](modules/marketplace/marketplace-overview.md)** — маркетплейс продуктов и услуг
+- **[Каталог](modules/marketplace/marketplace-overview.md)** — user-facing слой решений внутри внутреннего домена Marketplace; C1-C5 sync закрыт, future scope вынесен отдельно
 - **[AI-хаб](modules/ai-hub/ai-hub-overview.md)** — интеграция AI-ассистентов
+- **[OpenClaw Architecture Brief](modules/ai-hub/ai-hub-openclaw-architecture.md)** — стартовая shared/private архитектура AI Hub на OpenClaw
 - **[Маркетинг](modules/marketing/marketing-overview.md)** — маркетинговые дашборды и аналитика
 - **[Исполнители](modules/performers/performers-overview.md)** — специалисты, команды и вакансии
 - **[Комьюнити](modules/community/community-overview.md)** — сообщество и взаимодействие (планируется)
@@ -103,12 +104,14 @@
 - ✅ Базовая инфраструктура (Stage 0)
 - ✅ Система аутентификации (dev-режим)
 - ✅ Маркетинговый слой и навигация
+- ✅ CRM функционал (проекты, задачи, файлы)
+- ✅ AI Hub (Агенты, чаты, аналитика)
+- ✅ Мульти-организации и подписки
 
 **В разработке:**
 
-- 🚧 CRM функционал (проекты, задачи)
 - 🚧 Финансовый модуль
-- 🚧 Маркетплейс
+- 🚧 Каталог (C1-C5 sync завершён; delivery / analytics / dashboard backlog остаётся)
 
 
 ## 🛠️ Технологический стек
@@ -192,7 +195,7 @@
 
 ---
 
-**Последнее обновление:** 2026-01-07  
+**Последнее обновление:** 2026-03-09  
 **Версия документации:** 2.1  
 **Статус реорганизации:** ✅ Завершена
 

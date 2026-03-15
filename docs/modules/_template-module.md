@@ -1,4 +1,6 @@
-# Module: [Название модуля]
+> **Использование:** сохранить как `docs/modules/<module>/<module>-overview.md`
+
+# Module Overview: [Название модуля]
 
 **Статус:** draft | review | stable  
 **Владелец:** product | engineering  
@@ -17,7 +19,10 @@
 - Object 2
 - Object 3
 
-NEEDS_CONFIRMATION: [если есть неопределенности, указать здесь]
+> **NEEDS_CONFIRMATION:** [если есть неопределенности, указать здесь]
+> **Владелец:** product
+> **Дедлайн:** TBD
+> **Контекст:** [почему это важно]
 
 ## 3) Top user scenarios (E2E)
 
@@ -44,9 +49,9 @@ See: `../../platform/analytics-events.md`
 
 ## 7) Implementation status
 
-[Ссылка на план реализации, если есть]
+[Краткое summary текущего состояния модуля]
 
-See: `_implementation-plan.md` или `../../ROADMAP.md`
+See: `./<module>-implementation-plan.md` или `../../ROADMAP.md`
 
 ## 8) Related documents
 
@@ -58,8 +63,6 @@ See: `_implementation-plan.md` или `../../ROADMAP.md`
 
 ## TODO / Future improvements
 
-[Идеи и задачи на будущее, возникшие в процессе разработки]
-
 | Идея | Приоритет | Дата | Контекст | Статус |
 |------|-----------|------|----------|--------|
 | Идея 1 | P2 | YYYY-MM-DD | Из этапа X | ⏳ |
@@ -67,4 +70,3 @@ See: `_implementation-plan.md` или `../../ROADMAP.md`
 ---
 
 **Последнее обновление:** YYYY-MM-DD
-

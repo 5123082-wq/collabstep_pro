@@ -1,11 +1,13 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import type { CatalogAuthorPublication } from '@/lib/marketplace/types';
 import { ContentBlock, ContentBlockTitle } from '@/components/ui/content-block';
 import { Button } from '@/components/ui/button';
 import { InvitePerformerModal } from '@/components/performers/InvitePerformerModal';
 import { PerformerRating } from '@/components/performers/PerformerRating';
 import { PerformerReviewForm } from '@/components/performers/PerformerReviewForm';
+import AuthorSolutionsSection from '@/components/marketplace/catalog/AuthorSolutionsSection';
 
 type PerformerPublicProfile = {
   userId: string;
@@ -55,6 +57,7 @@ type ReviewItem = {
 
 type PerformerPublicCardProps = {
   profile: PerformerPublicProfile;
+  authorSolutions: CatalogAuthorPublication[];
   portfolio: PortfolioItem[];
   cases: CaseItem[];
   ratingSummary: { average: number; count: number };
@@ -88,6 +91,7 @@ function formatDate(value: string): string {
 
 export default function PerformerPublicCard({
   profile,
+  authorSolutions,
   portfolio,
   cases,
   ratingSummary,
@@ -97,18 +101,21 @@ export default function PerformerPublicCard({
 }: PerformerPublicCardProps) {
   const [isInviteOpen, setInviteOpen] = useState(false);
 
-  const skills = useMemo(() => (profile.skills.length ? profile.skills : ['Навыки не указаны']), [profile.skills]);
-  const languages = useMemo(() => (profile.languages.length ? profile.languages : ['Не указано']), [profile.languages]);
-  const workFormats = useMemo(() => {
-    if (profile.workFormats.length === 0) {
-      return ['remote'];
-    }
-    return profile.workFormats;
-  }, [profile.workFormats]);
+  const skills = useMemo(() => profile.skills.filter((skill) => skill.trim().length > 0), [profile.skills]);
+  const languages = useMemo(() => profile.languages.filter((language) => language.trim().length > 0), [profile.languages]);
+  const workFormats = useMemo(() => profile.workFormats.filter((format) => format.trim().length > 0), [profile.workFormats]);
 
   const displayEmployment = profile.employmentType ? (EMPLOYMENT_LABEL[profile.employmentType] ?? profile.employmentType) : 'Не указано';
   const displayName = profile.user.name ?? 'Исполнитель';
   const displayHandle = profile.handle ? `@${profile.handle}` : null;
+  const showPortfolio = profile.portfolioEnabled || portfolio.length > 0;
+  const showCases = cases.length > 0;
+  const showReviews = ratingSummary.count > 0;
+  const showConditions = profile.rate !== null || profile.employmentType !== null || profile.location !== null || profile.timezone !== null;
+  const showLanguages = languages.length > 0;
+  const showWorkFormats = workFormats.length > 0;
+  const showSidebar = showConditions || showLanguages || showWorkFormats;
+  const eyebrow = authorSolutions.length > 0 ? 'Автор каталога' : 'Публичная визитка';
 
   return (
     <div className="space-y-6">
@@ -117,7 +124,7 @@ export default function PerformerPublicCard({
         header={
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-xs uppercase tracking-wide text-indigo-300">Публичная визитка</p>
+              <p className="text-xs uppercase tracking-wide text-indigo-300">{eyebrow}</p>
               <h1 className="mt-2 text-2xl font-semibold text-neutral-50">{displayName}</h1>
               {profile.specialization ? (
                 <p className="mt-1 text-sm text-neutral-300">{profile.specialization}</p>
@@ -136,60 +143,64 @@ export default function PerformerPublicCard({
           </div>
         }
       >
-        <div className="flex flex-wrap gap-2 text-xs text-neutral-400">
-          {skills.map((skill) => (
-            <span key={skill} className="rounded-full border border-indigo-500/40 bg-indigo-500/10 px-3 py-1 text-indigo-100">
-              {skill}
-            </span>
-          ))}
-        </div>
+        {skills.length > 0 ? (
+          <div className="flex flex-wrap gap-2 text-xs text-neutral-400">
+            {skills.map((skill) => (
+              <span key={skill} className="rounded-full border border-indigo-500/40 bg-indigo-500/10 px-3 py-1 text-indigo-100">
+                {skill}
+              </span>
+            ))}
+          </div>
+        ) : null}
         {profile.bio ? <p className="mt-4 text-sm text-neutral-300">{profile.bio}</p> : null}
       </ContentBlock>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <div className={showSidebar ? 'grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]' : 'grid gap-6'}>
         <div className="space-y-6">
-          <ContentBlock
-            as="section"
-            header={<ContentBlockTitle as="h2">Портфолио</ContentBlockTitle>}
-          >
-            {!profile.portfolioEnabled ? (
-              <p className="text-sm text-neutral-400">Портфолио скрыто владельцем профиля.</p>
-            ) : portfolio.length === 0 ? (
-              <p className="text-sm text-neutral-400">В портфолио пока нет работ.</p>
-            ) : (
-              <div className="space-y-4">
-                {portfolio.map((item) => (
-                  <div key={item.id} className="rounded-2xl border border-neutral-900 bg-neutral-950/60 p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h3 className="text-sm font-semibold text-neutral-100">{item.title}</h3>
-                      <span className="text-xs text-neutral-500">{formatDate(item.createdAt)}</span>
-                    </div>
-                    {item.description ? <p className="mt-2 text-sm text-neutral-300">{item.description}</p> : null}
-                    <div className="mt-3 flex flex-wrap gap-3 text-xs text-indigo-200">
-                      {item.url ? (
-                        <a href={item.url} className="hover:text-indigo-100" target="_blank" rel="noreferrer">
-                          Ссылка на проект
-                        </a>
-                      ) : null}
-                      {item.fileUrl ? (
-                        <a href={item.fileUrl} className="hover:text-indigo-100" target="_blank" rel="noreferrer">
-                          Файл
-                        </a>
-                      ) : null}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </ContentBlock>
+          <AuthorSolutionsSection items={authorSolutions} />
 
-          <ContentBlock
-            as="section"
-            header={<ContentBlockTitle as="h2">Кейсы</ContentBlockTitle>}
-          >
-            {cases.length === 0 ? (
-              <p className="text-sm text-neutral-400">Кейсы пока не добавлены.</p>
-            ) : (
+          {showPortfolio ? (
+            <ContentBlock
+              as="section"
+              header={<ContentBlockTitle as="h2">Портфолио</ContentBlockTitle>}
+            >
+              {!profile.portfolioEnabled ? (
+                <p className="text-sm text-neutral-400">Портфолио скрыто владельцем профиля.</p>
+              ) : portfolio.length === 0 ? (
+                <p className="text-sm text-neutral-400">В портфолио пока нет работ.</p>
+              ) : (
+                <div className="space-y-4">
+                  {portfolio.map((item) => (
+                    <div key={item.id} className="rounded-2xl border border-neutral-900 bg-neutral-950/60 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="text-sm font-semibold text-neutral-100">{item.title}</h3>
+                        <span className="text-xs text-neutral-500">{formatDate(item.createdAt)}</span>
+                      </div>
+                      {item.description ? <p className="mt-2 text-sm text-neutral-300">{item.description}</p> : null}
+                      <div className="mt-3 flex flex-wrap gap-3 text-xs text-indigo-200">
+                        {item.url ? (
+                          <a href={item.url} className="hover:text-indigo-100" target="_blank" rel="noreferrer">
+                            Ссылка на проект
+                          </a>
+                        ) : null}
+                        {item.fileUrl ? (
+                          <a href={item.fileUrl} className="hover:text-indigo-100" target="_blank" rel="noreferrer">
+                            Файл
+                          </a>
+                        ) : null}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ContentBlock>
+          ) : null}
+
+          {showCases ? (
+            <ContentBlock
+              as="section"
+              header={<ContentBlockTitle as="h2">Кейсы</ContentBlockTitle>}
+            >
               <div className="space-y-4">
                 {cases.map((item) => (
                   <div key={item.id} className="rounded-2xl border border-neutral-900 bg-neutral-950/60 p-4">
@@ -202,10 +213,10 @@ export default function PerformerPublicCard({
                   </div>
                 ))}
               </div>
-            )}
-          </ContentBlock>
+            </ContentBlock>
+          ) : null}
 
-          <PerformerRating average={ratingSummary.average} count={ratingSummary.count} reviews={reviews} />
+          {showReviews ? <PerformerRating average={ratingSummary.average} count={ratingSummary.count} reviews={reviews} /> : null}
 
           {canReview ? (
             <ContentBlock
@@ -217,48 +228,56 @@ export default function PerformerPublicCard({
           ) : null}
         </div>
 
-        <aside className="space-y-6">
-          <ContentBlock as="section" size="sm" header={<ContentBlockTitle as="h2">Условия</ContentBlockTitle>}>
-            <dl className="space-y-3 text-sm text-neutral-300">
-              <div className="flex justify-between gap-3">
-                <dt className="text-neutral-400">Ставка</dt>
-                <dd className="text-right text-neutral-100">{formatRate(profile.rate)}</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-neutral-400">Занятость</dt>
-                <dd className="text-right text-neutral-100">{displayEmployment}</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-neutral-400">Локация</dt>
-                <dd className="text-right text-neutral-100">{profile.location ?? 'Не указана'}</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-neutral-400">Часовой пояс</dt>
-                <dd className="text-right text-neutral-100">{profile.timezone ?? 'UTC'}</dd>
-              </div>
-            </dl>
-          </ContentBlock>
+        {showSidebar ? (
+          <aside className="space-y-6">
+            {showConditions ? (
+              <ContentBlock as="section" size="sm" header={<ContentBlockTitle as="h2">Условия</ContentBlockTitle>}>
+                <dl className="space-y-3 text-sm text-neutral-300">
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-neutral-400">Ставка</dt>
+                    <dd className="text-right text-neutral-100">{formatRate(profile.rate)}</dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-neutral-400">Занятость</dt>
+                    <dd className="text-right text-neutral-100">{displayEmployment}</dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-neutral-400">Локация</dt>
+                    <dd className="text-right text-neutral-100">{profile.location ?? 'Не указана'}</dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-neutral-400">Часовой пояс</dt>
+                    <dd className="text-right text-neutral-100">{profile.timezone ?? 'UTC'}</dd>
+                  </div>
+                </dl>
+              </ContentBlock>
+            ) : null}
 
-          <ContentBlock as="section" size="sm" header={<ContentBlockTitle as="h2">Языки</ContentBlockTitle>}>
-            <div className="flex flex-wrap gap-2 text-xs text-neutral-200">
-              {languages.map((language) => (
-                <span key={language} className="rounded-full border border-neutral-800 bg-neutral-900/70 px-3 py-1">
-                  {language}
-                </span>
-              ))}
-            </div>
-          </ContentBlock>
+            {showLanguages ? (
+              <ContentBlock as="section" size="sm" header={<ContentBlockTitle as="h2">Языки</ContentBlockTitle>}>
+                <div className="flex flex-wrap gap-2 text-xs text-neutral-200">
+                  {languages.map((language) => (
+                    <span key={language} className="rounded-full border border-neutral-800 bg-neutral-900/70 px-3 py-1">
+                      {language}
+                    </span>
+                  ))}
+                </div>
+              </ContentBlock>
+            ) : null}
 
-          <ContentBlock as="section" size="sm" header={<ContentBlockTitle as="h2">Форматы работы</ContentBlockTitle>}>
-            <div className="flex flex-wrap gap-2 text-xs text-neutral-200">
-              {workFormats.map((format) => (
-                <span key={format} className="rounded-full border border-neutral-800 bg-neutral-900/70 px-3 py-1">
-                  {WORK_FORMAT_LABEL[format] ?? format}
-                </span>
-              ))}
-            </div>
-          </ContentBlock>
-        </aside>
+            {showWorkFormats ? (
+              <ContentBlock as="section" size="sm" header={<ContentBlockTitle as="h2">Форматы работы</ContentBlockTitle>}>
+                <div className="flex flex-wrap gap-2 text-xs text-neutral-200">
+                  {workFormats.map((format) => (
+                    <span key={format} className="rounded-full border border-neutral-800 bg-neutral-900/70 px-3 py-1">
+                      {WORK_FORMAT_LABEL[format] ?? format}
+                    </span>
+                  ))}
+                </div>
+              </ContentBlock>
+            ) : null}
+          </aside>
+        ) : null}
       </div>
 
       <InvitePerformerModal

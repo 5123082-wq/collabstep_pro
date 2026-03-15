@@ -2,15 +2,15 @@
 
 **Статус:** active  
 **Владелец:** product  
-**Последнее обновление:** 2026-01-06
+**Последнее обновление:** 2026-03-09
 
 ## Что такое платформа
 
-Collabverse (ранее Collabstep) — это мультимодульная платформа для управления проектами, маркетплейсом и маркетинговой аналитикой. Платформа объединяет:
+Collabverse (ранее Collabstep) — это мультимодульная платформа для управления проектами, каталогом решений и маркетинговой аналитикой. Платформа объединяет:
 
 - **PM Core** — управление рабочими пространствами, проектами, задачами и представлениями (Kanban, List, Calendar, Gantt)
 - **Рабочий стол** — входная точка с виджетами по всем модулям
-- **Marketplace** — каталог продуктов и услуг, корзина, публикация проектов как шаблонов
+- **Каталог (Marketplace)** — шаблоны, готовые решения, услуги, публичные страницы авторов и публикация проектов
 - **Marketing Dashboards** — аналитика ROI/CPC/CPA/CLV, интеграции с внешними платформами
 - **AI Hub** — интеграция AI-ассистентов, генерация контента, промпты и агенты
 - **Finance** — управление бюджетами проектов, расходами, финансовой отчетностью
@@ -40,8 +40,8 @@ API реализовано через Next.js route handlers в `app/api`:
 
 ### База данных
 
-- **Vercel Postgres** (PostgreSQL) — основное хранилище
-- Канонические таблицы: `pm_projects`, `pm_tasks`, `organizations`, `users`
+- **Vercel Postgres** (PostgreSQL) — основное хранилище (БД была консолидирована в одну общую базу `neon-collabverse`).
+- Канонические таблицы: `pm_projects`, `pm_tasks`, `organizations`, `users`, `user_subscriptions`, `ai_conversation`
 - Миграции через Drizzle ORM
 - Cache-aside паттерн для оптимизации чтения
 
@@ -86,19 +86,20 @@ API реализовано через Next.js route handlers в `app/api`:
 **UX потоки:**
 - Рабочий стол (`/app/dashboard`) — централизованный обзор статусов
 
-### Marketplace
+### Каталог (Marketplace)
 
-**Описание:** Маркетплейс продуктов и услуг, публикация проектов как шаблонов.
+**Описание:** user-facing каталог решений с шаблонами, готовыми решениями, услугами и страницами авторов.
 
 **Документация:** [`../modules/marketplace/marketplace-overview.md`](../modules/marketplace/marketplace-overview.md)
 
-**Статус реализации:** ⚠️ частично (шаблоны и каталог), продукты/услуги/checkout — планируется
+**Статус реализации:** ⚠️ частично (C1-C5 reorg sync закрыт: discovery feed, author-page, publish/apply/inquiry flows и docs/permissions/analytics audit зафиксированы; full real-publications feed, protected delivery и dashboard metrics остаются future scope)
 
 **Ключевые функции:**
-- Каталог шаблонов проектов
-- Публикация проектов как продуктов/услуг
-- Корзина и checkout flow
-- Заказы и управление заказами
+- Лента и discovery-layer решений
+- Публикация PM-проектов как публичных решений
+- Публичные страницы авторов
+- Reuse/import решений в проекты
+- Secondary layer для оформления, доступа и сделок
 
 **Источники:**
 - Анализ структуры шаблонов (архив): [`../archive/2026-01-07-marketplace-migration/brand-package-template-structure.md`](../archive/2026-01-07-marketplace-migration/brand-package-template-structure.md)
@@ -134,6 +135,7 @@ API реализовано через Next.js route handlers в `app/api`:
 
 **Документация:**
 - Интеграция: [`../modules/ai-hub/ai-hub-integration.md`](../modules/ai-hub/ai-hub-integration.md)
+- OpenClaw Architecture Brief: [`../modules/ai-hub/ai-hub-openclaw-architecture.md`](../modules/ai-hub/ai-hub-openclaw-architecture.md)
 - Быстрый старт: [`../modules/ai-hub/ai-hub-quick-start.md`](../modules/ai-hub/ai-hub-quick-start.md)
 - Настройка ключей: [`../modules/ai-hub/ai-hub-setup.md`](../modules/ai-hub/ai-hub-setup.md)
 - Гайд по ассистенту: [`../modules/ai-hub/ai-hub-assistant.md`](../modules/ai-hub/ai-hub-assistant.md)
@@ -183,12 +185,13 @@ API реализовано через Next.js route handlers в `app/api`:
 
 ## Взаимодействия между разделами
 
-- **Рабочий стол ↔ модули:** агрегирует виджеты по проектам, AI‑агентам, маркетплейсу, финансам, документам и поддержке. ([Рабочий стол](../modules/dashboard/dashboard-overview.md))
-- **Проекты ↔ Маркетплейс:** проекты могут публиковаться как шаблоны/продукты. ([Проекты](../modules/projects-tasks/projects-tasks-projects.md), [Маркетплейс](../modules/marketplace/marketplace-overview.md))
+- **Рабочий стол ↔ модули:** агрегирует виджеты по проектам, AI‑агентам, каталогу, финансам, документам и поддержке. ([Рабочий стол](../modules/dashboard/dashboard-overview.md))
+- **Проекты ↔ Каталог:** проекты могут публиковаться как публичные решения и использоваться как reusable starting point. ([Проекты](../modules/projects-tasks/projects-tasks-projects.md), [Каталог](../modules/marketplace/marketplace-overview.md))
 - **Проекты ↔ Документы:** документы и файлы связываются через `project_files`, используются в задачах/проектах. ([Документы](../modules/docs/docs-overview.md), [Файлы проекта](../modules/projects-tasks/projects-tasks-files.md))
 - **Контракты ↔ Финансы:** контракты управляют оплатами/эскроу и статусами выплат. ([Контракты](../modules/docs/docs-contracts.md), [Финансы](../modules/finance/finance-overview.md))
 - **AI‑хаб ↔ Проекты/задачи:** ассистенты и генерации работают с проектами, задачами и комментариями. ([AI‑хаб](../modules/ai-hub/ai-hub-overview.md), [Проекты](../modules/projects-tasks/projects-tasks-projects.md))
 - **Организация ↔ Документы:** документы учитываются при архивировании и закрытии организаций. ([Организация](../modules/organization/organization-overview.md), [Документы](../modules/docs/docs-overview.md))
+
 ## Канонические ссылки
 
 - **Видение и scope** → [`./vision-scope.md`](./vision-scope.md)
@@ -214,11 +217,12 @@ API реализовано через Next.js route handlers в `app/api`:
 ### Основные сущности
 
 - **Users** — пользователи платформы
-- **Organizations** — организации (мультиаккаунт)
+- **UserSubscriptions** — тарифные планы и лимиты
+- **Organizations** — организации (мультиаккаунт, с поддержкой основной/первичной через `is_primary`)
 - **Accounts** — рабочие пространства (workspaces) внутри организаций
 - **Projects** — проекты, принадлежащие workspace
 - **Tasks** — задачи в проектах (с иерархией)
-- **Project Templates** — шаблоны проектов для маркетплейса
+- **Project Templates** — шаблоны проектов для каталога
 - **Files** — файлы с интеграцией Vercel Blob Storage
 - **Documents** — документы и договоры
 

@@ -1,18 +1,53 @@
-export default function MarketPublishPage() {
+import { getCurrentUser } from '@/lib/auth/session';
+import {
+  listManagedAuthorPublications,
+  listPublishableProjectSources,
+  listPublishableTemplateSources
+} from '@/lib/marketplace/author-publications';
+import MarketPublishClient from '@/components/marketplace/author/MarketPublishClient';
+import { performerProfilesRepository } from '@collabverse/api';
+
+export const dynamic = 'force-dynamic';
+
+export default async function MarketPublishPage() {
+  const user = await getCurrentUser();
+  if (!user?.id) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-semibold text-neutral-50">Опубликовать в каталог</h1>
+            <p className="text-sm text-neutral-400">Для управления публикациями нужна активная авторская сессия.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const [profile, projectSources, templateSources, existingPublications] = await Promise.all([
+    performerProfilesRepository.findByUserId(user.id),
+    listPublishableProjectSources(user.id),
+    listPublishableTemplateSources(user.id),
+    listManagedAuthorPublications(user.id)
+  ]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-neutral-50">Публикация в маркетплейсе</h1>
+          <h1 className="text-xl font-semibold text-neutral-50">Опубликовать в каталог</h1>
           <p className="text-sm text-neutral-400">
-            Мастер публикации готовится к релизу. Здесь появятся шаги для загрузки шаблонов, проектов и пакетов
-            услуг.
+            Управляемый C3 publish-flow: проекты, шаблоны и услуги получают отдельный publication-layer, а PM авторство теперь определяется по owner-vs-team contract.
           </p>
         </div>
       </div>
-      <div className="rounded-2xl border border-dashed border-neutral-800/80 bg-neutral-900/40 p-10 text-sm text-neutral-400">
-        Функция «Опубликовать» находится в разработке.
-      </div>
+      <MarketPublishClient
+        authorHandle={profile?.handle ?? null}
+        authorProfilePublic={profile?.isPublic ?? false}
+        projectSources={projectSources}
+        templateSources={templateSources}
+        existingPublicationsCount={existingPublications.length}
+      />
     </div>
   );
 }

@@ -1,96 +1,169 @@
-# Маркетплейс — Обзор
+# Каталог — Обзор
 
-**Статус:** partial
-**Владелец:** product/engineering
-**Создан:** 2026-01-07
-**Последнее обновление:** 2026-01-07
+**Статус:** active  
+**Владелец:** product/engineering  
+**Создан:** 2026-01-07  
+**Последнее обновление:** 2026-03-09
 
 ## Назначение
 
-Маркетплейс объединяет каталог шаблонов, витрину готовых проектов и пакеты услуг. Раздел отвечает за поиск, добавление в избранное и корзину, публикацию проектов и будущие продажи в рамках платформы.
+`Каталог` — это discovery-first слой платформы Collabverse.
+
+Раздел объединяет:
+
+- шаблоны;
+- готовые решения на базе PM-проектов;
+- услуги;
+- подборки;
+- сохранённое;
+- публичные страницы авторов;
+- вторичный слой оформления и доступа.
+
+Главная задача раздела — не продать объект как товар, а помочь пользователю быстрее:
+
+- найти основу для проекта;
+- найти автора/команду;
+- применить решение к своему проекту;
+- опубликовать собственное решение.
+
+## Термины
+
+- **User-facing имя:** `Каталог`
+- **Внутренний домен:** `Marketplace`
+- **Технические контракты пока остаются прежними:** `/market/*`, `marketplace_*`, `MarketplaceListing`
 
 ## Навигация
 
-- `/market/templates` — каталог шаблонов
-- `/market/templates/:id` — карточка шаблона
-- `/market/projects` — готовые проекты (в разработке)
-- `/market/services` — пакеты услуг (в разработке)
-- `/market/categories` — категории и подборки (в разработке)
-- `/market/favorites` — избранное
-- `/market/cart` — корзина
-- `/market/orders` — мои заказы (в разработке)
-- `/market/publish` — опубликовать (в разработке)
-- `/market/seller` — мои продажи (в разработке)
+### Первый слой
 
-## Состав раздела
+- `/market` — главная лента каталога
+- `/market/templates` — шаблоны
+- `/market/projects` — готовые решения
+- `/market/services` — услуги
+- `/market/categories` — подборки
+- `/market/favorites` — сохранённое
+- `/market/publish` — опубликовать
+- `/market/seller` — мои публикации
+- `/p/:handle` — публичная страница автора
 
-- [Маркетплейс — Каталог шаблонов](./marketplace-templates.md)
-- [Маркетплейс — Избранное](./marketplace-favorites.md)
-- [Маркетплейс — Корзина](./marketplace-cart.md)
-- [Маркетплейс — Готовые проекты](./marketplace-ready-projects.md)
-- [Маркетплейс — Пакеты услуг](./marketplace-services.md)
-- [Маркетплейс — Категории и подборки](./marketplace-categories.md)
-- [Маркетплейс — Мои заказы](./marketplace-orders.md)
-- [Маркетплейс — Опубликовать](./marketplace-publish.md)
-- [Маркетплейс — Мои продажи](./marketplace-seller.md)
+### Вторичный слой
 
-## Текущее состояние (по UI и коду)
+- `/market/cart` — корзина и оформление
+- `/market/orders` — сделки и доступ
 
-- Каталог шаблонов работает на мок‑данных (`apps/web/lib/marketplace/data.ts`).
-- Карточка шаблона доступна по `/market/templates/:id` и включает галерею, метаданные, список файлов.
-- Избранное и корзина реализованы через `useMarketplaceStore` (Zustand) без серверной синхронизации.
-- Оформление заказа — демо‑кнопка (alert), платежного провайдера нет.
-- Разделы готовых проектов, услуг, категорий, заказов, публикации и продавца — заглушки UI.
-- API для листинга проекта: `/api/pm/projects/:id/listings` (флаг `PM_PROJECT_CARD`) с состояниями `draft`, `published`, `rejected`.
-- Статус листинга отображается на карточке проекта в блоке «Связки».
+## Фактически внедрено в C1
 
-## Ключевые сущности (по коду)
+- корневой маршрут `/market` теперь работает как discovery-first лента, а не редирект в шаблоны;
+- левое меню и topbar уже используют user-facing IA `Каталог`;
+- discovery-карточки шаблонов, готовых решений и услуг упрощены до названия, краткого описания, хэштегов, строки автора и demo-метрик;
+- действия `Открыть`, `В проект`, `Сохранить` убраны с плиток ленты и вынесены в detail surface;
+- страницы `Готовые решения`, `Услуги` и `Подборки` получили discovery-first framing на mock-данных;
+- вторичный слой (`/market/cart`, `/market/orders`) и author-facing поверхности (`/market/publish`, `/market/seller`) визуально понижены в приоритете.
 
-- **MarketplaceTemplate** — карточка шаблона (категория, цена, рейтинг, файлы).
-- **MarketplaceCategory** — `logo`, `landing`, `ui_kit`, `presentation`.
-- **MarketplaceListing** — листинг проекта (черновик/опубликован/отклонён).
-- **CartItem** — элемент корзины (`templateId`, `quantity`).
+## Основные принципы
+
+1. **Discovery first**
+   - Первый контакт с разделом строится через ленту, карточки, авторов, кейсы и подборки.
+
+2. **Reuse важнее checkout**
+   - Главный сценарий: взять решение и применить к проекту.
+
+3. **Публикация отделена от PM-проекта**
+   - В PM живёт рабочий проект.
+   - В каталоге живёт его публичная публикация.
+
+4. **Автор обязателен как часть доверия**
+   - У карточки решения должен быть видимый автор и путь к публичной странице.
+
+5. **Коммерческий слой вторичен**
+   - Корзина, оплата и доступ сохраняются, но не формируют главное восприятие раздела.
+
+## Ключевые сущности
+
+- **MarketplaceTemplate** — шаблон с возможностью reuse в проекте.
+- **MarketplaceListing** — публичная публикация проекта/решения.
+- **CatalogAuthorProfile** — user-facing профиль автора; на Phase 1 reuse текущего `performer_profile`.
+- **MarketplaceSeller** — текущий минимальный author contract для карточек каталога (`id`, `handle`, `name`, `avatarUrl`, `headline`, `location`, `portfolioCount`).
+- **SavedItem** — сохранённый объект каталога.
+- **Deal/Access Layer** — оформление, доступ, история сделок и выдача материалов.
 
 ## Основные сценарии
 
-1. Найти шаблон через поиск, фильтр по категории и сортировку.
-2. Открыть карточку шаблона и добавить его в избранное/корзину.
-3. Управлять корзиной: менять количество, удалять позиции, очищать список.
-4. Запустить демо‑оформление заказа (без оплаты).
-5. Создать черновик листинга проекта из PM‑карточки.
+1. Найти шаблон или готовое решение в ленте каталога.
+2. Открыть карточку и перейти на страницу автора.
+3. Сохранить решение для последующего выбора.
+4. Применить решение к проекту или создать проект на его основе.
+5. Отправить запрос по услуге или адаптации.
+6. Опубликовать собственный проект как публичное решение.
+7. Управлять своими публикациями отдельно от PM-проектов.
 
-## Создание
+## Текущее состояние
 
-- **Кнопка «Создать» в маркетплейсе:** действия «Вакансия» и «Услуга» (модальные сценарии в разработке).
-- **Публикация проекта:** листинг создаётся через `/api/pm/projects/:id/listings`, доступен роли owner/admin проекта.
-- **Опубликовать:** мастер публикации находится в разработке.
+- `/market` уже перестроен в discovery-first feed поверх mock-данных.
+- Локальные состояния `favorites`, `cart` и `inquiries` реализованы через persisted Zustand store; `favorites` пока всё ещё template-centric.
+- C4 доработан: `Использовать в проекте` и inquiry path больше не заглушки, а Catalog -> PM bridge теперь не уводит новый проект в чужой workspace.
+- publish-flow через `/market/publish` уже работает: пользователь может создавать publication-layer для PM-проекта, пользовательского шаблона и отдельной услуги.
+- `/market/seller` больше не заглушка: это единый кабинет author-publications для `MarketplaceListing`, шаблонов и услуг.
+- `/p/:handle` остаётся канонической public author-page каталога: reuse-ит `performer_profile`, показывает блок `Решения автора` и не дублирует `/market/seller`.
+- PM-based `MarketplaceListing` использует текущий C3 rework contract author entity:
+  - ownership для PM publish-flow определяется из `project.workspaceId -> workspace.accountId` и organization/account mapping layer, а не из deprecated `project.organization_id`;
+  - personal project -> author = человек-владелец, publish only owner;
+  - team-owned project -> author = команда, publish allowed owner/admin;
+  - publish actor хранится отдельно от author entity.
+- Если расширенный performer-profile ещё не публичен или discovery пока работает на mock/demo данных, author-link может fallback-иться на минимальную author-shell по тому же `handle`, не вводя новую сущность поверх `performer_profile`.
+- `/market/publish` больше не даёт team-admin ложный сценарий `создать публикацию`, если publication-layer этого проекта уже существует.
+- `/market/seller` управляет PM publications по manager rights, но author attribution уже созданной публикации читает из persisted listing contract, а не пересчитывает из project-state.
+- canonical person-route `/p/:handle` сохранён, но team-owned publication туда не попадает как fallback; отдельная public surface для команды остаётся следующим этапом.
+- corrective task перед C3 завершён: discovery-карточки упрощены, CTA убраны из ленты, demo-метрики оставлены без нового backend/source и аналитики.
+- шаблоны и ready solutions теперь реально переводятся в PM через `Использовать в проекте`:
+  - новый проект создаётся сразу с reusable task-block;
+  - выбранная в apply-flow организация становится каноническим PM context нового проекта через `workspace.accountId = organizationId`;
+  - personal selection остаётся personal path;
+  - team selection получает минимальный access bridge через snapshot активных участников организации в `project_members`;
+  - существующий проект получает отдельный import-block без смешения с publication-layer;
+- `Запросить адаптацию` для шаблонов, ready solutions и услуг открывает brief/inquiry flow и складывает запрос в `/market/orders`;
+- `/market/cart` и `/market/orders` остались вторичным слоем: reuse path важнее checkout path;
+- C5 закрыт как audit/sync layer:
+  - read-side каталог и `/p/:handle` сейчас живут внутри authenticated app shell; anonymous web exposure не входил в текущий контракт;
+  - visibility автора зафиксирована явно: расширенные performer-блоки требуют `performer_profile.isPublic`, а минимальный author-shell может жить поверх публичных catalog entities;
+  - publish/manage rights зафиксированы без переоткрытия C3: personal PM publication = only owner, team-owned PM publication = owner/admin, template/service publication = ownerUserId;
+  - apply/import rights зафиксированы без переоткрытия C4: новый проект требует active membership выбранной организации, import в existing project разрешён owner/admin/member и закрыт для viewer;
+  - analytics reality задокументирована без переименования namespace: реально логируются `pm_publish_started`, `pm_listing_updated`, `pm_listing_deleted`, `catalog_publication_created`, `catalog_publication_updated`;
+  - discovery / author-page / favorites / cart / apply / inquiry / orders пока не получили полного telemetry coverage.
+- future scope после C5: full real-publications feed, server-backed cart/favorites/inquiries, protected delivery, dashboard metrics sync и отдельные public routes для команд.
 
-## Спорные статусы и роли
+## Архитектурные инварианты
 
-- **`rejected`** — листинг отклонён (модерация). Решение принимает администратор/модератор.
-- **Роли:** покупатель (FOUNDER/PM), продавец/исполнитель (SPECIALIST/CONTRACTOR), модерация (ADMIN/MODERATOR).
+- Внутренние `marketplace_*` namespace не переименовываются в этом цикле.
+- Публикация проекта остаётся связанной с PM.
+- Не все проекты пользователя становятся публичными автоматически.
+- Услуги, шаблоны и решения продолжают жить внутри одного модуля.
 
-## Доступность по ролям
+## Документация модуля
 
-- Раздел доступен ролям `FOUNDER`, `PM`, `ADMIN`, `SPECIALIST`, `CONTRACTOR`.
-- Публикация листинга требует прав owner/admin в проекте.
+- [Каталог — План реализации](./marketplace-implementation-plan.md)
+- [Каталог — Шаблоны](./marketplace-templates.md)
+- [Каталог — Готовые решения](./marketplace-ready-projects.md)
+- [Каталог — Услуги](./marketplace-services.md)
+- [Каталог — Подборки](./marketplace-categories.md)
+- [Каталог — Сохранённое](./marketplace-favorites.md)
+- [Каталог — Корзина и оформление](./marketplace-cart.md)
+- [Каталог — Сделки и доступ](./marketplace-orders.md)
+- [Каталог — Публикация](./marketplace-publish.md)
+- [Каталог — Мои публикации](./marketplace-seller.md)
+- [Каталог — Страница автора](./marketplace-author-profile.md)
+- [Каталог — Пакет документов для субагентов](./agents/README.md)
 
 ## Взаимодействия с другими разделами
 
-- **Проекты и задачи:** публикация проекта в маркетплейсе, отображение статуса листинга.
-- **Финансы:** оплата и заказы планируются.
-- **Исполнители:** вакансии/услуги будут связаны с рынком исполнителей.
-- **Документы:** файлы шаблонов будут выдаваться через защищённые ссылки после покупки.
+- **PM Core:** публикация проектов, импорт решений в проекты, статус связки listing ↔ project.
+- **Исполнители:** reuse handle/profile слоя для авторов и сервисных сценариев.
+- **Финансы:** сделки, доступ, выплаты и статусы оформления.
+- **Документы:** выдача файлов и материалов после оформления или в рамках публикации.
+- **Рабочий стол:** сводные виджеты по реакциям и активности каталога.
 
-## Ограничения и планируемое
+## Архив legacy-модели
 
-- Корзина/избранное не сохраняются между сессиями.
-- Нет реального checkout и истории заказов.
-- Витрина готовых проектов не привязана к листингам (планируется связать).
+Предыдущая shop-first версия документации сохранена в архиве:
 
-## Связанные документы
-
-- [Проекты и задачи — Проекты](../projects-tasks/projects-tasks-projects.md)
-- [Финансы — Обзор](../finance/finance-overview.md)
-- [Документы — Обзор](../docs/docs-overview.md)
-- [Обзор платформы](../../platform/overview.md)
+- [Legacy Marketplace Structure](../../archive/development/2026-03-09-catalog-reorganization/legacy-marketplace-structure.md)

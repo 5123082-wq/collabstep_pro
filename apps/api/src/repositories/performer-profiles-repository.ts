@@ -49,6 +49,31 @@ export class PerformerProfilesRepository {
         return profile || null;
     }
 
+    async findByHandle(
+        handle: string
+    ): Promise<(PerformerProfile & { user: { name: string | null; image: string | null } }) | null> {
+        const [result] = await db
+            .select({
+                profile: performerProfiles,
+                user: {
+                    name: users.name,
+                    image: users.image
+                }
+            })
+            .from(performerProfiles)
+            .innerJoin(users, eq(performerProfiles.userId, users.id))
+            .where(eq(performerProfiles.handle, handle));
+
+        if (!result) {
+            return null;
+        }
+
+        return {
+            ...result.profile,
+            user: result.user
+        };
+    }
+
     async updateVisibility(userId: string, isPublic: boolean): Promise<PerformerProfile | null> {
         const [updated] = await db
             .update(performerProfiles)

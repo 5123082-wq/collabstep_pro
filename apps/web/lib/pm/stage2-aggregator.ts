@@ -468,14 +468,21 @@ export async function collectStage2Projects(
       continue;
     }
 
+    let members = membersCache.get(project.id);
+    if (!members) {
+      members = await projectsRepository.listMembers(project.id);
+      membersCache.set(project.id, members);
+    }
+
     // Проверяем, является ли пользователь владельцем проекта
     const isOwner = project.ownerId === currentUserId;
+    const membership = members.find((member) => member.userId === currentUserId) ?? null;
 
     // Фильтрация по workspaceId пользователя (если не админ и не указан конкретный workspaceId в options)
     // Владельцы проектов всегда видят свои проекты, независимо от workspace
-    // Даже публичные проекты фильтруются по workspace - пользователь должен быть членом workspace проекта
+    // Явное project membership остаётся каноничным access contract, даже если workspace membership не прогрет.
     if (!isAdmin && !isOwner && options.workspaceId === undefined && userWorkspaceIds.size > 0) {
-      if (!userWorkspaceIds.has(project.workspaceId)) {
+      if (!userWorkspaceIds.has(project.workspaceId) && !membership) {
         continue;
       }
     }
@@ -484,15 +491,6 @@ export async function collectStage2Projects(
     if (!hasAccess) {
       continue;
     }
-
-    let members = membersCache.get(project.id);
-    if (!members) {
-      members = await projectsRepository.listMembers(project.id);
-      membersCache.set(project.id, members);
-    }
-
-    // isOwner уже определен выше для фильтрации по workspace
-    const membership = members.find((member) => member.userId === currentUserId) ?? null;
 
     if (normalizedFilters.scope === 'owned' && !isOwner) {
       continue;
@@ -579,5 +577,4 @@ export async function collectStage2Projects(
     tasksByProject
   };
 }
-
 

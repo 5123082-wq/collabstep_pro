@@ -5,8 +5,8 @@ export default function EmptyTemplatesState({ onReset }: { onReset: () => void }
     <ContentBlock variant="dashed" size="sm" className="flex flex-col items-center justify-center gap-4 p-16 text-center">
       <h2 className="text-lg font-semibold text-neutral-200">Не нашли подходящий шаблон</h2>
       <p className="max-w-lg text-sm text-neutral-400">
-        Попробуйте изменить запрос или снимите фильтры. Мы постоянно пополняем маркетплейс новыми шаблонами и
-        проектами.
+        Попробуйте изменить запрос или снять фильтры. Каталог пополняется новыми шаблонами, решениями и сервисными
+        предложениями.
       </p>
       <button
         type="button"

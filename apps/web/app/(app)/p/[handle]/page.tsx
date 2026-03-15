@@ -1,6 +1,9 @@
 import { notFound } from 'next/navigation';
 import PerformerPublicCard from '@/components/performers/PerformerPublicCard';
 import { getCurrentUser } from '@/lib/auth/session';
+import { listPublicAuthorPublicationsByUserId } from '@/lib/marketplace/author-publications';
+import { getCatalogAuthorPublications, getMarketplaceSellerByHandle } from '@/lib/marketplace/data';
+import type { MarketplaceSeller } from '@/lib/marketplace/types';
 import {
   organizationsRepository,
   performerCasesRepository,
@@ -62,6 +65,8 @@ type ReviewPayload = {
 
 const ACTIVE_ORG_ROLES = new Set(['owner', 'admin']);
 
+type AuthorProfileRecord = Awaited<ReturnType<typeof performerProfilesRepository.findPublicByHandleOrUserId>>;
+
 function toIsoDate(value?: Date | string | null): string {
   if (!value) {
     return new Date().toISOString();
@@ -72,19 +77,110 @@ function toIsoDate(value?: Date | string | null): string {
   return new Date(value).toISOString();
 }
 
+function buildCatalogFallbackProfile(seller: MarketplaceSeller): PerformerProfilePayload {
+  return {
+    userId: `catalog-demo:${seller.handle}`,
+    handle: seller.handle,
+    specialization: 'Автор каталога',
+    skills: [],
+    bio: seller.headline,
+    rate: null,
+    employmentType: null,
+    location: seller.location,
+    timezone: null,
+    languages: [],
+    workFormats: [],
+    portfolioEnabled: false,
+    isPublic: true,
+    user: {
+      name: seller.name,
+      image: seller.avatarUrl
+    }
+  };
+}
+
+function buildAuthorShellProfile(authorProfile: NonNullable<AuthorProfileRecord>, seller: MarketplaceSeller | null): PerformerProfilePayload {
+  return {
+    userId: authorProfile.userId,
+    handle: authorProfile.handle ?? seller?.handle ?? null,
+    specialization: 'Автор каталога',
+    skills: [],
+    bio: seller?.headline ?? null,
+    rate: null,
+    employmentType: null,
+    location: seller?.location ?? null,
+    timezone: null,
+    languages: [],
+    workFormats: [],
+    portfolioEnabled: false,
+    isPublic: false,
+    user: {
+      name: seller?.name ?? authorProfile.user.name ?? null,
+      image: seller?.avatarUrl ?? authorProfile.user.image ?? null
+    }
+  };
+}
+
 export const dynamic = 'force-dynamic';
 
 export default async function PerformerPublicPage({ params }: PerformerPublicPageProps) {
-  const profile = await performerProfilesRepository.findPublicByHandleOrUserId(params.handle);
+  const publicProfile = await performerProfilesRepository.findPublicByHandleOrUserId(params.handle);
+  const authorProfile = publicProfile ?? (await performerProfilesRepository.findByHandle(params.handle));
+  const catalogAuthor = getMarketplaceSellerByHandle(params.handle);
+  const realAuthorSolutions = authorProfile ? await listPublicAuthorPublicationsByUserId(authorProfile.userId) : [];
+  const catalogAuthorSolutions =
+    realAuthorSolutions.length > 0 ? realAuthorSolutions : getCatalogAuthorPublications(params.handle);
 
-  if (!profile) {
+  if (!authorProfile && !catalogAuthor) {
     notFound();
   }
 
+  if (!publicProfile) {
+    const fallbackSolutions = catalogAuthorSolutions;
+
+    if (authorProfile && (catalogAuthor || fallbackSolutions.length > 0)) {
+      return (
+        <div className="space-y-6">
+          <PerformerPublicCard
+            profile={buildAuthorShellProfile(authorProfile, catalogAuthor)}
+            authorSolutions={fallbackSolutions}
+            portfolio={[]}
+            cases={[]}
+            ratingSummary={{ average: 0, count: 0 }}
+            reviews={[]}
+            canInvite={false}
+            canReview={false}
+          />
+        </div>
+      );
+    }
+
+    if (catalogAuthor) {
+      return (
+        <div className="space-y-6">
+          <PerformerPublicCard
+            profile={buildCatalogFallbackProfile(catalogAuthor)}
+            authorSolutions={fallbackSolutions}
+            portfolio={[]}
+            cases={[]}
+            ratingSummary={{ average: 0, count: 0 }}
+            reviews={[]}
+            canInvite={false}
+            canReview={false}
+          />
+        </div>
+      );
+    }
+
+    notFound();
+  }
+
+  const resolvedProfile = publicProfile;
+
   const [portfolioItems, caseItems, ratings] = await Promise.all([
-    performerPortfolioRepository.listByPerformer(profile.userId),
-    performerCasesRepository.listByPerformer(profile.userId),
-    performerRatingsRepository.listByPerformer(profile.userId)
+    performerPortfolioRepository.listByPerformer(resolvedProfile.userId),
+    performerCasesRepository.listByPerformer(resolvedProfile.userId),
+    performerRatingsRepository.listByPerformer(resolvedProfile.userId)
   ]);
 
   const ratingCount = ratings.length;
@@ -107,7 +203,7 @@ export default async function PerformerPublicPage({ params }: PerformerPublicPag
   let canReview = false;
 
   if (user?.id) {
-    canReview = user.id !== profile.userId;
+    canReview = user.id !== resolvedProfile.userId;
     const memberships = await organizationsRepository.listMembershipsForUser(user.id);
     canInvite = memberships.some((membership) => {
       const member = membership.member;
@@ -116,24 +212,26 @@ export default async function PerformerPublicPage({ params }: PerformerPublicPag
   }
 
   const profilePayload: PerformerProfilePayload = {
-    userId: profile.userId,
-    handle: profile.handle ?? null,
-    specialization: profile.specialization ?? null,
-    skills: Array.isArray(profile.skills) ? profile.skills.filter((item): item is string => typeof item === 'string') : [],
-    bio: profile.bio ?? null,
-    rate: profile.rate ?? null,
-    employmentType: profile.employmentType ?? null,
-    location: profile.location ?? null,
-    timezone: profile.timezone ?? null,
-    languages: Array.isArray(profile.languages) ? profile.languages : [],
-    workFormats: Array.isArray(profile.workFormats) ? profile.workFormats : [],
-    portfolioEnabled: profile.portfolioEnabled ?? false,
-    isPublic: profile.isPublic ?? false,
+    userId: resolvedProfile.userId,
+    handle: resolvedProfile.handle ?? null,
+    specialization: resolvedProfile.specialization ?? null,
+    skills: Array.isArray(resolvedProfile.skills) ? resolvedProfile.skills.filter((item): item is string => typeof item === 'string') : [],
+    bio: resolvedProfile.bio ?? null,
+    rate: resolvedProfile.rate ?? null,
+    employmentType: resolvedProfile.employmentType ?? null,
+    location: resolvedProfile.location ?? null,
+    timezone: resolvedProfile.timezone ?? null,
+    languages: Array.isArray(resolvedProfile.languages) ? resolvedProfile.languages : [],
+    workFormats: Array.isArray(resolvedProfile.workFormats) ? resolvedProfile.workFormats : [],
+    portfolioEnabled: resolvedProfile.portfolioEnabled ?? false,
+    isPublic: resolvedProfile.isPublic ?? false,
     user: {
-      name: profile.user.name ?? null,
-      image: profile.user.image ?? null
+      name: resolvedProfile.user.name ?? null,
+      image: resolvedProfile.user.image ?? null
     }
   };
+
+  const authorSolutions = catalogAuthorSolutions;
 
   const portfolioPayload: PortfolioPayload[] = portfolioItems.map((item) => ({
     id: item.id,
@@ -168,6 +266,7 @@ export default async function PerformerPublicPage({ params }: PerformerPublicPag
     <div className="space-y-6">
       <PerformerPublicCard
         profile={profilePayload}
+        authorSolutions={authorSolutions}
         portfolio={portfolioPayload}
         cases={casePayload}
         ratingSummary={{ average: ratingAverage, count: ratingCount }}

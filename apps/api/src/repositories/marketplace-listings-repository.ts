@@ -2,14 +2,21 @@ import type { ID } from '../types';
 import { memory } from '../data/memory';
 
 export type MarketplaceListingState = 'draft' | 'published' | 'rejected';
+export type MarketplaceListingAuthorEntityType = 'user' | 'organization';
 
 export interface MarketplaceListing {
   id: ID;
   projectId: ID;
   workspaceId: ID;
+  authorEntityType: MarketplaceListingAuthorEntityType;
+  authorEntityId: ID;
+  publishedByUserId: ID;
+  lastEditedByUserId: ID;
   title: string;
   description?: string;
   state: MarketplaceListingState;
+  showOnAuthorPage: boolean;
+  sortOrder: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -39,17 +46,28 @@ export class MarketplaceListingsRepository {
   create(payload: {
     projectId: string;
     workspaceId: string;
+    authorEntityType: MarketplaceListingAuthorEntityType;
+    authorEntityId: string;
+    publishedByUserId: string;
     title: string;
     description?: string;
     state?: MarketplaceListingState;
+    showOnAuthorPage?: boolean;
+    sortOrder?: number;
   }): MarketplaceListing {
     const now = new Date().toISOString();
     const listing: MarketplaceListing = {
       id: crypto.randomUUID(),
       projectId: payload.projectId,
       workspaceId: payload.workspaceId,
+      authorEntityType: payload.authorEntityType,
+      authorEntityId: payload.authorEntityId,
+      publishedByUserId: payload.publishedByUserId,
+      lastEditedByUserId: payload.publishedByUserId,
       title: payload.title,
       state: payload.state ?? 'draft',
+      showOnAuthorPage: payload.showOnAuthorPage ?? false,
+      sortOrder: payload.sortOrder ?? 0,
       createdAt: now,
       updatedAt: now
     };
@@ -62,7 +80,34 @@ export class MarketplaceListingsRepository {
     return cloneListing(listing);
   }
 
-  update(id: string, patch: Partial<Pick<MarketplaceListing, 'title' | 'description' | 'state'>>): MarketplaceListing | null {
+  listByAuthorEntity(authorEntityType: MarketplaceListingAuthorEntityType, authorEntityId: string): MarketplaceListing[] {
+    return memory.MARKETPLACE_LISTINGS
+      .filter(
+        (listing) => listing.authorEntityType === authorEntityType && listing.authorEntityId === authorEntityId
+      )
+      .map(cloneListing);
+  }
+
+  listPublishedByAuthorEntity(
+    authorEntityType: MarketplaceListingAuthorEntityType,
+    authorEntityId: string
+  ): MarketplaceListing[] {
+    return memory.MARKETPLACE_LISTINGS
+      .filter(
+        (listing) =>
+          listing.authorEntityType === authorEntityType &&
+          listing.authorEntityId === authorEntityId &&
+          listing.state === 'published'
+      )
+      .map(cloneListing);
+  }
+
+  update(
+    id: string,
+    patch: Partial<
+      Pick<MarketplaceListing, 'title' | 'description' | 'state' | 'showOnAuthorPage' | 'sortOrder' | 'lastEditedByUserId'>
+    >
+  ): MarketplaceListing | null {
     const idx = memory.MARKETPLACE_LISTINGS.findIndex((l) => l.id === id);
     if (idx === -1) {
       return null;
@@ -77,8 +122,14 @@ export class MarketplaceListingsRepository {
       id: current.id,
       projectId: current.projectId,
       workspaceId: current.workspaceId,
+      authorEntityType: current.authorEntityType,
+      authorEntityId: current.authorEntityId,
+      publishedByUserId: current.publishedByUserId,
+      lastEditedByUserId: current.lastEditedByUserId,
       title: current.title,
       state: current.state,
+      showOnAuthorPage: current.showOnAuthorPage,
+      sortOrder: current.sortOrder,
       createdAt: current.createdAt,
       updatedAt: new Date().toISOString(),
       ...(current.description && { description: current.description })
@@ -100,6 +151,18 @@ export class MarketplaceListingsRepository {
       next.state = patch.state as MarketplaceListingState;
     }
 
+    if (typeof patch.showOnAuthorPage === 'boolean') {
+      next.showOnAuthorPage = patch.showOnAuthorPage;
+    }
+
+    if (typeof patch.sortOrder === 'number' && Number.isFinite(patch.sortOrder)) {
+      next.sortOrder = patch.sortOrder;
+    }
+
+    if (typeof patch.lastEditedByUserId === 'string' && patch.lastEditedByUserId.trim()) {
+      next.lastEditedByUserId = patch.lastEditedByUserId.trim();
+    }
+
     memory.MARKETPLACE_LISTINGS[idx] = next;
     return cloneListing(next);
   }
@@ -115,4 +178,3 @@ export class MarketplaceListingsRepository {
 }
 
 export const marketplaceListingsRepository = new MarketplaceListingsRepository();
-

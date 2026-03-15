@@ -7,6 +7,7 @@ import { useMarketplaceStore } from '@/lib/marketplace/store';
 import type { MarketplaceTemplate } from '@/lib/marketplace/types';
 import { getTemplatePriceLabel } from '@/lib/marketplace/pricing';
 import { ContentBlock } from '@/components/ui/content-block';
+import CatalogIntentButton from '@/components/marketplace/catalog/CatalogIntentButton';
 
 type FavoritesViewProps = {
   templates: MarketplaceTemplate[];
@@ -24,13 +25,13 @@ export default function FavoritesView({ templates }: FavoritesViewProps) {
       <ContentBlock variant="dashed" size="sm" className="flex flex-col items-center justify-center gap-4 p-16 text-center">
         <h2 className="text-lg font-semibold text-neutral-100">Вы пока ничего не сохранили</h2>
         <p className="max-w-md text-sm text-neutral-400">
-          Добавляйте понравившиеся шаблоны и проекты в избранное, чтобы быстро находить их и делиться с командой.
+          Добавляйте решения в сохранённое, чтобы быстро вернуться к shortlist, сравнить варианты и позже отправить их в проект.
         </p>
         <Link
-          href="/market/templates"
+          href="/market"
           className="rounded-xl border border-indigo-400 px-5 py-2 text-sm font-semibold text-indigo-200 transition hover:bg-indigo-500/10"
         >
-          Открыть каталог шаблонов
+          Открыть каталог
         </Link>
       </ContentBlock>
     );
@@ -58,6 +59,9 @@ export default function FavoritesView({ templates }: FavoritesViewProps) {
                 {template.title}
               </Link>
               <p className="text-sm text-neutral-400">{template.description}</p>
+              <Link href={`/p/${template.seller.handle}`} className="text-sm font-semibold text-neutral-200 transition hover:text-indigo-300">
+                {template.seller.name}
+              </Link>
               <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-400">
                 <span className="font-semibold text-neutral-100">{priceInfo.primary}</span>
                 {priceInfo.secondary ? <span className="text-xs text-neutral-500">{priceInfo.secondary}</span> : null}
@@ -66,12 +70,36 @@ export default function FavoritesView({ templates }: FavoritesViewProps) {
                   ★ {template.rating.toFixed(1)} <span className="text-neutral-600">({template.ratingCount})</span>
                 </span>
               </div>
+              <div className="flex flex-wrap gap-2">
+                {template.tags.slice(0, 3).map((tag) => (
+                  <span
+                    key={`${template.id}-${tag}`}
+                    className="rounded-full border border-neutral-800 bg-neutral-900/80 px-3 py-1 text-xs text-neutral-300"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
             </div>
             <div className="flex flex-col gap-2 sm:w-48">
+              <CatalogIntentButton
+                intent="project"
+                sourceKind="template"
+                sourceId={template.id}
+                sourceTitle={template.title}
+                label="Использовать в проекте"
+                className="w-full"
+              />
+              <Link
+                href={`/market/templates/${template.id}`}
+                className="rounded-xl border border-neutral-700 px-4 py-2 text-center text-sm font-semibold text-neutral-200 transition hover:border-neutral-500 hover:text-neutral-50"
+              >
+                Открыть
+              </Link>
               <button
                 type="button"
                 onClick={() => addToCart(template.id)}
-                className="rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-400"
+                className="rounded-xl border border-neutral-800 bg-neutral-950/70 px-4 py-2 text-sm font-semibold text-neutral-300 transition hover:border-neutral-600 hover:text-neutral-100"
               >
                 В корзину
               </button>

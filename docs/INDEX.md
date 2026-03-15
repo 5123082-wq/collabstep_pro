@@ -1,6 +1,6 @@
 # Индекс документации Collabverse
 
-> **Последнее обновление:** 2026-01-07  
+> **Последнее обновление:** 2026-03-09  
 > **Версия:** 2.0  
 > **Статус реорганизации:** ✅ Завершена
 
@@ -59,18 +59,19 @@
 - Архив — planned
 - Дополнительно: [Обзор](modules/projects-tasks/projects-tasks-overview.md), [Доступ](modules/projects-tasks/projects-tasks-access.md), [Файлы](modules/projects-tasks/projects-tasks-files.md), [Комментарии](modules/projects-tasks/projects-tasks-comments.md), [Чат](modules/projects-tasks/projects-tasks-chat.md), [Уведомления](modules/projects-tasks/projects-tasks-notifications.md), [Kanban](modules/projects-tasks/projects-tasks-kanban.md), [WebSocket](modules/projects-tasks/projects-tasks-websocket.md), [Команды](modules/projects-tasks/projects-tasks-teams.md), [План реализации](modules/projects-tasks/projects-tasks-implementation-plan.md)
 
-### Маркетплейс
+### Каталог (внутренний домен Marketplace)
 
-- [Каталог шаблонов](modules/marketplace/marketplace-templates.md)
-- [Готовые проекты](modules/marketplace/marketplace-ready-projects.md)
-- [Пакеты услуг](modules/marketplace/marketplace-services.md)
-- [Категории и подборки](modules/marketplace/marketplace-categories.md)
-- [Избранное](modules/marketplace/marketplace-favorites.md)
-- [Корзина](modules/marketplace/marketplace-cart.md)
-- [Мои заказы](modules/marketplace/marketplace-orders.md)
+- [Шаблоны](modules/marketplace/marketplace-templates.md)
+- [Готовые решения](modules/marketplace/marketplace-ready-projects.md)
+- [Услуги](modules/marketplace/marketplace-services.md)
+- [Подборки и навигация](modules/marketplace/marketplace-categories.md)
+- [Сохранённое](modules/marketplace/marketplace-favorites.md)
+- [Корзина и оформление](modules/marketplace/marketplace-cart.md)
+- [Сделки и доступ](modules/marketplace/marketplace-orders.md)
 - [Опубликовать](modules/marketplace/marketplace-publish.md)
-- [Мои продажи](modules/marketplace/marketplace-seller.md)
-- Дополнительно: [Обзор](modules/marketplace/marketplace-overview.md)
+- [Мои публикации](modules/marketplace/marketplace-seller.md)
+- Дополнительно: [Обзор](modules/marketplace/marketplace-overview.md), [Страница автора](modules/marketplace/marketplace-author-profile.md), [План реализации](modules/marketplace/marketplace-implementation-plan.md), [Пакет для субагентов](modules/marketplace/agents/README.md)
+- Cross-cutting: [Роли и права доступа](platform/roles-permissions.md), [События аналитики](platform/analytics-events.md)
 
 ### Исполнители
 
@@ -96,7 +97,7 @@
 - История — planned
 - [Промпты](modules/ai-hub/ai-hub-prompts.md)
 - [Агенты](modules/ai-hub/ai-hub-agents.md)
-- Дополнительно: [Обзор](modules/ai-hub/ai-hub-overview.md), [Ассистент](modules/ai-hub/ai-hub-assistant.md), [Быстрый старт](modules/ai-hub/ai-hub-quick-start.md), [Настройка](modules/ai-hub/ai-hub-setup.md), [Интеграция](modules/ai-hub/ai-hub-integration.md), [План реализации](modules/ai-hub/ai-hub-implementation-plan.md)
+- Дополнительно: [Обзор](modules/ai-hub/ai-hub-overview.md), [Ассистент](modules/ai-hub/ai-hub-assistant.md), [Быстрый старт](modules/ai-hub/ai-hub-quick-start.md), [Настройка](modules/ai-hub/ai-hub-setup.md), [Интеграция](modules/ai-hub/ai-hub-integration.md), [OpenClaw Architecture Brief](modules/ai-hub/ai-hub-openclaw-architecture.md), [План реализации](modules/ai-hub/ai-hub-implementation-plan.md)
 
 ### Комьюнити
 
@@ -162,8 +163,8 @@
 - **[Авторизация и регистрация](platform/authentication.md)** — вход, регистрация, сессии
 - **[Организации и workspace](modules/organization/organization-overview.md)** — модель организаций и членства
 - **[Глоссарий](platform/glossary.md)** — определения терминов платформы
-- **[Роли и права доступа](platform/roles-permissions.md)** — матрица прав доступа
-- **[События аналитики](platform/analytics-events.md)** — каталог событий аналитики
+- **[Роли и права доступа](platform/roles-permissions.md)** — матрица прав доступа, включая overlay `Каталога` после C5
+- **[События аналитики](platform/analytics-events.md)** — каталог событий аналитики, включая текущий coverage/gaps `Каталога`
 - **[Видение и scope](platform/vision-scope.md)** — видение платформы и границы
 - **[Начало работы](platform/getting-started.md)** — быстрый старт и настройка
 - **[История изменений](platform/changelog.md)** — changelog платформы
@@ -196,24 +197,30 @@
 - **[Метрики](modules/projects-tasks/projects-tasks-metrics.md)** — дашборд workspace
 - **[Уведомления](modules/projects-tasks/projects-tasks-notifications.md)** — система уведомлений
 
-### Маркетплейс
+### Каталог (Marketplace)
 
 - **[Обзор раздела](modules/marketplace/marketplace-overview.md)** — основной документ модуля
-- **[Каталог шаблонов](modules/marketplace/marketplace-templates.md)** — витрина шаблонов
-- **[Избранное](modules/marketplace/marketplace-favorites.md)** — сохранённые шаблоны
-- **[Корзина](modules/marketplace/marketplace-cart.md)** — оформление покупок
-- **[Готовые проекты](modules/marketplace/marketplace-ready-projects.md)** — витрина проектов
-- **[Пакеты услуг](modules/marketplace/marketplace-services.md)** — предложения услуг
-- **[Категории и подборки](modules/marketplace/marketplace-categories.md)** — навигация по витрине
-- **[Мои заказы](modules/marketplace/marketplace-orders.md)** — история покупок
+- **[План реализации](modules/marketplace/marketplace-implementation-plan.md)** — канонический orchestration-doc по реорганизации, C0-C5 закрыты
+- **[Шаблоны](modules/marketplace/marketplace-templates.md)** — reusable основы для проектов
+- **[Готовые решения](modules/marketplace/marketplace-ready-projects.md)** — публичные публикации PM-проектов
+- **[Услуги](modules/marketplace/marketplace-services.md)** — сервисные предложения и inquiry flow
+- **[Подборки и навигация](modules/marketplace/marketplace-categories.md)** — discovery и curation layer
+- **[Сохранённое](modules/marketplace/marketplace-favorites.md)** — shortlist пользователя
+- **[Корзина и оформление](modules/marketplace/marketplace-cart.md)** — secondary commerce surface
+- **[Сделки и доступ](modules/marketplace/marketplace-orders.md)** — история оформлений и доступ
 - **[Опубликовать](modules/marketplace/marketplace-publish.md)** — мастер публикации
-- **[Мои продажи](modules/marketplace/marketplace-seller.md)** — кабинет продавца
+- **[Мои публикации](modules/marketplace/marketplace-seller.md)** — кабинет автора
+- **[Страница автора](modules/marketplace/marketplace-author-profile.md)** — публичная витрина автора
+- **[Пакет для субагентов](modules/marketplace/agents/README.md)** — рабочие документы для orchestration flow
+- **[Роли и права доступа](platform/roles-permissions.md)** — cross-cutting permissions contract `Каталога`
+- **[События аналитики](platform/analytics-events.md)** — cross-cutting analytics contract `Каталога`
 
 ### AI-хаб
 
 - **[Обзор раздела](modules/ai-hub/ai-hub-overview.md)** — основной документ модуля
 - **[План реализации](modules/ai-hub/ai-hub-implementation-plan.md)** — план реализации модуля
 - **[Интеграция](modules/ai-hub/ai-hub-integration.md)** — интеграция AI
+- **[OpenClaw Architecture Brief](modules/ai-hub/ai-hub-openclaw-architecture.md)** — стартовая архитектура shared/private agent модели
 - **[Быстрый старт](modules/ai-hub/ai-hub-quick-start.md)** — быстрый старт
 - **[Настройка](modules/ai-hub/ai-hub-setup.md)** — настройка AI
 - **[Ассистент](modules/ai-hub/ai-hub-assistant.md)** — AI ассистент

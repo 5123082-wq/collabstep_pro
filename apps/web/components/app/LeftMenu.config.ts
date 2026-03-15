@@ -82,20 +82,22 @@ const baseLeftMenuConfig: LeftMenuSection[] = [
   PM_MENU_SECTION,
   {
     id: 'marketplace',
-    label: 'Маркетплейс',
+    label: 'Каталог',
     icon: 'marketplace',
-    href: '/market/templates',
+    href: '/market',
     children: [
-      { id: 'marketplace-templates', label: 'Каталог шаблонов', href: '/market/templates' },
-      { id: 'marketplace-projects', label: 'Готовые проекты', href: '/market/projects' },
-      { id: 'marketplace-services', label: 'Пакеты услуг', href: '/market/services' },
-      { id: 'marketplace-categories', label: 'Категории и подборки', href: '/market/categories' },
-      { id: 'marketplace-favorites', label: 'Избранное', href: '/market/favorites' },
-      { id: 'marketplace-cart', label: 'Корзина', href: '/market/cart' },
-      { id: 'marketplace-orders', label: 'Мои заказы', href: '/market/orders' },
+      { id: 'marketplace-home', label: 'Каталог', href: '/market' },
+      { id: 'marketplace-templates', label: 'Шаблоны', href: '/market/templates' },
+      { id: 'marketplace-projects', label: 'Готовые решения', href: '/market/projects' },
+      { id: 'marketplace-services', label: 'Услуги', href: '/market/services' },
+      { id: 'marketplace-categories', label: 'Подборки', href: '/market/categories' },
+      { id: 'marketplace-favorites', label: 'Сохранённое', href: '/market/favorites' },
       { id: 'marketplace-divider', type: 'divider' },
       { id: 'marketplace-publish', label: 'Опубликовать', href: '/market/publish' },
-      { id: 'marketplace-seller', label: 'Мои продажи', href: '/market/seller' }
+      { id: 'marketplace-seller', label: 'Мои публикации', href: '/market/seller' },
+      { id: 'marketplace-divider-secondary', type: 'divider' },
+      { id: 'marketplace-cart', label: 'Корзина и оформление', href: '/market/cart' },
+      { id: 'marketplace-orders', label: 'Сделки и доступ', href: '/market/orders' }
     ]
   },
   {

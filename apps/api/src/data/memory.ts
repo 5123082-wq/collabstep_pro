@@ -82,9 +82,29 @@ type GlobalMemory = {
     id: string;
     projectId: string;
     workspaceId: string;
+    authorEntityType: 'user' | 'organization';
+    authorEntityId: string;
+    publishedByUserId: string;
+    lastEditedByUserId: string;
     title: string;
     description?: string;
     state: 'draft' | 'published' | 'rejected';
+    showOnAuthorPage: boolean;
+    sortOrder: number;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+  MARKETPLACE_AUTHOR_PUBLICATIONS: Array<{
+    id: string;
+    ownerUserId: string;
+    kind: 'template' | 'service';
+    sourceTemplateId?: string;
+    title: string;
+    description: string;
+    tags: string[];
+    state: 'draft' | 'published' | 'rejected';
+    showOnAuthorPage: boolean;
+    sortOrder: number;
     createdAt: string;
     updatedAt: string;
   }>;
@@ -131,6 +151,24 @@ const getOrCreateGlobalMemory = (): GlobalMemory => {
     if (!globalMemoryScope.__collabverseMemory__.TEMPLATE_TASKS) {
       globalMemoryScope.__collabverseMemory__.TEMPLATE_TASKS = [] as ProjectTemplateTask[];
     }
+    if (!globalMemoryScope.__collabverseMemory__.MARKETPLACE_AUTHOR_PUBLICATIONS) {
+      globalMemoryScope.__collabverseMemory__.MARKETPLACE_AUTHOR_PUBLICATIONS = [] as GlobalMemory['MARKETPLACE_AUTHOR_PUBLICATIONS'];
+    }
+    globalMemoryScope.__collabverseMemory__.MARKETPLACE_LISTINGS =
+      globalMemoryScope.__collabverseMemory__.MARKETPLACE_LISTINGS.map((listing) => {
+        const legacyListing = listing as typeof listing & { authorUserId?: string };
+        const legacyAuthorUserId = legacyListing.authorUserId ?? '';
+
+        return {
+          ...listing,
+          authorEntityType: listing.authorEntityType ?? 'user',
+          authorEntityId: listing.authorEntityId ?? legacyAuthorUserId,
+          publishedByUserId: listing.publishedByUserId ?? legacyAuthorUserId,
+          lastEditedByUserId: listing.lastEditedByUserId ?? listing.publishedByUserId ?? legacyAuthorUserId,
+          showOnAuthorPage: listing.showOnAuthorPage ?? false,
+          sortOrder: typeof listing.sortOrder === 'number' ? listing.sortOrder : 0
+        };
+      });
     return globalMemoryScope.__collabverseMemory__;
   }
 
@@ -148,9 +186,29 @@ const getOrCreateGlobalMemory = (): GlobalMemory => {
       id: string;
       projectId: string;
       workspaceId: string;
+      authorEntityType: 'user' | 'organization';
+      authorEntityId: string;
+      publishedByUserId: string;
+      lastEditedByUserId: string;
       title: string;
       description?: string;
       state: 'draft' | 'published' | 'rejected';
+      showOnAuthorPage: boolean;
+      sortOrder: number;
+      createdAt: string;
+      updatedAt: string;
+    }>,
+    MARKETPLACE_AUTHOR_PUBLICATIONS: [] as Array<{
+      id: string;
+      ownerUserId: string;
+      kind: 'template' | 'service';
+      sourceTemplateId?: string;
+      title: string;
+      description: string;
+      tags: string[];
+      state: 'draft' | 'published' | 'rejected';
+      showOnAuthorPage: boolean;
+      sortOrder: number;
       createdAt: string;
       updatedAt: string;
     }>,
@@ -695,12 +753,33 @@ export const memory = {
     id: string;
     projectId: string;
     workspaceId: string;
+    authorEntityType: 'user' | 'organization';
+    authorEntityId: string;
+    publishedByUserId: string;
+    lastEditedByUserId: string;
     title: string;
     description?: string;
     state: 'draft' | 'published' | 'rejected';
+    showOnAuthorPage: boolean;
+    sortOrder: number;
     createdAt: string;
     updatedAt: string;
   }>) { globalMemory.MARKETPLACE_LISTINGS = value; },
+  get MARKETPLACE_AUTHOR_PUBLICATIONS() { return globalMemory.MARKETPLACE_AUTHOR_PUBLICATIONS; },
+  set MARKETPLACE_AUTHOR_PUBLICATIONS(value: Array<{
+    id: string;
+    ownerUserId: string;
+    kind: 'template' | 'service';
+    sourceTemplateId?: string;
+    title: string;
+    description: string;
+    tags: string[];
+    state: 'draft' | 'published' | 'rejected';
+    showOnAuthorPage: boolean;
+    sortOrder: number;
+    createdAt: string;
+    updatedAt: string;
+  }>) { globalMemory.MARKETPLACE_AUTHOR_PUBLICATIONS = value; },
   ADMIN_PLATFORM_MODULES: [
     {
       id: 'module-core-dashboard',

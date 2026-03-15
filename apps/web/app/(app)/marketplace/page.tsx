@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
 export default function MarketplaceIndexPage() {
-  redirect('/market/templates');
+  redirect('/market');
 }

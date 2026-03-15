@@ -16,24 +16,31 @@ type PaletteResult = ReturnType<typeof search>;
 const COMMAND_ITEMS: SearchItem[] = [
   {
     type: 'command',
-    title: 'Открыть Маркетплейс',
-    subtitle: 'Переход в общий каталог',
-    tags: ['marketplace'],
-    ref: '/app/marketplace/categories'
+    title: 'Открыть Каталог',
+    subtitle: 'Главная discovery-лента решений',
+    tags: ['marketplace', 'catalog'],
+    ref: '/market'
   },
   {
     type: 'command',
-    title: 'Открыть каталог шаблонов',
-    subtitle: 'Готовые решения для старта проекта',
+    title: 'Открыть шаблоны',
+    subtitle: 'Готовые основы для старта проекта',
     tags: ['marketplace', 'templates'],
-    ref: '/app/marketplace/templates'
+    ref: '/market/templates'
   },
   {
     type: 'command',
-    title: 'Открыть пакеты услуг',
-    subtitle: 'Форматные предложения команд и студий',
+    title: 'Открыть готовые решения',
+    subtitle: 'Публичные публикации PM-проектов',
+    tags: ['marketplace', 'projects'],
+    ref: '/market/projects'
+  },
+  {
+    type: 'command',
+    title: 'Открыть услуги',
+    subtitle: 'Сервисные предложения авторов и команд',
     tags: ['marketplace', 'services'],
-    ref: '/app/marketplace/services'
+    ref: '/market/services'
   },
   {
     type: 'command',

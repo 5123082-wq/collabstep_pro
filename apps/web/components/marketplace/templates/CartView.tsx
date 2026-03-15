@@ -113,6 +113,9 @@ export default function CartView({ templates }: CartViewProps) {
           <p className="text-sm text-neutral-500">
             Услуги оформляются отдельно: их нельзя добавить в корзину и оплатить вместе с шаблонами.
           </p>
+          <p className="text-sm text-neutral-500">
+            Если нужен reuse path, вернитесь в карточку решения и выберите `Использовать в проекте`.
+          </p>
         </div>
         <div className="space-y-2 text-sm text-neutral-300">
           <div className="flex justify-between text-base font-semibold text-neutral-100">

@@ -5,8 +5,8 @@ import TemplatesSkeleton from '@/components/marketplace/templates/TemplatesSkele
 import { templates } from '@/lib/marketplace/data';
 
 export const metadata: Metadata = {
-  title: 'Каталог шаблонов — Collabverse Market',
-  description: '12 подборок шаблонов и UI-китов для быстрого старта проекта.'
+  title: 'Шаблоны — Каталог Collabverse',
+  description: 'Шаблоны и стартовые базы для проекта: с автором, хэштегами и demo-метриками на discovery-плитках.'
 };
 
 export default function MarketTemplatesPage() {
@@ -14,10 +14,10 @@ export default function MarketTemplatesPage() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-neutral-50">Каталог шаблонов</h1>
+          <h1 className="text-xl font-semibold text-neutral-50">Шаблоны</h1>
           <p className="text-sm text-neutral-400">
-            Подборка готовых UI-комплектов, презентаций и лендингов. Добавляйте в корзину, сохраняйте в
-            избранное и собирайте коллекции для своих проектов.
+            Стартовые базы для проектов: с автором, тегами и demo-метриками на плитке. Сначала откройте detail surface, а затем
+            отправляйте решение в проект или сохраняйте его.
           </p>
         </div>
       </div>

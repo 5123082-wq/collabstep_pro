@@ -3,6 +3,17 @@ import type { NavigationItem } from '@/components/app/SectionNavigationBar';
 import type { SectionHeaderMenuItem } from '@/components/common/SectionHeader';
 import type { OrganizationMember } from '@collabverse/api';
 
+const MARKETPLACE_PRIMARY_NAV_IDS = new Set([
+  'marketplace-home',
+  'marketplace-templates',
+  'marketplace-projects',
+  'marketplace-services',
+  'marketplace-categories',
+  'marketplace-favorites',
+  'marketplace-publish',
+  'marketplace-seller'
+]);
+
 /**
  * Универсальная утилита для получения навигации из LeftMenu.config
  * Используется для генерации хлебных крошек в AppTopbar
@@ -84,11 +95,16 @@ export function getPMMenuItems(pathname: string): SectionHeaderMenuItem[] {
 }
 
 export function getMarketplaceNavigation(): NavigationItem[] {
-  return getNavigationFromConfig('marketplace');
+  return getNavigationFromConfig('marketplace').filter((item) => MARKETPLACE_PRIMARY_NAV_IDS.has(item.id));
 }
 
 export function getMarketplaceMenuItems(pathname: string): SectionHeaderMenuItem[] {
-  return getMenuItemsFromConfig('marketplace', pathname);
+  const marketplaceSection = leftMenuConfig.find((section) => section.id === 'marketplace');
+  return getMenuItemsFromConfig('marketplace', pathname).filter((item) => {
+    const childId =
+      marketplaceSection?.children?.find((child) => child.type !== 'divider' && child.href === item.href)?.id ?? '';
+    return MARKETPLACE_PRIMARY_NAV_IDS.has(childId);
+  });
 }
 
 export function getPerformersNavigation(): NavigationItem[] {
@@ -230,4 +246,3 @@ export function extractOrgIdFromPath(pathname: string | null): string | null {
   const match = pathname.match(/^\/org\/([^/]+)/);
   return match?.[1] ?? null;
 }
-

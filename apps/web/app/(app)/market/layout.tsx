@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 export const metadata: Metadata = {
-  title: 'Маркетплейс Collabverse',
-  description: 'Шаблоны, проекты и сервисы для быстрого старта цифровых продуктов.'
+  title: 'Каталог Collabverse',
+  description: 'Discovery-first лента шаблонов, готовых решений и услуг для быстрого старта проекта.'
 };
 
 export default function MarketLayout({ children }: { children: ReactNode }) {

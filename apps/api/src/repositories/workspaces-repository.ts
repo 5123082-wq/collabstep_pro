@@ -2,6 +2,7 @@ import { memory } from '../data/memory';
 import type { ProjectVisibility, Workspace, WorkspaceMember } from '../types';
 
 type CreateWorkspacePayload = {
+  id?: string;
   accountId: string;
   name: string;
   description?: string;
@@ -34,8 +35,16 @@ export class WorkspacesRepository {
 
   create(payload: CreateWorkspacePayload): Workspace {
     const now = new Date().toISOString();
+    const workspaceId =
+      typeof payload.id === 'string' && payload.id.trim().length > 0
+        ? payload.id.trim()
+        : crypto.randomUUID();
+    const existing = memory.WORKSPACES.find((item) => item.id === workspaceId);
+    if (existing) {
+      return cloneWorkspace(existing);
+    }
     const workspace: Workspace = {
-      id: crypto.randomUUID(),
+      id: workspaceId,
       accountId: payload.accountId,
       name: payload.name.trim(),
       visibility: payload.visibility === 'public' ? 'public' : 'private',

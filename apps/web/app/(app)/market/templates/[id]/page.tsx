@@ -19,15 +19,15 @@ export function generateMetadata({ params }: TemplateDetailPageProps): Metadata 
   const template = getTemplateById(params.id);
   if (!template) {
     return {
-      title: 'Шаблон не найден — Collabverse Market'
+      title: 'Шаблон не найден — Каталог Collabverse'
     };
   }
 
   return {
-    title: `${template.title} — Collabverse Market`,
+    title: `${template.title} — Каталог Collabverse`,
     description: template.description,
     openGraph: {
-      title: `${template.title} — Collabverse Market`,
+      title: `${template.title} — Каталог Collabverse`,
       description: template.description,
       images: template.gallery.slice(0, 1).map((url) => ({ url })),
       url: `/market/templates/${template.id}`
@@ -51,6 +51,16 @@ export default function TemplateDetailPage({ params }: TemplateDetailPageProps) 
           <header className="space-y-4">
             <h1 className="text-xl font-semibold text-neutral-50">{template.title}</h1>
             <p className="text-sm text-neutral-400">{template.description}</p>
+            <div className="rounded-2xl border border-neutral-800/80 bg-neutral-900/60 p-4">
+              <p className="text-xs uppercase tracking-[0.24em] text-neutral-500">Автор</p>
+              <Link href={`/p/${template.seller.handle}`} className="mt-2 block text-base font-semibold text-neutral-100 transition hover:text-indigo-300">
+                {template.seller.name}
+              </Link>
+              <p className="mt-1 text-sm text-neutral-400">{template.seller.headline}</p>
+              <p className="mt-2 text-xs text-neutral-500">
+                {template.seller.location} • {template.seller.portfolioCount} публичных работ
+              </p>
+            </div>
           </header>
           <div className="cs-auto-grid gap-4">
             {template.gallery.map((image) => (
@@ -75,11 +85,10 @@ export default function TemplateDetailPage({ params }: TemplateDetailPageProps) 
           <TemplatePurchaseActions template={template} />
           <div className="space-y-3 text-sm text-neutral-400">
             <p>
-              После оплаты шаблон появится в ваших заказах. Файлы будут доступны по защищённым ссылкам в течение
-              72 часов.
+              Основной сценарий страницы: оценить решение, сохранить его, отправить в проект или запросить адаптацию у автора.
             </p>
             <p>
-              Для совместной работы можно добавить шаблон в существующий проект и поделиться доступом с командой.
+              Корзина и оформление остаются рядом как вторичный слой и не доминируют над reuse-flow.
             </p>
           </div>
         </aside>
@@ -113,7 +122,7 @@ export default function TemplateDetailPage({ params }: TemplateDetailPageProps) 
                 </div>
                 <div className="space-y-2 p-4">
                   <h3 className="line-clamp-2 text-sm font-semibold text-neutral-100">{item.title}</h3>
-                  <p className="text-xs text-neutral-500">{item.rating.toFixed(1)} ★ · {item.salesCount} продаж</p>
+                  <p className="text-xs text-neutral-500">{item.rating.toFixed(1)} ★ · {item.salesCount} запусков</p>
                 </div>
               </Link>
             ))}

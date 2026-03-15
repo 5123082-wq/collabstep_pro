@@ -3,7 +3,7 @@
 **Статус:** draft  
 **Владелец:** engineering  
 **Создан:** 2026-01-07  
-**Последнее обновление:** 2026-01-19
+**Последнее обновление:** 2026-03-09
 
 ## 1) Purpose
 
@@ -85,6 +85,7 @@ AI Hub — модуль интеграции AI-функциональности
 | Brandbook Agent | Генеративный брендбук мерча на основе логотипа | [ai-brandbook-agent.md](../../development/ai-brandbook-agent/00-index.md) | ⚠️ partial |
 | Generations | Генерация контента AI, типы генераций | [generations.md](./ai-hub-generations.md) | ⚠️ partial |
 | Prompts | Управление промптами, шаблоны промптов | [prompts.md](./ai-hub-prompts.md) | ⏳ planned |
+| OpenClaw Architecture | Стартовая архитектура shared/private agent модели на базе OpenClaw | [openclaw-architecture.md](./ai-hub-openclaw-architecture.md) | 🔄 draft |
 | Implementation Plan | План реализации AI Hub, этапы Stage M и Stage N | [_implementation-plan.md](./ai-hub-implementation-plan.md) | ✅ stable |
 
 ## 5) Permissions
@@ -101,7 +102,11 @@ See: `../../platform/analytics-events.md`
 - `ai_generation_requested` — запрошена генерация контента
 - `ai_generation_completed` — генерация завершена
 - `ai_assistant_used` — использован AI-ассистент
-- `ai_agent_triggered` — активирован AI-агент
+- `ai_agent_invoked` — агент вызван через @упоминание
+- `ai_agent_run_created` — создан запуск агента
+- `ai_agent_run_completed` — запуск завершён успешно
+- `ai_agent_run_failed` — запуск завершился ошибкой
+- `ai_agent_limit_exceeded` — превышен лимит агента
 
 ## 7) Implementation status
 
@@ -112,8 +117,10 @@ AI Hub частично реализован:
   - Суммирование комментариев
   - AI агенты в чате
   - Напоминания о дедлайнах
-- 🔄 Brandbook Agent (MVP, Stage 1) — UI точка входа в AI Hub
+- ✅ Brandbook Agent (MVP, Stage 1) — UI точка входа в AI Hub
 - ✅ Brandbook Agent S1.5 — персистентные сессии + org‑storage + upload
+- ✅ Brandbook Agent S2.0 — интеграция в Identity (AI-пользователь `brandbook.agent@collabverse.ai`), отдельный API ключ `BRANDBOOK_AGENT_OPENAI_API_KEY`, промпты через динамические блоки (`blocks`), персистентная история чатов (`AIConversation`).
+- 🔄 OpenClaw architecture brief — стартовая структура shared/private agent модели и этапов внедрения зафиксирована в отдельном документе (2026-03-09).
 - ⚠️ Генерация контента — частично реализована
 - ⏳ Stage N: Расширенная AI функциональность — не начат
   - Планирование проекта
@@ -132,6 +139,7 @@ See: `_implementation-plan.md` и `../../ROADMAP.md`
 - [PM Core — Chat](../projects-tasks/projects-tasks-chat.md) — AI-ассистент в чате
 - [Platform Overview](../../platform/overview.md) — обзор платформы
 - [Integration](./ai-hub-integration.md) — полное руководство по AI
+- [OpenClaw Architecture](./ai-hub-openclaw-architecture.md) — стартовая архитектура shared/private agent модели
 - [Quick Start](./ai-hub-quick-start.md) — быстрый старт
 - [Setup](./ai-hub-setup.md) — настройка ключей
 
@@ -141,13 +149,14 @@ See: `_implementation-plan.md` и `../../ROADMAP.md`
 
 | Идея | Приоритет | Дата | Контекст | Статус |
 |------|-----------|------|----------|--------|
-| **История чатов с AI-агентами** | **P1** | 2026-01-19 | Нет персистентности диалогов. [План](../../development/ai-brandbook-agent/07-conversation-history.md) | ⏳ |
+| **История чатов с AI-агентами** | **P1** | 2026-02-04 | Реализована персистентность диалогов (`AIConversation`, `AIMessage`). | ✅ |
 | **Исправить N+1 на странице агентов** | **P1** | 2026-01-19 | Медленная загрузка `/ai-hub/agents` | ⏳ |
 | Реализация Stage N функций | P2 | 2026-01-07 | Из плана реализации | ⏳ |
 | Управление промптами | P2 | 2026-01-07 | Планируется | ⏳ |
 | Расширение генерации контента | P2 | 2026-01-07 | Частично реализовано | ⏳ |
 | AI-агенты для автоматизации | P3 | 2026-01-07 | Stage N | ⏳ |
+| OpenClaw shared/private agent rollout | P1 | 2026-03-09 | Новый execution layer для AI Hub | 🔄 |
 
 ---
 
-**Последнее обновление:** 2026-01-19
+**Последнее обновление:** 2026-03-09

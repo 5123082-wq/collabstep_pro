@@ -109,8 +109,16 @@ export {
   MarketplaceListingsRepository,
   marketplaceListingsRepository,
   type MarketplaceListing,
+  type MarketplaceListingAuthorEntityType,
   type MarketplaceListingState
 } from './repositories/marketplace-listings-repository';
+export {
+  MarketplaceAuthorPublicationsRepository,
+  marketplaceAuthorPublicationsRepository,
+  type MarketplaceAuthorPublication,
+  type MarketplaceAuthorPublicationKind,
+  type MarketplaceAuthorPublicationState
+} from './repositories/marketplace-author-publications-repository';
 export {
   NotificationsRepository,
   notificationsRepository,

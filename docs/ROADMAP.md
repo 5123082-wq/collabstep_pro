@@ -3,7 +3,7 @@
 **Статус:** активен  
 **Владелец:** product + engineering  
 **Создан:** 2026-01-06  
-**Последнее обновление:** 2026-01-20
+**Последнее обновление:** 2026-03-09
 
 > **Примечание:** Этот файл является каноническим источником истины для всех долгосрочных планов.  
 > См. также: `docs/platform/changelog.md` (что реально вышло) и `docs/playbooks/release-process.md` (как релизимся)
@@ -32,6 +32,38 @@
    - Обновить приоритет (P0/P1/P2/P3)
    - Обновить порядок этапов
    - Указать причину изменения
+
+### Связь с другими документами
+
+- `docs/ROADMAP.md` отвечает на вопрос: что планируется, что уже начато и что завершено в реализации.
+- `docs/modules/<module>/<module>-overview.md` отвечает на вопрос: что умеет модуль и в каком состоянии его функции.
+- `docs/modules/<module>/<module>-implementation-plan.md` детализирует крупные реализации, если такой файл существует.
+- `CONTINUITY.md` фиксирует только активный handoff и текущее рабочее состояние, особенно если задача поставлена на паузу.
+- `docs/platform/changelog.md` отражает только реально выпущенные изменения.
+
+### Жизненный цикл идеи / фичи
+
+1. **Идея появилась:**
+   - Добавить в `Текущие планы` или `Будущие улучшения`
+   - Указать дату, контекст и приоритет
+
+2. **Реализация началась:**
+   - Обновить статус на `🔄`
+   - Добавить дату начала
+   - Синхронизировать module overview и `CONTINUITY.md`
+
+3. **Работа поставлена на паузу:**
+   - Не ставить `✅` раньше времени
+   - Оставить честный статус и open scope
+   - Зафиксировать точку остановки в `CONTINUITY.md`
+
+4. **Реализация завершена:**
+   - Обновить статус на `✅`
+   - Добавить дату завершения
+   - Синхронизировать module overview, implementation plan и cross-cutting docs
+
+5. **Изменение вышло в релиз:**
+   - Добавить запись в `docs/platform/changelog.md`
 
 ---
 
@@ -90,7 +122,7 @@
 - API limits: free=1 org, pro/max=unlimited
 - Paywall modal для free users
 
-**Документация:** См. `CONTINUITY.md` (2026-01-03)
+**Документация:** См. `docs/archive/continuity/2026-03-08-continuity-ledger-history.md` (запись за 2026-01-03)
 
 ---
 
@@ -107,7 +139,7 @@
 - Сервис создания проекта из шаблона
 - UI wizard `CreateProjectFromTemplateModal`
 
-**Документация:** См. `CONTINUITY.md` (2026-01-04, 2026-01-05)
+**Документация:** См. `docs/archive/continuity/2026-03-08-continuity-ledger-history.md` (записи за 2026-01-04 и 2026-01-05)
 
 ---
 
@@ -130,13 +162,149 @@
 
 ### Текущие планы
 
-*Планы будут добавлены по мере необходимости*
+#### Реорганизация user-facing раздела "Каталог" поверх текущего домена Marketplace
+
+**Статус:** ✅ Завершён  
+**Источник:** `docs/modules/marketplace/marketplace-implementation-plan.md`  
+**Последнее обновление:** 2026-03-09
+
+| Фаза | Описание | Статус | Приоритет | Начало | Завершение | Зависимости |
+|------|----------|--------|-----------|--------|------------|-------------|
+| C0 | Документационное выравнивание и orchestration-pack | ✅ Завершён | P0 | 2026-03-09 | 2026-03-09 | - |
+| C1 | IA, навигация и discovery-first feed | ✅ Завершён | P0 | 2026-03-09 | 2026-03-09 | C0 |
+| C2 | Публичная страница автора и author identity | ✅ Завершён | P0 | 2026-03-09 | 2026-03-09 | C1 |
+| C3 | Публикация и кабинет автора | ✅ Завершён | P0 | 2026-03-09 | 2026-03-09 | C2 |
+| C4 | Apply/import flows и secondary deal-layer | ✅ Завершён | P1 | 2026-03-09 | 2026-03-09 | C3 |
+| C5 | Cross-cutting sync: permissions, analytics, docs, QA | ✅ Завершён | P0 | 2026-03-09 | 2026-03-09 | C1, C2, C3, C4 |
+
+**Детали:** См. `docs/modules/marketplace/marketplace-implementation-plan.md`
 
 ---
 
 ### Завершенные этапы
 
-*Завершенные этапы будут добавлены по мере реализации*
+#### C0. Документационное выравнивание и orchestration-pack
+
+**Статус:** ✅ Завершён  
+**Завершено:** 2026-03-09
+
+**Реализовано:**
+- Новый user-facing framing модуля как `Каталог`
+- Новый overview модуля
+- Основной implementation-plan для orchestration и pause/resume
+- Пакет документов для субагентов
+- Архивный snapshot legacy Marketplace-first модели
+- Синхронизация `ROADMAP`, `CONTINUITY`, `docs/README.md`, `docs/INDEX.md`, `docs/platform/overview.md`
+
+#### C1. IA, навигация и discovery-first feed
+
+**Статус:** ✅ Завершён  
+**Завершено:** 2026-03-09
+
+**Реализовано:**
+- `/market` стал discovery-first лентой вместо redirect в шаблоны
+- `Маркетплейс` переведён в user-facing `Каталог` в навигации, topbar и command palette
+- discovery-карточки шаблонов, готовых решений и услуг упрощены до названия, краткого описания, хэштегов, автора и demo-метрик
+- CTA `Открыть`, `Сохранить`, `В проект`, `Запросить адаптацию` убраны с плиток ленты и перенесены в detail surface
+- `Готовые решения`, `Услуги`, `Подборки`, `Сохранённое`, `Корзина и оформление`, `Сделки и доступ`, `Опубликовать` и `Мои публикации` переоформлены под новую IA
+- `pnpm -w typecheck` выполнен успешно
+
+#### C2. Публичная страница автора и author identity
+
+**Статус:** ✅ Завершён  
+**Завершено:** 2026-03-09
+
+**Реализовано:**
+- `/p/:handle` зафиксирован как каноническая public author-page каталога
+- author-page reuse-ит текущий `performer_profile` / `handle` / `isPublic` stack как Phase 1 решение
+- добавлен блок `Решения автора`, который показывает только публичные catalog entities
+- `project.ownerId` больше не считается нормой author attribution для public author-page
+- PM-based `MarketplaceListing` временно скрыты на author-page до C3, если у публикации нет явного author contract
+- добавлен fallback author-shell по `handle`, чтобы author-link из карточек не ломал flow, даже если performer-profile ещё не публичен или discovery пока работает на mock/demo данных
+- `pnpm -w typecheck` выполнен успешно
+
+**Коррективная задача перед C3 выполнена:**
+- discovery-карточки упрощены, CTA убраны из ленты и demo-метрики `лайки / просмотры / использования` оставлены как placeholders без новой аналитики и backend-источника
+
+**Handoff в C3:**
+- собрать единый author-publications source с явным author contract для `MarketplaceListing`, шаблонов и услуг
+- определить author entity каталога как человека или команду; это обязательный design/input topic следующего этапа
+
+#### C3. Публикация и кабинет автора
+
+**Статус:** ✅ Завершён  
+**Последнее обновление:** 2026-03-09
+
+**Что исправлено в rework C3:**
+- ownership для PM publish-flow больше не определяется через deprecated `project.organization_id`:
+  - канонический source для C3 теперь строится из PM `project.workspaceId -> workspace.accountId` и безопасного organization/account mapping layer;
+  - legacy `project` table остаётся вне критического path для authorship resolution;
+- `/market/publish` использует этот PM ownership contract только для create/manage decision:
+  - personal project -> publish only owner, author entity = человек-владелец;
+  - team-owned project -> publish by owner/admin, author entity = команда;
+- `MarketplaceListing` больше не опирается на `currentUser.id` / `authorUserId` как на единственный source of truth:
+  - добавлены явные `authorEntityType`, `authorEntityId`, `publishedByUserId`, `lastEditedByUserId`;
+  - actor и author entity разделены;
+- persisted listing contract стал source of truth для listing-layer:
+  - `/market/seller` читает author entity уже созданной публикации из самого listing, а не пересчитывает из текущего project-state;
+  - `/p/:handle` фильтрует person-publications по persisted `authorEntityType=user` и `authorEntityId=userId`;
+  - author attribution созданной публикации не "переезжает" из-за рассинхрона project-state без явного update listing contract;
+- `/market/publish` больше не показывает ложный create-flow для team-admin, если publication этого проекта уже существует;
+- `/market/seller` собирает PM publications по manager rights из PM ownership layer, но author entity берёт из persisted listing contract;
+- `/p/:handle` использует тот же unified source, но показывает только person-authored публикации по persisted listing contract;
+- team-owned publication не попадает на person-route `/p/:handle`, пока отдельная public surface для команды не внедрена;
+- `showOnAuthorPage` по-прежнему отделён от PM visibility и от `performer_profile.isPublic`;
+- `pnpm -w typecheck` выполнен успешно.
+
+**Статус этапа:**
+- C3 принят после повторной приёмки;
+- последующие этапы C4 и C5 уже закрыты.
+
+**Зафиксированное правило для C3 rework:**
+- `/p/:handle` остаётся canonical person-route;
+- отдельная public route для команды остаётся future enhancement;
+- team-owned publication не публикуется на person-route как fallback.
+
+#### C4. Apply/import flows и secondary deal-layer
+
+**Статус:** ✅ Завершён после corrective bridge-fix  
+**Завершено:** 2026-03-09
+
+**Реализовано:**
+- `Использовать в проекте` в шаблонах и готовых решениях открывает project-first flow:
+  - новый PM-проект;
+  - импорт в существующий PM-проект;
+- template/solution apply route импортирует reusable block задач в PM, не смешивая PM-проект с public publication;
+- selected organization в apply-flow теперь задаёт канонический PM context нового проекта:
+  - `DEFAULT_WORKSPACE_ID` больше не используется как universal target для catalog apply-flow;
+  - новый проект создаётся в workspace/account context выбранной организации;
+  - team path получает минимальный `project_members` bridge, чтобы проект не становился hidden owner-only;
+- `Запросить адаптацию` у шаблонов, ready solutions и услуг ведёт в brief/inquiry modal вместо shop-first checkout;
+- `/market/orders` показывает inquiry submissions как secondary deal-layer;
+- `/market/cart` сохранён как вторичный checkout surface только для template purchase path;
+- `pnpm -w typecheck` выполнен успешно.
+
+#### C5. Cross-cutting sync: permissions, analytics, docs, QA
+
+**Статус:** ✅ Завершён  
+**Завершено:** 2026-03-09
+
+**Реализовано:**
+- синхронизированы `marketplace-overview`, `marketplace-implementation-plan`, профильные marketplace docs, `docs/ROADMAP.md`, `CONTINUITY.md`, `docs/platform/overview.md`, `docs/README.md`, `docs/INDEX.md`;
+- зафиксирован catalog permissions overlay:
+  - `/p/:handle` остаётся canonical person-route;
+  - personal PM publish/manage = owner only;
+  - team-owned PM publish/manage = owner/admin;
+  - apply/import rights и inquiry linkage rules описаны без переоткрытия C4;
+- открытое противоречие по PM project creation не принято молча как контракт:
+  - platform matrix говорит `viewer` не может создавать проект;
+  - current implementation проверяет только active organization membership;
+  - требуется отдельный corrective task;
+- зафиксирован analytics reality layer:
+  - реально используются `pm_publish_started`, `pm_listing_updated`, `pm_listing_deleted`, `catalog_publication_created`, `catalog_publication_updated`;
+  - discovery / author-page / favorites / cart / apply / inquiry / orders остаются telemetry gaps;
+- собран ручной QA checklist и rollout backlog;
+- residual risks и future scope вынесены отдельно без запуска новой продуктовой фазы.
 
 ---
 
@@ -146,6 +314,13 @@
 |------|--------|-----------|------|----------|--------|
 | Публичный доступ к шаблонам маркетплейса | Marketplace | P1 | 2026-01-05 | Шаблоны проектов | ⏳ |
 | AI quality hints для listings | Marketplace | P2 | 2026-01-06 | AI интеграция | ⏳ |
+| Align PM project creation permissions: platform matrix vs implementation | Marketplace / PM Core | P0 | 2026-03-09 | C5 corrective task | ⏳ |
+| Full real-publications feed для discovery surfaces | Marketplace | P1 | 2026-03-09 | C5 residual risk | ⏳ |
+| Server-backed cart / favorites / inquiries и shared deal history | Marketplace | P1 | 2026-03-09 | C5 residual risk | ⏳ |
+| Checkout / protected delivery / access issuance | Marketplace | P1 | 2026-03-09 | C5 residual risk | ⏳ |
+| Analytics implementation для discovery / author / apply / inquiry / orders | Marketplace | P1 | 2026-03-09 | C5 residual risk | ⏳ |
+| Dashboard/widget sync под новую IA `Каталога` | Marketplace | P2 | 2026-03-09 | C5 residual risk | ⏳ |
+| Author pages для команд и организаций | Marketplace | P1 | 2026-03-09 | Каталог / авторы | ⏳ |
 
 ---
 
@@ -175,6 +350,22 @@
 ## AI Hub
 
 ### Текущие планы
+
+#### OpenClaw integration for AI Hub
+
+**Статус:** 🔄 В работе  
+**Источник:** `docs/modules/ai-hub/ai-hub-openclaw-architecture.md`  
+**Последнее обновление:** 2026-03-09
+
+| Этап | Описание | Статус | Начало | Завершение | Зависимости |
+|------|----------|--------|--------|------------|-------------|
+| O0 | Архитектурный brief, trust boundary, product contract | ✅ Завершён | 2026-03-09 | 2026-03-09 | - |
+| O1 | Shared platform agent для всех пользователей | ⏳ Ожидает | - | - | O0 |
+| O2 | Workspace-aware tool proxy и scoped context | ⏳ Ожидает | - | - | O1 |
+| O3 | Premium private agent и provisioning lifecycle | ⏳ Ожидает | - | - | O2 |
+| O4 | External channels, automation и billing orchestration | ⏳ Ожидает | - | - | O3 |
+
+---
 
 #### Brandbook Agent (MVP, Stage 1)
 

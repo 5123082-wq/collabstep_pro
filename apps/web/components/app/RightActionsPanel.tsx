@@ -20,12 +20,12 @@ const routeActions: Record<string, { title: string; actions: { label: string; me
       { label: 'Создать проект', message: 'Используйте меню создания, чтобы запустить инициативу' }
     ]
   },
-  '/marketplace': {
-    title: 'Маркетплейс',
+  '/market': {
+    title: 'Каталог',
     actions: [
-      { label: 'Открыть витрину', message: 'TODO: Открыть витрину решений' },
-      { label: 'Добавить в корзину', message: 'TODO: Добавить товар в корзину' },
-      { label: 'Перейти к заказам', message: 'TODO: Открыть историю заказов' }
+      { label: 'Открыть ленту решений', message: 'Переходите в discovery-ленту каталога' },
+      { label: 'Открыть сохранённое', message: 'TODO: Открыть shortlist сохранённых решений' },
+      { label: 'Перейти к публикациям', message: 'TODO: Открыть кабинет автора' }
     ]
   },
   '/performers': {
@@ -99,7 +99,9 @@ export default function RightActionsPanel() {
   const pathname = usePathname();
 
   const matched = useMemo(() => {
-    const entry = Object.entries(routeActions).find(([prefix]) => pathname.startsWith(prefix));
+    const entry = Object.entries(routeActions).find(([prefix]) =>
+      prefix === '/market' ? pathname === '/market' || pathname.startsWith('/market/') : pathname.startsWith(prefix)
+    );
     return entry ? entry[1] : null;
   }, [pathname]);
 

@@ -3,121 +3,64 @@
 **Статус:** stable  
 **Владелец:** engineering  
 **Создан:** 2026-01-06  
-**Последнее обновление:** 2026-01-07
+**Последнее обновление:** 2026-03-08
 
 ## Назначение
 
-Этот документ описывает процесс релиза фич и обновления документации при релизах.
+Этот документ описывает процесс релиза и то, как при релизе синхронизируются `ROADMAP`, модульные overview-документы, implementation plans, `CONTINUITY` и `changelog`.
 
 > **См. также:**
-> - [Чеклист для PR](./docs-pr-checklist.md) - проверка документации перед PR
-> - [Руководство по миграции](./docs-migration-guide.md) - как работать с документацией
-> - [Руководство для агентов](./agent-docs-guide.md) - правила для AI агентов
+> - [Docs PR Checklist](./docs-pr-checklist.md)
+> - [Agent Docs Guide](./agent-docs-guide.md)
+> - [Documentation Rules](../../.cursor/rules/documentation.mdc)
 
-## Процесс релиза
+## Роли Документов В Релизном Процессе
 
-### 1. Подготовка к релизу
+- `docs/ROADMAP.md` — что было запланировано и какой у этого статус реализации.
+- `docs/modules/<module>/<module>-overview.md` — как выглядит актуальное состояние модуля.
+- `docs/modules/<module>/<module>-implementation-plan.md` — подробные этапы, если они ведутся отдельно.
+- `CONTINUITY.md` — актуальный рабочий handoff во время реализации.
+- `docs/platform/changelog.md` — что реально вышло.
 
-1. **Обновить ROADMAP:**
-   - Обновить статусы завершенных этапов (⏳ → 🔄 → ✅) в `docs/ROADMAP.md`
-   - Добавить даты завершения для завершенных этапов
-   - Обновить общий статус плана (например, "50% завершено")
-   - Обновить "Последнее обновление" в заголовке плана
-   - Обновить планы реализации модулей (`docs/modules/<module>/_implementation-plan.md`), если применимо
+## 1. Перед Релизом
 
-   > **Подробнее:** См. [Руководство по миграции](./docs-migration-guide.md#работа-с-планами)
+### Синхронизировать Реальный Статус Реализации
 
-2. **Обновить changelog:**
-   - Добавить запись в `docs/platform/changelog.md`
-   - Использовать формат:
-     ```markdown
-     ## [Версия] - YYYY-MM-DD
-     
-     ### Добавлено
-     - Фича 1
-     - Фича 2
-     
-     ### Изменено
-     - Изменение 1
-     
-     ### Исправлено
-     - Баг 1
-     ```
-   - Или добавить в раздел `[Unreleased]`, если версия еще не определена
-   - Указать конкретные фичи, а не общие описания
+- обновить `docs/ROADMAP.md`;
+- обновить соответствующий `docs/modules/<module>/<module>-overview.md`;
+- обновить `docs/modules/<module>/<module>-implementation-plan.md`, если такой файл существует;
+- обновить `CONTINUITY.md`, если нужно завершить active handoff по большой задаче.
 
-   > **Подробнее:** См. [Руководство по миграции](./docs-migration-guide.md#обновление-changelogmd)
+### Проверить Cross-Cutting Docs
 
-3. **Проверить документацию:**
-   - Использовать [Чеклист для PR](./docs-pr-checklist.md) для проверки
-   - Убедиться, что все фичи из релиза документированы
-   - Проверить, что [Definition of Done (Docs)](../reorganization/PLAN_DOCUMENTATION_REORGANIZATION.md#definition-of-done-docs) выполнен:
-     - [ ] Обновлён модульный doc (`docs/modules/<module>/_module.md`)
-     - [ ] Обновлены events (если менялись) в `docs/platform/analytics-events.md`
-     - [ ] Обновлены permissions (если менялись) в `docs/platform/roles-permissions.md`
-     - [ ] Обновлен platform overview TOC (если module map изменился) в `docs/platform/overview.md`
-     - [ ] Добавлена ссылка на Issue/PR в doc (если уместно)
-     - [ ] Обновлен `docs/ROADMAP.md` (если есть план реализации)
-     - [ ] Обновлены метаданные (статус, дата обновления)
-     - [ ] Все ссылки проверены (link-check)
+- `docs/platform/roles-permissions.md`
+- `docs/platform/analytics-events.md`
+- `docs/platform/overview.md`
+- `docs/README.md` и `docs/INDEX.md`, если менялась навигация или карта docs
 
-### 2. Релиз
+## 2. В Момент Релиза
 
-1. Создать release в GitHub
-2. Обновить версию в `package.json`
-3. Закоммитить изменения документации
+- создать или обновить запись в `docs/platform/changelog.md`;
+- использовать раздел `Unreleased` или версионированную запись `## [Версия] - YYYY-MM-DD`;
+- указывать конкретные shipped changes.
 
-### 3. После релиза
+## 3. После Релиза
 
-1. ~~Обновить `docs/_inventory/coverage.md` если изменилось покрытие документации~~ (архивировано, см. `archive/reorganization/inventory/`)
-2. Обновить `docs/ROADMAP.md` если есть новые планы или изменения в существующих
-3. Обновить `CONTINUITY.md` с завершенными задачами (если применимо)
-4. Архивировать устаревшие документы если нужно
+- убедиться, что `ROADMAP` не противоречит changelog;
+- архивировать временные планы и stage reports, если они больше не нужны как активные документы;
+- при необходимости обновить `CONTINUITY.md`, если active handoff завершён и контекст можно убрать из верхней active-section.
 
-## Связь ROADMAP и changelog
+## Связь ROADMAP, CONTINUITY И Changelog
 
-- **`docs/ROADMAP.md`** - планы (что будет реализовано)
-- **`docs/platform/changelog.md`** - история (что реально вышло)
-- **`docs/playbooks/release-process.md`** - процесс (как релизимся)
+- `ROADMAP` отвечает на вопрос: что планировалось и в каком статусе находится реализация?
+- `CONTINUITY` отвечает на вопрос: где остановилась текущая активная работа?
+- `changelog` отвечает на вопрос: что уже реально вышло?
 
-**При релизе:**
+## Минимальный Релизный Чеклист
 
-1. Фича из ROADMAP → changelog (добавляется запись в changelog)
-2. Статус в ROADMAP обновляется на ✅ (этап завершен)
-3. Дата завершения добавляется в таблицу этапов
-4. "Последнее обновление" обновляется в заголовке плана
-
-**Пример:**
-
-**ROADMAP (до релиза):**
-```markdown
-| Stage H | Комментарии | 🔄 В работе | P0 | 2024-10-01 | - | - |
-```
-
-**ROADMAP (после релиза):**
-```markdown
-| Stage H | Комментарии | ✅ Завершён | P0 | 2024-10-01 | 2024-10-10 | - |
-```
-
-**Changelog (после релиза):**
-```markdown
-## [Unreleased]
-
-### Добавлено
-- Комментарии к задачам с упоминаниями (@mentions)
-```
-
-## Связанные документы
-
-- [Чеклист для PR](./docs-pr-checklist.md)
-- [Руководство по миграции](./docs-migration-guide.md)
-- [Руководство для агентов](./agent-docs-guide.md)
-- [Правила работы с документацией](../../.cursor/rules/documentation.mdc)
-- [План реорганизации документации](../reorganization/PLAN_DOCUMENTATION_REORGANIZATION.md)
-- [ROADMAP](../ROADMAP.md)
-- [Changelog](../platform/changelog.md)
-
----
-
-**Последнее обновление:** 2026-01-07
-
+- [ ] `ROADMAP` синхронизирован
+- [ ] module overview синхронизирован
+- [ ] implementation plan синхронизирован, если существует
+- [ ] `CONTINUITY.md` больше не содержит устаревший active handoff
+- [ ] `changelog` отражает shipped changes
+- [ ] cross-cutting docs обновлены, если менялись права, события или структура платформы

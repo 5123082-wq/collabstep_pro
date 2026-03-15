@@ -2,7 +2,7 @@
 
 **Статус:** active  
 **Владелец:** product/analytics  
-**Последнее обновление:** 2026-02-03
+**Последнее обновление:** 2026-03-09
 
 Это **канонический** список событий аналитики и их схем.
 
@@ -12,6 +12,7 @@
 
 - Имена событий: `snake_case`
 - Префиксы по модулям: `auth_`, `pm_`, `marketplace_`, `marketing_`, `ai_`, `finance_`
+- Для текущего `Каталога` дополнительно уже существуют lightweight события `catalog_publication_*`; существующие namespaces не переименовываются задним числом
 - Формат: `{module}_{entity}_{action}`
 
 ### Общие поля (обязательные)
@@ -81,18 +82,38 @@
 | `pm_filter_applied` | Применен фильтр | `{ view_type, filter_type, filter_value }` | При применении фильтра | Frontend views |
 | `pm_sort_changed` | Изменена сортировка | `{ view_type, sort_field, sort_direction }` | При изменении сортировки | Frontend views |
 
-## События Marketplace
+## События Marketplace / Каталога
+
+### Реально реализовано на 2026-03-09
 
 | Событие | Описание | Payload | Когда | Где |
 |---------|----------|--------|-------|-----|
-| `marketplace_product_viewed` | Просмотр продукта | `{ product_id, listing_id, referrer?, position? }` | При открытии страницы продукта | Frontend page `/market/*` |
-| `marketplace_product_added_to_cart` | Продукт добавлен в корзину | `{ product_id, listing_id }` | При добавлении в корзину | Frontend page `/market/cart` |
-| `marketplace_cart_viewed` | Просмотр корзины | `{ item_count }` | При открытии корзины | Frontend page `/market/cart` |
-| `marketplace_purchase_initiated` | Начата покупка | `{ product_id, listing_id, total_amount }` | При переходе к checkout | Frontend checkout (API планируется) |
-| `marketplace_purchase_completed` | Покупка завершена | `{ order_id, product_id, listing_id, total_amount }` | При успешной покупке | Планируется (API `/api/marketplace/*` отсутствует) |
-| `marketplace_service_inquiry_sent` | Отправлен запрос на услугу | `{ service_id, listing_id }` | При отправке запроса | Планируется (API `/api/marketplace/*` отсутствует) |
-| `marketplace_listing_created` | Создана публикация | `{ listing_id, project_id, listing_type }` | При публикации проекта | Планируется (API `/api/marketplace/*` отсутствует) |
-| `marketplace_listing_published` | Публикация опубликована | `{ listing_id }` | При публикации | Планируется (API `/api/marketplace/*` отсутствует) |
+| `pm_publish_started` | Создан черновик PM-публикации | `{ workspaceId, projectId, userId, actorUserId, authorEntityType, authorEntityId, publishedByUserId, listingId, source }` | При `POST /api/pm/projects/[id]/listings` | API |
+| `pm_listing_updated` | Обновлена PM-публикация | `{ workspaceId, projectId, userId, actorUserId, authorEntityType, authorEntityId, listingId, source }` | При `PATCH /api/pm/projects/[id]/listings` | API |
+| `pm_listing_deleted` | Удалена PM-публикация | `{ workspaceId, projectId, userId, actorUserId, authorEntityType, authorEntityId, listingId, source }` | При `DELETE /api/pm/projects/[id]/listings` | API |
+| `catalog_publication_created` | Создана author publication для шаблона или услуги | `{ userId, kind, publicationId, sourceTemplateId? }` | При `POST /api/marketplace/author-publications` | API |
+| `catalog_publication_updated` | Обновлена managed publication (`solution`/`template`/`service`) | `{ userId, kind, publicationId, state, authorEntityType?, authorEntityId? }` | При `PATCH /api/marketplace/author-publications/[kind]/[id]` | API |
+
+**Примечание:** Это lightweight implementation telemetry. Payload keys пока следуют текущим code-level contracts и ещё не нормализованы к канонической warehouse schema из этого документа.
+
+### Задокументировано, но пока не реализовано после C5
+
+| Событие | Описание | Payload | Когда | Где |
+|---------|----------|--------|-------|-----|
+| `marketplace_product_viewed` | Просмотр detail surface публикации/шаблона | `{ product_id, listing_id, referrer?, position? }` | Планируется для detail surfaces `/market/*` | Frontend |
+| `marketplace_product_added_to_cart` | Продукт добавлен в корзину | `{ product_id, listing_id }` | Планируется для template cart path | Frontend |
+| `marketplace_cart_viewed` | Просмотр корзины | `{ item_count }` | Планируется при открытии `/market/cart` | Frontend |
+| `marketplace_purchase_initiated` | Начата покупка | `{ product_id, listing_id, total_amount }` | Планируется вместе с real checkout | Frontend/API |
+| `marketplace_purchase_completed` | Покупка завершена | `{ order_id, product_id, listing_id, total_amount }` | Планируется вместе с access delivery | API |
+| `marketplace_service_inquiry_sent` | Отправлен inquiry/brief | `{ service_id, listing_id }` | Планируется для `Запросить адаптацию` | Frontend/API |
+| `marketplace_listing_created` | Создана публикация в unified marketplace namespace | `{ listing_id, project_id, listing_type }` | Пока не используется; publication layer сейчас логирует `pm_*` и `catalog_publication_*` события | API |
+| `marketplace_listing_published` | Публикация переведена в `published` | `{ listing_id }` | Планируется после выделения publish-state analytics | API |
+
+### Catalog C5 gaps
+
+- на 2026-03-09 в `/market`, `/p/:handle`, detail modals, favorites/cart/apply/inquiry/orders нет прямых frontend `trackEvent` вызовов;
+- discovery / author-page / favorites / cart / apply / inquiry / orders остаются отдельной analytics implementation wave;
+- storage / transport / enrichment pipeline для Catalog events пока не выделен отдельно.
 
 ## События Marketing
 
@@ -215,7 +236,7 @@ trackEvent('pm_task_created', {
 - [ ] Хранение событий (база данных, data warehouse)
 - [ ] Агрегация и отчеты
 - [ ] Real-time дашборды аналитики
-- [ ] Marketplace/Marketing события и API (модули планируются)
+- [ ] Каталог: discovery / author / apply / inquiry / orders telemetry, storage и schema normalization
 - [x] AI-агенты: базовые события реализованы (`ai_agent_invoked`, `ai_agent_run_created`)
 
 ---
