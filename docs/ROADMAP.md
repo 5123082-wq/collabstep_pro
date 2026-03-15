@@ -3,7 +3,7 @@
 **Статус:** активен  
 **Владелец:** product + engineering  
 **Создан:** 2026-01-06  
-**Последнее обновление:** 2026-03-09
+**Последнее обновление:** 2026-03-15
 
 > **Примечание:** Этот файл является каноническим источником истины для всех долгосрочных планов.  
 > См. также: `docs/platform/changelog.md` (что реально вышло) и `docs/playbooks/release-process.md` (как релизимся)
@@ -123,6 +123,26 @@
 - Paywall modal для free users
 
 **Документация:** См. `docs/archive/continuity/2026-03-08-continuity-ledger-history.md` (запись за 2026-01-03)
+
+---
+
+#### PM People Picker и прямое добавление участников проекта
+
+**Статус:** ✅ Базовый slice завершён  
+**Завершено:** 2026-03-15
+
+**Реализовано:**
+- добавлен server-side people picker `/api/pm/projects/[id]/member-candidates` для поиска зарегистрированных пользователей платформы по имени, email и должности;
+- picker размечает состояние кандидата как `уже в проекте` / `в команде организации` / `только на платформе`;
+- добавлен `POST /api/pm/projects/[id]/members` для прямого добавления existing platform user в PM-проект без email-only обходного сценария;
+- PM modal управления участниками переведён с link-only flow на `поиск + direct add`, при этом invite-link оставлен как fallback;
+- назначение в задачу осталось project-scoped: в assignee picker попадают только участники проекта, но UI теперь явно подсказывает сначала добавить человека в команду проекта;
+- синхронизированы PM docs и analytics taxonomy под новый people-picker contract.
+
+**Follow-up вне этого slice:**
+- отдельная user directory / картотека пользователей вне project modal;
+- org-first invite-and-add flow из PM modal, если нужен более жёсткий organization-gate до project access;
+- расширение telemetry и notification policy при необходимости.
 
 ---
 
@@ -401,19 +421,57 @@
 
 ### Текущие планы
 
-*Планы будут добавлены по мере необходимости*
+#### Единый кабинет пользователя, карточка исполнителя и картотека людей
+
+**Статус:** 🔄 в работе  
+**Приоритет:** P0/P1  
+**Начало:** 2026-03-15
+
+**Этапы:**
+- ✅ P0: product/doc contract для performers, people directory и user cabinet (2026-03-15)
+- ⏳ P1: единый кабинет пользователя и performer card как каноническая surface
+- ⏳ P2: картотека людей и карточка контакта с relation-layer организации
+- ⏳ P3: contact workflow `общение -> preview -> approval -> membership`
+- ⏳ P4: нормализация project-invite approval под текущую PM role model и финальная стыковка с assignee contract
+
+**Контекст:**
+- текущая реализация разнесена между `/settings/profile`, `/settings/performer`, `/profile/*` и модалками;
+- публичная performer card уже существует на `/p/:handle`, но создание и кабинет разрознены;
+- PM people picker уже закрывает direct add зарегистрированного пользователя, но не решает discovery/contact-first flow для внешнего кандидата;
+- для preview/access flow нужно максимально переиспользовать существующие `organization_invite`, `project_invite`, invite threads и статусы `previewing` / `pending_owner_approval` / `approved`, а не вводить параллельную state machine.
+
+**Документация:**
+- `docs/modules/performers/performers-overview.md`
+- `docs/modules/performers/performers-specialists.md`
+- `docs/modules/performers/performers-responses.md`
+- `docs/modules/performers/performers-profile-cabinet.md`
+- `docs/modules/performers/performers-implementation-plan.md`
 
 ---
 
 ### Завершенные этапы
 
-*Завершенные этапы будут добавлены по мере реализации*
+#### Product/docs contract по performers people flow
+
+**Статус:** ✅ Завершён  
+**Завершено:** 2026-03-15
+
+**Реализовано:**
+- зафиксирован канонический lifecycle `аккаунт -> кабинет -> карточка исполнителя -> контакт -> preview -> approval -> project membership`;
+- описано текущее устройство профиля пользователя и performer profile, включая реальные routes `/settings/profile`, `/settings/performer`, `/onboarding/create-profile`, `/p/:handle` и legacy-заглушки `/profile/*`;
+- описан механизм поиска людей как связка публичного performers catalog, приватной картотеки контактов и PM people picker;
+- зафиксировано, что внешний кандидат не должен напрямую bypass-ить contact/preview/approval flow, а назначение в задачи остаётся project-scoped;
+- создан отдельный implementation plan по фазам P0-P4.
 
 ---
 
 ### Будущие улучшения
 
-*Идеи будут добавлены по мере возникновения*
+| Идея | Модуль | Приоритет | Дата | Контекст | Статус |
+|------|--------|-----------|------|----------|--------|
+| Автогенерация и проверка handle в кабинете исполнителя | Performers | P2 | 2026-03-15 | User cabinet / performer card | ⏳ |
+| Приватные заметки и shortlist по контактам организации | Performers | P2 | 2026-03-15 | People directory | ⏳ |
+| Owner/admin inbox для кандидатов в `pending_owner_approval` | Performers | P2 | 2026-03-15 | Preview -> approval flow | ⏳ |
 
 ---
 

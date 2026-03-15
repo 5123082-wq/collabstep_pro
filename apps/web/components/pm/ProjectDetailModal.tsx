@@ -523,7 +523,11 @@ export default function ProjectDetailModal({ projectId, isOpen, onClose }: Proje
                   />
 
                   <div className="grid gap-6 lg:grid-cols-2">
-                    <ProjectTeam project={project} currentUserId={currentUserId} />
+                    <ProjectTeam
+                      project={project}
+                      currentUserId={currentUserId}
+                      onManageMembers={() => setShowInviteModal(true)}
+                    />
                     <ProjectLinks project={project} />
                   </div>
 

@@ -1,6 +1,6 @@
 # Индекс документации Collabverse
 
-> **Последнее обновление:** 2026-03-09  
+> **Последнее обновление:** 2026-03-15  
 > **Версия:** 2.0  
 > **Статус реорганизации:** ✅ Завершена
 
@@ -81,7 +81,7 @@
 - [Вакансии и задачи](modules/performers/performers-vacancies.md)
 - [Мои вакансии](modules/performers/performers-my-vacancies.md)
 - [Отклики и приглашения](modules/performers/performers-responses.md)
-- Дополнительно: [Обзор](modules/performers/performers-overview.md)
+- Дополнительно: [Обзор](modules/performers/performers-overview.md), [Кабинет и карточка исполнителя](modules/performers/performers-profile-cabinet.md), [План реализации](modules/performers/performers-implementation-plan.md)
 
 ### Маркетинг
 
@@ -233,6 +233,8 @@
 
 - **[Обзор раздела](modules/performers/performers-overview.md)** — основной документ модуля
 - **[Специалисты](modules/performers/performers-specialists.md)** — каталог специалистов
+- **[Кабинет и карточка исполнителя](modules/performers/performers-profile-cabinet.md)** — канонический кабинет пользователя и создание performer card
+- **[План реализации](modules/performers/performers-implementation-plan.md)** — phases P0-P4 для people directory и approval flow
 - **[Команды](modules/performers/performers-teams.md)** — команды
 - **[Подрядчики](modules/performers/performers-contractors.md)** — подрядчики
 - **[Вакансии и задачи](modules/performers/performers-vacancies.md)** — каталог вакансий

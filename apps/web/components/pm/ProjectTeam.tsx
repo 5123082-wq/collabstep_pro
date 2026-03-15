@@ -11,6 +11,7 @@ import { isAdminUserId } from '@/lib/utils/admin';
 type ProjectTeamProps = {
   project: Project;
   currentUserId: string;
+  onManageMembers?: () => void;
 };
 
 type InviteLink = {
@@ -31,7 +32,7 @@ const ROLE_LABELS: Record<ProjectMember['role'], string> = {
   GUEST: 'Гость'
 };
 
-export default function ProjectTeam({ project, currentUserId }: ProjectTeamProps) {
+export default function ProjectTeam({ project, currentUserId, onManageMembers }: ProjectTeamProps) {
   const [inviteLink, setInviteLink] = useState<InviteLink | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -59,7 +60,7 @@ export default function ProjectTeam({ project, currentUserId }: ProjectTeamProps
       }
 
       const data = await response.json();
-      setInviteLink(data.inviteLink);
+      setInviteLink(data.data?.inviteLink ?? data.inviteLink ?? null);
 
       trackEvent('pm_invite_link_created', {
         workspaceId: 'current',
@@ -104,14 +105,25 @@ export default function ProjectTeam({ project, currentUserId }: ProjectTeamProps
         as="h3"
         actions={
           canManageTeam ? (
-            <button
-              type="button"
-              onClick={handleCreateInviteLink}
-              disabled={loading}
-              className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-4 py-2 text-sm font-medium text-white transition hover:border-indigo-500/40 hover:bg-indigo-500/10 disabled:opacity-50"
-            >
-              {loading ? 'Создание...' : 'Создать инвайт-ссылку'}
-            </button>
+            <div className="flex flex-wrap gap-2">
+              {onManageMembers ? (
+                <button
+                  type="button"
+                  onClick={onManageMembers}
+                  className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-4 py-2 text-sm font-medium text-white transition hover:border-indigo-500/40 hover:bg-indigo-500/10"
+                >
+                  Добавить участника
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={handleCreateInviteLink}
+                disabled={loading}
+                className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-4 py-2 text-sm font-medium text-white transition hover:border-indigo-500/40 hover:bg-indigo-500/10 disabled:opacity-50"
+              >
+                {loading ? 'Создание...' : 'Инвайт-ссылка'}
+              </button>
+            </div>
           ) : undefined
         }
       >
@@ -206,4 +218,3 @@ export default function ProjectTeam({ project, currentUserId }: ProjectTeamProps
     </ContentBlock>
   );
 }
-

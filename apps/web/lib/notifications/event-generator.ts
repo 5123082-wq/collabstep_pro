@@ -190,7 +190,7 @@ export async function notifyProjectInvite(
   const project = await projectsRepository.findById(projectId);
   if (!project) return;
 
-  notificationsRepository.create({
+  const notification = notificationsRepository.create({
     userId,
     type: 'project_invite',
     title: `Приглашение в проект: ${project.title}`,
@@ -198,6 +198,33 @@ export async function notifyProjectInvite(
     projectId,
     status: 'unread'
   });
+
+  await broadcastToUser(userId, 'notification.new', {
+    notification,
+    projectId
+  }, projectId);
+}
+
+export async function notifyProjectAccessGranted(
+  projectId: string,
+  userId: string
+): Promise<void> {
+  const project = await projectsRepository.findById(projectId);
+  if (!project) return;
+
+  const notification = notificationsRepository.create({
+    userId,
+    type: 'project_invite',
+    title: `Вас добавили в проект: ${project.title}`,
+    message: `Теперь у вас есть доступ к проекту "${project.title}"`,
+    projectId,
+    status: 'unread'
+  });
+
+  await broadcastToUser(userId, 'notification.new', {
+    notification,
+    projectId
+  }, projectId);
 }
 
 /**
@@ -249,4 +276,3 @@ export async function notifyChatMessageAdded(
     }, projectId);
   });
 }
-
