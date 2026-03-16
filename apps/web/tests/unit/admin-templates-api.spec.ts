@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { templatesRepository, memory, TEST_ADMIN_USER_ID, resetFinanceMemory } from '@collabverse/api';
+import { memory, TEST_ADMIN_USER_ID, resetFinanceMemory } from '@collabverse/api';
 import { GET, POST } from '@/app/api/admin/templates/route';
 import { db } from '@collabverse/api/db/config';
 import { users } from '@collabverse/api/db/schema';
