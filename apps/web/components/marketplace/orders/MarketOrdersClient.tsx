@@ -29,14 +29,6 @@ function getSourceLabel(kind: CatalogSourceKind): string {
 export default function MarketOrdersClient() {
   const inquiries = useMarketplaceStore((state) => state.inquiries);
 
-  if (!MARKETPLACE_PERSONAL_STATE_ENABLED) {
-    return (
-      <ContentBlock variant="dashed" size="sm" className="p-10 text-sm text-neutral-400">
-        Inquiry-flow временно отключён, пока marketplace requests не будут переведены на DB-backed runtime.
-      </ContentBlock>
-    );
-  }
-
   const sortedInquiries = useMemo(
     () =>
       [...inquiries].sort((left, right) => {
@@ -44,6 +36,14 @@ export default function MarketOrdersClient() {
       }),
     [inquiries]
   );
+
+  if (!MARKETPLACE_PERSONAL_STATE_ENABLED) {
+    return (
+      <ContentBlock variant="dashed" size="sm" className="p-10 text-sm text-neutral-400">
+        Inquiry-flow временно отключён, пока marketplace requests не будут переведены на DB-backed runtime.
+      </ContentBlock>
+    );
+  }
 
   return (
     <div className="space-y-6">

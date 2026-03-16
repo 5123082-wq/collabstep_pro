@@ -18,6 +18,13 @@ export default function CartView({ templates }: CartViewProps) {
   const clearCart = useMarketplaceStore((state) => state.clearCart);
   const [promo, setPromo] = useState('');
 
+  const items = useMemo(() => enrichCartItems(cart, templates), [cart, templates]);
+  const subtotal = items.reduce(
+    (acc, item) => (item.template.pricingType === 'paid' ? acc + item.template.price * item.quantity : acc),
+    0
+  );
+  const totalLabel = formatTemplatePrice(subtotal);
+
   if (!MARKETPLACE_PERSONAL_STATE_ENABLED) {
     return (
       <ContentBlock variant="dashed" size="sm" className="flex flex-col items-center justify-center gap-4 p-16 text-center">
@@ -28,13 +35,6 @@ export default function CartView({ templates }: CartViewProps) {
       </ContentBlock>
     );
   }
-
-  const items = useMemo(() => enrichCartItems(cart, templates), [cart, templates]);
-  const subtotal = items.reduce(
-    (acc, item) => (item.template.pricingType === 'paid' ? acc + item.template.price * item.quantity : acc),
-    0
-  );
-  const totalLabel = formatTemplatePrice(subtotal);
 
   if (items.length === 0) {
     return (

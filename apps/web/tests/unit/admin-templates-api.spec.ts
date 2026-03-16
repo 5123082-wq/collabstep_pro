@@ -64,7 +64,6 @@ describe('Admin Templates API', () => {
         method: 'GET'
       });
       const response = await GET(request);
-      const data = await response.json();
 
       expect(response.status).toBe(401);
     });
@@ -81,7 +80,6 @@ describe('Admin Templates API', () => {
         headers: { cookie: `cv_session=${userSession}` }
       });
       const response = await GET(request);
-      const data = await response.json();
 
       expect(response.status).toBe(403);
     });
