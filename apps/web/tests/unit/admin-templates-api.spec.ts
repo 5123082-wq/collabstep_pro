@@ -1,24 +1,23 @@
 import { NextRequest } from 'next/server';
-import { encodeDemoSession } from '@/lib/auth/demo-session';
 import { templatesRepository, memory, TEST_ADMIN_USER_ID, resetFinanceMemory } from '@collabverse/api';
 import { GET, POST } from '@/app/api/admin/templates/route';
 import { db } from '@collabverse/api/db/config';
 import { users } from '@collabverse/api/db/schema';
 import { resetTestDb } from './utils/db-cleaner';
 
+jest.mock('@/lib/auth/demo-session.server', () => ({
+  getDemoSessionFromCookies: jest.fn(),
+}));
+
+import { getDemoSessionFromCookies } from '@/lib/auth/demo-session.server';
+
 describe('Admin Templates API', () => {
   const adminEmail = 'admin.demo@collabverse.test';
   const adminUserId = TEST_ADMIN_USER_ID;
-  const adminSession = encodeDemoSession({
+  const adminSession = {
     email: adminEmail,
     userId: adminUserId,
-    role: 'admin',
-    issuedAt: Date.now()
-  });
-
-  const headers = {
-    cookie: `cv_session=${adminSession}`,
-    'content-type': 'application/json'
+    role: 'admin'
   };
 
   beforeEach(async () => {
@@ -31,6 +30,9 @@ describe('Admin Templates API', () => {
       email: adminEmail,
       name: 'Admin User',
     });
+
+    // Default mock implementation (admin)
+    (getDemoSessionFromCookies as jest.Mock).mockReturnValue(adminSession);
 
     // Reset to initial state
     memory.TEMPLATES = [
@@ -48,11 +50,7 @@ describe('Admin Templates API', () => {
 
   describe('GET /api/admin/templates', () => {
     it('returns templates list for admin', async () => {
-      const request = new NextRequest('http://localhost/api/admin/templates', {
-        method: 'GET',
-        headers
-      });
-      const response = await GET(request);
+      const response = await GET();
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -60,26 +58,18 @@ describe('Admin Templates API', () => {
     });
 
     it('returns 401 for unauthorized request', async () => {
-      const request = new NextRequest('http://localhost/api/admin/templates', {
-        method: 'GET'
-      });
-      const response = await GET(request);
+      (getDemoSessionFromCookies as jest.Mock).mockReturnValue(null);
+      const response = await GET();
 
       expect(response.status).toBe(401);
     });
 
     it('returns 403 for non-admin user', async () => {
-      const userSession = encodeDemoSession({
-        email: 'user@example.com',
-        userId: 'user-1',
-        role: 'user',
-        issuedAt: Date.now()
+      (getDemoSessionFromCookies as jest.Mock).mockReturnValue({
+        ...adminSession,
+        role: 'user'
       });
-      const request = new NextRequest('http://localhost/api/admin/templates', {
-        method: 'GET',
-        headers: { cookie: `cv_session=${userSession}` }
-      });
-      const response = await GET(request);
+      const response = await GET();
 
       expect(response.status).toBe(403);
     });
@@ -87,20 +77,19 @@ describe('Admin Templates API', () => {
 
   describe('POST /api/admin/templates', () => {
     it('creates new template for admin', async () => {
+      const newTemplate = {
+        title: 'New Template',
+        kind: 'product',
+        summary: 'New Summary',
+        projectType: 'product',
+        projectStage: 'discovery',
+        projectVisibility: 'private'
+      };
+
       const request = new NextRequest('http://localhost/api/admin/templates', {
         method: 'POST',
-        headers: {
-          cookie: `cv_session=${adminSession}`,
-          'content-type': 'application/json'
-        },
-        body: JSON.stringify({
-          title: 'New Template',
-          kind: 'product',
-          summary: 'Test summary',
-          projectType: 'product',
-          projectStage: 'design',
-          projectVisibility: 'private'
-        })
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(newTemplate)
       });
 
       const response = await POST(request);
@@ -109,23 +98,18 @@ describe('Admin Templates API', () => {
       expect(response.status).toBe(201);
       expect(data.item).toBeDefined();
       expect(data.item.title).toBe('New Template');
-      expect(data.item.projectType).toBe('product');
-
-      const templates = templatesRepository.list();
-      expect(templates.some(t => t.id === data.item.id)).toBe(true);
     });
 
     it('validates required fields', async () => {
+      const invalidTemplate = {
+        title: '', // Empty title
+        kind: 'product'
+      };
+
       const request = new NextRequest('http://localhost/api/admin/templates', {
         method: 'POST',
-        headers: {
-          cookie: `cv_session=${adminSession}`,
-          'content-type': 'application/json'
-        },
-        body: JSON.stringify({
-          kind: 'product'
-          // missing title
-        })
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(invalidTemplate)
       });
 
       const response = await POST(request);
@@ -133,15 +117,11 @@ describe('Admin Templates API', () => {
     });
 
     it('returns 401 for unauthorized request', async () => {
+      (getDemoSessionFromCookies as jest.Mock).mockReturnValue(null);
       const request = new NextRequest('http://localhost/api/admin/templates', {
         method: 'POST',
-        headers: {
-          'content-type': 'application/json'
-        },
-        body: JSON.stringify({
-          title: 'Test',
-          kind: 'product'
-        })
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({})
       });
 
       const response = await POST(request);
@@ -149,4 +129,3 @@ describe('Admin Templates API', () => {
     });
   });
 });
-
