@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { ContentBlock } from '@/components/ui/content-block';
-import { useMarketplaceStore } from '@/lib/marketplace/store';
+import { MARKETPLACE_PERSONAL_STATE_ENABLED, useMarketplaceStore } from '@/lib/marketplace/store';
 import type { CatalogSourceKind } from '@/lib/marketplace/types';
 
 function getSourceHref(kind: CatalogSourceKind, sourceId: string): string {
@@ -28,6 +28,14 @@ function getSourceLabel(kind: CatalogSourceKind): string {
 
 export default function MarketOrdersClient() {
   const inquiries = useMarketplaceStore((state) => state.inquiries);
+
+  if (!MARKETPLACE_PERSONAL_STATE_ENABLED) {
+    return (
+      <ContentBlock variant="dashed" size="sm" className="p-10 text-sm text-neutral-400">
+        Inquiry-flow временно отключён, пока marketplace requests не будут переведены на DB-backed runtime.
+      </ContentBlock>
+    );
+  }
 
   const sortedInquiries = useMemo(
     () =>

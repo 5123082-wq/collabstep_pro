@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Получение проекта
-    const project = projectsRepository.findById(projectId);
+    const project = await projectsRepository.findById(projectId);
 
     if (!project) {
       return jsonError('NOT_FOUND', {
@@ -123,4 +123,3 @@ export async function POST(req: NextRequest) {
     });
   }
 }
-

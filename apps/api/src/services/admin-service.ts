@@ -14,9 +14,10 @@ import type {
   PlatformUserStatus,
   WorkspaceUser
 } from '../types';
+import { isEmergencyOrLegacyDemoAdminIdentity } from '../runtime/emergency-admin';
 
 // Factory logic - проверяем, используется ли DB хранилище
-const hasDbConnection = !!process.env.POSTGRES_URL;
+const hasDbConnection = !!process.env.POSTGRES_URL || !!process.env.DATABASE_URL;
 const isDbStorage = process.env.AUTH_STORAGE === 'db' && hasDbConnection;
 
 export interface AdminModuleTester {
@@ -71,6 +72,13 @@ export interface AdminUserView {
 }
 
 export class AdminService {
+  private shouldHideFromBusinessLists(userId: string, user?: WorkspaceUser): boolean {
+    return isEmergencyOrLegacyDemoAdminIdentity({
+      userId,
+      email: user?.email
+    });
+  }
+
   private async getWorkspaceUserMap(): Promise<Map<string, WorkspaceUser>> {
     // Используем usersRepository вместо memory, чтобы поддерживать как DB, так и memory хранилище
     const users = await usersRepository.list();
@@ -264,6 +272,9 @@ export class AdminService {
     const views: AdminUserView[] = [];
     for (const userId of userIds) {
       const user = usersMap.get(userId);
+      if (this.shouldHideFromBusinessLists(userId, user)) {
+        continue;
+      }
       const control = controlsMap.get(userId) ?? {
         userId,
         status: 'active' as PlatformUserStatus,
@@ -539,4 +550,3 @@ export class AdminService {
 }
 
 export const adminService = new AdminService();
-

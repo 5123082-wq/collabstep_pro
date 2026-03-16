@@ -14,6 +14,10 @@ interface RateLimitEntry {
   endpoint: string;
 }
 
+function isTestEnv(): boolean {
+  return process.env.NODE_ENV === 'test' || typeof process.env.JEST_WORKER_ID === 'string';
+}
+
 /**
  * Хранилище запросов (в памяти)
  * В продакшене следует использовать Redis или другую БД
@@ -202,6 +206,12 @@ export function getUserUsageStats(userId: string): {
 }
 
 // Периодическая очистка старых записей (каждые 10 минут)
-if (typeof setInterval !== 'undefined') {
-  setInterval(cleanupOldEntries, 10 * 60 * 1000);
+if (typeof setInterval !== 'undefined' && !isTestEnv()) {
+  const cleanupTimer = setInterval(cleanupOldEntries, 10 * 60 * 1000);
+  if (typeof cleanupTimer === 'object' && cleanupTimer !== null && 'unref' in cleanupTimer) {
+    const timerWithUnref = cleanupTimer as NodeJS.Timeout;
+    if (typeof timerWithUnref.unref === 'function') {
+      timerWithUnref.unref();
+    }
+  }
 }

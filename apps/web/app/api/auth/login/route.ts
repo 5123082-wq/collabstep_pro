@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { encodeDemoSession, getDemoAccount, isDemoAuthEnabled, type DemoRole } from '@/lib/auth/demo-session';
 import { withSessionCookie } from '@/lib/auth/session-cookie';
-import { ensureDemoAccountsInitialized } from '@/lib/auth/init-demo-accounts';
-import { usersRepository } from '@collabverse/api';
+import { buildEmergencyAdminUser, usersRepository } from '@collabverse/api';
 import { verifyPassword } from '@collabverse/api/utils/password';
 import { db } from '@collabverse/api/db/config';
 import { userControls } from '@collabverse/api/db/schema';
@@ -26,27 +25,12 @@ type DemoAccount = {
 };
 
 async function collectAccounts(): Promise<DemoAccount[]> {
-  // Проверяем, какие демо-аккаунты существуют в БД
-  const accounts: DemoAccount[] = [];
-  
-  try {
-    // Всегда проверяем администратора
-    const adminAccount = getDemoAccount('admin');
-    const adminUser = await usersRepository.findByEmail(adminAccount.email);
-    if (adminUser) {
-      accounts.push({
-        role: 'admin',
-        ...adminAccount
-      });
+  return [
+    {
+      role: 'admin',
+      ...getDemoAccount('admin')
     }
-  } catch (error) {
-    console.error('[Login] Error checking admin account:', error);
-    // Продолжаем выполнение, но не добавляем аккаунт
-  }
-  
-  // Роль 'user' больше не поддерживается - пользователь был удален
-  
-  return accounts;
+  ];
 }
 
 function resolveReturnPath(value: unknown): string {
@@ -88,17 +72,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'Dev authentication disabled' }, { status: 403 });
     }
 
-    // Инициализируем демо-аккаунты при первом использовании
-    try {
-      await ensureDemoAccountsInitialized();
-    } catch (error) {
-      console.error('[Login] Error in ensureDemoAccountsInitialized:', error);
-      return NextResponse.json(
-        { error: 'Внутренняя ошибка сервера при инициализации аккаунтов.' },
-        { status: 500 }
-      );
-    }
-
     const payload = await readPayload(request);
     const email = typeof payload.email === 'string' ? payload.email.trim() : '';
     const password = typeof payload.password === 'string' ? payload.password : '';
@@ -122,46 +95,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const demoAccount = findMatchingAccount(demoAccounts, email, password);
 
     if (demoAccount) {
-      // Получаем пользователя из БД для получения userId
-      let user;
-      try {
-        user = await usersRepository.findByEmail(demoAccount.email);
-      } catch (error) {
-        console.error('[Login] Error finding user by email:', error);
-        return NextResponse.json(
-          { error: 'Внутренняя ошибка сервера при поиске пользователя.' },
-          { status: 500 }
-        );
-      }
-      // Если пользователя нет в БД, не пропускаем вход (пользователь был удален)
-      if (!user) {
-        return NextResponse.json({ error: INVALID_MESSAGE }, { status: 401 });
-      }
-      
-      // Проверяем роли из базы данных (если используется БД)
-      let role: DemoRole = demoAccount.role;
-      if (isDbStorage) {
-        try {
-          const [control] = await db.select().from(userControls).where(eq(userControls.userId, user.id)).limit(1);
-          if (control && control.roles && Array.isArray(control.roles)) {
-            // Если у пользователя есть productAdmin или featureAdmin, он администратор
-            if (control.roles.includes('productAdmin') || control.roles.includes('featureAdmin')) {
-              role = 'admin';
-            } else {
-              // Если ролей нет, но это демо-админ по email, оставляем admin
-              role = demoAccount.role;
-            }
-          }
-        } catch (error) {
-          console.error('[Login] Error checking user controls for demo account:', error);
-          // В случае ошибки используем роль из демо-аккаунта
-        }
-      }
-      
-      const userId = user.id;
+      const emergencyAdmin = buildEmergencyAdminUser();
+      const role: DemoRole = 'admin';
       const sessionToken = encodeDemoSession({ 
         email: demoAccount.email, 
-        userId,
+        userId: emergencyAdmin.id,
         role, 
         issuedAt: Date.now() 
       });

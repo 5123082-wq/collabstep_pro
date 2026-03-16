@@ -30,5 +30,6 @@ module.exports = {
   extensionsToTreatAsEsm: [],
   // Load environment variables from .env.local before tests run
   setupFiles: ['<rootDir>/apps/web/tests/setup-env.js'],
-  setupFilesAfterEnv: [],
+  setupFilesAfterEnv: ['<rootDir>/apps/web/tests/setup-after-env.js'],
+  testTimeout: 60000,
 };

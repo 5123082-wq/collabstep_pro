@@ -60,8 +60,8 @@ function canImportIntoProject(project: Project, member: ProjectMember | null, us
   return member?.role === 'owner' || member?.role === 'admin' || member?.role === 'member';
 }
 
-function createImportedTasks(projectId: string, plan: NonNullable<ReturnType<typeof resolveCatalogReusePlan>>) {
-  const rootTask = tasksRepository.create({
+async function createImportedTasks(projectId: string, plan: NonNullable<ReturnType<typeof resolveCatalogReusePlan>>) {
+  const rootTask = await tasksRepository.create({
     projectId,
     title: plan.rootTaskTitle,
     description: plan.rootTaskDescription,
@@ -72,12 +72,12 @@ function createImportedTasks(projectId: string, plan: NonNullable<ReturnType<typ
 
   let createdCount = 1;
 
-  const createChildren = (
+  const createChildren = async (
     parentId: string,
     tasks: NonNullable<ReturnType<typeof resolveCatalogReusePlan>>['tasks']
-  ) => {
+  ): Promise<void> => {
     for (const task of tasks) {
-      const createdTask = tasksRepository.create({
+      const createdTask = await tasksRepository.create({
         projectId,
         parentId,
         title: task.title,
@@ -88,12 +88,12 @@ function createImportedTasks(projectId: string, plan: NonNullable<ReturnType<typ
       });
       createdCount += 1;
       if (task.children && task.children.length > 0) {
-        createChildren(createdTask.id, task.children);
+        await createChildren(createdTask.id, task.children);
       }
     }
   };
 
-  createChildren(rootTask.id, plan.tasks);
+  await createChildren(rootTask.id, plan.tasks);
 
   return {
     rootTaskId: rootTask.id,
@@ -137,7 +137,7 @@ export async function POST(request: Request) {
         return jsonError('PROJECT_ACCESS_DENIED', { status: 403 });
       }
 
-      const imported = createImportedTasks(project.id, plan);
+      const imported = await createImportedTasks(project.id, plan);
       return jsonOk({
         project: {
           id: project.id,
@@ -167,7 +167,7 @@ export async function POST(request: Request) {
     const title = parsed.data.projectTitle?.trim() || plan.recommendedProjectTitle;
     const description = parsed.data.projectDescription?.trim() || plan.recommendedProjectDescription;
 
-    const project = projectsRepository.create({
+    const project = await projectsRepository.create({
       title,
       ...(description ? { description } : {}),
       ownerId: auth.userId,
@@ -179,10 +179,10 @@ export async function POST(request: Request) {
 
     try {
       for (const projectMember of targetPmContext.projectMembers) {
-        projectsRepository.upsertMember(project.id, projectMember.userId, projectMember.role);
+        await projectsRepository.upsertMember(project.id, projectMember.userId, projectMember.role);
       }
 
-      const imported = createImportedTasks(project.id, plan);
+      const imported = await createImportedTasks(project.id, plan);
       await upsertOrganizationProject({
         projectId: project.id,
         organizationId: parsed.data.organizationId,
@@ -203,7 +203,7 @@ export async function POST(request: Request) {
         ...imported
       });
     } catch (error) {
-      projectsRepository.delete(project.id);
+      await projectsRepository.delete(project.id);
       if (await db.select({ id: projects.id }).from(projects).where(eq(projects.id, project.id)).limit(1).then((rows) => rows.length > 0)) {
         await db.delete(projects).where(eq(projects.id, project.id));
       }

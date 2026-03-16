@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { getCurrentUser } from '@/lib/auth/session';
-import { dbProjectsRepository, organizationsRepository, invitationsRepository, inviteThreadsRepository } from '@collabverse/api';
+import { dbProjectsRepository, organizationsRepository, invitationsRepository } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { sendOrganizationInviteEmail } from '@/lib/email/mailer';
 import { nanoid } from 'nanoid';
@@ -107,15 +107,6 @@ export async function POST(
                 role: roleResult?.ok ? roleResult.role : undefined,
             });
 
-            const thread = inviteThreadsRepository.ensureThreadForInvite({
-                orgInviteId: invite.id,
-                organizationId: orgId,
-                createdByUserId: userId,
-                ...(invite.inviteeUserId ? { inviteeUserId: invite.inviteeUserId } : {}),
-                ...(invite.inviteeEmail ? { inviteeEmail: invite.inviteeEmail } : {}),
-                ...(previewProjectIds && previewProjectIds.length ? { previewProjectIds } : {}),
-            });
-
             // Stage 7: create preview project invites (iterative, DB-backed).
             // We can create preview invites either for known userId (registered) OR by email (pre-registration).
             if (previewProjectIds && previewProjectIds.length && (invite.inviteeUserId || invite.inviteeEmail)) {
@@ -166,7 +157,7 @@ export async function POST(
                 });
             }
 
-            return jsonOk({ invite, threadId: thread.id });
+            return jsonOk({ invite, threadId: null });
 
         } else if (source === 'link') {
             const invite = await invitationsRepository.createOrganizationInvite({
@@ -178,13 +169,7 @@ export async function POST(
                 role: roleResult?.ok ? roleResult.role : undefined,
             });
 
-            const thread = inviteThreadsRepository.ensureThreadForInvite({
-                orgInviteId: invite.id,
-                organizationId: orgId,
-                createdByUserId: userId,
-            });
-
-            return jsonOk({ invite, threadId: thread.id, link: `/invite/org/${invite.token}` }); // client constructs full URL
+            return jsonOk({ invite, threadId: null, link: `/invite/org/${invite.token}` }); // client constructs full URL
         }
 
         return jsonError('INVALID_REQUEST', { status: 400, details: 'Invalid source' });

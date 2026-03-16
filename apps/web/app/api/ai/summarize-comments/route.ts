@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Получение задачи
-    const task = tasksRepository.findById(taskId);
+    const task = await tasksRepository.findById(taskId);
     if (!task) {
       return jsonError('NOT_FOUND', {
         status: 404

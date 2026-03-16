@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { encodeDemoSession, getDemoAccount, isDemoAuthEnabled, parseDemoRole, type DemoRole } from '@/lib/auth/demo-session';
 import { withSessionCookie } from '@/lib/auth/session-cookie';
-import { usersRepository } from '@collabverse/api';
-import { ensureDemoAccountsInitialized } from '@/lib/auth/init-demo-accounts';
+import { buildEmergencyAdminUser } from '@collabverse/api';
 
 type DemoLoginResponse = NextResponse<unknown>;
 
@@ -56,34 +55,6 @@ export async function POST(request: NextRequest): Promise<DemoLoginResponse> {
     const account = getDemoAccount(role);
 
     try {
-      // Инициализируем демо-аккаунты (создаем админа если его нет)
-      await ensureDemoAccountsInitialized();
-    } catch (error) {
-      console.error('[Login Demo] Error in ensureDemoAccountsInitialized:', error);
-      throw error;
-    }
-
-    try {
-      // Получаем userId из репозитория пользователей
-      let user;
-      try {
-        user = await usersRepository.findByEmail(account.email);
-      } catch (error) {
-        console.error('[Login Demo] Error finding user by email:', error);
-        return NextResponse.json(
-          { error: 'Внутренняя ошибка сервера при поиске пользователя.' },
-          { status: 500 }
-        );
-      }
-
-      // Если пользователя нет в БД, блокируем вход (пользователь был удален)
-      if (!user) {
-        return NextResponse.json(
-          { error: 'Демо-аккаунт недоступен. Пользователь был удален.' },
-          { status: 403 }
-        );
-      }
-
       // Блокируем удаленные демо-аккаунты
       const blockedEmails = ['user.demo@collabverse.test'];
       if (blockedEmails.includes(account.email.toLowerCase())) {
@@ -93,9 +64,14 @@ export async function POST(request: NextRequest): Promise<DemoLoginResponse> {
         );
       }
 
-      const userId = user.id;
+      const emergencyAdmin = buildEmergencyAdminUser();
 
-      const sessionToken = encodeDemoSession({ email: account.email, userId, role, issuedAt: Date.now() });
+      const sessionToken = encodeDemoSession({
+        email: account.email,
+        userId: emergencyAdmin.id,
+        role,
+        issuedAt: Date.now()
+      });
       const response = NextResponse.redirect(new URL('/app/dashboard', request.url), { status: 303 });
       return withSessionCookie(response, sessionToken);
     } catch (error) {

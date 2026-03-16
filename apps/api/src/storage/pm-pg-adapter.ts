@@ -1,10 +1,10 @@
-import { sql as vercelSql } from '@vercel/postgres';
 import postgres from 'postgres';
 import type { Project, ProjectChatMessage, ProjectMember, Task, TaskComment } from '../types';
 import { memory } from '../data/memory';
+import { vercelSql } from '../db/vercel-sql';
 
 const LOG_PREFIX = '[pm-pg]';
-const postgresUrl = process.env.POSTGRES_URL;
+const postgresUrl = process.env.POSTGRES_URL ?? process.env.DATABASE_URL;
 const isLocalPgUrl =
   !!postgresUrl &&
   (() => {
@@ -16,9 +16,10 @@ const isLocalPgUrl =
     }
   })();
 const shouldUseLocalPg = process.env.USE_LOCAL_PG === 'true' || isLocalPgUrl;
-const sqlClient = shouldUseLocalPg && postgresUrl
+const localPgClient = shouldUseLocalPg && postgresUrl
   ? postgres(postgresUrl, { ssl: 'prefer' })
-  : vercelSql;
+  : null;
+const sqlClient = localPgClient ?? vercelSql;
 
 function hasQuery(
   client: typeof vercelSql | ReturnType<typeof postgres>
@@ -52,6 +53,10 @@ const TABLE_PROJECT_CHAT_MESSAGES = 'pm_project_chat_messages';
 const tablesReady: { ensured: boolean } = { ensured: false };
 let hydrated = false;
 
+function shouldLogPmPgBootstrap(): boolean {
+  return process.env.NODE_ENV !== 'test' && typeof process.env.JEST_WORKER_ID !== 'string';
+}
+
 const ALLOWED_PROJECT_STATUSES: Project['status'][] = ['active', 'on_hold', 'completed', 'archived'];
 
 function normalizeProjectStatus(rawStatus: unknown): Project['status'] {
@@ -66,7 +71,7 @@ function normalizeProjectVisibility(rawVisibility: unknown): Project['visibility
 }
 
 export function isPmDbEnabled(): boolean {
-  return process.env.USE_DB_STORAGE !== 'false' && Boolean(process.env.DATABASE_URL);
+  return process.env.USE_DB_STORAGE !== 'false' && Boolean(postgresUrl);
 }
 
 export async function ensurePmTables(): Promise<void> {
@@ -182,7 +187,9 @@ export async function ensurePmTables(): Promise<void> {
   `);
 
   tablesReady.ensured = true;
-  console.log(`${LOG_PREFIX} ensured tables`);
+  if (shouldLogPmPgBootstrap()) {
+    console.log(`${LOG_PREFIX} ensured tables`);
+  }
 }
 
 function mapProjectRow(row: Record<string, unknown>): Project {
@@ -338,9 +345,11 @@ export async function hydrateMemoryFromPg(): Promise<void> {
   memory.PROJECT_CHAT_MESSAGES = chatRows.rows.map(mapChatMessageRow);
 
   hydrated = true;
-  console.log(
-    `${LOG_PREFIX} hydrated memory from Postgres (projects=${memory.PROJECTS.length}, tasks=${memory.TASKS.length}, comments=${memory.TASK_COMMENTS.length}, chatMessages=${memory.PROJECT_CHAT_MESSAGES.length})`
-  );
+  if (shouldLogPmPgBootstrap()) {
+    console.log(
+      `${LOG_PREFIX} hydrated memory from Postgres (projects=${memory.PROJECTS.length}, tasks=${memory.TASKS.length}, comments=${memory.TASK_COMMENTS.length}, chatMessages=${memory.PROJECT_CHAT_MESSAGES.length})`
+    );
+  }
 }
 
 export async function persistProjectToPg(project: Project): Promise<void> {

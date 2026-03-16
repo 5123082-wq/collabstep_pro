@@ -35,7 +35,7 @@ Collabverse (ранее Collabstep) — это мультимодульная п
 API реализовано через Next.js route handlers в `app/api`:
 - Аутентификация через cookie `cv_session` (dev-режим)
 - Репозитории в `apps/api/src/repositories/` для работы с данными
-- Поддержка in-memory хранилища (dev) и PostgreSQL (production)
+- Runtime business data читаются из PostgreSQL; локальные memory/mock/demo sources допускаются только в test/dev helpers и изолированном emergency auth path
 - WebSocket сервер для real-time обновлений
 
 ### База данных
@@ -53,7 +53,7 @@ API реализовано через Next.js route handlers в `app/api`:
 
 **Документация:** [`../modules/projects-tasks/projects-tasks-overview.md`](../modules/projects-tasks/projects-tasks-overview.md)
 
-**Статус реализации:** ✅ ядро (проекты/задачи/файлы/чат/kanban/gantt), ⚠️ дашборд частично
+**Статус реализации:** ✅ ядро (проекты/задачи/файлы/чат/kanban/gantt) и DB-only runtime contract, ⚠️ дашборд частично
 
 **Ключевые функции:**
 - Рабочие пространства (workspaces) и проекты
@@ -92,7 +92,7 @@ API реализовано через Next.js route handlers в `app/api`:
 
 **Документация:** [`../modules/marketplace/marketplace-overview.md`](../modules/marketplace/marketplace-overview.md)
 
-**Статус реализации:** ⚠️ частично (C1-C5 reorg sync закрыт: discovery feed, author-page, publish/apply/inquiry flows и docs/permissions/analytics audit зафиксированы; full real-publications feed, protected delivery и dashboard metrics остаются future scope)
+**Статус реализации:** ⚠️ частично (C1-C5 reorg sync закрыт: discovery feed, author-page, publish/apply/inquiry flows и docs/permissions/analytics audit зафиксированы; local author-publication/cart/favorites/inquiries runtime overlays отключены до DB-backed реализации, full real-publications feed, protected delivery и dashboard metrics остаются future scope)
 
 **Ключевые функции:**
 - Лента и discovery-layer решений
@@ -181,6 +181,8 @@ API реализовано через Next.js route handlers в `app/api`:
 
 **Документация:** [`../modules/performers/performers-overview.md`](../modules/performers/performers-overview.md)
 
+**Ключевой handoff:** [`../modules/performers/performers-agent-handoff.md`](../modules/performers/performers-agent-handoff.md)
+
 **Статус реализации:** ⚠️ частично (каталог специалистов, публичные карточки, performer profile и invite/preview primitives уже есть; единый кабинет, картотека людей и full approval flow — в разработке)
 
 ## Взаимодействия между разделами
@@ -250,12 +252,14 @@ API реализовано через Next.js route handlers в `app/api`:
 
 ## Демо-аккаунты
 
-Для быстрого тестирования доступны демо-аккаунты:
+Для аварийного входа доступен изолированный emergency admin:
 
 - **Администратор:**
   - Email: `admin.demo@collabverse.test`
   - Пароль: значение из `DEMO_ADMIN_PASSWORD`
   - Роли: `productAdmin`, `featureAdmin`
+  - Используется только как emergency auth fallback, если есть проблемы с БД
+  - Не должен попадать в обычные business reads: списки пользователей, проектов, задач, участников и другие runtime-сущности
 
 Подробнее см. [`./getting-started.md`](./getting-started.md#демо-аккаунт)
 

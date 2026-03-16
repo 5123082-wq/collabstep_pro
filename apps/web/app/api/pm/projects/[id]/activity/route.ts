@@ -1,5 +1,5 @@
 import { getAuthFromRequestWithSession } from "@/lib/api/finance-access";
-import { memory, projectsRepository, tasksRepository } from '@collabverse/api';
+import { commentsRepository, projectsRepository, tasksRepository } from '@collabverse/api';
  // removed unused from '@/lib/api/finance-access';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { flags } from '@/lib/flags';
@@ -83,13 +83,14 @@ export async function GET(
   }
 
   // Комментарии по задачам за период (без построения дерева комментариев)
-  const taskIdsSet = new Set(projectTasks.map((t) => t.id));
-  const recentComments = memory.TASK_COMMENTS.filter((comment) => {
-    if (!taskIdsSet.has(comment.taskId)) return false;
-    if (comment.projectId !== projectId) return false;
-    const createdAtTs = Date.parse(comment.createdAt);
-    return !Number.isNaN(createdAtTs) && createdAtTs >= cutoff;
-  });
+  const recentComments = (
+    await Promise.all(projectTasks.map((task) => commentsRepository.listFlatByTask(projectId, task.id)))
+  )
+    .flat()
+    .filter((comment) => {
+      const createdAtTs = Date.parse(comment.createdAt);
+      return !Number.isNaN(createdAtTs) && createdAtTs >= cutoff;
+    });
 
   for (const comment of recentComments) {
     const task = taskLookup.get(comment.taskId);

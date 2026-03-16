@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDemoAccount } from '@/lib/auth/demo-session';
-import { ensureDemoAccountsInitialized } from '@/lib/auth/init-demo-accounts';
 import { invitationsRepository, organizationsRepository, usersRepository } from '@collabverse/api';
 import { hashPassword, verifyPassword } from '@collabverse/api/utils/password';
 import { trackEvent } from '@/lib/telemetry';
@@ -21,9 +20,6 @@ function isValidEmail(value: string): boolean {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  // Инициализируем демо-аккаунты при первом использовании
-  await ensureDemoAccountsInitialized();
-
   let payload: Record<string, unknown> = {};
   try {
     payload = (await request.json()) as Record<string, unknown>;

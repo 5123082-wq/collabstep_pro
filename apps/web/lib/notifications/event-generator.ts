@@ -15,7 +15,7 @@ export async function notifyTaskAssigned(
   assigneeId: string,
   projectId: string
 ): Promise<void> {
-  const task = tasksRepository.findById(taskId);
+  const task = await tasksRepository.findById(taskId);
   if (!task) return;
 
   const project = await projectsRepository.findById(projectId);
@@ -47,7 +47,7 @@ export async function notifyTaskUpdated(
   projectId: string,
   updatedBy: string
 ): Promise<void> {
-  const task = tasksRepository.findById(taskId);
+  const task = await tasksRepository.findById(taskId);
   if (!task) return;
 
   const project = await projectsRepository.findById(projectId);
@@ -106,7 +106,7 @@ export async function notifyCommentAdded(
   const comment = commentsRepository.listByTask(projectId, taskId).find((c) => c.id === commentId);
   if (!comment) return;
 
-  const task = tasksRepository.findById(taskId);
+  const task = await tasksRepository.findById(taskId);
   if (!task) return;
 
   const project = await projectsRepository.findById(projectId);
@@ -134,7 +134,7 @@ export async function notifyCommentAdded(
   }
 
   // Создаём уведомления для всех получателей
-  recipients.forEach(async (userId) => {
+  for (const userId of recipients) {
     const notification = notificationsRepository.create({
       userId,
       type: 'comment_added',
@@ -152,7 +152,7 @@ export async function notifyCommentAdded(
       projectId,
       taskId
     }, projectId);
-  });
+  }
 }
 
 /**
@@ -163,7 +163,7 @@ export async function notifyDeadlineApproaching(
   projectId: string,
   assigneeId: string
 ): Promise<void> {
-  const task = tasksRepository.findById(taskId);
+  const task = await tasksRepository.findById(taskId);
   if (!task || !task.dueAt) return;
 
   const project = await projectsRepository.findById(projectId);

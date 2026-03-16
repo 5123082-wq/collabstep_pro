@@ -258,6 +258,7 @@
   - PM operational people picker;
   - будущую приватную картотеку контактов;
 - `performers-responses` зафиксировал reuse уже существующих invite threads, `previewProjectIds` и project invite statuses вместо новой state machine;
+- добавлен единый handoff doc `docs/modules/performers/performers-agent-handoff.md`, который можно отдавать новому агенту как single-source brief;
 - добавлен новый канонический doc `docs/modules/performers/performers-profile-cabinet.md`:
   - описывает текущее расщепление `/settings/profile`, `/settings/performer`, `/profile/*`, settings modals;
   - фиксирует, как должна создаваться performer card через единый кабинет;
@@ -275,5 +276,60 @@
 ### Performers Docs Verification
 
 - docs-only update; `pnpm -w typecheck` не запускался
+
+### Quinary Thread
+
+- **Зона работ:** Platform runtime audit / DB-only business data
+- **Текущий статус:** 2026-03-15 выполнен cross-cutting cleanup local runtime sources; business surfaces переведены на DB-backed reads либо в honest maintenance/empty state
+
+### Что зафиксировано по DB-only runtime cleanup
+
+- emergency admin вынесен в изолированный auth/emergency path:
+  - логин fallback сохранён;
+  - emergency identity больше не materialize-ится в `users` storage и не загрязняет business lists;
+- `admin/users` больше не может показывать единственного локального demo admin вместо реальных DB users;
+- PM runtime выровнен под DB-only contract:
+  - `projectsRepository` и `tasksRepository` переведены на async DB-backed path;
+  - task activity больше не читает comments из `memory.TASK_COMMENTS`;
+  - PM tasks page/API больше не подставляют fake project / fake current user fallback;
+- performers/catalog author route выровнены:
+  - `/p/:handle` больше не fallback-ит в marketplace catalog author shell;
+  - если нет публичного `performer_profile`, route честно возвращает `notFound()`;
+- invites runtime выровнен:
+  - org/project invites читаются из DB-backed repositories;
+  - invite threads убраны из обычного runtime и заменены maintenance response `INVITE_THREADING_UNAVAILABLE`;
+- marketplace local source-of-truth отключён:
+  - author publications и seller-management overlays не читают runtime business data из memory;
+  - local `favorites/cart/inquiries` persist выключен, UI показывает maintenance/disabled state;
+- unified DB detection выровнен на `POSTGRES_URL ?? DATABASE_URL`;
+- test infrastructure приведена в соответствие с DB-backed PM runtime:
+  - `resetTestDb()` теперь чистит `pm_*` таблицы и repository caches;
+  - DB-backed test suites переведены с emergency admin fixture на обычных test users;
+  - увеличен timeout integration-style unit suites, завязанных на live test DB.
+
+### Ключевые решения по DB-only runtime cleanup
+
+- local runtime data для business сущностей не оставляются как silent fallback "на всякий случай";
+- если DB-backed path для surface пока не готов, surface должен быть honest non-fake, а не mask real data;
+- emergency admin разрешён только как operational auth fallback;
+- marketplace publication/cart/favorites/inquiries runtime оставлены disabled до появления настоящего DB-backed контракта.
+
+### DB-only Runtime Docs
+
+- `docs/ROADMAP.md`
+- `docs/platform/overview.md`
+- `docs/modules/performers/performers-overview.md`
+- `docs/modules/projects-tasks/projects-tasks-overview.md`
+- `docs/modules/projects-tasks/projects-tasks-access.md`
+- `CONTINUITY.md`
+
+### DB-only Runtime Verification
+
+- `pnpm -w typecheck` — успешно
+- `pnpm test -- --runTestsByPath apps/web/tests/unit/invites-api.spec.ts --runInBand` — успешно
+- **Чек-лист для агента (тестирование и исправления):** `docs/playbooks/agent-testing-handoff.md` — переписан в стабильный handoff-playbook: входной контекст, выбор глубины проверок, доменные regression checks, cross-cutting checks и короткий формат отчёта; временные риски выносить в task-specific addendum, а не в базовый шаблон.
+- `pnpm test -- --runInBand --runTestsByPath apps/web/tests/unit/project-chat.spec.ts apps/web/tests/unit/project-files.spec.ts apps/web/tests/unit/task-results.spec.ts apps/web/tests/unit/files-direct-upload.spec.ts apps/web/tests/unit/files-trash-limits.spec.ts` — успешно
+- `pnpm test -- --runInBand --detectOpenHandles --runTestsByPath apps/web/tests/unit/invites-api.spec.ts apps/web/tests/unit/notifications.spec.ts apps/web/tests/unit/task-comments-api.spec.ts apps/web/tests/unit/project-chat.spec.ts apps/web/tests/unit/project-files.spec.ts apps/web/tests/unit/task-results.spec.ts apps/web/tests/unit/files-direct-upload.spec.ts apps/web/tests/unit/files-trash-limits.spec.ts apps/web/tests/unit/financeApiRoutes.spec.ts` — локализованы residual open handles: test-only `setInterval` в repository/cache слое и shared Neon/Vercel pool sockets
+- `pnpm test -- --runInBand --runTestsByPath apps/web/tests/unit/invites-api.spec.ts apps/web/tests/unit/notifications.spec.ts apps/web/tests/unit/task-comments-api.spec.ts apps/web/tests/unit/project-chat.spec.ts apps/web/tests/unit/project-files.spec.ts apps/web/tests/unit/task-results.spec.ts apps/web/tests/unit/files-direct-upload.spec.ts apps/web/tests/unit/files-trash-limits.spec.ts apps/web/tests/unit/financeApiRoutes.spec.ts` — 9 suite / 85 tests, assertions проходят; post-run warning `Jest did not exit one second after the test run has completed` устранён через test-safe timer guards и per-suite `@vercel/postgres` teardown (`apps/web/tests/setup-after-env.js`)
 
 <!-- STOP LINE: ACTIVE CONTEXT ENDS -->

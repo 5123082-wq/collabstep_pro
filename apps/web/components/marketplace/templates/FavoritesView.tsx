@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import clsx from 'clsx';
-import { useMarketplaceStore } from '@/lib/marketplace/store';
+import { MARKETPLACE_PERSONAL_STATE_ENABLED, useMarketplaceStore } from '@/lib/marketplace/store';
 import type { MarketplaceTemplate } from '@/lib/marketplace/types';
 import { getTemplatePriceLabel } from '@/lib/marketplace/pricing';
 import { ContentBlock } from '@/components/ui/content-block';
@@ -17,6 +17,17 @@ export default function FavoritesView({ templates }: FavoritesViewProps) {
   const favorites = useMarketplaceStore((state) => state.favorites);
   const toggleFavorite = useMarketplaceStore((state) => state.toggleFavorite);
   const addToCart = useMarketplaceStore((state) => state.addToCart);
+
+  if (!MARKETPLACE_PERSONAL_STATE_ENABLED) {
+    return (
+      <ContentBlock variant="dashed" size="sm" className="flex flex-col items-center justify-center gap-4 p-16 text-center">
+        <h2 className="text-lg font-semibold text-neutral-100">Сохранённое временно недоступно</h2>
+        <p className="max-w-md text-sm text-neutral-400">
+          Избранное отключено, пока эта пользовательская state-поверхность не будет переведена на БД.
+        </p>
+      </ContentBlock>
+    );
+  }
 
   const favoriteTemplates = templates.filter((template) => favorites.includes(template.id));
 

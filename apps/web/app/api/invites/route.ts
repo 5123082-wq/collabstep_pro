@@ -1,5 +1,5 @@
 import { getCurrentUser } from '@/lib/auth/session';
-import { dbProjectsRepository, inviteThreadsRepository, invitationsRepository, organizationsRepository, usersRepository } from '@collabverse/api';
+import { dbProjectsRepository, invitationsRepository, organizationsRepository, usersRepository } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
 
 export async function GET() {
@@ -14,29 +14,22 @@ export async function GET() {
     const invites = await invitationsRepository.listOrganizationInvitesForInvitee(userId, userEmail);
 
     const result = await Promise.all(invites.map(async (invite) => {
-      const [organization, inviter] = await Promise.all([
+      const [organization, inviter, previewInvites] = await Promise.all([
         organizationsRepository.findById(invite.organizationId),
         usersRepository.findById(invite.inviterId),
+        invitationsRepository.listActiveProjectInvitesForInvitee({
+          userId,
+          ...(userEmail ? { email: userEmail } : {}),
+          organizationId: invite.organizationId
+        })
       ]);
 
-      const thread = inviteThreadsRepository.ensureThreadForInvite({
-        orgInviteId: invite.id,
-        organizationId: invite.organizationId,
-        createdByUserId: invite.inviterId,
-        ...(invite.inviteeUserId ? { inviteeUserId: invite.inviteeUserId } : {}),
-        ...(invite.inviteeEmail ? { inviteeEmail: invite.inviteeEmail } : {}),
-      });
-
-      const previewProjectIds = Array.isArray(thread.previewProjectIds) ? thread.previewProjectIds : [];
+      const previewProjectIds = Array.from(new Set(previewInvites.map((item) => item.projectId)));
       const previewProjects = previewProjectIds.length
         ? await Promise.all(
           previewProjectIds.map(async (projectId) => {
             const project = await dbProjectsRepository.findById(projectId);
-            const activeInviteForUser = await invitationsRepository.findActiveProjectInviteForUser(projectId, userId);
-            const activeInviteForEmail = userEmail
-              ? await invitationsRepository.findActiveProjectInviteForEmail(projectId, userEmail)
-              : null;
-            const activeInvite = activeInviteForUser ?? activeInviteForEmail;
+            const activeInvite = previewInvites.find((item) => item.projectId === projectId) ?? null;
             return project
               ? {
                 id: project.id,
@@ -57,7 +50,7 @@ export async function GET() {
         inviter: inviter
           ? { id: inviter.id, name: inviter.name, email: inviter.email, avatarUrl: inviter.avatarUrl ?? null }
           : null,
-        threadId: thread.id,
+        threadId: null,
         previewProjects: previewProjectsClean,
       };
     }));
@@ -90,5 +83,3 @@ export async function GET() {
     return jsonError('INTERNAL_ERROR', { status: 500 });
   }
 }
-
-

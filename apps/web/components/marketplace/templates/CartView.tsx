@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useMarketplaceStore, enrichCartItems } from '@/lib/marketplace/store';
+import { MARKETPLACE_PERSONAL_STATE_ENABLED, useMarketplaceStore, enrichCartItems } from '@/lib/marketplace/store';
 import type { MarketplaceTemplate } from '@/lib/marketplace/types';
 import { formatTemplatePrice, getTemplatePriceLabel } from '@/lib/marketplace/pricing';
 import { ContentBlock } from '@/components/ui/content-block';
@@ -17,6 +17,17 @@ export default function CartView({ templates }: CartViewProps) {
   const updateQuantity = useMarketplaceStore((state) => state.updateQuantity);
   const clearCart = useMarketplaceStore((state) => state.clearCart);
   const [promo, setPromo] = useState('');
+
+  if (!MARKETPLACE_PERSONAL_STATE_ENABLED) {
+    return (
+      <ContentBlock variant="dashed" size="sm" className="flex flex-col items-center justify-center gap-4 p-16 text-center">
+        <h2 className="text-lg font-semibold text-neutral-100">Корзина временно недоступна</h2>
+        <p className="max-w-md text-sm text-neutral-400">
+          Корзина и checkout отключены, пока эта пользовательская state-поверхность не будет переведена на БД.
+        </p>
+      </ContentBlock>
+    );
+  }
 
   const items = useMemo(() => enrichCartItems(cart, templates), [cart, templates]);
   const subtotal = items.reduce(

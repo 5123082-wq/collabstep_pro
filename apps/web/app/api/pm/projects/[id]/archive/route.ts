@@ -33,7 +33,7 @@ export async function POST(
   }
 
   try {
-    const archivedProject = projectsRepository.archive(params.id);
+    const archivedProject = await projectsRepository.archive(params.id);
     if (!archivedProject) {
       return jsonError('ARCHIVE_FAILED', { status: 500 });
     }
@@ -44,4 +44,3 @@ export async function POST(
     return jsonError('INTERNAL_ERROR', { status: 500 });
   }
 }
-

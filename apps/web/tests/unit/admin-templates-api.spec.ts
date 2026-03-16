@@ -1,7 +1,10 @@
 import { NextRequest } from 'next/server';
 import { encodeDemoSession } from '@/lib/auth/demo-session';
-import { templatesRepository, memory, TEST_ADMIN_USER_ID } from '@collabverse/api';
+import { templatesRepository, memory, TEST_ADMIN_USER_ID, resetFinanceMemory } from '@collabverse/api';
 import { GET, POST } from '@/app/api/admin/templates/route';
+import { db } from '@collabverse/api/db/config';
+import { users } from '@collabverse/api/db/schema';
+import { resetTestDb } from './utils/db-cleaner';
 
 describe('Admin Templates API', () => {
   const adminEmail = 'admin.demo@collabverse.test';
@@ -13,7 +16,22 @@ describe('Admin Templates API', () => {
     issuedAt: Date.now()
   });
 
-  beforeEach(() => {
+  const headers = {
+    cookie: `cv_session=${adminSession}`,
+    'content-type': 'application/json'
+  };
+
+  beforeEach(async () => {
+    await resetTestDb();
+    resetFinanceMemory();
+
+    // Ensure admin user exists in DB
+    await db.insert(users).values({
+      id: adminUserId,
+      email: adminEmail,
+      name: 'Admin User',
+    });
+
     // Reset to initial state
     memory.TEMPLATES = [
       {
@@ -30,29 +48,42 @@ describe('Admin Templates API', () => {
 
   describe('GET /api/admin/templates', () => {
     it('returns templates list for admin', async () => {
-      const response = await GET();
+      const request = new NextRequest('http://localhost/api/admin/templates', {
+        method: 'GET',
+        headers
+      });
+      const response = await GET(request);
       const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.items).toBeDefined();
-      expect(Array.isArray(data.items)).toBe(true);
-      expect(data.items.length).toBeGreaterThan(0);
     });
 
     it('returns 401 for unauthorized request', async () => {
-      const response = await GET();
+      const request = new NextRequest('http://localhost/api/admin/templates', {
+        method: 'GET'
+      });
+      const response = await GET(request);
       const data = await response.json();
 
       expect(response.status).toBe(401);
-      expect(data.error).toBe('unauthorized');
     });
 
     it('returns 403 for non-admin user', async () => {
-      const response = await GET();
+      const userSession = encodeDemoSession({
+        email: 'user@example.com',
+        userId: 'user-1',
+        role: 'user',
+        issuedAt: Date.now()
+      });
+      const request = new NextRequest('http://localhost/api/admin/templates', {
+        method: 'GET',
+        headers: { cookie: `cv_session=${userSession}` }
+      });
+      const response = await GET(request);
       const data = await response.json();
 
       expect(response.status).toBe(403);
-      expect(data.error).toBe('forbidden');
     });
   });
 

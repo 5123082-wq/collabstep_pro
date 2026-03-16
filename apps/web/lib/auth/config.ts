@@ -2,13 +2,12 @@ import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
 import Credentials from "next-auth/providers/credentials"
 import { DrizzleAdapter } from "@auth/drizzle-adapter"
+import { buildEmergencyAdminUser, usersRepository } from "@collabverse/api"
 import { db } from "@collabverse/api/db/config"
-import { usersRepository } from "@collabverse/api"
 import { eq } from "drizzle-orm"
 import { userControls } from "@collabverse/api/db/schema"
 import { getDemoAccount, isDemoAuthEnabled } from "./demo-session"
 import { getAuthSecret } from "./get-auth-secret"
-import { ensureDemoAccountsInitialized } from "./init-demo-accounts"
 
 const hasDbConnection = !!process.env.POSTGRES_URL || !!process.env.DATABASE_URL;
 const isDbStorage = process.env.AUTH_STORAGE === 'db' && hasDbConnection;
@@ -38,27 +37,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 const email = credentials.email as string
                 const password = credentials.password as string
 
-                // Инициализируем демо-аккаунты перед проверкой
+                // Emergency admin lives in isolated auth-path and is not materialized in business storage.
                 if (isDemoAuthEnabled()) {
-                    await ensureDemoAccountsInitialized();
-                }
-
-                // Check demo accounts first, but only if they exist in DB
-                if (isDemoAuthEnabled()) {
-                    // Проверяем только администратора
                     const adminAccount = getDemoAccount('admin');
                     if (adminAccount.email === email && adminAccount.password === password) {
-                        // Проверяем, что администратор существует в БД
-                        const adminUser = await usersRepository.findByEmail(adminAccount.email);
-                        if (adminUser) {
-                            return {
-                                id: adminUser.id,
-                                email: adminUser.email,
-                                name: adminUser.name || 'Demo Admin',
-                                image: adminUser.avatarUrl ?? null,
-                                role: 'admin',
-                                roles: []
-                            }
+                        const adminUser = buildEmergencyAdminUser();
+                        return {
+                            id: adminUser.id,
+                            email: adminUser.email,
+                            name: adminUser.name,
+                            image: adminUser.avatarUrl ?? null,
+                            role: 'admin',
+                            roles: []
                         }
                     }
                     // Явно блокируем удаленные демо-аккаунты

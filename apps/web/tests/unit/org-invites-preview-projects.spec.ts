@@ -1,12 +1,19 @@
 import { NextRequest } from 'next/server';
 
 import { POST as createOrgInvite } from '@/app/api/organizations/[orgId]/invites/route';
+import { resetTestDb } from './utils/db-cleaner';
 
 jest.mock('@/lib/auth/session', () => ({
   getCurrentUser: jest.fn(),
 }));
 
 import { getCurrentUser } from '@/lib/auth/session';
+
+jest.mock('@/lib/api/resolve-organization-plan', () => ({
+  resolveOrganizationPlan: jest.fn(),
+}));
+
+import { resolveOrganizationPlan } from '@/lib/api/resolve-organization-plan';
 
 jest.mock('@collabverse/api', () => {
   const actual = jest.requireActual('@collabverse/api');
@@ -17,7 +24,9 @@ jest.mock('@collabverse/api', () => {
       createProjectInvite: jest.fn(),
     },
     organizationsRepository: {
+      findById: jest.fn(),
       findMember: jest.fn(),
+      listMembers: jest.fn(),
     },
     dbProjectsRepository: {
       findById: jest.fn(),
@@ -31,10 +40,14 @@ import { dbProjectsRepository, invitationsRepository, organizationsRepository } 
 describe('Org invites -> preview project invites (stage 7)', () => {
   const currentUser = { id: 'admin-1', email: 'admin@example.com', role: 'user' };
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await resetTestDb();
     jest.clearAllMocks();
     (getCurrentUser as jest.Mock).mockResolvedValue(currentUser);
+    (resolveOrganizationPlan as jest.Mock).mockResolvedValue({ code: 'free' });
+    (organizationsRepository.findById as jest.Mock).mockResolvedValue({ id: 'org-1', name: 'Test Org' });
     (organizationsRepository.findMember as jest.Mock).mockResolvedValue({ role: 'admin', status: 'active' });
+    (organizationsRepository.listMembers as jest.Mock).mockResolvedValue([{ userId: currentUser.id, role: 'owner' }]);
   });
 
   it('creates previewing project_invite for inviteeUserId when previewProjectIds provided', async () => {

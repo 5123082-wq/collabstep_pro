@@ -44,7 +44,7 @@ describe('Task Comments API', () => {
     resetFinanceMemory();
 
     // Создаем проект и задачу для тестов
-    const project = projectsRepository.create({
+    const project = await projectsRepository.create({
       title: 'Test Project',
       description: 'Test Description',
       ownerId: adminUserId,
@@ -55,7 +55,7 @@ describe('Task Comments API', () => {
 
     const tasks = await tasksRepository.list({ projectId });
     if (tasks.length === 0) {
-      const task = tasksRepository.create({
+      const task = await tasksRepository.create({
         projectId,
         title: 'Test Task',
         status: 'new'

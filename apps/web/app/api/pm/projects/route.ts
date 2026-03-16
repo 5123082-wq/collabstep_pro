@@ -177,7 +177,7 @@ export async function POST(request: Request) {
       `[Projects API POST] Creating project: title=${title}, ownerId=${auth.userId}, workspaceId=${workspaceId}, organizationId=${organizationId}, status=${normalizedStatus}, visibility=${visibility}`
     );
 
-    const project = projectsRepository.create({
+    const project = await projectsRepository.create({
       title,
       description: typeof body.description === 'string' ? body.description : undefined,
       key: body.key,
@@ -208,7 +208,7 @@ export async function POST(request: Request) {
       });
     } catch (error) {
       console.error('[Projects API POST] Failed to sync organization project record', error);
-      projectsRepository.delete(project.id);
+      await projectsRepository.delete(project.id);
       return jsonError('PROJECT_ORGANIZATION_SYNC_FAILED', { status: 500 });
     }
 

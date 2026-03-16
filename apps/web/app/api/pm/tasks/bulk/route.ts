@@ -70,7 +70,7 @@ export async function POST(request: Request) {
     // Применяем обновления
     const updatedTasks = [];
     for (const taskId of taskIds) {
-      const taskBefore = tasksRepository.findById(taskId);
+      const taskBefore = await tasksRepository.findById(taskId);
       const patch: Parameters<typeof tasksRepository.update>[1] = {};
 
       if ('status' in updates) {

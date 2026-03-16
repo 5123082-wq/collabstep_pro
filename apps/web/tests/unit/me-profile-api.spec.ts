@@ -1,7 +1,8 @@
-
-import { usersRepository, resetFinanceMemory, memory } from '@collabverse/api';
+import { usersRepository, resetFinanceMemory } from '@collabverse/api';
 import { GET, PATCH } from '@/app/api/me/profile/route';
 import { NextRequest } from 'next/server';
+import { resetTestDb } from './utils/db-cleaner';
+import { makeTestUserId } from './utils/test-ids';
 
 // Mock the session module
 jest.mock('@/lib/auth/session', () => ({
@@ -11,19 +12,25 @@ jest.mock('@/lib/auth/session', () => ({
 import { getCurrentUser } from '@/lib/auth/session';
 
 describe('User Profile API', () => {
-    const userId = 'test-user-profile@collabverse.test';
+    let userId: string;
+    let userEmail: string;
     const headers = {
         'content-type': 'application/json'
     };
 
     beforeEach(async () => {
+        await resetTestDb();
         resetFinanceMemory();
-        memory.WORKSPACE_USERS = [];
+        
+        const testUser = makeTestUserId('profile');
+        userId = testUser.id;
+        userEmail = testUser.email;
+
         // Create test user
         await usersRepository.create({
             id: userId,
             name: 'Test User',
-            email: userId,
+            email: userEmail,
             title: 'Software Engineer',
             department: 'Engineering',
             location: 'Moscow',
@@ -34,7 +41,7 @@ describe('User Profile API', () => {
         // Default mock implementation
         (getCurrentUser as jest.Mock).mockResolvedValue({
             id: userId,
-            email: userId,
+            email: userEmail,
             role: 'user'
         });
     });
@@ -50,7 +57,7 @@ describe('User Profile API', () => {
             expect(response.status).toBe(200);
             const data = await response.json();
             expect(data.data.profile).toBeDefined();
-            expect(data.data.profile.email).toBe(userId);
+            expect(data.data.profile.email).toBe(userEmail);
             expect(data.data.profile.name).toBe('Test User');
             expect(data.data.profile.title).toBe('Software Engineer');
             expect(data.data.profile.department).toBe('Engineering');

@@ -534,6 +534,20 @@
 
 ### Завершенные этапы
 
+#### DB-only runtime cleanup для business data
+
+**Статус:** ✅ Завершён  
+**Завершено:** 2026-03-15
+
+**Реализовано:**
+- runtime инвентаризация local `memory/mock/demo/fallback/persist` sources по платформе;
+- emergency admin изолирован в auth/emergency path и исключён из обычных business reads;
+- PM projects/tasks/comments/chat/files переведены на DB-backed read path без silent local fallback;
+- performers `/p/:handle` и invites runtime больше не подменяют реальные данные локальными author/thread данными;
+- marketplace local business overlays отключены или переведены в maintenance/test-only режим до DB-backed реализации;
+- унифицирован DB detection contract `POSTGRES_URL ?? DATABASE_URL`;
+- `pnpm -w typecheck` и targeted DB-backed unit suites выполнены успешно.
+
 #### Настройка локального тестирования
 
 **Статус:** ✅ Завершён  

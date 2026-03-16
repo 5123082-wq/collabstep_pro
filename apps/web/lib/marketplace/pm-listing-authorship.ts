@@ -1,5 +1,4 @@
 import {
-  memory,
   organizationsRepository,
   projectsRepository,
   workspacesRepository,
@@ -70,14 +69,6 @@ async function resolveProject(projectOrId: Project | string): Promise<Project | 
     return projectOrId;
   }
   return projectsRepository.findById(projectOrId);
-}
-
-function resolveWorkspaceAccountRole(accountId: string, actorUserId: string): MarketplaceListingManagerRole {
-  const membership = memory.ACCOUNT_MEMBERS.find(
-    (member) => member.accountId === accountId && member.userId === actorUserId
-  );
-
-  return membership?.role ?? 'viewer';
 }
 
 function rolePriority(role: MarketplaceListingManagerRole): number {
@@ -179,8 +170,6 @@ async function resolveTeamManagerRole(
     if (organizationMember?.status === 'active') {
       teamRole = pickStrongerRole(teamRole, organizationMember.role);
     }
-  } else {
-    teamRole = pickStrongerRole(teamRole, resolveWorkspaceAccountRole(authorContext.organizationId, actorUserId));
   }
 
   return teamRole;
@@ -190,21 +179,9 @@ function buildAuthorEntity(
   project: Project,
   workspace: Workspace | null,
   organizationId: string | null,
-  organization: Organization | null,
-  ownershipSource: MarketplaceListingOwnershipSource
+  organization: Organization | null
 ): Pick<ProjectListingAuthorContext, 'projectOwnership' | 'authorEntity' | 'managerPolicy' | 'supportsPersonRoute'> {
-  const hasSharedAccountMembers =
-    organizationId !== null &&
-    memory.ACCOUNT_MEMBERS.some(
-      (member) => member.accountId === organizationId && member.userId !== project.ownerId
-    );
-  const accountOwnerId =
-    organizationId !== null ? (memory.ACCOUNTS.find((account) => account.id === organizationId)?.ownerId ?? null) : null;
-  const isTeamOwned =
-    organization?.kind === 'business' ||
-    (organization === null &&
-      ownershipSource === 'workspace_account_membership' &&
-      (hasSharedAccountMembers || (typeof accountOwnerId === 'string' && accountOwnerId !== project.ownerId)));
+  const isTeamOwned = organization?.kind === 'business';
 
   if (isTeamOwned) {
     return {
@@ -242,8 +219,7 @@ export async function resolveProjectListingAuthorContext(projectOrId: Project | 
     project,
     ownershipBinding.workspace,
     ownershipBinding.organizationId,
-    ownershipBinding.organization,
-    ownershipBinding.ownershipSource
+    ownershipBinding.organization
   );
 
   return {
