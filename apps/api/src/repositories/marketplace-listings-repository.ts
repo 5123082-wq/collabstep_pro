@@ -28,17 +28,36 @@ function cloneListing(listing: MarketplaceListing): MarketplaceListing {
   };
 }
 
+function isTestRuntime(): boolean {
+  return process.env.NODE_ENV === 'test' || typeof process.env.JEST_WORKER_ID === 'string';
+}
+
+function ensureRuntimeWriteAvailable(): void {
+  if (!isTestRuntime()) {
+    throw new Error('MARKETPLACE_OVERLAY_RUNTIME_DISABLED');
+  }
+}
+
 export class MarketplaceListingsRepository {
   list(): MarketplaceListing[] {
+    if (!isTestRuntime()) {
+      return [];
+    }
     return memory.MARKETPLACE_LISTINGS.map(cloneListing);
   }
 
   findByProjectId(projectId: string): MarketplaceListing | null {
+    if (!isTestRuntime()) {
+      return null;
+    }
     const listing = memory.MARKETPLACE_LISTINGS.find((l) => l.projectId === projectId);
     return listing ? cloneListing(listing) : null;
   }
 
   findById(id: string): MarketplaceListing | null {
+    if (!isTestRuntime()) {
+      return null;
+    }
     const listing = memory.MARKETPLACE_LISTINGS.find((l) => l.id === id);
     return listing ? cloneListing(listing) : null;
   }
@@ -55,6 +74,7 @@ export class MarketplaceListingsRepository {
     showOnAuthorPage?: boolean;
     sortOrder?: number;
   }): MarketplaceListing {
+    ensureRuntimeWriteAvailable();
     const now = new Date().toISOString();
     const listing: MarketplaceListing = {
       id: crypto.randomUUID(),
@@ -81,6 +101,9 @@ export class MarketplaceListingsRepository {
   }
 
   listByAuthorEntity(authorEntityType: MarketplaceListingAuthorEntityType, authorEntityId: string): MarketplaceListing[] {
+    if (!isTestRuntime()) {
+      return [];
+    }
     return memory.MARKETPLACE_LISTINGS
       .filter(
         (listing) => listing.authorEntityType === authorEntityType && listing.authorEntityId === authorEntityId
@@ -92,6 +115,9 @@ export class MarketplaceListingsRepository {
     authorEntityType: MarketplaceListingAuthorEntityType,
     authorEntityId: string
   ): MarketplaceListing[] {
+    if (!isTestRuntime()) {
+      return [];
+    }
     return memory.MARKETPLACE_LISTINGS
       .filter(
         (listing) =>
@@ -108,6 +134,7 @@ export class MarketplaceListingsRepository {
       Pick<MarketplaceListing, 'title' | 'description' | 'state' | 'showOnAuthorPage' | 'sortOrder' | 'lastEditedByUserId'>
     >
   ): MarketplaceListing | null {
+    ensureRuntimeWriteAvailable();
     const idx = memory.MARKETPLACE_LISTINGS.findIndex((l) => l.id === id);
     if (idx === -1) {
       return null;
@@ -168,6 +195,7 @@ export class MarketplaceListingsRepository {
   }
 
   delete(id: string): boolean {
+    ensureRuntimeWriteAvailable();
     const idx = memory.MARKETPLACE_LISTINGS.findIndex((l) => l.id === id);
     if (idx === -1) {
       return false;

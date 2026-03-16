@@ -99,8 +99,8 @@ export default function PMTasksPage() {
         const response = await fetch('/api/auth/me');
         if (response.ok) {
           const data = await response.json();
-          if (data.authenticated && data.email) {
-            setCurrentUserId(data.email);
+          if (data.authenticated && typeof data.userId === 'string') {
+            setCurrentUserId(data.userId);
           }
         }
       } catch (err) {
@@ -183,18 +183,6 @@ export default function PMTasksPage() {
           projects: Array.isArray(data?.meta?.projects) ? data.meta.projects : [],
           scopeCounts: data?.meta?.scopeCounts ?? DEFAULT_SCOPE_COUNTS
         };
-
-        // Если API не вернул ни проектов, ни задач, создаём демо-данные, чтобы рабочее место не было пустым
-        if (cacheData.projects.length === 0) {
-          const fallbackProject: TaskProjectOption = {
-            id: 'demo-project',
-            name: 'Demo project',
-            key: 'DEMO',
-            scope: 'owned',
-            isOwner: true
-          };
-          cacheData.projects = [fallbackProject];
-        }
 
         // Сохраняем в кэш
         cacheRef.current.set(cacheKey, cacheData);
@@ -489,7 +477,7 @@ export default function PMTasksPage() {
         task={selectedTask}
         isOpen={selectedTask !== null}
         onClose={() => setSelectedTask(null)}
-        currentUserId={currentUserId || 'demo-user'}
+        currentUserId={currentUserId}
       />
     </div>
   );

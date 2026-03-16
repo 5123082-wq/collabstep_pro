@@ -34,9 +34,13 @@ import type {
   InviteThreadParticipant,
   InviteThreadMessage
 } from '../types';
+import {
+  EMERGENCY_ADMIN_USER_ID,
+  LEGACY_DEMO_ADMIN_USER_ID
+} from '../runtime/emergency-admin';
 
 // Предсказуемые UUID для тестовых пользователей (для стабильности тестирования)
-export const TEST_ADMIN_USER_ID = '00000000-0000-0000-0000-000000000001';
+export const TEST_ADMIN_USER_ID = LEGACY_DEMO_ADMIN_USER_ID;
 export const TEST_USER_ID = '00000000-0000-0000-0000-000000000002';
 export const TEST_FINANCE_USER_ID = '00000000-0000-0000-0000-000000000003';
 export const TEST_DESIGNER_USER_ID = '00000000-0000-0000-0000-000000000004';
@@ -50,7 +54,11 @@ export const DEFAULT_WORKSPACE_ID = 'ws-collabverse-core';
  * Checks if a user ID belongs to the admin user
  */
 export function isAdminUserId(userId: string): boolean {
-  return userId === TEST_ADMIN_USER_ID || userId === DEFAULT_WORKSPACE_USER_ID;
+  return (
+    userId === TEST_ADMIN_USER_ID ||
+    userId === DEFAULT_WORKSPACE_USER_ID ||
+    userId === EMERGENCY_ADMIN_USER_ID
+  );
 }
 
 // Test project IDs (using UUID format for consistency)

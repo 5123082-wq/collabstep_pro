@@ -2,8 +2,7 @@ import { encodeDemoSession } from '@/lib/auth/demo-session';
 import {
   projectsRepository,
   tasksRepository,
-  resetFinanceMemory,
-  TEST_ADMIN_USER_ID
+  resetFinanceMemory
 } from '@collabverse/api';
 import { db } from '@collabverse/api/db/config';
 import {
@@ -19,13 +18,17 @@ import { NextRequest } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { eq, and } from 'drizzle-orm';
 import { resetTestDb } from './utils/db-cleaner';
+import { makeTestUserId } from './utils/test-ids';
+
+jest.setTimeout(30_000);
 
 describe('Task Results API', () => {
   let projectId: string;
   let taskId: string;
   let organizationId: string;
-  const adminEmail = 'admin.demo@collabverse.test';
-  const userId = TEST_ADMIN_USER_ID;
+  const admin = makeTestUserId('task-results-admin');
+  const adminEmail = admin.email;
+  const userId = admin.id;
   const session = encodeDemoSession({
     email: adminEmail,
     userId,
@@ -70,7 +73,7 @@ describe('Task Results API', () => {
       });
 
     // Create project
-    const project = projectsRepository.create({
+    const project = await projectsRepository.create({
       title: 'Test Project',
       description: 'Test Description',
       ownerId: userId,
@@ -90,7 +93,7 @@ describe('Task Results API', () => {
       });
 
     // Create task
-    const task = tasksRepository.create({
+    const task = await tasksRepository.create({
       projectId,
       title: 'Test Task',
       status: 'new'

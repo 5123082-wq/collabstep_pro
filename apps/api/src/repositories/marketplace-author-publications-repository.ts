@@ -34,25 +34,47 @@ function clonePublication(publication: MarketplaceAuthorPublication): Marketplac
   };
 }
 
+function isTestRuntime(): boolean {
+  return process.env.NODE_ENV === 'test' || typeof process.env.JEST_WORKER_ID === 'string';
+}
+
+function ensureRuntimeWriteAvailable(): void {
+  if (!isTestRuntime()) {
+    throw new Error('MARKETPLACE_OVERLAY_RUNTIME_DISABLED');
+  }
+}
+
 export class MarketplaceAuthorPublicationsRepository {
   listByOwnerUserId(ownerUserId: string): MarketplaceAuthorPublication[] {
+    if (!isTestRuntime()) {
+      return [];
+    }
     return memory.MARKETPLACE_AUTHOR_PUBLICATIONS
       .filter((publication) => publication.ownerUserId === ownerUserId)
       .map(clonePublication);
   }
 
   listPublishedByOwnerUserId(ownerUserId: string): MarketplaceAuthorPublication[] {
+    if (!isTestRuntime()) {
+      return [];
+    }
     return memory.MARKETPLACE_AUTHOR_PUBLICATIONS
       .filter((publication) => publication.ownerUserId === ownerUserId && publication.state === 'published')
       .map(clonePublication);
   }
 
   findById(id: string): MarketplaceAuthorPublication | null {
+    if (!isTestRuntime()) {
+      return null;
+    }
     const publication = memory.MARKETPLACE_AUTHOR_PUBLICATIONS.find((item) => item.id === id);
     return publication ? clonePublication(publication) : null;
   }
 
   findBySourceTemplateId(sourceTemplateId: string, ownerUserId: string): MarketplaceAuthorPublication | null {
+    if (!isTestRuntime()) {
+      return null;
+    }
     const publication = memory.MARKETPLACE_AUTHOR_PUBLICATIONS.find(
       (item) => item.kind === 'template' && item.ownerUserId === ownerUserId && item.sourceTemplateId === sourceTemplateId
     );
@@ -66,6 +88,7 @@ export class MarketplaceAuthorPublicationsRepository {
     description: string;
     tags?: string[];
   }): MarketplaceAuthorPublication {
+    ensureRuntimeWriteAvailable();
     const existing = this.findBySourceTemplateId(payload.sourceTemplateId, payload.ownerUserId);
     if (existing) {
       return existing;
@@ -97,6 +120,7 @@ export class MarketplaceAuthorPublicationsRepository {
     description: string;
     tags?: string[];
   }): MarketplaceAuthorPublication {
+    ensureRuntimeWriteAvailable();
     const now = new Date().toISOString();
     const publication: MarketplaceAuthorPublication = {
       id: crypto.randomUUID(),
@@ -123,6 +147,7 @@ export class MarketplaceAuthorPublicationsRepository {
       Pick<MarketplaceAuthorPublication, 'title' | 'description' | 'tags' | 'state' | 'showOnAuthorPage' | 'sortOrder'>
     >
   ): MarketplaceAuthorPublication | null {
+    ensureRuntimeWriteAvailable();
     const index = memory.MARKETPLACE_AUTHOR_PUBLICATIONS.findIndex(
       (item) => item.id === id && item.ownerUserId === ownerUserId
     );

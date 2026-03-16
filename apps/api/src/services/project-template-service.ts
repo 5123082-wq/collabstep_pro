@@ -102,7 +102,7 @@ export class ProjectTemplateService {
 
     let project: Project | null = null;
     try {
-      project = projectsRepository.create({
+      project = await projectsRepository.create({
         title: projectTitle,
         description: projectDescription,
         ownerId: params.ownerId,
@@ -117,7 +117,7 @@ export class ProjectTemplateService {
       // Rollback: delete project if it was created before the error
       if (project) {
         try {
-          projectsRepository.delete(project.id);
+          await projectsRepository.delete(project.id);
         } catch (deleteError) {
           console.error('[ProjectTemplateService] Failed to rollback project deletion:', deleteError);
         }
@@ -154,7 +154,7 @@ export class ProjectTemplateService {
       const idMap = new Map<string, string>();
       const baseDate = params.startDate ? new Date(params.startDate) : new Date();
 
-      const createTaskRecursive = (task: ProjectTemplateTask) => {
+      const createTaskRecursive = async (task: ProjectTemplateTask): Promise<void> => {
         if (!selected.has(task.id) || idMap.has(task.id)) {
           return;
         }
@@ -162,7 +162,7 @@ export class ProjectTemplateService {
         if (task.parentTaskId) {
           const parent = tasksById.get(task.parentTaskId);
           if (parent) {
-            createTaskRecursive(parent);
+            await createTaskRecursive(parent);
           }
         }
 
@@ -171,7 +171,7 @@ export class ProjectTemplateService {
           task.offsetDueDays !== undefined ? addDays(baseDate, task.offsetDueDays) : undefined;
         const parentId = task.parentTaskId ? idMap.get(task.parentTaskId) ?? null : null;
 
-        const created = tasksRepository.create({
+        const created = await tasksRepository.create({
           projectId: project.id,
           title: task.title,
           ...(task.description && { description: task.description }),
@@ -191,7 +191,7 @@ export class ProjectTemplateService {
 
       const sortedTasks = [...allTasks].sort((a, b) => a.position - b.position);
       for (const task of sortedTasks) {
-        createTaskRecursive(task);
+        await createTaskRecursive(task);
       }
 
       return { project, tasks: createdTasks };
@@ -201,7 +201,7 @@ export class ProjectTemplateService {
       if (project) {
         try {
           console.error('[ProjectTemplateService] Task creation failed, rolling back project:', project.id, error);
-          projectsRepository.delete(project.id);
+          await projectsRepository.delete(project.id);
         } catch (deleteError) {
           console.error('[ProjectTemplateService] Failed to rollback project deletion:', deleteError);
           // Re-throw the original error, not the delete error

@@ -12,7 +12,7 @@ import {
   ModalHeader,
   ModalTitle
 } from '@/components/ui/modal';
-import { useMarketplaceStore } from '@/lib/marketplace/store';
+import { MARKETPLACE_PERSONAL_STATE_ENABLED, useMarketplaceStore } from '@/lib/marketplace/store';
 import type { CatalogSourceKind } from '@/lib/marketplace/types';
 import { toast } from '@/lib/ui/toast';
 
@@ -92,6 +92,11 @@ export default function CatalogInquiryModal({
   }, [open]);
 
   function handleSubmit() {
+    if (!MARKETPLACE_PERSONAL_STATE_ENABLED) {
+      toast('Inquiry-flow временно отключён до перевода на БД', 'warning');
+      return;
+    }
+
     if (brief.trim().length < 12) {
       toast('Коротко опишите задачу и контекст адаптации', 'warning');
       return;
@@ -133,6 +138,11 @@ export default function CatalogInquiryModal({
         </ModalHeader>
 
         <ModalBody className="space-y-6">
+          {!MARKETPLACE_PERSONAL_STATE_ENABLED ? (
+            <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100">
+              Inquiry-flow временно отключён, пока пользовательские marketplace requests не будут переведены на DB-backed runtime.
+            </div>
+          ) : null}
           <div className="rounded-2xl border border-neutral-800/80 bg-neutral-950/60 p-4">
             <p className="text-xs uppercase tracking-[0.24em] text-neutral-500">Источник</p>
             <p className="mt-2 text-base font-semibold text-neutral-100">{sourceTitle}</p>

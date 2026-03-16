@@ -31,6 +31,7 @@
 ## Состав раздела
 
 - [Исполнители — Специалисты](./performers-specialists.md)
+- [Исполнители — Handoff для нового агента](./performers-agent-handoff.md)
 - [Исполнители — Кабинет и карточка исполнителя](./performers-profile-cabinet.md)
 - [Исполнители — Команды](./performers-teams.md)
 - [Исполнители — Подрядчики](./performers-contractors.md)
@@ -42,13 +43,13 @@
 ## Текущее состояние (по UI и коду)
 
 - Каталог специалистов работает на публичных профилях `performer_profile`, есть быстрые фильтры и блок «Все фильтры».
-- Публичная визитка `/p/:handle` отображает профиль, портфолио, кейсы, рейтинг и отзывы.
+- Публичная визитка `/p/:handle` отображает профиль, портфолио, кейсы, рейтинг и отзывы только для реального публичного `performer_profile`; runtime больше не подменяет эту страницу catalog/mock author shell-данными.
 - Профиль исполнителя создаётся и обновляется через `/settings/performer` и `/onboarding/create-profile`; данные хранятся в `performer_profile`, портфолио и кейсы — в отдельных сущностях.
 - Базовый личный профиль пользователя редактируется отдельно через `/settings/profile` и `/api/me/profile`.
 - `/profile`, `/profile/card`, `/profile/rating`, `/profile/badges` и часть глобальных settings surfaces пока не являются каноническим кабинетом и содержат заглушки или дублируют существующие формы.
 - Вакансии подключены к API: каталог, карточка вакансии, отклик, вложения и часовой пояс.
 - «Мои вакансии» показывает вакансии организации, фильтр статусов и создание через модальное окно.
-- «Отклики и приглашения» уже используют `organization_invite`, `project_invite` и invite threads; preview-доступ в проекты частично поддержан через `previewProjectIds`.
+- «Отклики и приглашения» используют `organization_invite` и `project_invite`; preview-доступ в проекты частично поддержан через `previewProjectIds`, а invite-thread messaging runtime сейчас честно переведён в maintenance state вместо локального fallback.
 - В PM уже реализован отдельный server-side people picker для прямого добавления зарегистрированных пользователей платформы в проект, но он решает только operational add для известных пользователей, а не discovery/contact workflow внешних кандидатов.
 - Команды и подрядчики пока не реализованы как отдельные сущности.
 
@@ -57,7 +58,7 @@
 - **Аккаунт пользователя (`users`):** имя, email, аватар, title, department, location, timezone.
 - **PerformerProfile:** `id`, `userId`, `specialization`, `skills`, `bio`, `rate`, `employmentType`, `location`, `timezone`, `languages`, `workFormats`, `handle`, `portfolioEnabled`, `isPublic`, `createdAt`, `updatedAt`.
 - **Публичные артефакты:** портфолио, кейсы, рейтинги и отзывы.
-- **Слой отношений:** membership в организации и проекте, `organization_invite`, `project_invite`, invite threads.
+- **Слой отношений:** membership в организации и проекте, `organization_invite`, `project_invite`; invite threads остаются доменной заготовкой, но не используются как активный runtime source of truth.
 
 ## Канонический продуктовый контракт
 

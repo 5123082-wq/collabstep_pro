@@ -20,7 +20,7 @@ type InviteListItem = {
   invite: OrganizationInviteDTO;
   organization: { id: string; name: string } | null;
   inviter: { id: string; name: string | null; email: string; avatarUrl: string | null } | null;
-  threadId: string;
+  threadId: string | null;
   previewProjects?: { id: string; name: string; previewInviteToken: string | null }[];
 };
 
@@ -197,6 +197,7 @@ export default function InvitesPanel() {
     if (sending) return;
     if (activeInvite.invite.status !== 'pending') return;
     const threadId = activeInvite.threadId;
+    if (!threadId) return;
     const body = messageDraft.trim();
     if (!body) return;
 
@@ -296,6 +297,7 @@ export default function InvitesPanel() {
   }
 
   const canRespond = activeInvite.invite.status === 'pending';
+  const canUseThreading = activeInvite.threadId !== null;
   // Get organizationId from invite directly, fallback to organization?.id, then to postAcceptOrgId
   const inviteOrgId = (activeInvite.invite as { organizationId?: string }).organizationId ?? activeInvite.organization?.id ?? postAcceptOrgId;
   const acceptedOrgId = activeInvite.invite.status === 'accepted' && inviteOrgId && inviteOrgId.trim() !== '' ? inviteOrgId : null;
@@ -413,7 +415,11 @@ export default function InvitesPanel() {
         </div>
 
         <ScrollArea className="flex-1 px-6 pb-6 pr-4 pt-6">
-          {loadingMessages ? (
+          {!canUseThreading ? (
+            <div className="flex h-full items-center justify-center text-center text-sm text-neutral-400">
+              Чат по приглашению временно отключён, пока invite threads не переведены на БД.
+            </div>
+          ) : loadingMessages ? (
             <div className="flex h-full items-center justify-center text-sm text-neutral-400">Загрузка чата...</div>
           ) : activeMessages.length === 0 ? (
             <div className="flex h-full items-center justify-center text-sm text-neutral-400">
@@ -446,21 +452,32 @@ export default function InvitesPanel() {
         </ScrollArea>
 
         <div className="border-t border-[color:var(--surface-border-subtle)] px-6 py-4">
+          {!canUseThreading ? (
+            <div className="text-sm text-[color:var(--text-secondary)]">
+              Сообщения по приглашению вернутся после перевода invite threads на DB-backed runtime.
+            </div>
+          ) : null}
           <div className="flex gap-3">
             <Textarea
               value={messageDraft}
               onChange={(event) => setMessageDraft(event.target.value)}
-              placeholder={canRespond ? 'Напишите сообщение…' : 'Чат доступен только для просмотра'}
-              disabled={!canRespond || sending}
+              placeholder={
+                !canUseThreading
+                  ? 'Чат временно недоступен'
+                  : canRespond
+                    ? 'Напишите сообщение…'
+                    : 'Чат доступен только для просмотра'
+              }
+              disabled={!canUseThreading || !canRespond || sending}
               className="min-h-[44px]"
             />
             <button
               type="button"
               onClick={() => void handleSendMessage()}
-              disabled={!canRespond || sending || !messageDraft.trim()}
+              disabled={!canUseThreading || !canRespond || sending || !messageDraft.trim()}
               className={cn(
                 'h-[44px] shrink-0 rounded-xl border border-transparent px-4 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
-                canRespond && messageDraft.trim() && !sending
+                canUseThreading && canRespond && messageDraft.trim() && !sending
                   ? 'bg-indigo-500 text-white hover:bg-indigo-400'
                   : 'cursor-not-allowed bg-[color:var(--surface-muted)] text-[color:var(--text-tertiary)]'
               )}
@@ -473,5 +490,4 @@ export default function InvitesPanel() {
     </div>
   );
 }
-
 

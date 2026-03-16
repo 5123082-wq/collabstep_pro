@@ -76,12 +76,13 @@
 ### Исполнители
 
 - [Специалисты](modules/performers/performers-specialists.md)
+- [Handoff для агента](modules/performers/performers-agent-handoff.md)
 - [Команды](modules/performers/performers-teams.md)
 - [Подрядчики](modules/performers/performers-contractors.md)
 - [Вакансии и задачи](modules/performers/performers-vacancies.md)
 - [Мои вакансии](modules/performers/performers-my-vacancies.md)
 - [Отклики и приглашения](modules/performers/performers-responses.md)
-- Дополнительно: [Обзор](modules/performers/performers-overview.md), [Кабинет и карточка исполнителя](modules/performers/performers-profile-cabinet.md), [План реализации](modules/performers/performers-implementation-plan.md)
+- Дополнительно: [Обзор](modules/performers/performers-overview.md), [Handoff для агента](modules/performers/performers-agent-handoff.md), [Кабинет и карточка исполнителя](modules/performers/performers-profile-cabinet.md), [План реализации](modules/performers/performers-implementation-plan.md)
 
 ### Маркетинг
 
@@ -233,6 +234,7 @@
 
 - **[Обзор раздела](modules/performers/performers-overview.md)** — основной документ модуля
 - **[Специалисты](modules/performers/performers-specialists.md)** — каталог специалистов
+- **[Handoff для агента](modules/performers/performers-agent-handoff.md)** — единый brief для нового разработчика/агента
 - **[Кабинет и карточка исполнителя](modules/performers/performers-profile-cabinet.md)** — канонический кабинет пользователя и создание performer card
 - **[План реализации](modules/performers/performers-implementation-plan.md)** — phases P0-P4 для people directory и approval flow
 - **[Команды](modules/performers/performers-teams.md)** — команды
@@ -278,6 +280,7 @@
 - **[Чеклист для PR](playbooks/docs-pr-checklist.md)** — проверка документации перед PR
 - **[Руководство по миграции](playbooks/docs-migration-guide.md)** — как работать с новой документацией
 - **[Руководство для агентов](playbooks/agent-docs-guide.md)** — правила для AI агентов
+- **[Agent Testing Handoff](playbooks/agent-testing-handoff.md)** — чек-лист для агента: тестирование, верификация и исправления; опора на опыт аналогичных проектов и лайфхаки
 - **[Процесс релиза](playbooks/release-process.md)** — процесс релиза и обновления документации
 
 ---
@@ -297,7 +300,8 @@
 
 ### Проверка и валидация
 
-- **[Чеклист проверки](getting-started/VERIFICATION_CHECKLIST.md)** - Проверка корректности установки
+- **[Чеклист проверки](getting-started/VERIFICATION_CHECKLIST.md)** — проверка корректности установки
+- **[Agent Testing Handoff](playbooks/agent-testing-handoff.md)** — полный чек-лист для агента (тесты, функциональные проверки, исправления)
 - **[Шпаргалка](getting-started/CHEAT_SHEET.md)** - Быстрая справка по командам
 
 ### Утилиты

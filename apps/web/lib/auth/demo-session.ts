@@ -1,3 +1,5 @@
+import { EMERGENCY_ADMIN_EMAIL, EMERGENCY_ADMIN_USER_ID } from '@collabverse/api';
+
 export type DemoRole = 'admin' | 'user';
 
 export type DemoSession = {
@@ -9,7 +11,8 @@ export type DemoSession = {
 
 export const DEMO_SESSION_COOKIE = 'cv_session';
 export const DEMO_SESSION_MAX_AGE = 60 * 60 * 24 * 7;
-export const DEMO_ADMIN_EMAIL = process.env.DEMO_ADMIN_EMAIL ?? 'admin.demo@collabverse.test';
+export const DEMO_ADMIN_EMAIL = EMERGENCY_ADMIN_EMAIL;
+export const DEMO_ADMIN_USER_ID = EMERGENCY_ADMIN_USER_ID;
 
 export function encodeDemoSession(session: DemoSession): string {
   return Buffer.from(JSON.stringify(session)).toString('base64url');

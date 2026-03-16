@@ -2,18 +2,27 @@ import { encodeDemoSession } from '@/lib/auth/demo-session';
 import {
   projectsRepository,
   projectChatRepository,
-  resetFinanceMemory,
-  TEST_ADMIN_USER_ID,
-  usersRepository
+  resetFinanceMemory
 } from '@collabverse/api';
+import { db } from '@collabverse/api/db/config';
+import { users } from '@collabverse/api/db/schema';
 import { GET as getChatMessages, POST as createChatMessage } from '@/app/api/pm/projects/[id]/chat/route';
 import { NextRequest } from 'next/server';
 import { makeTestUserId } from './utils/test-ids';
+import { resetTestDb } from './utils/db-cleaner';
+
+jest.mock('@/lib/ai/agent-responses', () => ({
+  handleAgentMentionInChat: jest.fn().mockResolvedValue([]),
+  sendAgentChatResponse: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.setTimeout(30_000);
 
 describe('Project Chat API', () => {
   let projectId: string;
-  const adminEmail = 'admin.demo@collabverse.test';
-  const userId = TEST_ADMIN_USER_ID;
+  const admin = makeTestUserId('project-chat-admin');
+  const adminEmail = admin.email;
+  const userId = admin.id;
   let viewerEmail: string;
   let viewerUserId: string;
   const session = encodeDemoSession({
@@ -29,13 +38,20 @@ describe('Project Chat API', () => {
 
   beforeEach(async () => {
     resetFinanceMemory();
+    await resetTestDb();
 
     const viewer = makeTestUserId('viewer');
     viewerEmail = viewer.email;
     viewerUserId = viewer.id;
 
+    await db.insert(users).values({
+      id: userId,
+      email: adminEmail,
+      name: 'Admin',
+    });
+
     // Создаем проект для тестов
-    const project = projectsRepository.create({
+    const project = await projectsRepository.create({
       title: 'Test Project',
       description: 'Test Description',
       ownerId: userId,
@@ -45,7 +61,7 @@ describe('Project Chat API', () => {
     projectId = project.id;
 
     // Ensure viewer user exists so getCurrentUser can resolve it by email
-    await usersRepository.create({
+    await db.insert(users).values({
       id: viewerUserId,
       email: viewerEmail,
       name: 'Viewer',

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useMemo } from 'react';
-import { useMarketplaceStore } from '@/lib/marketplace/store';
+import { MARKETPLACE_PERSONAL_STATE_ENABLED, useMarketplaceStore } from '@/lib/marketplace/store';
 import type { MarketplaceTemplate } from '@/lib/marketplace/types';
 import { getTemplatePriceLabel } from '@/lib/marketplace/pricing';
 import CatalogIntentButton from '@/components/marketplace/catalog/CatalogIntentButton';
@@ -51,9 +51,14 @@ export default function TemplatePurchaseActions({ template }: TemplatePurchaseAc
         <button
           type="button"
           onClick={() => toggleFavorite(template.id)}
+          disabled={!MARKETPLACE_PERSONAL_STATE_ENABLED}
           className="w-full rounded-xl border border-neutral-700 px-5 py-3 text-sm font-semibold text-neutral-200 transition hover:border-neutral-500 hover:text-neutral-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300"
         >
-          {isFavorite ? 'Сохранено в сохранённом' : 'Сохранить'}
+          {MARKETPLACE_PERSONAL_STATE_ENABLED
+            ? isFavorite
+              ? 'Сохранено в сохранённом'
+              : 'Сохранить'
+            : 'Сохранённое недоступно'}
         </button>
         <CatalogIntentButton
           intent="adaptation"
@@ -67,11 +72,17 @@ export default function TemplatePurchaseActions({ template }: TemplatePurchaseAc
         <button
           type="button"
           onClick={() => addToCart(template.id)}
+          disabled={!MARKETPLACE_PERSONAL_STATE_ENABLED}
           className="w-full rounded-xl border border-neutral-800 bg-neutral-950/70 px-5 py-3 text-sm font-semibold text-neutral-300 transition hover:border-neutral-600 hover:text-neutral-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300"
         >
-          В корзину и оформление
+          {MARKETPLACE_PERSONAL_STATE_ENABLED ? 'В корзину и оформление' : 'Корзина недоступна'}
         </button>
       </div>
+      {!MARKETPLACE_PERSONAL_STATE_ENABLED ? (
+        <p className="text-xs text-neutral-500">
+          Сохранённое, корзина и inquiry-flow отключены, пока эти данные не переведены на DB-backed runtime.
+        </p>
+      ) : null}
     </div>
   );
 }

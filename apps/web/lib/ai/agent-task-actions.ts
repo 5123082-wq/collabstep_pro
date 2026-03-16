@@ -17,7 +17,7 @@ export async function handleAgentTaskAssignment(
     return;
   }
 
-  const task = tasksRepository.findById(taskId);
+  const task = await tasksRepository.findById(taskId);
   if (!task) {
     return;
   }
@@ -62,7 +62,7 @@ export async function handleAgentTaskStatusChange(
     return;
   }
 
-  const task = tasksRepository.findById(taskId);
+  const task = await tasksRepository.findById(taskId);
   if (!task) {
     return;
   }
@@ -109,7 +109,7 @@ export async function sendDeadlineReminder(
     return;
   }
 
-  const task = tasksRepository.findById(taskId);
+  const task = await tasksRepository.findById(taskId);
   if (!task || !task.dueAt) {
     return;
   }
@@ -136,4 +136,3 @@ export async function sendDeadlineReminder(
     attachments: []
   });
 }
-

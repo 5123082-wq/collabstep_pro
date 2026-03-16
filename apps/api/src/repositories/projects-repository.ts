@@ -51,6 +51,15 @@ function normalizeBudgetValue(value: unknown): number | null {
   return null;
 }
 
+function syncProjectIntoMemory(project: Project): void {
+  const index = memory.PROJECTS.findIndex((item) => item.id === project.id);
+  if (index === -1) {
+    memory.PROJECTS.push(project);
+    return;
+  }
+  memory.PROJECTS[index] = project;
+}
+
 export class ProjectsRepository {
   private normalizeProjectStorage(): void {
     let changed = false;
@@ -84,50 +93,27 @@ export class ProjectsRepository {
     
     // Если БД включена, используем cache-aside паттерн с TTL
     if (isPmDbEnabled()) {
-      try {
-        // Формируем ключ кэша на основе параметров
-        const cacheKey = workspaceId 
-          ? `projects:workspace:${workspaceId}:archived:${archived ?? 'all'}`
-          : `projects:all:archived:${archived ?? 'all'}`;
-        
-        // Проверяем кэш
-        const cached = cacheManager.getProjects(cacheKey);
-        if (cached) {
-          // Фильтруем по workspaceId если нужно (кэш может содержать все проекты)
-          let items = cached;
-          if (typeof workspaceId === 'string' && workspaceId.trim()) {
-            const targetWorkspaceId = workspaceId.trim();
-            items = items.filter((project) => project.workspaceId === targetWorkspaceId);
-          }
-          return items.map(cloneProject);
+      const cacheKey = workspaceId 
+        ? `projects:workspace:${workspaceId}:archived:${archived ?? 'all'}`
+        : `projects:all:archived:${archived ?? 'all'}`;
+      
+      const cached = cacheManager.getProjects(cacheKey);
+      if (cached) {
+        let items = cached;
+        if (typeof workspaceId === 'string' && workspaceId.trim()) {
+          const targetWorkspaceId = workspaceId.trim();
+          items = items.filter((project) => project.workspaceId === targetWorkspaceId);
         }
-
-        // Кэш промах - читаем из БД
-        const dbProjects = await fetchProjectsFromPg(options);
-        
-        // Сохраняем в кэш
-        cacheManager.setProjects(cacheKey, dbProjects);
-        
-        // Также обновляем память для обратной совместимости (но это не источник истины)
-        if (memory.PROJECTS.length === 0) {
-          memory.PROJECTS = dbProjects;
-        } else {
-          // Синхронизируем: добавляем новые проекты из БД, обновляем существующие
-          for (const dbProject of dbProjects) {
-            const index = memory.PROJECTS.findIndex(p => p.id === dbProject.id);
-            if (index >= 0) {
-              memory.PROJECTS[index] = dbProject;
-            } else {
-              memory.PROJECTS.push(dbProject);
-            }
-          }
-        }
-        this.normalizeProjectStorage();
-        return dbProjects.map(cloneProject);
-      } catch (error) {
-        console.error('[ProjectsRepository] Error loading projects from DB, falling back to memory:', error);
-        // Fallback to memory if DB fails
+        return items.map(cloneProject);
       }
+
+      const dbProjects = await fetchProjectsFromPg(options);
+      cacheManager.setProjects(cacheKey, dbProjects);
+      for (const dbProject of dbProjects) {
+        syncProjectIntoMemory(dbProject);
+      }
+      this.normalizeProjectStorage();
+      return dbProjects.map(cloneProject);
     }
     
     // Fallback: читаем из памяти (для случаев когда БД не включена)
@@ -144,71 +130,50 @@ export class ProjectsRepository {
   }
 
   async findById(id: string): Promise<Project | null> {
+    if (isPmDbEnabled()) {
+      const dbProject = await fetchProjectByIdFromPg(id);
+      if (!dbProject) {
+        return null;
+      }
+      syncProjectIntoMemory(dbProject);
+      memory.PROJECT_MEMBERS[dbProject.id] = await fetchProjectMembersFromPg(dbProject.id);
+      this.normalizeProjectStorage();
+      return cloneProject(dbProject);
+    }
+
     this.normalizeProjectStorage();
-    // Сначала ищем в памяти
     const project = memory.PROJECTS.find((item) => item.id === id);
     if (project) {
       return cloneProject(project);
-    }
-
-    // Если не найден в памяти и БД включена, загружаем из БД
-    if (isPmDbEnabled()) {
-      try {
-        const dbProject = await fetchProjectByIdFromPg(id);
-        if (dbProject) {
-          // Добавляем в память для последующих запросов
-          memory.PROJECTS.push(dbProject);
-          console.log(`[ProjectsRepository] Loaded project from DB: id=${dbProject.id}, title=${dbProject.title}`);
-          
-          // Также загружаем участников проекта, если их нет в памяти
-          if (!memory.PROJECT_MEMBERS[dbProject.id]) {
-            const members = await fetchProjectMembersFromPg(dbProject.id);
-            if (members.length > 0) {
-              memory.PROJECT_MEMBERS[dbProject.id] = members;
-            }
-          }
-          
-          this.normalizeProjectStorage();
-          return cloneProject(dbProject);
-        }
-      } catch (error) {
-        console.error(`[ProjectsRepository] Error loading project from DB: ${id}`, error);
-      }
     }
 
     console.log(`[ProjectsRepository] Project not found by ID: ${id}, totalProjects=${memory.PROJECTS.length}`);
     return null;
   }
 
-  getMember(projectId: string, userId: string): ProjectMember | null {
-    const members = memory.PROJECT_MEMBERS[projectId] ?? [];
+  async getMember(projectId: string, userId: string): Promise<ProjectMember | null> {
+    const members = await this.listMembers(projectId);
     return members.find((member) => member.userId === userId) ?? null;
   }
 
   async listMembers(projectId: string): Promise<ProjectMember[]> {
-    // Сначала проверяем память
-    if (memory.PROJECT_MEMBERS[projectId]) {
-      return memory.PROJECT_MEMBERS[projectId].map((member) => ({ ...member }));
+    if (isPmDbEnabled()) {
+      const members = await fetchProjectMembersFromPg(projectId);
+      memory.PROJECT_MEMBERS[projectId] = members;
+      return members.map((member) => ({ ...member }));
     }
 
-    // Если нет в памяти и БД включена, загружаем из БД
-    if (isPmDbEnabled()) {
-      try {
-        const members = await fetchProjectMembersFromPg(projectId);
-        if (members.length > 0) {
-          memory.PROJECT_MEMBERS[projectId] = members;
-          return members.map((member) => ({ ...member }));
-        }
-      } catch (error) {
-        console.error(`[ProjectsRepository] Error loading project members from DB: ${projectId}`, error);
-      }
+    if (memory.PROJECT_MEMBERS[projectId]) {
+      return memory.PROJECT_MEMBERS[projectId].map((member) => ({ ...member }));
     }
 
     return [];
   }
 
-  upsertMember(projectId: string, userId: string, role: ProjectMember['role']): ProjectMember {
-    const members = memory.PROJECT_MEMBERS[projectId] ?? [];
+  async upsertMember(projectId: string, userId: string, role: ProjectMember['role']): Promise<ProjectMember> {
+    const members = isPmDbEnabled()
+      ? await this.listMembers(projectId)
+      : [...(memory.PROJECT_MEMBERS[projectId] ?? [])];
     const index = members.findIndex((item) => item.userId === userId);
     const member: ProjectMember = { userId, role };
     if (index === -1) {
@@ -218,15 +183,15 @@ export class ProjectsRepository {
     }
     memory.PROJECT_MEMBERS[projectId] = members;
     if (isPmDbEnabled()) {
-      void persistProjectMembersToPg(projectId, members).catch((error) =>
-        console.error('[ProjectsRepository] Failed to persist members', error)
-      );
+      await persistProjectMembersToPg(projectId, members);
     }
     return { ...member };
   }
 
-  removeMember(projectId: string, userId: string): boolean {
-    const members = memory.PROJECT_MEMBERS[projectId];
+  async removeMember(projectId: string, userId: string): Promise<boolean> {
+    const members = isPmDbEnabled()
+      ? await this.listMembers(projectId)
+      : [...(memory.PROJECT_MEMBERS[projectId] ?? [])];
     if (!members) {
       return false;
     }
@@ -242,9 +207,7 @@ export class ProjectsRepository {
     }
     if (isPmDbEnabled()) {
       const snapshot = memory.PROJECT_MEMBERS[projectId] ?? [];
-      void persistProjectMembersToPg(projectId, snapshot).catch((error) =>
-        console.error('[ProjectsRepository] Failed to persist members', error)
-      );
+      await persistProjectMembersToPg(projectId, snapshot);
     }
     return true;
   }
@@ -261,7 +224,7 @@ export class ProjectsRepository {
     }
 
     const isOwner = project.ownerId === userId;
-    const isProjectMember = this.getMember(projectId, userId) !== null;
+    const isProjectMember = (await this.getMember(projectId, userId)) !== null;
 
     // Public projects: NOT globally visible; доступ только владельцу и явным участникам проекта.
     // (Важно: в demo-режиме новые пользователи могут автоматически попадать в общий workspace.)
@@ -283,67 +246,7 @@ export class ProjectsRepository {
     return false;
   }
 
-  /**
-   * Generates a unique project key for a workspace
-   * Format: uppercase letters (e.g., "PROJ", "ABC")
-   */
-  private generateProjectKey(workspaceId: string, requestedKey?: string, title?: string): string {
-    // If key is provided, validate uniqueness
-    if (requestedKey && typeof requestedKey === 'string') {
-      const normalizedKey = requestedKey.trim().toUpperCase();
-      if (normalizedKey.length >= 2 && normalizedKey.length <= 10) {
-        const isUnique = !memory.PROJECTS.some(
-          (p) => p.workspaceId === workspaceId && p.key === normalizedKey
-        );
-        if (isUnique) {
-          return normalizedKey;
-        }
-      }
-    }
-
-    // Generate automatic key based on project title
-    // Extract first letters from title and make uppercase
-    let baseKey = 'PROJ';
-    if (title && typeof title === 'string') {
-      const titleWords = title.split(/\s+/).filter((w) => w.length > 0);
-      if (titleWords.length > 0) {
-        baseKey = titleWords
-          .slice(0, 4)
-          .map((w) => w[0]?.toUpperCase() || '')
-          .join('')
-          .slice(0, 10);
-        // Ensure it's at least 2 characters
-        if (baseKey.length < 2) {
-          baseKey = 'PROJ';
-        }
-      }
-    }
-
-    // Ensure uniqueness by appending number if needed
-    let key = baseKey;
-    let counter = 1;
-    while (memory.PROJECTS.some((p) => p.workspaceId === workspaceId && p.key === key)) {
-      key = `${baseKey}${counter}`;
-      counter++;
-    }
-
-    return key;
-  }
-
-  /**
-   * Returns the next sequential project number for the given owner.
-   * Numbers are monotonically increasing and are not reused after deletion.
-   */
-  private getNextOwnerProjectNumber(ownerId: string): number {
-    const ownerProjects = memory.PROJECTS.filter((project) => project.ownerId === ownerId);
-    if (ownerProjects.length === 0) {
-      return 1;
-    }
-    const maxNumber = Math.max(...ownerProjects.map((project) => project.ownerNumber ?? 0));
-    return maxNumber + 1;
-  }
-
-  create(payload: {
+  async create(payload: {
     title: string;
     description?: string;
     ownerId: string;
@@ -357,8 +260,9 @@ export class ProjectsRepository {
     workflowId?: string;
     budgetPlanned?: number | string | null;
     budgetSpent?: number | string | null;
-  }): Project {
+  }): Promise<Project> {
     this.normalizeProjectStorage();
+    const existingProjects = isPmDbEnabled() ? await this.list() : memory.PROJECTS.map(cloneProject);
     const now = new Date().toISOString();
     const id = crypto.randomUUID();
     const workflowId = payload.workflowId ?? `wf-${id}`;
@@ -367,8 +271,8 @@ export class ProjectsRepository {
 
     const visibility: ProjectVisibility = payload.visibility === 'public' ? 'public' : 'private';
     const status: ProjectStatus = 'active';
-    const key = this.generateProjectKey(payload.workspaceId, payload.key, payload.title);
-    const ownerNumber = this.getNextOwnerProjectNumber(payload.ownerId);
+    const key = this.generateProjectKeyFromSource(existingProjects, payload.workspaceId, payload.key, payload.title);
+    const ownerNumber = this.getNextOwnerProjectNumberFromSource(existingProjects, payload.ownerId);
 
     const budgetPlanned = normalizeBudgetValue(payload.budgetPlanned);
     const budgetSpent = normalizeBudgetValue(payload.budgetSpent);
@@ -399,12 +303,10 @@ export class ProjectsRepository {
     if (type) {
       project.type = type;
     }
-    memory.PROJECTS.push(project);
+    syncProjectIntoMemory(project);
     console.log(`[ProjectsRepository] Created project: id=${project.id}, workspaceId=${project.workspaceId}, ownerId=${project.ownerId}, title=${project.title}, totalProjects=${memory.PROJECTS.length}`);
     if (isPmDbEnabled()) {
-      void persistProjectToPg(project).catch((error) =>
-        console.error('[ProjectsRepository] Failed to persist project', error)
-      );
+      await persistProjectToPg(project);
       // Инвалидируем кэш проектов при создании
       cacheManager.invalidateProjects(project.workspaceId);
     }
@@ -412,7 +314,7 @@ export class ProjectsRepository {
     return cloneProject(project);
   }
 
-  update(
+  async update(
     id: string,
     patch: Partial<
       Pick<
@@ -431,16 +333,12 @@ export class ProjectsRepository {
         | 'budgetSpent'
       >
     >
-  ): Project | null {
-    const idx = memory.PROJECTS.findIndex((item) => item.id === id);
-    if (idx === -1) {
-      return null;
-    }
-    this.normalizeProjectStorage();
-    const current = memory.PROJECTS[idx];
+  ): Promise<Project | null> {
+    const current = await this.findById(id);
     if (!current) {
       return null;
     }
+    this.normalizeProjectStorage();
 
     const next: Project = {
       ...current,
@@ -483,7 +381,8 @@ export class ProjectsRepository {
     if (patch.key && typeof patch.key === 'string') {
       const normalizedKey = patch.key.trim().toUpperCase();
       // Validate uniqueness within workspace
-      const isUnique = !memory.PROJECTS.some(
+      const existingProjects = isPmDbEnabled() ? await this.list() : memory.PROJECTS.map(cloneProject);
+      const isUnique = !existingProjects.some(
         (p) => p.id !== id && p.workspaceId === next.workspaceId && p.key === normalizedKey
       );
       if (isUnique && normalizedKey.length >= 2 && normalizedKey.length <= 10) {
@@ -515,11 +414,9 @@ export class ProjectsRepository {
       next.budgetSpent = normalizeBudgetValue(patch.budgetSpent);
     }
 
-    memory.PROJECTS[idx] = next;
+    syncProjectIntoMemory(next);
     if (isPmDbEnabled()) {
-      void persistProjectToPg(next).catch((error) =>
-        console.error('[ProjectsRepository] Failed to persist project update', error)
-      );
+      await persistProjectToPg(next);
       // Инвалидируем кэш проектов при обновлении
       cacheManager.invalidateProjects(next.workspaceId);
     }
@@ -527,24 +424,35 @@ export class ProjectsRepository {
     return cloneProject(next);
   }
 
-  delete(id: string): boolean {
+  async delete(id: string): Promise<boolean> {
     const idx = memory.PROJECTS.findIndex((item) => item.id === id);
     if (idx === -1) {
+      if (isPmDbEnabled()) {
+        const existing = await this.findById(id);
+        if (!existing) {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    }
+
+    const project = idx === -1 ? await this.findById(id) : memory.PROJECTS[idx];
+    if (!project) {
       return false;
     }
 
-    const project = memory.PROJECTS[idx];
     const workspaceId = project?.workspaceId;
 
-    memory.PROJECTS.splice(idx, 1);
+    if (idx !== -1) {
+      memory.PROJECTS.splice(idx, 1);
+    }
     memory.TASKS = memory.TASKS.filter((task) => task.projectId !== id);
     memory.ITERATIONS = memory.ITERATIONS.filter((iteration) => iteration.projectId !== id);
     delete memory.WORKFLOWS[id];
     delete memory.PROJECT_MEMBERS[id];
     if (isPmDbEnabled()) {
-      void deleteProjectFromPg(id).catch((error) =>
-        console.error('[ProjectsRepository] Failed to delete project from Postgres', error)
-      );
+      await deleteProjectFromPg(id);
       // Инвалидируем кэш проектов при удалении
       if (workspaceId) {
         cacheManager.invalidateProjects(workspaceId);
@@ -556,49 +464,82 @@ export class ProjectsRepository {
     return true;
   }
 
-  archive(id: string): Project | null {
+  async archive(id: string): Promise<Project | null> {
     return this.update(id, { status: 'archived', archived: true });
   }
 
-  unarchive(id: string): Project | null {
+  async unarchive(id: string): Promise<Project | null> {
     // When unarchiving, set status to 'active' by default
     return this.update(id, { status: 'active', archived: false });
   }
 
   async findByKey(workspaceId: string, key: string): Promise<Project | null> {
-    // Сначала ищем в памяти
+    if (isPmDbEnabled()) {
+      const dbProject = await fetchProjectByKeyFromPg(workspaceId, key);
+      if (!dbProject) {
+        return null;
+      }
+      syncProjectIntoMemory(dbProject);
+      memory.PROJECT_MEMBERS[dbProject.id] = await fetchProjectMembersFromPg(dbProject.id);
+      return cloneProject(dbProject);
+    }
+
     const project = memory.PROJECTS.find(
       (item) => item.workspaceId === workspaceId && item.key === key.toUpperCase()
     );
-    if (project) {
-      return cloneProject(project);
-    }
+    return project ? cloneProject(project) : null;
+  }
 
-    // Если не найден в памяти и БД включена, загружаем из БД
-    if (isPmDbEnabled()) {
-      try {
-        const dbProject = await fetchProjectByKeyFromPg(workspaceId, key);
-        if (dbProject) {
-          // Добавляем в память для последующих запросов
-          memory.PROJECTS.push(dbProject);
-          console.log(`[ProjectsRepository] Loaded project from DB by key: key=${key}, id=${dbProject.id}, title=${dbProject.title}`);
-          
-          // Также загружаем участников проекта, если их нет в памяти
-          if (!memory.PROJECT_MEMBERS[dbProject.id]) {
-            const members = await fetchProjectMembersFromPg(dbProject.id);
-            if (members.length > 0) {
-              memory.PROJECT_MEMBERS[dbProject.id] = members;
-            }
-          }
-          
-          return cloneProject(dbProject);
+  private generateProjectKeyFromSource(
+    projects: Project[],
+    workspaceId: string,
+    requestedKey?: string,
+    title?: string
+  ): string {
+    if (requestedKey && typeof requestedKey === 'string') {
+      const normalizedKey = requestedKey.trim().toUpperCase();
+      if (normalizedKey.length >= 2 && normalizedKey.length <= 10) {
+        const isUnique = !projects.some(
+          (p) => p.workspaceId === workspaceId && p.key === normalizedKey
+        );
+        if (isUnique) {
+          return normalizedKey;
         }
-      } catch (error) {
-        console.error(`[ProjectsRepository] Error loading project from DB by key: ${workspaceId}/${key}`, error);
       }
     }
 
-    return null;
+    let baseKey = 'PROJ';
+    if (title && typeof title === 'string') {
+      const titleWords = title.split(/\s+/).filter((w) => w.length > 0);
+      if (titleWords.length > 0) {
+        baseKey = titleWords
+          .slice(0, 4)
+          .map((w) => w[0]?.toUpperCase() || '')
+          .join('')
+          .slice(0, 10);
+        if (baseKey.length < 2) {
+          baseKey = 'PROJ';
+        }
+      }
+    }
+
+    let key = baseKey;
+    let counter = 1;
+    while (projects.some((p) => p.workspaceId === workspaceId && p.key === key)) {
+      key = `${baseKey}${counter}`;
+      counter++;
+    }
+
+    return key;
+  }
+
+  private getNextOwnerProjectNumberFromSource(projects: Project[], ownerId: string): number {
+    const ownerProjects = projects.filter((project) => project.ownerId === ownerId);
+    if (ownerProjects.length === 0) {
+      return 1;
+    }
+    const maxNumber = Math.max(...ownerProjects.map((project) => project.ownerNumber ?? 0));
+    return maxNumber + 1;
   }
 }
 

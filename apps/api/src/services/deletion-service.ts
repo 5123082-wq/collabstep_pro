@@ -123,7 +123,7 @@ function uniqueTaskRefs(tasks: Array<TaskRef | null>): TaskRef[] {
 
 export class DeletionService {
   async getTaskPreview(taskId: string): Promise<TaskDeletionPreview | null> {
-    const task = tasksRepository.findById(taskId);
+    const task = await tasksRepository.findById(taskId);
     if (!task) {
       return null;
     }
@@ -131,12 +131,16 @@ export class DeletionService {
     const project = await projectsRepository.findById(task.projectId);
 
     const dependencies = taskDependenciesRepository.listByTask(taskId);
-    const blockers = dependencies
-      .filter((dep) => dep.dependentTaskId === taskId)
-      .map((dep) => toTaskRef(tasksRepository.findById(dep.blockerTaskId)));
-    const blocks = dependencies
-      .filter((dep) => dep.blockerTaskId === taskId)
-      .map((dep) => toTaskRef(tasksRepository.findById(dep.dependentTaskId)));
+    const blockers = await Promise.all(
+      dependencies
+        .filter((dep) => dep.dependentTaskId === taskId)
+        .map(async (dep) => toTaskRef(await tasksRepository.findById(dep.blockerTaskId)))
+    );
+    const blocks = await Promise.all(
+      dependencies
+        .filter((dep) => dep.blockerTaskId === taskId)
+        .map(async (dep) => toTaskRef(await tasksRepository.findById(dep.dependentTaskId)))
+    );
     const children = memory.TASKS.filter((child) => child.parentId === taskId).map(toTaskRef).filter(Boolean) as TaskRef[];
 
     const comments = memory.TASK_COMMENTS.filter((comment) => comment.taskId === taskId);
@@ -277,7 +281,7 @@ export class DeletionService {
       memory.NOTIFICATIONS = memory.NOTIFICATIONS.filter((notification) => !notificationIds.has(notification.id));
     }
 
-    tasksRepository.delete(taskId);
+    await tasksRepository.delete(taskId);
 
     if (!options.skipReparent) {
       for (const childId of childIds) {
@@ -357,7 +361,7 @@ export class DeletionService {
     );
 
     // Remove project iterations, workflows, members via repository cleanup
-    projectsRepository.delete(projectId);
+    await projectsRepository.delete(projectId);
 
     return {
       projectId,

@@ -28,7 +28,7 @@ export async function DELETE(
     return jsonError('ACCESS_DENIED', { status: 403 });
   }
 
-  const task = tasksRepository.findById(params.id);
+  const task = await tasksRepository.findById(params.id);
   if (!task) {
     return jsonError('NOT_FOUND', { status: 404 });
   }

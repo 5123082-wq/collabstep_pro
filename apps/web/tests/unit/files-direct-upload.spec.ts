@@ -2,8 +2,7 @@ import { encodeDemoSession } from '@/lib/auth/demo-session';
 import {
   projectsRepository,
   tasksRepository,
-  resetFinanceMemory,
-  TEST_ADMIN_USER_ID
+  resetFinanceMemory
 } from '@collabverse/api';
 import { db } from '@collabverse/api/db/config';
 import {
@@ -22,17 +21,21 @@ import { randomUUID } from 'node:crypto';
 import { generateClientTokenFromReadWriteToken } from '@vercel/blob/client';
 import { and, eq } from 'drizzle-orm';
 import { resetTestDb } from './utils/db-cleaner';
+import { makeTestUserId } from './utils/test-ids';
 
 // Мокаем generateClientTokenFromReadWriteToken
 jest.mock('@vercel/blob/client', () => ({
   generateClientTokenFromReadWriteToken: jest.fn()
 }));
 
+jest.setTimeout(30_000);
+
 describe('Direct Upload API', () => {
   let projectId: string;
   let organizationId: string;
-  const adminEmail = 'admin.demo@collabverse.test';
-  const userId = TEST_ADMIN_USER_ID;
+  const admin = makeTestUserId('files-upload-admin');
+  const adminEmail = admin.email;
+  const userId = admin.id;
   const session = encodeDemoSession({
     email: adminEmail,
     userId,
@@ -82,7 +85,7 @@ describe('Direct Upload API', () => {
       });
 
     // Создаем проект в памяти + в БД
-    const project = projectsRepository.create({
+    const project = await projectsRepository.create({
       title: 'Test Project',
       description: 'Test Description',
       ownerId: userId,
@@ -224,8 +227,8 @@ describe('Direct Upload API', () => {
 
   describe('POST /api/files/complete', () => {
     it('should create FileObject and Attachment after upload with valid blob URL', async () => {
-      const blobUrl = 'https://example.blob.vercel-storage.com/test.txt';
       const storageKey = `projects/${projectId}/test-file-id-test.txt`;
+      const blobUrl = `https://example.blob.vercel-storage.com/${storageKey}`;
 
       const response = await completeUpload(
         new NextRequest('http://localhost/api/files/complete', {
@@ -430,7 +433,7 @@ describe('Direct Upload API', () => {
     });
 
     it('should create project/task folders when uploading task file', async () => {
-      const task = tasksRepository.create({
+      const task = await tasksRepository.create({
         projectId,
         title: 'Design Logo',
         status: 'new'

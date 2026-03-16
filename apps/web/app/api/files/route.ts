@@ -23,7 +23,7 @@ const UploadJsonSchema = z.object({
   filename: z.string(),
   mimeType: z.string().default('application/octet-stream'),
   sizeBytes: z.number().int().nonnegative(),
-  uploaderId: z.string().default('admin.demo@collabverse.test'),
+  uploaderId: z.string().default(''),
   projectId: z.string().optional(),
   entityType: z.enum(['project', 'task', 'comment', 'document', 'project_chat']).optional(),
   entityId: z.string().optional()
@@ -65,7 +65,7 @@ async function extractUploadPayload(
       typeof form.get('entityType') === 'string' ? (form.get('entityType') as string) : undefined
     );
     const entityId = typeof form.get('entityId') === 'string' ? (form.get('entityId') as string) : undefined;
-    const uploaderId = typeof form.get('uploaderId') === 'string' ? (form.get('uploaderId') as string) : 'admin.demo@collabverse.test';
+    const uploaderId = typeof form.get('uploaderId') === 'string' ? (form.get('uploaderId') as string) : '';
     const buffer = Buffer.from(await file.arrayBuffer());
     const sha256 = createHash('sha256').update(buffer).digest('hex');
     const payload: UploadPayload = {
@@ -148,10 +148,10 @@ export async function POST(req: NextRequest) {
 
     const organizationId = dbProject.organizationId;
     const projectFolderName = `${project.title || 'Project'} (${projectId})`;
-    let taskForFolder: ReturnType<typeof tasksRepository.findById> | null = null;
+    let taskForFolder: Awaited<ReturnType<typeof tasksRepository.findById>> = null;
 
     if (payload.entityType === 'task' && payload.entityId) {
-      const task = tasksRepository.findById(payload.entityId);
+      const task = await tasksRepository.findById(payload.entityId);
       if (!task) {
         return jsonError('TASK_NOT_FOUND', { status: 404 });
       }

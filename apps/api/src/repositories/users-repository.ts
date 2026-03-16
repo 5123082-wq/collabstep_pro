@@ -2,18 +2,28 @@ import { memory, DEFAULT_ACCOUNT_ID, DEFAULT_WORKSPACE_ID } from '../data/memory
 import type { WorkspaceUser } from '../types';
 import type { UsersRepository } from './users-repository.interface';
 import { UsersDbRepository } from './users-db-repository';
+import { isEmergencyOrLegacyDemoAdminIdentity, isEmergencyAdminUserId } from '../runtime/emergency-admin';
 
 function cloneUser(user: WorkspaceUser): WorkspaceUser {
   return { ...user };
 }
 
+function shouldExcludeFromBusinessReads(user: Pick<WorkspaceUser, 'id' | 'email'>): boolean {
+  return isEmergencyOrLegacyDemoAdminIdentity({ userId: user.id, email: user.email });
+}
+
 export class UsersMemoryRepository implements UsersRepository {
   async list(): Promise<WorkspaceUser[]> {
-    return memory.WORKSPACE_USERS.map(cloneUser);
+    return memory.WORKSPACE_USERS
+      .filter((user) => !shouldExcludeFromBusinessReads(user))
+      .map(cloneUser);
   }
 
   async findById(id: string): Promise<WorkspaceUser | null> {
     if (!id) {
+      return null;
+    }
+    if (isEmergencyAdminUserId(id) || isEmergencyOrLegacyDemoAdminIdentity({ userId: id })) {
       return null;
     }
     const trimmed = id.trim();
@@ -24,7 +34,10 @@ export class UsersMemoryRepository implements UsersRepository {
     const match = memory.WORKSPACE_USERS.find(
       (user) => user.id === trimmed || user.email.toLowerCase() === lower
     );
-    return match ? cloneUser(match) : null;
+    if (!match || shouldExcludeFromBusinessReads(match)) {
+      return null;
+    }
+    return cloneUser(match);
   }
 
   async findMany(ids: string[]): Promise<WorkspaceUser[]> {
@@ -35,7 +48,9 @@ export class UsersMemoryRepository implements UsersRepository {
     if (lookup.size === 0) {
       return [];
     }
-    return memory.WORKSPACE_USERS.filter((user) => lookup.has(user.id)).map(cloneUser);
+    return memory.WORKSPACE_USERS
+      .filter((user) => lookup.has(user.id) && !shouldExcludeFromBusinessReads(user))
+      .map(cloneUser);
   }
 
   async findByEmail(email: string): Promise<WorkspaceUser | null> {
@@ -187,13 +202,12 @@ export class UsersMemoryRepository implements UsersRepository {
 }
 
 // Factory logic
-// @vercel/postgres requires POSTGRES_URL to be set. DATABASE_URL is not enough for it.
-const hasDbConnection = !!process.env.POSTGRES_URL;
+const hasDbConnection = !!process.env.POSTGRES_URL || !!process.env.DATABASE_URL;
 const isDbStorage = process.env.AUTH_STORAGE === 'db' && hasDbConnection;
 
 if (process.env.AUTH_STORAGE === 'db' && !hasDbConnection) {
-  console.error('[UsersRepository] AUTH_STORAGE=db but POSTGRES_URL is not set. Database operations will fail.');
-  throw new Error('AUTH_STORAGE=db requires POSTGRES_URL to be set');
+  console.error('[UsersRepository] AUTH_STORAGE=db but POSTGRES_URL/DATABASE_URL is not set. Database operations will fail.');
+  throw new Error('AUTH_STORAGE=db requires POSTGRES_URL or DATABASE_URL to be set');
 }
 
 export const usersRepository: UsersRepository = isDbStorage ? new UsersDbRepository() : new UsersMemoryRepository();

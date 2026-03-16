@@ -1,5 +1,5 @@
 import { getCurrentUser } from '@/lib/auth/session';
-import { listManagedAuthorPublications } from '@/lib/marketplace/author-publications';
+import { MARKETPLACE_PUBLICATION_RUNTIME_ENABLED, listManagedAuthorPublications } from '@/lib/marketplace/author-publications';
 import MarketSellerClient from '@/components/marketplace/author/MarketSellerClient';
 import { performerProfilesRepository } from '@collabverse/api';
 
@@ -35,6 +35,11 @@ export default async function MarketSellerPage() {
           </p>
         </div>
       </div>
+      {!MARKETPLACE_PUBLICATION_RUNTIME_ENABLED ? (
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          Publication-layer временно отключён, пока PM listings и author publications не переведены на БД.
+        </div>
+      ) : null}
       <MarketSellerClient
         authorHandle={profile?.handle ?? null}
         authorProfilePublic={profile?.isPublic ?? false}

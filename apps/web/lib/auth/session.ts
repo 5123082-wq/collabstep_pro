@@ -2,7 +2,7 @@ import type { Session } from 'next-auth';
 import { auth } from './config';
 import { redirect } from 'next/navigation';
 import { getDemoSessionFromCookies } from './demo-session.server';
-import { usersRepository } from '@collabverse/api';
+import { buildEmergencyAdminUser, isEmergencyOrLegacyDemoAdminIdentity, usersRepository } from '@collabverse/api';
 
 type AppSessionUser = {
   id?: string;
@@ -68,6 +68,13 @@ export async function getCurrentUser() {
 
   const sessionUserId = session.user.id;
   const sessionEmail = session.user.email;
+
+  if (isEmergencyOrLegacyDemoAdminIdentity({ userId: sessionUserId, email: sessionEmail })) {
+    return {
+      ...buildEmergencyAdminUser(),
+      role: 'admin'
+    };
+  }
 
   // Primary: canonical id (UUID/string id) -> usersRepository.findById
   if (sessionUserId && !isEmailLike(sessionUserId)) {

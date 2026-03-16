@@ -8,7 +8,7 @@ export class ContractService {
     async createOffer(taskId: string, performerId: string, organizationId: string, amount: number, currency: 'RUB' | 'USD' = 'RUB') {
         // 1. Validate
         // Check if task exists (in memory repo)
-        const task = tasksRepository.findById(taskId);
+        const task = await tasksRepository.findById(taskId);
         if (!task) throw new Error('Task not found');
 
         // Check if contract already exists

@@ -264,20 +264,6 @@ export async function GET(request: Request) {
       }
     };
 
-    // Защита от пустого списка проектов/задач в ответе
-    if (response.meta.projects.length === 0) {
-      response.meta.projects = [
-        {
-          id: 'fallback-project',
-          name: 'Demo project',
-          key: 'DEMO',
-          scope: 'owned',
-          isOwner: true
-        }
-      ];
-      response.meta.scopeCounts = response.meta.scopeCounts ?? { all: 0, owned: 0, member: 0 };
-    }
-
     return jsonOk(response);
   } catch (error) {
     console.error('[Tasks API] Unexpected error', error);
@@ -320,11 +306,11 @@ export async function POST(request: Request) {
     }
 
     // Проверяем доступ к проекту
-    if (!projectsRepository.hasAccess(normalizedProjectId, auth.userId)) {
+    if (!(await projectsRepository.hasAccess(normalizedProjectId, auth.userId))) {
       return jsonError('No access to project', { status: 403 });
     }
 
-    const task = tasksRepository.create({
+    const task = await tasksRepository.create({
       projectId: normalizedProjectId,
       title: normalizedTitle,
       status: status as TaskStatus,

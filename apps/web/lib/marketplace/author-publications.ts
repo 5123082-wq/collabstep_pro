@@ -18,6 +18,8 @@ import {
   type ProjectListingAuthorContext
 } from '@/lib/marketplace/pm-listing-authorship';
 
+export const MARKETPLACE_PUBLICATION_RUNTIME_ENABLED = false;
+
 export type ManagedAuthorPublicationKind = 'solution' | 'template' | 'service';
 export type ManagedAuthorPublicationStatus = 'draft' | 'published' | 'rejected';
 
@@ -209,6 +211,10 @@ function toAuthorListing(listing: MarketplaceListing, project: Project | null): 
 }
 
 export async function listPublishableProjectSources(userId: string): Promise<PublishableProjectSource[]> {
+  if (!MARKETPLACE_PUBLICATION_RUNTIME_ENABLED) {
+    return [];
+  }
+
   const projects = await projectsRepository.list({ archived: false });
 
   const sourceEntries = await Promise.all(
@@ -263,6 +269,10 @@ export async function listPublishableProjectSources(userId: string): Promise<Pub
 }
 
 export async function listPublishableTemplateSources(userId: string): Promise<PublishableTemplateSource[]> {
+  if (!MARKETPLACE_PUBLICATION_RUNTIME_ENABLED) {
+    return [];
+  }
+
   const templates = await userTemplatesRepository.list(userId);
   return templates
     .map((template) => {
@@ -279,6 +289,10 @@ export async function listPublishableTemplateSources(userId: string): Promise<Pu
 }
 
 export async function listManagedAuthorPublications(userId: string): Promise<ManagedAuthorPublication[]> {
+  if (!MARKETPLACE_PUBLICATION_RUNTIME_ENABLED) {
+    return [];
+  }
+
   const [listings, overlayPublications] = await Promise.all([
     Promise.resolve(marketplaceListingsRepository.list()),
     Promise.resolve(marketplaceAuthorPublicationsRepository.listByOwnerUserId(userId))
@@ -301,6 +315,10 @@ export async function listManagedAuthorPublications(userId: string): Promise<Man
 }
 
 export async function listPublicAuthorPublicationsByUserId(userId: string): Promise<CatalogAuthorPublication[]> {
+  if (!MARKETPLACE_PUBLICATION_RUNTIME_ENABLED) {
+    return [];
+  }
+
   const [listings, overlayPublications] = await Promise.all([
     Promise.resolve(marketplaceListingsRepository.list()),
     Promise.resolve(marketplaceAuthorPublicationsRepository.listPublishedByOwnerUserId(userId))

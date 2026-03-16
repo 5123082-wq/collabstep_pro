@@ -18,6 +18,13 @@ PM Core (Project Management Core) — основной модуль управл
 - Управляет файлами проектов через интеграцию с Vercel Blob Storage
 - Поддерживает real-time обновления через WebSocket
 
+**Runtime contract:**
+
+- Business reads/writes проектов, задач, project members, комментариев, project activity, чата и файлов идут через DB-backed path.
+- При доступной БД PM surfaces не подменяют реальные данные memory/mock/demo сущностями.
+- Если DB-path для конкретной поверхности недоступен, экран должен показывать честный empty/error/maintenance state.
+- Emergency admin остаётся только auth fallback и не считается каноническим участником PM business данных.
+
 ## 2) Key objects
 
 Основные сущности модуля PM Core:
@@ -94,12 +101,12 @@ PM Core (Project Management Core) — основной модуль управл
 
 | Feature       | What it does                                                                                            | Doc                                    | Status     |
 | ------------- | ------------------------------------------------------------------------------------------------------- | -------------------------------------- | ---------- |
-| Projects      | Создание, редактирование, архивирование проектов. Управление командой проекта, публикация в маркетплейс | [projects.md](./projects-tasks-projects.md)           | ✅ stable  |
-| Tasks         | Создание и управление задачами. Иерархия, статусы, метки, назначения, зависимости                       | [tasks.md](./projects-tasks-tasks.md)                 | ✅ stable  |
-| Comments      | Комментарии к задачам с упоминаниями, файлами, реакциями. Древовидная структура                         | [comments.md](./projects-tasks-comments.md)           | ✅ stable  |
+| Projects      | Создание, редактирование, архивирование проектов. Управление командой проекта, публикация в маркетплейс | [projects.md](./projects-tasks-projects.md)           | ✅ stable / DB-backed |
+| Tasks         | Создание и управление задачами. Иерархия, статусы, метки, назначения, зависимости                       | [tasks.md](./projects-tasks-tasks.md)                 | ✅ stable / DB-backed |
+| Comments      | Комментарии к задачам с упоминаниями, файлами, реакциями. Древовидная структура                         | [comments.md](./projects-tasks-comments.md)           | ✅ stable / DB-backed |
 | Notifications | Система уведомлений о событиях в проектах. In-app уведомления с фильтрацией                             | [notifications.md](./projects-tasks-notifications.md) | ✅ 95%     |
-| Chat          | Командный чат проекта для общения участников. Прикрепление файлов, упоминания                           | [chat.md](./projects-tasks-chat.md)                   | ✅ stable  |
-| Files         | Файловый менеджер проекта. Загрузка, организация в папки, публичные ссылки, корзина                     | [files.md](./projects-tasks-files.md)                 | ✅ stable  |
+| Chat          | Командный чат проекта для общения участников. Прикрепление файлов, упоминания                           | [chat.md](./projects-tasks-chat.md)                   | ✅ stable / DB-backed |
+| Files         | Файловый менеджер проекта. Загрузка, организация в папки, публичные ссылки, корзина                     | [files.md](./projects-tasks-files.md)                 | ✅ stable / DB-backed |
 | Kanban        | Kanban представление задач. Drag & drop, группировки, фильтры, массовые операции                        | [kanban.md](./projects-tasks-kanban.md)               | ✅ stable  |
 | List          | Табличное представление задач (Excel-подобное). Настраиваемые колонки, инлайн-редактирование            | [tasks.md](./projects-tasks-tasks.md#list-view)       | ✅ stable  |
 | Calendar      | Календарное представление задач. День/Неделя/Месяц, drag-to-reschedule                                  | [tasks.md](./projects-tasks-tasks.md#calendar-view)   | ✅ stable  |

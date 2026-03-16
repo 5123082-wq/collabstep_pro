@@ -12,6 +12,12 @@ jest.mock('@/lib/auth/session', () => ({
 
 import { getCurrentUser } from '@/lib/auth/session';
 
+jest.mock('@/lib/api/resolve-organization-plan', () => ({
+  resolveOrganizationPlan: jest.fn(),
+}));
+
+import { resolveOrganizationPlan } from '@/lib/api/resolve-organization-plan';
+
 jest.mock('@collabverse/api', () => {
   const actual = jest.requireActual('@collabverse/api');
   return {
@@ -20,12 +26,15 @@ jest.mock('@collabverse/api', () => {
       listOrganizationInvitesForInvitee: jest.fn(),
       findOrganizationInviteById: jest.fn(),
       updateOrganizationInviteStatus: jest.fn(),
+      listActiveProjectInvitesForInvitee: jest.fn(),
       findActiveProjectInviteForUser: jest.fn(),
       findActiveProjectInviteForEmail: jest.fn(),
     },
     organizationsRepository: {
       findById: jest.fn(),
       findMember: jest.fn(),
+      listMembers: jest.fn(),
+      listMembershipsForUser: jest.fn(),
       addMember: jest.fn(),
       updateMemberStatus: jest.fn(),
     },
@@ -50,9 +59,14 @@ describe('Invites API (org invites via messaging)', () => {
     resetInvitesMemory();
     jest.clearAllMocks();
     (getCurrentUser as jest.Mock).mockResolvedValue(currentUser);
+    (resolveOrganizationPlan as jest.Mock).mockResolvedValue({ code: 'free' });
+    (organizationsRepository.findById as jest.Mock).mockResolvedValue(null);
+    (organizationsRepository.listMembers as jest.Mock).mockResolvedValue([]);
+    (organizationsRepository.listMembershipsForUser as jest.Mock).mockResolvedValue([]);
+    (invitationsRepository.listActiveProjectInvitesForInvitee as jest.Mock).mockResolvedValue([]);
   });
 
-  it('GET /api/invites returns invites with inviter/org and creates thread', async () => {
+  it('GET /api/invites returns invites with inviter/org and no local thread fallback', async () => {
     (invitationsRepository.listOrganizationInvitesForInvitee as jest.Mock).mockResolvedValue([
       {
         id: 'inv-1',
@@ -75,12 +89,11 @@ describe('Invites API (org invites via messaging)', () => {
       name: 'Inviter',
       email: 'inviter@example.com',
     });
-
     const response = await listInvites();
     expect(response.status).toBe(200);
     const payload = await response.json();
     expect(payload.data.invites).toHaveLength(1);
-    expect(payload.data.invites[0].threadId).toBeTruthy();
+    expect(payload.data.invites[0].threadId).toBeNull();
   });
 
   it('POST /api/invites/[id]/accept accepts pending invite and adds member if missing', async () => {
@@ -214,7 +227,7 @@ describe('Invites API (org invites via messaging)', () => {
     expect(organizationsRepository.addMember).not.toHaveBeenCalled();
   });
 
-  it('POST /api/invites/threads/[threadId]/messages can list and create messages for participant', async () => {
+  it('POST /api/invites/threads/[threadId]/messages returns maintenance while thread runtime is disabled', async () => {
     const thread = inviteThreadsRepository.createThread({
       orgInviteId: 'inv-3',
       organizationId: 'org-3',
@@ -230,7 +243,7 @@ describe('Invites API (org invites via messaging)', () => {
       }),
       { params: { threadId: thread.id } }
     );
-    expect(createResp.status).toBe(200);
+    expect(createResp.status).toBe(503);
 
     const listResp = await listThreadMessages(
       new NextRequest('http://localhost/api/invites/threads/' + thread.id + '/messages?page=1&pageSize=10', {
@@ -238,9 +251,9 @@ describe('Invites API (org invites via messaging)', () => {
       }),
       { params: { threadId: thread.id } }
     );
-    expect(listResp.status).toBe(200);
+    expect(listResp.status).toBe(503);
     const payload = await listResp.json();
-    expect(payload.data.messages.length).toBeGreaterThanOrEqual(1);
+    expect(payload.error).toBe('INVITE_THREADING_UNAVAILABLE');
   });
 
   it('POST /api/invites/[id]/reject rejects pending invite', async () => {
@@ -278,5 +291,3 @@ describe('Invites API (org invites via messaging)', () => {
     expect(response.status).toBe(200);
   });
 });
-
-

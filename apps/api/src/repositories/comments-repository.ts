@@ -120,6 +120,25 @@ function compactCommentChildren(comment: TaskCommentNode): TaskCommentNode {
 }
 
 export class CommentsRepository {
+  async listFlatByTask(projectId: string, taskId: string): Promise<TaskComment[]> {
+    if (isPmDbEnabled()) {
+      const fromPg = await fetchCommentsByTaskFromPg(projectId, taskId);
+      if (fromPg.length > 0) {
+        for (const comment of fromPg) {
+          const exists = memory.TASK_COMMENTS.some((item) => item.id === comment.id);
+          if (!exists) {
+            memory.TASK_COMMENTS.push(comment);
+          }
+        }
+      }
+      return fromPg.map(cloneComment);
+    }
+
+    return memory.TASK_COMMENTS
+      .filter((comment) => comment.projectId === projectId && comment.taskId === taskId)
+      .map(cloneComment);
+  }
+
   listByTask(projectId: string, taskId: string): TaskCommentNode[] {
     const comments = memory.TASK_COMMENTS.filter(
       (comment) => comment.projectId === projectId && comment.taskId === taskId

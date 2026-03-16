@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Получение проекта
-    const project = projectsRepository.findById(projectId);
+    const project = await projectsRepository.findById(projectId);
 
     if (!project) {
       return jsonError('NOT_FOUND', { 
@@ -80,8 +80,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Получение задач
-    const tasks = taskIds
-      .map(id => tasksRepository.findById(id))
+    const tasks = (await Promise.all(taskIds.map((id) => tasksRepository.findById(id))))
       .filter((t): t is Task => t !== null && t.projectId === projectId);
 
     if (tasks.length === 0) {
@@ -150,4 +149,3 @@ export async function POST(req: NextRequest) {
     });
   }
 }
-

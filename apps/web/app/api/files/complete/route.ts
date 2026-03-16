@@ -167,7 +167,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     let projectFolderName = '';
-    let taskForFolder: ReturnType<typeof tasksRepository.findById> | null = null;
+    let taskForFolder: Awaited<ReturnType<typeof tasksRepository.findById>> = null;
 
     if (projectId) {
       // Проверка существования проекта
@@ -200,7 +200,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       projectFolderName = `${project.title || 'Project'} (${projectId})`;
 
       if (entityType === 'task' && entityId) {
-        const task = tasksRepository.findById(entityId);
+        const task = await tasksRepository.findById(entityId);
         if (!task) {
           return jsonError('TASK_NOT_FOUND', { status: 404 });
         }

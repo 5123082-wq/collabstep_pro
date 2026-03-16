@@ -23,7 +23,7 @@ export async function GET(
   const projectId = params.id;
 
   // Проверка существования проекта
-  const project = projectsRepository.findById(projectId);
+  const project = await projectsRepository.findById(projectId);
   if (!project) {
     return jsonError('NOT_FOUND', {
       status: 404
@@ -68,7 +68,7 @@ export async function POST(
   const projectId = params.id;
 
   // Проверка существования проекта
-  const project = projectsRepository.findById(projectId);
+  const project = await projectsRepository.findById(projectId);
   if (!project) {
     return jsonError('NOT_FOUND', {
       status: 404
@@ -114,7 +114,7 @@ export async function POST(
     }
 
     // Добавление агента как участника проекта
-    projectsRepository.upsertMember(projectId, agentId, 'viewer');
+    await projectsRepository.upsertMember(projectId, agentId, 'viewer');
 
     return jsonOk({
       success: true,
@@ -159,7 +159,7 @@ export async function DELETE(
   }
 
   // Проверка существования проекта
-  const project = projectsRepository.findById(projectId);
+  const project = await projectsRepository.findById(projectId);
   if (!project) {
     return jsonError('NOT_FOUND', {
       status: 404
@@ -184,7 +184,7 @@ export async function DELETE(
     }
 
     // Удаление агента из участников проекта
-    const removed = projectsRepository.removeMember(projectId, agentId);
+    const removed = await projectsRepository.removeMember(projectId, agentId);
 
     if (!removed) {
       return jsonError('NOT_FOUND', {

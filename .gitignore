@@ -5,6 +5,7 @@ dist
 .coverage
 playwright-report
 test-results
+**/.DS_Store
 \.env
 .env.local
 /apps/web/.env.local
@@ -24,6 +25,7 @@ test-output.txt
 .yandex-credentials.txt
 .cursor/
 assets/
+design/
 
 # Example code (not part of the main project)
 filebrowser-test/

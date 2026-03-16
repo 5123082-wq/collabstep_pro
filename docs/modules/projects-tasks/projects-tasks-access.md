@@ -11,6 +11,11 @@
 
 **Статус реализации:** ✅ Завершён
 
+**Runtime guardrails:**
+- membership, projects, tasks и invite-derived access читаются из DB-backed path;
+- silent fallback на local memory/mock runtime для PM business surfaces не допускается;
+- emergency admin может использоваться только для аварийного входа и не должен материализоваться как обычный project member или пользователь бизнес-списков.
+
 ## Роли в проекте
 
 ### Типы ролей
@@ -187,6 +192,8 @@ if (canAccessProject(projectId, 'edit')) {
   "issuedAt": "2026-01-06T00:00:00.000Z"
 }
 ```
+
+Emergency admin через `cv_session` остаётся допустимым только как auth/emergency fallback. Он не должен подменять реальные DB-записи в списках пользователей, проектов, задач и участников.
 
 ### Production (планируется)
 

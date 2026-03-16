@@ -82,6 +82,12 @@ export async function POST(
     return jsonOk({ listing });
   } catch (error) {
     console.error('[listings] Error creating listing:', error);
+    if (error instanceof Error && error.message === 'MARKETPLACE_OVERLAY_RUNTIME_DISABLED') {
+      return jsonError('MARKETPLACE_RUNTIME_UNAVAILABLE', {
+        status: 503,
+        details: 'Project marketplace listings are disabled until they are backed by the database.'
+      });
+    }
     return jsonError(
       error instanceof Error ? error.message : 'Не удалось создать листинг',
       { status: 400 }
@@ -164,6 +170,12 @@ export async function PATCH(
     return jsonOk({ listing: updatedListing });
   } catch (error) {
     console.error('[listings] Error updating listing:', error);
+    if (error instanceof Error && error.message === 'MARKETPLACE_OVERLAY_RUNTIME_DISABLED') {
+      return jsonError('MARKETPLACE_RUNTIME_UNAVAILABLE', {
+        status: 503,
+        details: 'Project marketplace listings are disabled until they are backed by the database.'
+      });
+    }
     return jsonError(
       error instanceof Error ? error.message : 'Не удалось обновить листинг',
       { status: 400 }
@@ -227,6 +239,12 @@ export async function DELETE(
     return jsonOk({ success: true, message: 'Листинг успешно удалён' });
   } catch (error) {
     console.error('[listings] Error deleting listing:', error);
+    if (error instanceof Error && error.message === 'MARKETPLACE_OVERLAY_RUNTIME_DISABLED') {
+      return jsonError('MARKETPLACE_RUNTIME_UNAVAILABLE', {
+        status: 503,
+        details: 'Project marketplace listings are disabled until they are backed by the database.'
+      });
+    }
     return jsonError(
       error instanceof Error ? error.message : 'Не удалось удалить листинг',
       { status: 400 }

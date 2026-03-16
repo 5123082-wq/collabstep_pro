@@ -176,6 +176,49 @@ export class InvitationsRepository {
         return invite ?? null;
     }
 
+    async listActiveProjectInvitesForInvitee(params: {
+        userId?: string | null;
+        email?: string | null;
+        organizationId?: string | null;
+    }): Promise<ProjectInvite[]> {
+        const identityConditions = [];
+        if (params.userId) {
+            identityConditions.push(eq(projectInvites.inviteeUserId, params.userId));
+        }
+
+        const normalizedEmail = params.email?.trim().toLowerCase();
+        if (normalizedEmail) {
+            identityConditions.push(eq(projectInvites.inviteeEmail, normalizedEmail));
+        }
+
+        if (identityConditions.length === 0) {
+            return [];
+        }
+
+        const activeStatuses: ProjectInvite['status'][] = [
+            'invited',
+            'previewing',
+            'accepted_by_user',
+            'pending_owner_approval',
+            'approved'
+        ];
+
+        const conditions = [
+            or(...identityConditions),
+            inArray(projectInvites.status, activeStatuses)
+        ];
+
+        if (params.organizationId) {
+            conditions.push(eq(projectInvites.organizationId, params.organizationId));
+        }
+
+        return db
+            .select()
+            .from(projectInvites)
+            .where(and(...conditions))
+            .orderBy(desc(projectInvites.createdAt));
+    }
+
     async listPendingProjectInvites(projectId: string): Promise<ProjectInvite[]> {
         // Returns invites waiting for owner approval
         const pendingStatuses: ProjectInvite['status'][] = ['accepted_by_user', 'pending_owner_approval'];

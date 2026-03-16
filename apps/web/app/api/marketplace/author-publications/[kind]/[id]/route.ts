@@ -116,6 +116,12 @@ export async function PATCH(
     return jsonOk({ item: updated });
   } catch (error) {
     console.error('[catalog author publications] update failed:', error);
+    if (error instanceof Error && error.message === 'MARKETPLACE_OVERLAY_RUNTIME_DISABLED') {
+      return jsonError('MARKETPLACE_RUNTIME_UNAVAILABLE', {
+        status: 503,
+        details: 'Author publications are disabled until they are backed by the database.'
+      });
+    }
     return jsonError('INTERNAL_ERROR', { status: 500 });
   }
 }

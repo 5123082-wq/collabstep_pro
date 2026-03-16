@@ -28,7 +28,7 @@ describe('Finance API routes', () => {
     // Создаём проект для теста, если его нет
     const existingProjects = await projectsRepository.list();
     if (existingProjects.length === 0) {
-      const project = projectsRepository.create({
+      const project = await projectsRepository.create({
         title: 'Test Project',
         ownerId: adminUserId,
         workspaceId: 'workspace',

@@ -30,7 +30,7 @@ export async function DELETE(
 
   try {
     // Получение задачи
-    const task = tasksRepository.findById(taskId);
+    const task = await tasksRepository.findById(taskId);
     if (!task) {
       return jsonError('TASK_NOT_FOUND', { status: 404 });
     }
@@ -61,4 +61,3 @@ export async function DELETE(
     return jsonError('INTERNAL_ERROR', { status: 500 });
   }
 }
-

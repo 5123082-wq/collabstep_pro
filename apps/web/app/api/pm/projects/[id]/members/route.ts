@@ -141,7 +141,7 @@ export async function POST(
     }
 
     const normalizedRole = normalizeProjectMemberRole(body.role) ?? 'member';
-    const existingMember = projectsRepository.getMember(projectId, userId);
+    const existingMember = await projectsRepository.getMember(projectId, userId);
     if (existingMember) {
       return jsonOk({
         member: existingMember,
@@ -149,7 +149,7 @@ export async function POST(
       });
     }
 
-    const member = projectsRepository.upsertMember(projectId, userId, normalizedRole);
+    const member = await projectsRepository.upsertMember(projectId, userId, normalizedRole);
     if (userId !== auth.userId) {
       await notifyProjectAccessGranted(projectId, userId);
     }

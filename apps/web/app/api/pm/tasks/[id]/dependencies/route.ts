@@ -30,7 +30,7 @@ export async function GET(
 
   try {
     // Получение задачи
-    const task = tasksRepository.findById(taskId);
+    const task = await tasksRepository.findById(taskId);
     if (!task) {
       return jsonError('TASK_NOT_FOUND', { status: 404 });
     }
@@ -74,7 +74,7 @@ export async function POST(
 
   try {
     // Получение задачи
-    const task = tasksRepository.findById(taskId);
+    const task = await tasksRepository.findById(taskId);
     if (!task) {
       return jsonError('TASK_NOT_FOUND', { status: 404 });
     }
@@ -94,7 +94,7 @@ export async function POST(
     const { blockerTaskId, type } = body;
 
     // Проверка существования блокирующей задачи
-    const blockerTask = tasksRepository.findById(blockerTaskId);
+    const blockerTask = await tasksRepository.findById(blockerTaskId);
     if (!blockerTask) {
       return jsonError('BLOCKER_TASK_NOT_FOUND', { status: 404 });
     }
@@ -132,4 +132,3 @@ export async function POST(
     return jsonError('INTERNAL_ERROR', { status: 500 });
   }
 }
-

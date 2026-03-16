@@ -99,7 +99,7 @@ export async function GET(
     const { id: taskId } = params;
 
     // Get task
-    const task = tasksRepository.findById(taskId);
+    const task = await tasksRepository.findById(taskId);
     if (!task) {
       return jsonError('TASK_NOT_FOUND', { status: 404 });
     }
@@ -183,7 +183,7 @@ export async function POST(
     const { fileIds } = parsed.data;
 
     // Get task
-    const task = tasksRepository.findById(taskId);
+    const task = await tasksRepository.findById(taskId);
     if (!task) {
       return jsonError('TASK_NOT_FOUND', { status: 404 });
     }

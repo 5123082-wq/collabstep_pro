@@ -1,7 +1,6 @@
 import { encodeDemoSession } from '@/lib/auth/demo-session';
 import {
-  sharesRepository,
-  TEST_ADMIN_USER_ID
+  sharesRepository
 } from '@collabverse/api';
 import { POST as createShare } from '@/app/api/files/[id]/share/route';
 import { DELETE as revokeShare } from '@/app/api/share/[token]/route';
@@ -11,6 +10,7 @@ import { NextRequest } from 'next/server';
 import { db } from '@collabverse/api/db/config';
 import { files, organizations, users } from '@collabverse/api/db/schema';
 import { resetTestDb } from './utils/db-cleaner';
+import { makeTestUserId } from './utils/test-ids';
 
 // Mock fetch for blob requests
 global.fetch = jest.fn();
@@ -19,25 +19,32 @@ describe('Share Links API', () => {
   let fileId: string;
   let organizationId: string;
   let userId: string;
-  const adminEmail = 'admin.demo@collabverse.test';
-  const session = encodeDemoSession({
-    email: adminEmail,
-    userId: TEST_ADMIN_USER_ID,
-    role: 'admin',
-    issuedAt: Date.now()
-  });
-  const headers = {
-    cookie: `cv_session=${session}`
-  };
+  let adminEmail: string;
+  let session: string;
+  let headers: { cookie: string };
 
   beforeEach(async () => {
     await resetTestDb();
+
+    const admin = makeTestUserId('share-admin');
+    adminEmail = admin.email;
+    userId = admin.id;
+
+    session = encodeDemoSession({
+      email: adminEmail,
+      userId: userId,
+      role: 'admin',
+      issuedAt: Date.now()
+    });
+    headers = {
+      cookie: `cv_session=${session}`
+    };
 
     // Create test user
     const [user] = await db
       .insert(users)
       .values({
-        id: TEST_ADMIN_USER_ID,
+        id: userId,
         email: adminEmail,
         name: 'Test Admin'
       })
@@ -221,6 +228,13 @@ describe('Share Links API', () => {
     });
 
     it('should return 403 if user did not create the share', async () => {
+      // Create different user in DB to satisfy foreign key
+      await db.insert(users).values({
+        id: 'different-user-id',
+        email: 'different@example.com',
+        name: 'Different User'
+      });
+
       // Create share with different user
       const share = await sharesRepository.create({
         fileId,

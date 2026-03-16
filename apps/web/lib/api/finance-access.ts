@@ -123,7 +123,7 @@ export async function getProjectRole(projectId: string, userId: string, email?: 
   }
 
   // Проверяем членство в проекте (используется userId, который для новых пользователей всегда UUID)
-  const member = projectsRepository.getMember(projectId, userId);
+  const member = await projectsRepository.getMember(projectId, userId);
   if (!member) {
     return 'viewer';
   }

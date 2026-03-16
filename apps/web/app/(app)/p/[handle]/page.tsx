@@ -2,8 +2,6 @@ import { notFound } from 'next/navigation';
 import PerformerPublicCard from '@/components/performers/PerformerPublicCard';
 import { getCurrentUser } from '@/lib/auth/session';
 import { listPublicAuthorPublicationsByUserId } from '@/lib/marketplace/author-publications';
-import { getCatalogAuthorPublications, getMarketplaceSellerByHandle } from '@/lib/marketplace/data';
-import type { MarketplaceSeller } from '@/lib/marketplace/types';
 import {
   organizationsRepository,
   performerCasesRepository,
@@ -65,8 +63,6 @@ type ReviewPayload = {
 
 const ACTIVE_ORG_ROLES = new Set(['owner', 'admin']);
 
-type AuthorProfileRecord = Awaited<ReturnType<typeof performerProfilesRepository.findPublicByHandleOrUserId>>;
-
 function toIsoDate(value?: Date | string | null): string {
   if (!value) {
     return new Date().toISOString();
@@ -77,105 +73,16 @@ function toIsoDate(value?: Date | string | null): string {
   return new Date(value).toISOString();
 }
 
-function buildCatalogFallbackProfile(seller: MarketplaceSeller): PerformerProfilePayload {
-  return {
-    userId: `catalog-demo:${seller.handle}`,
-    handle: seller.handle,
-    specialization: 'Автор каталога',
-    skills: [],
-    bio: seller.headline,
-    rate: null,
-    employmentType: null,
-    location: seller.location,
-    timezone: null,
-    languages: [],
-    workFormats: [],
-    portfolioEnabled: false,
-    isPublic: true,
-    user: {
-      name: seller.name,
-      image: seller.avatarUrl
-    }
-  };
-}
-
-function buildAuthorShellProfile(authorProfile: NonNullable<AuthorProfileRecord>, seller: MarketplaceSeller | null): PerformerProfilePayload {
-  return {
-    userId: authorProfile.userId,
-    handle: authorProfile.handle ?? seller?.handle ?? null,
-    specialization: 'Автор каталога',
-    skills: [],
-    bio: seller?.headline ?? null,
-    rate: null,
-    employmentType: null,
-    location: seller?.location ?? null,
-    timezone: null,
-    languages: [],
-    workFormats: [],
-    portfolioEnabled: false,
-    isPublic: false,
-    user: {
-      name: seller?.name ?? authorProfile.user.name ?? null,
-      image: seller?.avatarUrl ?? authorProfile.user.image ?? null
-    }
-  };
-}
-
 export const dynamic = 'force-dynamic';
 
 export default async function PerformerPublicPage({ params }: PerformerPublicPageProps) {
   const publicProfile = await performerProfilesRepository.findPublicByHandleOrUserId(params.handle);
-  const authorProfile = publicProfile ?? (await performerProfilesRepository.findByHandle(params.handle));
-  const catalogAuthor = getMarketplaceSellerByHandle(params.handle);
-  const realAuthorSolutions = authorProfile ? await listPublicAuthorPublicationsByUserId(authorProfile.userId) : [];
-  const catalogAuthorSolutions =
-    realAuthorSolutions.length > 0 ? realAuthorSolutions : getCatalogAuthorPublications(params.handle);
-
-  if (!authorProfile && !catalogAuthor) {
-    notFound();
-  }
-
   if (!publicProfile) {
-    const fallbackSolutions = catalogAuthorSolutions;
-
-    if (authorProfile && (catalogAuthor || fallbackSolutions.length > 0)) {
-      return (
-        <div className="space-y-6">
-          <PerformerPublicCard
-            profile={buildAuthorShellProfile(authorProfile, catalogAuthor)}
-            authorSolutions={fallbackSolutions}
-            portfolio={[]}
-            cases={[]}
-            ratingSummary={{ average: 0, count: 0 }}
-            reviews={[]}
-            canInvite={false}
-            canReview={false}
-          />
-        </div>
-      );
-    }
-
-    if (catalogAuthor) {
-      return (
-        <div className="space-y-6">
-          <PerformerPublicCard
-            profile={buildCatalogFallbackProfile(catalogAuthor)}
-            authorSolutions={fallbackSolutions}
-            portfolio={[]}
-            cases={[]}
-            ratingSummary={{ average: 0, count: 0 }}
-            reviews={[]}
-            canInvite={false}
-            canReview={false}
-          />
-        </div>
-      );
-    }
-
     notFound();
   }
 
   const resolvedProfile = publicProfile;
+  const authorSolutions = await listPublicAuthorPublicationsByUserId(resolvedProfile.userId);
 
   const [portfolioItems, caseItems, ratings] = await Promise.all([
     performerPortfolioRepository.listByPerformer(resolvedProfile.userId),
@@ -230,8 +137,6 @@ export default async function PerformerPublicPage({ params }: PerformerPublicPag
       image: resolvedProfile.user.image ?? null
     }
   };
-
-  const authorSolutions = catalogAuthorSolutions;
 
   const portfolioPayload: PortfolioPayload[] = portfolioItems.map((item) => ({
     id: item.id,

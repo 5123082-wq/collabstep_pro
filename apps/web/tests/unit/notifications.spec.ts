@@ -25,13 +25,13 @@ describe('Notifications API', () => {
     'content-type': 'application/json'
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     resetFinanceMemory();
     // Очищаем все уведомления
     memory.NOTIFICATIONS = [];
 
     // Создаем задачу для тестов
-    tasksRepository.create({
+    await tasksRepository.create({
       projectId: 'project-1',
       title: 'Test Task',
       status: 'new'

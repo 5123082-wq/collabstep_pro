@@ -39,7 +39,7 @@ export async function ensureTestProject(_userId: string, _email: string): Promis
     // Remove tasks for the seeded project
     const projectTasks = await tasksRepository.list({ projectId: project.id });
     for (const task of projectTasks) {
-      tasksRepository.delete(task.id);
+      await tasksRepository.delete(task.id);
     }
 
     // Remove finance artifacts tied to the seeded project
@@ -58,7 +58,7 @@ export async function ensureTestProject(_userId: string, _email: string): Promis
     );
 
     // Finally remove the project itself
-    projectsRepository.delete(project.id);
+    await projectsRepository.delete(project.id);
     console.log('[ensureTestProject] Removed demo project:', project.id);
   }
 
@@ -67,6 +67,6 @@ export async function ensureTestProject(_userId: string, _email: string): Promis
   const strayTasks = allTasks.filter((task) => SEED_TASK_TITLES.includes(task.title));
 
   for (const task of strayTasks) {
-    tasksRepository.delete(task.id);
+    await tasksRepository.delete(task.id);
   }
 }

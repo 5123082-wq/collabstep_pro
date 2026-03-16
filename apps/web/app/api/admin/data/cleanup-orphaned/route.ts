@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     }
 
     for (const task of tasksToDelete) {
-      const deleted = tasksRepository.delete(task.id);
+      const deleted = await tasksRepository.delete(task.id);
       if (deleted) {
         deletedTasks++;
         deletedTaskIds.add(task.id);
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
       const projectTasks = await tasksRepository.list({ projectId: project.id });
       projectTasks.forEach(t => deletedTaskIds.add(t.id));
       
-      const deleted = projectsRepository.delete(project.id);
+      const deleted = await projectsRepository.delete(project.id);
       if (deleted) {
         deletedProjects++;
       }

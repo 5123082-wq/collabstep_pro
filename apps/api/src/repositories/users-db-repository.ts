@@ -2,26 +2,45 @@ import { eq, inArray } from 'drizzle-orm';
 import { db } from '../db/config';
 import { users, userControls } from '../db/schema';
 import type { WorkspaceUser } from '../types';
+import {
+    isEmergencyOrLegacyDemoAdminIdentity,
+    isEmergencyAdminUserId
+} from '../runtime/emergency-admin';
 
 import type { UsersRepository } from './users-repository.interface';
 type UserInsert = typeof users.$inferInsert;
 
+function shouldExcludeFromBusinessReads(user: Pick<WorkspaceUser, 'id' | 'email'>): boolean {
+    return isEmergencyOrLegacyDemoAdminIdentity({ userId: user.id, email: user.email });
+}
+
 export class UsersDbRepository implements UsersRepository {
     async list(): Promise<WorkspaceUser[]> {
         const dbUsers = await db.select().from(users);
-        return dbUsers.map(this.mapToWorkspaceUser);
+        return dbUsers
+            .map(this.mapToWorkspaceUser)
+            .filter((user) => !shouldExcludeFromBusinessReads(user));
     }
 
     async findById(id: string): Promise<WorkspaceUser | null> {
         if (!id) return null;
+        if (isEmergencyAdminUserId(id) || isEmergencyOrLegacyDemoAdminIdentity({ userId: id })) {
+            return null;
+        }
         const [user] = await db.select().from(users).where(eq(users.id, id));
-        return user ? this.mapToWorkspaceUser(user) : null;
+        if (!user) {
+            return null;
+        }
+        const mapped = this.mapToWorkspaceUser(user);
+        return shouldExcludeFromBusinessReads(mapped) ? null : mapped;
     }
 
     async findMany(ids: string[]): Promise<WorkspaceUser[]> {
         if (!ids.length) return [];
         const dbUsers = await db.select().from(users).where(inArray(users.id, ids));
-        return dbUsers.map(this.mapToWorkspaceUser);
+        return dbUsers
+            .map(this.mapToWorkspaceUser)
+            .filter((user) => !shouldExcludeFromBusinessReads(user));
     }
 
     async findByEmail(email: string): Promise<WorkspaceUser | null> {

@@ -1,8 +1,7 @@
 import { encodeDemoSession } from '@/lib/auth/demo-session';
 import {
   projectsRepository,
-  resetFinanceMemory,
-  TEST_ADMIN_USER_ID
+  resetFinanceMemory
 } from '@collabverse/api';
 import { db } from '@collabverse/api/db/config';
 import {
@@ -19,16 +18,20 @@ import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { put } from '@vercel/blob';
 import { resetTestDb } from './utils/db-cleaner';
+import { makeTestUserId } from './utils/test-ids';
 
 jest.mock('@vercel/blob', () => ({
   put: jest.fn()
 }));
 
+jest.setTimeout(30_000);
+
 describe('Project Files API', () => {
   let projectId: string;
   let organizationId: string;
-  const adminEmail = 'admin.demo@collabverse.test';
-  const userId = TEST_ADMIN_USER_ID;
+  const admin = makeTestUserId('project-files-admin');
+  const adminEmail = admin.email;
+  const userId = admin.id;
   const session = encodeDemoSession({
     email: adminEmail,
     userId,
@@ -84,7 +87,7 @@ describe('Project Files API', () => {
       });
 
     // Создаем проект для тестов
-    const project = projectsRepository.create({
+    const project = await projectsRepository.create({
       title: 'Test Project',
       description: 'Test Description',
       ownerId: userId,

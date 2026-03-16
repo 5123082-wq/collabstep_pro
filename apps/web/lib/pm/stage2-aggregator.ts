@@ -3,7 +3,6 @@ import {
   projectsRepository,
   tasksRepository,
   usersRepository,
-  memory,
   isAdminUserId,
   type Project as ApiProject,
   type ProjectMember as ApiProjectMember,
@@ -152,16 +151,9 @@ export function mapMembers(apiMembers: ApiProjectMember[], ownerId: string): Pro
     : [...apiMembers, { userId: ownerId, role: 'owner' }];
 
   return withOwner.map((member) => {
-    // Получаем имя пользователя из memory (fallback для синхронных вызовов)
-    const user = memory.WORKSPACE_USERS.find(u => u.id === member.userId);
-    const userName = user?.name || undefined;
-    const avatarUrl = user?.avatarUrl || undefined;
-
     return {
       userId: member.userId,
-      role: (member.role in MEMBER_ROLE_MAP ? MEMBER_ROLE_MAP[member.role as keyof typeof MEMBER_ROLE_MAP] : undefined) ?? 'MEMBER',
-      ...(userName ? { name: userName } : {}),
-      ...(avatarUrl ? { avatarUrl } : {})
+      role: (member.role in MEMBER_ROLE_MAP ? MEMBER_ROLE_MAP[member.role as keyof typeof MEMBER_ROLE_MAP] : undefined) ?? 'MEMBER'
     };
   });
 }
@@ -172,22 +164,7 @@ export async function mapMembersAsync(apiMembers: ApiProjectMember[], ownerId: s
     : [...apiMembers, { userId: ownerId, role: 'owner' }];
 
   return Promise.all(withOwner.map(async (member) => {
-    // Получаем имя пользователя через usersRepository (использует новое хранилище)
-    let user = await usersRepository.findById(member.userId);
-    
-    // Fallback: если пользователь не найден в новом хранилище, проверяем старое
-    if (!user) {
-      const userInMemory = memory.WORKSPACE_USERS.find(u => u.id === member.userId);
-      if (userInMemory) {
-        user = userInMemory;
-        console.log(`[mapMembersAsync] Found user in memory (fallback): ${member.userId} -> name: ${user.name}`);
-      } else {
-        console.log(`[mapMembersAsync] User not found anywhere for userId: ${member.userId}`);
-      }
-    } else {
-      console.log(`[mapMembersAsync] Found user in repository: ${member.userId} -> name: ${user.name}`);
-    }
-    
+    const user = await usersRepository.findById(member.userId);
     const userName = user?.name || undefined;
     const avatarUrl = user?.avatarUrl || undefined;
 
@@ -406,21 +383,14 @@ export function sortProjects(
  * Получает список workspaceId, к которым принадлежит пользователь
  */
 function getUserWorkspaceIds(userId: string): Set<string> {
-  const workspaceIds = new Set<string>();
-
   // Администраторы имеют доступ ко всем workspace
   if (isAdminUserId(userId)) {
-    return workspaceIds; // Пустой Set означает "все workspace"
+    return new Set<string>(); // Пустой Set означает "все workspace"
   }
 
-  // Ищем пользователя во всех workspace
-  for (const [workspaceId, members] of Object.entries(memory.WORKSPACE_MEMBERS)) {
-    if (members.some((member) => member.userId === userId)) {
-      workspaceIds.add(workspaceId);
-    }
-  }
-
-  return workspaceIds;
+  // Workspace membership больше не читается из in-memory runtime.
+  // Каноничный доступ к проектам определяется через owner/member checks в DB-backed repositories.
+  return new Set<string>();
 }
 
 export async function collectStage2Projects(
@@ -540,8 +510,7 @@ export async function collectStage2Projects(
       }
     }
 
-    // Direct memory access for sync operation (same approach as project-catalog-service)
-    const ownerProfile = memory.WORKSPACE_USERS.find(u => u.id === project.ownerId);
+    const ownerProfile = await usersRepository.findById(project.ownerId);
     if (ownerProfile) {
       ownersMap.set(project.ownerId, {
         id: ownerProfile.id,
@@ -577,4 +546,3 @@ export async function collectStage2Projects(
     tasksByProject
   };
 }
-

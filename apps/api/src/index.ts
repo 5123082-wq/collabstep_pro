@@ -1,6 +1,16 @@
 export * from './types';
 export { memory } from './data/memory';
 export { DEFAULT_WORKSPACE_USER_ID, DEFAULT_ACCOUNT_ID, DEFAULT_WORKSPACE_ID, TEST_PROJECT_DEMO_ID, TEST_PROJECT_2_ID, TEST_ADMIN_USER_ID, TEST_USER_ID, TEST_FINANCE_USER_ID, TEST_DESIGNER_USER_ID, isAdminUserId } from './data/memory';
+export {
+  EMERGENCY_ADMIN_USER_ID,
+  EMERGENCY_ADMIN_EMAIL,
+  LEGACY_DEMO_ADMIN_USER_ID,
+  isEmergencyAdminEmail,
+  isEmergencyAdminUserId,
+  isLegacyDemoAdminUserId,
+  isEmergencyOrLegacyDemoAdminIdentity,
+  buildEmergencyAdminUser
+} from './runtime/emergency-admin';
 export { ProjectsRepository, projectsRepository } from './repositories/projects-repository';
 export { TemplatesRepository, templatesRepository, type CreateTemplateInput, type UpdateTemplateInput } from './repositories/templates-repository';
 export {
@@ -78,6 +88,7 @@ export {
 export { projectBudgetsRepository } from './repositories/project-budgets-repository';
 export { resetFinanceMemory } from './data/memory';
 export { resetInvitesMemory } from './data/memory';
+export { resetRepositoryCachesForTests } from './data/cache-manager';
 export {
   getExpenseStore,
   resetExpenseStore,

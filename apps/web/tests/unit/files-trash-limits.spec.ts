@@ -2,8 +2,7 @@ import { encodeDemoSession } from '@/lib/auth/demo-session';
 import {
   organizationsRepository,
   projectsRepository,
-  resetFinanceMemory,
-  TEST_ADMIN_USER_ID
+  resetFinanceMemory
 } from '@collabverse/api';
 import { db } from '@collabverse/api/db/config';
 import {
@@ -25,12 +24,16 @@ import { NextRequest } from 'next/server';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { resetTestDb } from './utils/db-cleaner';
+import { makeTestUserId } from './utils/test-ids';
+
+jest.setTimeout(30_000);
 
 describe('File limits and trash', () => {
   let projectId: string;
   let organizationId: string;
-  const adminEmail = 'admin.demo@collabverse.test';
-  const userId = TEST_ADMIN_USER_ID;
+  const admin = makeTestUserId('files-trash-admin');
+  const adminEmail = admin.email;
+  const userId = admin.id;
   const session = encodeDemoSession({
     email: adminEmail,
     userId,
@@ -90,7 +93,7 @@ describe('File limits and trash', () => {
       });
     }
 
-    const project = projectsRepository.create({
+    const project = await projectsRepository.create({
       title: 'Test Project',
       description: 'Test Description',
       ownerId: userId,

@@ -33,7 +33,7 @@ export async function POST(
   }
 
   try {
-    const restoredProject = projectsRepository.unarchive(params.id);
+    const restoredProject = await projectsRepository.unarchive(params.id);
     if (!restoredProject) {
       return jsonError('RESTORE_FAILED', { status: 500 });
     }
@@ -44,4 +44,3 @@ export async function POST(
     return jsonError('INTERNAL_ERROR', { status: 500 });
   }
 }
-

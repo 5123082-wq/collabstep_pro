@@ -13,6 +13,10 @@ type CacheEntry<T> = {
   expiresAt: number; // timestamp
 };
 
+function isTestEnv(): boolean {
+  return process.env.NODE_ENV === 'test' || typeof process.env.JEST_WORKER_ID === 'string';
+}
+
 // TTL значения (в миллисекундах)
 export const CACHE_TTL = {
   ORGANIZATIONS: 10 * 60 * 1000, // 10 минут
@@ -147,6 +151,12 @@ class CacheManager {
     this.organizationsCache.clear();
   }
 
+  clearAll(): void {
+    this.projectsCache.clear();
+    this.tasksCache.clear();
+    this.organizationsCache.clear();
+  }
+
   /**
    * Очистить все истекшие записи из всех кэшей
    */
@@ -194,10 +204,20 @@ class CacheManager {
 // Singleton instance
 export const cacheManager = new CacheManager();
 
-// Периодическая очистка истекших записей (каждые 5 минут)
-if (typeof setInterval !== 'undefined') {
-  setInterval(() => {
-    cacheManager.cleanupExpired();
-  }, 5 * 60 * 1000);
+export function resetRepositoryCachesForTests(): void {
+  cacheManager.clearAll();
 }
 
+// Периодическая очистка истекших записей (каждые 5 минут)
+if (typeof setInterval !== 'undefined' && !isTestEnv()) {
+  const cleanupTimer = setInterval(() => {
+    cacheManager.cleanupExpired();
+  }, 5 * 60 * 1000);
+
+  if (typeof cleanupTimer === 'object' && cleanupTimer !== null && 'unref' in cleanupTimer) {
+    const timerWithUnref = cleanupTimer as NodeJS.Timeout;
+    if (typeof timerWithUnref.unref === 'function') {
+      timerWithUnref.unref();
+    }
+  }
+}

@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
 
     // Now delete projects (will cascade delete tasks)
     for (const project of userProjects) {
-      const deleted = projectsRepository.delete(project.id);
+      const deleted = await projectsRepository.delete(project.id);
       if (deleted) {
         deletedProjects++;
       }
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
       deletedTasks += projectTasks.length;
 
       // Delete project (will cascade delete tasks)
-      const deleted = projectsRepository.delete(project.id);
+      const deleted = await projectsRepository.delete(project.id);
       if (deleted) {
         deletedProjects++;
       }
@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
     // Clean up any orphaned tasks (shouldn't happen, but just in case)
     const remainingTasks = await tasksRepository.list();
     for (const task of remainingTasks) {
-      tasksRepository.delete(task.id);
+      await tasksRepository.delete(task.id);
       deletedTasks++;
     }
 
@@ -151,4 +151,3 @@ export async function POST(req: NextRequest) {
     scope: body.userId ? `user:${body.userId}` : 'all',
   });
 }
-

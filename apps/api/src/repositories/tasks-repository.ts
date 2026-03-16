@@ -77,6 +77,15 @@ function cloneFileObject(file: FileObject): FileObject {
   return { ...file };
 }
 
+function syncTaskIntoMemory(task: Task): void {
+  const index = memory.TASKS.findIndex((item) => item.id === task.id);
+  if (index === -1) {
+    memory.TASKS.push(task);
+    return;
+  }
+  memory.TASKS[index] = task;
+}
+
 export class TasksRepository {
   async list(options?: TaskListOptions & { view?: 'list' }): Promise<Task[]>;
   async list(options: TaskListOptions & { view: 'tree' }): Promise<TaskTreeNode[]>;
@@ -86,66 +95,44 @@ export class TasksRepository {
     
     // Если БД включена, используем cache-aside паттерн с TTL
     if (isPmDbEnabled()) {
-      try {
-        // Формируем ключ кэша на основе параметров
-        const cacheKey = projectId 
-          ? `tasks:project:${projectId}:status:${status ?? 'all'}:iteration:${iterationId ?? 'all'}`
-          : `tasks:all:status:${status ?? 'all'}:iteration:${iterationId ?? 'all'}`;
-        
-        // Проверяем кэш
-        const cached = cacheManager.getTasks(cacheKey);
-        if (cached) {
-          // Фильтруем по projectId если нужно (кэш может содержать все задачи)
-          let items = cached;
-          if (projectId) {
-            items = items.filter((task) => task.projectId === projectId);
-          }
-          const cloned = items.map(enrichTask);
-          if (normalizedView === 'tree') {
-            return buildTaskTree(cloned);
-          }
-          return cloned;
-        }
-
-        // Кэш промах - читаем из БД
-        const fetchOptions: { projectId?: string; status?: string; iterationId?: string } = {};
+      const cacheKey = projectId 
+        ? `tasks:project:${projectId}:status:${status ?? 'all'}:iteration:${iterationId ?? 'all'}`
+        : `tasks:all:status:${status ?? 'all'}:iteration:${iterationId ?? 'all'}`;
+      
+      const cached = cacheManager.getTasks(cacheKey);
+      if (cached) {
+        let items = cached;
         if (projectId) {
-          fetchOptions.projectId = projectId;
+          items = items.filter((task) => task.projectId === projectId);
         }
-        if (status) {
-          fetchOptions.status = status;
-        }
-        if (iterationId) {
-          fetchOptions.iterationId = iterationId;
-        }
-        const dbTasks = await fetchTasksFromPg(fetchOptions);
-        
-        // Сохраняем в кэш
-        cacheManager.setTasks(cacheKey, dbTasks);
-        
-        // Также обновляем память для обратной совместимости (но это не источник истины)
-        if (memory.TASKS.length === 0) {
-          memory.TASKS = dbTasks;
-        } else {
-          // Синхронизируем: добавляем новые задачи из БД, обновляем существующие
-          for (const dbTask of dbTasks) {
-            const index = memory.TASKS.findIndex(t => t.id === dbTask.id);
-            if (index >= 0) {
-              memory.TASKS[index] = dbTask;
-            } else {
-              memory.TASKS.push(dbTask);
-            }
-          }
-        }
-        const cloned = dbTasks.map(enrichTask);
+        const cloned = items.map(enrichTask);
         if (normalizedView === 'tree') {
           return buildTaskTree(cloned);
         }
         return cloned;
-      } catch (error) {
-        console.error('[TasksRepository] Error loading tasks from DB, falling back to memory:', error);
-        // Fallback to memory if DB fails
       }
+
+      const fetchOptions: { projectId?: string; status?: string; iterationId?: string } = {};
+      if (projectId) {
+        fetchOptions.projectId = projectId;
+      }
+      if (status) {
+        fetchOptions.status = status;
+      }
+      if (iterationId) {
+        fetchOptions.iterationId = iterationId;
+      }
+      const dbTasks = await fetchTasksFromPg(fetchOptions);
+      
+      cacheManager.setTasks(cacheKey, dbTasks);
+      for (const dbTask of dbTasks) {
+        syncTaskIntoMemory(dbTask);
+      }
+      const cloned = dbTasks.map(enrichTask);
+      if (normalizedView === 'tree') {
+        return buildTaskTree(cloned);
+      }
+      return cloned;
     }
     
     // Fallback: читаем из памяти (для случаев когда БД не включена)
@@ -172,29 +159,24 @@ export class TasksRepository {
     return Array.isArray(result) ? result : [];
   }
 
-  findById(id: string): Task | null {
-    const task = memory.TASKS.find((task) => task.id === id);
-    if (task) {
-      return enrichTask(task);
-    }
+  async findById(id: string): Promise<Task | null> {
     if (isPmDbEnabled()) {
-      // Lazy fetch from Postgres if not present in memory (can happen on new lambdas)
-      void fetchTaskByIdFromPg(id)
-        .then((fetched) => {
-          if (fetched) {
-            memory.TASKS.push(fetched);
-          }
-        })
-        .catch((error) => console.error('[TasksRepository] Failed to fetch task from Postgres', error));
+      const fetched = await fetchTaskByIdFromPg(id);
+      if (!fetched) {
+        return null;
+      }
+      syncTaskIntoMemory(fetched);
+      return enrichTask(fetched);
     }
-    return null;
+
+    const task = memory.TASKS.find((item) => item.id === id);
+    return task ? enrichTask(task) : null;
   }
 
   /**
    * Gets the next task number for a project
    */
-  private getNextTaskNumber(projectId: string): number {
-    const projectTasks = memory.TASKS.filter((task) => task.projectId === projectId);
+  private getNextTaskNumber(projectTasks: Task[]): number {
     if (projectTasks.length === 0) {
       return 1;
     }
@@ -202,13 +184,14 @@ export class TasksRepository {
     return maxNumber + 1;
   }
 
-  create(input: CreateTaskInput): Task {
+  async create(input: CreateTaskInput): Promise<Task> {
     const now = new Date().toISOString();
     const createdAt = input.createdAt ?? now;
     const updatedAt = input.updatedAt ?? createdAt;
+    const projectTasks = await this.listByProject(input.projectId);
 
     // Auto-generate number if not provided
-    const number = input.number ?? this.getNextTaskNumber(input.projectId);
+    const number = input.number ?? this.getNextTaskNumber(projectTasks);
 
     // Use startDate if provided, otherwise use startAt
     const startAt = input.startDate ?? input.startAt;
@@ -236,12 +219,10 @@ export class TasksRepository {
       ...(input.currency !== undefined ? { currency: input.currency } : {}),
     };
 
-    memory.TASKS.push(task);
+    syncTaskIntoMemory(task);
 
     if (isPmDbEnabled()) {
-      void persistTaskToPg(task).catch((error) =>
-        console.error('[TasksRepository] Failed to persist task', error)
-      );
+      await persistTaskToPg(task);
       // Инвалидируем кэш задач при создании
       cacheManager.invalidateTasks(task.projectId);
     }
@@ -250,17 +231,12 @@ export class TasksRepository {
   }
 
   async update(id: string, patch: TaskUpdatePatch): Promise<Task | null> {
-    const idx = memory.TASKS.findIndex((task) => task.id === id);
-    if (idx === -1) {
-      return null;
-    }
-
-    const current = memory.TASKS[idx];
+    const current = await this.findById(id);
     if (!current) {
       return null;
     }
 
-    const originalTask = current;
+    const originalTask = { ...current };
     const updated: Task = {
       ...current,
       updatedAt: new Date().toISOString()
@@ -345,7 +321,7 @@ export class TasksRepository {
       updated.currency = patch.currency ?? null;
     }
 
-    memory.TASKS[idx] = updated;
+    syncTaskIntoMemory(updated);
 
     if (isPmDbEnabled()) {
       console.log('[TasksRepository] DB enabled, persisting task update:', updated.id, 'status:', updated.status);
@@ -355,7 +331,7 @@ export class TasksRepository {
         cacheManager.invalidateTasks(updated.projectId);
         console.log('[TasksRepository] ✅ Task successfully persisted:', updated.id, 'status:', updated.status);
       } catch (error) {
-        memory.TASKS[idx] = originalTask;
+        syncTaskIntoMemory(originalTask);
         console.error('[TasksRepository] Failed to persist task update', error);
         console.error('[TasksRepository] ❌ Failed to persist, rolled back memory:', error);
         throw error;
@@ -364,28 +340,28 @@ export class TasksRepository {
       console.warn('[TasksRepository] ⚠️ DB not enabled, task updated in memory only:', updated.id, 'status:', updated.status);
     }
 
-    return enrichTask(memory.TASKS[idx]);
+    return enrichTask(updated);
   }
 
-  delete(id: string): boolean {
+  async delete(id: string): Promise<boolean> {
     const idx = memory.TASKS.findIndex((task) => task.id === id);
-    if (idx === -1) {
+    if (idx === -1 && !(await this.findById(id))) {
       return false;
     }
 
-    const task = memory.TASKS[idx];
+    const task = idx === -1 ? await this.findById(id) : memory.TASKS[idx];
     const projectId = task?.projectId;
 
-    memory.TASKS.splice(idx, 1);
+    if (idx !== -1) {
+      memory.TASKS.splice(idx, 1);
+    }
     // Also remove dependencies for this task
     memory.TASK_DEPENDENCIES = memory.TASK_DEPENDENCIES.filter(
       (dep) => dep.dependentTaskId !== id && dep.blockerTaskId !== id
     );
 
     if (isPmDbEnabled()) {
-      void deleteTaskFromPg(id).catch((error) =>
-        console.error('[TasksRepository] Failed to delete task from Postgres', error)
-      );
+      await deleteTaskFromPg(id);
       // Инвалидируем кэш задач при удалении
       if (projectId) {
         cacheManager.invalidateTasks(projectId);
